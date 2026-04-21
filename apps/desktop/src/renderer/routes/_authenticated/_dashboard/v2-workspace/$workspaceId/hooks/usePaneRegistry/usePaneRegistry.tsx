@@ -45,7 +45,6 @@ import {
 	BrowserPaneToolbar,
 	browserRuntimeRegistry,
 } from "./components/BrowserPane";
-import { ChatPane } from "./components/ChatPane";
 import { CommentPane } from "./components/CommentPane";
 import { DiffPane } from "./components/DiffPane";
 import { FilePane } from "./components/FilePane";
@@ -344,8 +343,12 @@ export function usePaneRegistry(
 			chat: {
 				getIcon: () => <MessageSquare className="size-4" />,
 				getTitle: () => "Chat",
-				renderPane: (ctx: RendererContext<PaneViewerData>) => (
-					<ChatPane ctx={ctx} workspaceId={workspaceId} />
+				// Disabled until ChatServiceProvider is wired above v2 panes —
+				// TiptapPromptEditor needs its tRPC context.
+				renderPane: (_ctx: RendererContext<PaneViewerData>) => (
+					<div className="flex h-full items-center justify-center p-4 text-sm text-muted-foreground">
+						Chat pane is temporarily disabled.
+					</div>
 				),
 				contextMenuActions: (_ctx, defaults) =>
 					defaults.map((d) =>

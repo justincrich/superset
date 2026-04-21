@@ -1,41 +1,21 @@
-import type { RendererContext } from "@superset/panes";
-import { useCallback } from "react";
-import type { ChatPaneData, PaneViewerData } from "../../../../types";
+import type { ChatLaunchConfig } from "shared/tabs-types";
 import { SessionSelector } from "./components/SessionSelector";
 import { ChatPaneInterface as WorkspaceChatInterface } from "./components/WorkspaceChatInterface";
 import { useWorkspaceChatController } from "./hooks/useWorkspaceChatController";
 
 export function ChatPane({
-	ctx,
+	onSessionIdChange,
+	sessionId,
 	workspaceId,
+	initialLaunchConfig,
+	onConsumeLaunchConfig,
 }: {
-	ctx: RendererContext<PaneViewerData>;
+	onSessionIdChange: (sessionId: string | null) => void;
+	sessionId: string | null;
 	workspaceId: string;
+	initialLaunchConfig?: ChatLaunchConfig | null;
+	onConsumeLaunchConfig?: () => void;
 }) {
-	const paneData = ctx.pane.data as ChatPaneData;
-	const sessionId = paneData.sessionId;
-	const initialLaunchConfig = paneData.launchConfig ?? null;
-
-	const onSessionIdChange = useCallback(
-		(nextSessionId: string | null) => {
-			const current = ctx.pane.data as ChatPaneData;
-			ctx.actions.updateData({
-				...current,
-				sessionId: nextSessionId,
-			} as PaneViewerData);
-		},
-		[ctx],
-	);
-
-	const onConsumeLaunchConfig = useCallback(() => {
-		const current = ctx.pane.data as ChatPaneData;
-		if (!current.launchConfig) return;
-		ctx.actions.updateData({
-			...current,
-			launchConfig: null,
-		} as PaneViewerData);
-	}, [ctx]);
-
 	const {
 		organizationId,
 		workspacePath,
@@ -66,9 +46,9 @@ export function ChatPane({
 			<div className="min-h-0 flex-1">
 				<WorkspaceChatInterface
 					getOrCreateSession={getOrCreateSession}
-					initialLaunchConfig={initialLaunchConfig}
+					initialLaunchConfig={initialLaunchConfig ?? null}
 					onConsumeLaunchConfig={onConsumeLaunchConfig}
-					isFocused={ctx.isActive}
+					isFocused
 					onResetSession={handleNewChat}
 					sessionId={sessionId}
 					workspaceId={workspaceId}
