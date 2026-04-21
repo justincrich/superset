@@ -24,6 +24,15 @@ export interface UseAutoScrollOptions {
 	working: boolean;
 	bottomThreshold?: number;
 	onUserInteracted?: () => void;
+	/**
+	 * Optional "content signal" that changes every time the timeline
+	 * gains new content (e.g. total character count of the active
+	 * assistant message). When this changes AND the user hasn't
+	 * scrolled away, we pin to the bottom. More reliable than a
+	 * ResizeObserver, which fires asynchronously and sometimes misses
+	 * streaming delta frames.
+	 */
+	contentSignal?: number | string;
 }
 
 export interface UseAutoScrollReturn {
@@ -41,7 +50,12 @@ export interface UseAutoScrollReturn {
 export function useAutoScroll(
 	options: UseAutoScrollOptions,
 ): UseAutoScrollReturn {
-	const { working, bottomThreshold = 10, onUserInteracted } = options;
+	const {
+		working,
+		bottomThreshold = 10,
+		onUserInteracted,
+		contentSignal,
+	} = options;
 	const [userScrolled, setUserScrolled] = useState(false);
 	const scrollElRef = useRef<HTMLElement | null>(null);
 	const contentElRef = useRef<HTMLElement | null>(null);
@@ -220,6 +234,28 @@ export function useAutoScroll(
 		if (!el) return;
 		el.style.overflowAnchor = userScrolled ? "auto" : "none";
 	}, [userScrolled]);
+
+	// Content-signal follower — more reliable than ResizeObserver for
+	// streaming deltas. When the signal changes and we're active + not
+	// paused, scroll to bottom. Double rAF to let React commit + paint
+	// the new content before we measure.
+	useEffect(() => {
+		if (contentSignal === undefined) return;
+		if (!isActive()) return;
+		if (userScrolledRef.current) return;
+		const raf1 = requestAnimationFrame(() => {
+			const raf2 = requestAnimationFrame(() => {
+				stickToBottom(false);
+			});
+			(raf1 as unknown as { next?: number }).next = raf2;
+		});
+		return () => {
+			cancelAnimationFrame(raf1);
+			const next = (raf1 as unknown as { next?: number }).next;
+			if (typeof next === "number") cancelAnimationFrame(next);
+		};
+		// `working` in deps so we also scroll on the idle→busy flip.
+	}, [contentSignal, working, stickToBottom]);
 
 	useEffect(() => {
 		return () => {

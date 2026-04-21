@@ -55,8 +55,30 @@ export function Timeline({ sessionId }: TimelineProps) {
 		[turns, status, historyMore, historyLoading],
 	);
 
+	// Content signal for auto-scroll: total characters of streaming
+	// text/reasoning in the active turn + message count. Changes every
+	// time a delta lands, giving useAutoScroll a deterministic trigger
+	// that doesn't rely on ResizeObserver catching the commit.
+	const contentSignal = useMemo(() => {
+		let chars = 0;
+		for (const turn of turns) {
+			for (const asst of turn.assistant) {
+				const parts = turn.parts[asst.id] ?? [];
+				for (const p of parts) {
+					if (p.type === "text" || p.type === "reasoning") {
+						chars += p.text.length;
+					}
+				}
+			}
+		}
+		// Pack message count so inserts also tick the signal even when
+		// text is empty (new tool part, dock changes, etc.).
+		return chars + turns.length * 1_000_000;
+	}, [turns]);
+
 	const autoScroll = useAutoScroll({
 		working: status.type !== "idle",
+		contentSignal,
 	});
 
 	return (
