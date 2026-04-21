@@ -31,6 +31,7 @@ import { Markdown } from "tiptap-markdown";
 import { EditableCodeBlockView } from "./components/EditableCodeBlockView";
 import { ReadOnlyCodeBlockView } from "./components/ReadOnlyCodeBlockView";
 import { ReadOnlySafeImageView } from "./components/ReadOnlySafeImageView";
+import { serializeTableAsMarkdown } from "./utils/tableMarkdownSerializer";
 
 const lowlight = createLowlight(common);
 const ENABLE_RAW_MARKDOWN_HTML = false;
@@ -50,6 +51,23 @@ const ReadOnlyCodeBlock = CodeBlockLowlight.extend({
 const EditableCodeBlock = CodeBlockLowlight.extend({
 	addNodeView() {
 		return ReactNodeViewRenderer(EditableCodeBlockView);
+	},
+});
+
+// tiptap-markdown ships a Table serializer that emits the literal string
+// "[table]" whenever cells hold anything more interesting than a single
+// paragraph — a very easy state to reach from the rendered editor, e.g. by
+// hitting Enter inside a cell. Override the markdown storage so tables always
+// round-trip as proper GFM. See issue #3613.
+const MarkdownTable = Table.extend({
+	addStorage() {
+		return {
+			...this.parent?.(),
+			markdown: {
+				serialize: serializeTableAsMarkdown,
+				parse: {},
+			},
+		};
 	},
 });
 
@@ -158,7 +176,7 @@ export function createMarkdownExtensions({
 			},
 		}),
 		SafeImage,
-		Table.configure({
+		MarkdownTable.configure({
 			resizable: false,
 			HTMLAttributes: {
 				class: "markdown-table my-4 min-w-full border-collapse",
