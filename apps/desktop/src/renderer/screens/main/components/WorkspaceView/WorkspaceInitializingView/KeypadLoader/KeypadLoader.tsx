@@ -1,6 +1,6 @@
 import { cn } from "@superset/ui/utils";
 import type { ComponentType } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	LuDatabase,
 	LuDownload,
@@ -84,6 +84,19 @@ export function KeypadLoader({
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const prevStepRef = useRef<WorkspaceInitStep>(currentStep);
 	const timeoutsRef = useRef<number[]>([]);
+	const [reducedMotion, setReducedMotion] = useState(false);
+
+	useEffect(() => {
+		const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+		setReducedMotion(mq.matches);
+		const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+		mq.addEventListener("change", onChange);
+		return () => mq.removeEventListener("change", onChange);
+	}, []);
+
+	// Reduced-motion implies reduced-audio — always auto-mute when it's on,
+	// even if the caller didn't pass muted.
+	const effectiveMuted = muted || reducedMotion;
 
 	useEffect(() => {
 		if (!audioRef.current) {
@@ -92,8 +105,8 @@ export function KeypadLoader({
 			audio.preload = "auto";
 			audioRef.current = audio;
 		}
-		audioRef.current.muted = muted;
-	}, [muted]);
+		audioRef.current.muted = effectiveMuted;
+	}, [effectiveMuted]);
 
 	useEffect(() => {
 		return () => {
@@ -123,23 +136,26 @@ export function KeypadLoader({
 			return prevIdx <= t && curIdx > t;
 		});
 
-		if (crossed.length === 0 || muted || !audioRef.current) return;
+		if (crossed.length === 0 || effectiveMuted || !audioRef.current) return;
 
-		const audio = audioRef.current;
+		const template = audioRef.current;
 		// Cap rapid-fire clicks (e.g. on a huge step skip) to avoid audio spam.
 		const clicksToPlay = Math.min(crossed.length, 2);
 		for (let i = 0; i < clicksToPlay; i++) {
 			const id = window.setTimeout(() => {
 				try {
-					audio.currentTime = 0;
-					void audio.play().catch(() => {});
+					// Clone per click so overlapping plays don't cancel each other
+					// via currentTime=0 while the previous play() Promise is pending.
+					const player = template.cloneNode() as HTMLAudioElement;
+					player.volume = 0.35;
+					void player.play().catch(() => {});
 				} catch {
 					// ignore — audio is best-effort
 				}
 			}, i * 140);
 			timeoutsRef.current.push(id);
 		}
-	}, [currentStep, muted]);
+	}, [currentStep, effectiveMuted]);
 
 	const currentIdx = getStepIndex(currentStep);
 
