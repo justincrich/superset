@@ -56,7 +56,10 @@ function toAccessStatus(
 	if (part.state === "output-error" || result.isError === true) {
 		return "error";
 	}
-	const content = typeof result.content === "string" ? result.content.trim() : "";
+	const content =
+		(typeof result.content === "string" && result.content.trim()) ||
+		(typeof result.text === "string" && result.text.trim()) ||
+		"";
 	return toAccessDecision(content) ?? "error";
 }
 
@@ -76,7 +79,7 @@ export function RequestSandboxAccessToolCall({
 
 	const isPending = status === "pending";
 	const isCancelledOrError = status === "cancelled" || status === "error";
-	const hasContext = Boolean(requestedPath ?? reason);
+	const hasContext = Boolean(requestedPath || reason);
 
 	return (
 		<ToolCallRow
