@@ -70,6 +70,7 @@ describe("TerminalResizeDebouncer — immediate path", () => {
 		debouncer.resize(80, 24, false);
 		expect(cb.resizeBoth).not.toHaveBeenCalled();
 		expect(cb.resizeY).toHaveBeenCalledTimes(1);
+		debouncer.dispose();
 	});
 });
 
