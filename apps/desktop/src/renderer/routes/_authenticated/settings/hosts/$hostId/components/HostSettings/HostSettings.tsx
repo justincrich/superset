@@ -1,14 +1,28 @@
+import { toast } from "@superset/ui/sonner";
 import { eq } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
 import { authClient } from "renderer/lib/auth-client";
-import { useOptimisticCollectionActions } from "renderer/routes/_authenticated/hooks/useOptimisticCollectionActions";
+import {
+	type PersistableTransaction,
+	useOptimisticCollectionActions,
+} from "renderer/routes/_authenticated/hooks/useOptimisticCollectionActions";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 import type { CandidateRow } from "./components/AddMemberDropdown";
 import { AddMemberDropdown } from "./components/AddMemberDropdown";
 import { HostHeader } from "./components/HostHeader";
 import type { MemberRowData } from "./components/MembersTable";
 import { MembersTable } from "./components/MembersTable";
+
+function notifyOnPersist(
+	tx: PersistableTransaction | null,
+	successMessage: string,
+) {
+	tx?.isPersisted.promise.then(
+		() => toast.success(successMessage),
+		() => {},
+	);
+}
 
 interface HostSettingsProps {
 	hostId: string;
@@ -115,19 +129,28 @@ export function HostSettings({ hostId }: HostSettingsProps) {
 	}
 
 	const handleAdd = (candidate: CandidateRow) => {
-		actions.v2UsersHosts.addMember({
-			hostId,
-			userId: candidate.userId,
-			organizationId: host.organizationId,
-		});
+		notifyOnPersist(
+			actions.v2UsersHosts.addMember({
+				hostId,
+				userId: candidate.userId,
+				organizationId: host.organizationId,
+			}),
+			"Member added",
+		);
 	};
 
 	const handleRemove = (member: MemberRowData) => {
-		actions.v2UsersHosts.removeMember(member.usersHostsId);
+		notifyOnPersist(
+			actions.v2UsersHosts.removeMember(member.usersHostsId),
+			"Member removed",
+		);
 	};
 
 	const handleSetRole = (member: MemberRowData, role: "owner" | "member") => {
-		actions.v2UsersHosts.setMemberRole(member.usersHostsId, role);
+		notifyOnPersist(
+			actions.v2UsersHosts.setMemberRole(member.usersHostsId, role),
+			"Role updated",
+		);
 	};
 
 	return (

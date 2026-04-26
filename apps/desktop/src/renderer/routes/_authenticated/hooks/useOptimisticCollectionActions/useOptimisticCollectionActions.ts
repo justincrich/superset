@@ -99,18 +99,6 @@ export function useOptimisticCollectionActions() {
 			mutation: () => PersistableTransaction,
 		) => runMutation("optimistic.v2UsersHosts", failureTitle, mutation);
 
-		const toastOnPersist = (
-			tx: PersistableTransaction | null,
-			successMessage: string,
-		) => {
-			if (!tx) return tx;
-			tx.isPersisted.promise.then(
-				() => toast.success(successMessage),
-				() => {},
-			);
-			return tx;
-		};
-
 		return {
 			tasks: {
 				updateTitle: (taskId: string, title: string) =>
@@ -221,36 +209,27 @@ export function useOptimisticCollectionActions() {
 					organizationId: string;
 					role?: V2UsersHostRole;
 				}) =>
-					toastOnPersist(
-						runUsersHostsMutation("Failed to add member", () => {
-							const now = new Date();
-							return collections.v2UsersHosts.insert({
-								id: crypto.randomUUID(),
-								hostId: input.hostId,
-								userId: input.userId,
-								organizationId: input.organizationId,
-								role: input.role ?? "member",
-								createdAt: now,
-								updatedAt: now,
-							});
-						}),
-						"Member added",
-					),
+					runUsersHostsMutation("Failed to add member", () => {
+						const now = new Date();
+						return collections.v2UsersHosts.insert({
+							id: crypto.randomUUID(),
+							hostId: input.hostId,
+							userId: input.userId,
+							organizationId: input.organizationId,
+							role: input.role ?? "member",
+							createdAt: now,
+							updatedAt: now,
+						});
+					}),
 				removeMember: (rowId: string) =>
-					toastOnPersist(
-						runUsersHostsMutation("Failed to remove member", () =>
-							collections.v2UsersHosts.delete(rowId),
-						),
-						"Member removed",
+					runUsersHostsMutation("Failed to remove member", () =>
+						collections.v2UsersHosts.delete(rowId),
 					),
 				setMemberRole: (rowId: string, role: V2UsersHostRole) =>
-					toastOnPersist(
-						runUsersHostsMutation("Failed to update role", () =>
-							collections.v2UsersHosts.update(rowId, (draft) => {
-								draft.role = role;
-							}),
-						),
-						"Role updated",
+					runUsersHostsMutation("Failed to update role", () =>
+						collections.v2UsersHosts.update(rowId, (draft) => {
+							draft.role = role;
+						}),
 					),
 			},
 		};
