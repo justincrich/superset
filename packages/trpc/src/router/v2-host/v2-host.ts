@@ -18,7 +18,7 @@ async function requireHostOwner(
 			eq(v2Hosts.id, hostId),
 			eq(v2Hosts.organizationId, organizationId),
 		),
-		columns: { id: true, organizationId: true },
+		columns: { id: true, organizationId: true, createdByUserId: true },
 	});
 
 	if (!host) {
@@ -78,20 +78,6 @@ export const v2HostRouter = {
 			await requireHostOwner(ctx.session.user.id, input.hostId, organizationId);
 			await requireOrgMember(input.userId, organizationId);
 
-			const existing = await db.query.v2UsersHosts.findFirst({
-				where: and(
-					eq(v2UsersHosts.hostId, input.hostId),
-					eq(v2UsersHosts.userId, input.userId),
-				),
-				columns: { id: true },
-			});
-			if (existing) {
-				throw new TRPCError({
-					code: "CONFLICT",
-					message: "User already has access to this host",
-				});
-			}
-
 			const result = await dbWs.transaction(async (tx) => {
 				const [inserted] = await tx
 					.insert(v2UsersHosts)
@@ -102,6 +88,13 @@ export const v2HostRouter = {
 						hostId: input.hostId,
 						role: input.role ?? "member",
 					})
+					.onConflictDoNothing({
+						target: [
+							v2UsersHosts.organizationId,
+							v2UsersHosts.userId,
+							v2UsersHosts.hostId,
+						],
+					})
 					.returning();
 				const txid = await getCurrentTxid(tx);
 				return { inserted, txid };
@@ -109,8 +102,8 @@ export const v2HostRouter = {
 
 			if (!result.inserted) {
 				throw new TRPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Failed to add member",
+					code: "CONFLICT",
+					message: "User already has access to this host",
 				});
 			}
 
@@ -126,7 +119,11 @@ export const v2HostRouter = {
 		)
 		.mutation(async ({ ctx, input }) => {
 			const organizationId = requireActiveOrgId(ctx);
-			await requireHostOwner(ctx.session.user.id, input.hostId, organizationId);
+			const host = await requireHostOwner(
+				ctx.session.user.id,
+				input.hostId,
+				organizationId,
+			);
 
 			if (input.userId === ctx.session.user.id) {
 				throw new TRPCError({
@@ -135,39 +132,47 @@ export const v2HostRouter = {
 				});
 			}
 
-			const target = await db.query.v2UsersHosts.findFirst({
-				where: and(
-					eq(v2UsersHosts.hostId, input.hostId),
-					eq(v2UsersHosts.userId, input.userId),
-				),
-				columns: { role: true },
-			});
-
-			if (!target) {
-				const txid = await dbWs.transaction((tx) => getCurrentTxid(tx));
-				return { success: true, txid };
-			}
-
-			if (target.role === "owner") {
-				const otherOwners = await db
-					.select({ id: v2UsersHosts.id })
-					.from(v2UsersHosts)
-					.where(
-						and(
-							eq(v2UsersHosts.hostId, input.hostId),
-							eq(v2UsersHosts.role, "owner"),
-							ne(v2UsersHosts.userId, input.userId),
-						),
-					);
-				if (otherOwners.length === 0) {
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: "A host must have at least one owner.",
-					});
-				}
+			if (host.createdByUserId === input.userId) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message:
+						"This user runs the host service for this device and can't be removed. Demote them to member instead.",
+				});
 			}
 
 			const txid = await dbWs.transaction(async (tx) => {
+				const target = await tx.query.v2UsersHosts.findFirst({
+					where: and(
+						eq(v2UsersHosts.hostId, input.hostId),
+						eq(v2UsersHosts.userId, input.userId),
+					),
+					columns: { role: true },
+				});
+
+				if (!target) {
+					return await getCurrentTxid(tx);
+				}
+
+				if (target.role === "owner") {
+					const otherOwners = await tx
+						.select({ id: v2UsersHosts.id })
+						.from(v2UsersHosts)
+						.where(
+							and(
+								eq(v2UsersHosts.hostId, input.hostId),
+								eq(v2UsersHosts.role, "owner"),
+								ne(v2UsersHosts.userId, input.userId),
+							),
+						)
+						.for("update");
+					if (otherOwners.length === 0) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: "A host must have at least one owner.",
+						});
+					}
+				}
+
 				await tx
 					.delete(v2UsersHosts)
 					.where(
@@ -201,26 +206,42 @@ export const v2HostRouter = {
 				});
 			}
 
-			if (input.role === "member") {
-				const otherOwners = await db
-					.select({ id: v2UsersHosts.id })
-					.from(v2UsersHosts)
-					.where(
-						and(
-							eq(v2UsersHosts.hostId, input.hostId),
-							eq(v2UsersHosts.role, "owner"),
-							ne(v2UsersHosts.userId, input.userId),
-						),
-					);
-				if (otherOwners.length === 0) {
+			const txid = await dbWs.transaction(async (tx) => {
+				const target = await tx.query.v2UsersHosts.findFirst({
+					where: and(
+						eq(v2UsersHosts.hostId, input.hostId),
+						eq(v2UsersHosts.userId, input.userId),
+					),
+					columns: { role: true },
+				});
+
+				if (!target) {
 					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: "A host must have at least one owner.",
+						code: "NOT_FOUND",
+						message: "User is not a member of this host",
 					});
 				}
-			}
 
-			const txid = await dbWs.transaction(async (tx) => {
+				if (input.role === "member" && target.role === "owner") {
+					const otherOwners = await tx
+						.select({ id: v2UsersHosts.id })
+						.from(v2UsersHosts)
+						.where(
+							and(
+								eq(v2UsersHosts.hostId, input.hostId),
+								eq(v2UsersHosts.role, "owner"),
+								ne(v2UsersHosts.userId, input.userId),
+							),
+						)
+						.for("update");
+					if (otherOwners.length === 0) {
+						throw new TRPCError({
+							code: "BAD_REQUEST",
+							message: "A host must have at least one owner.",
+						});
+					}
+				}
+
 				await tx
 					.update(v2UsersHosts)
 					.set({ role: input.role })
