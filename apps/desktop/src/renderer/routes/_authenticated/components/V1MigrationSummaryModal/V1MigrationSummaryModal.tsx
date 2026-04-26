@@ -78,10 +78,10 @@ const INITIAL_MODAL_UI_STATE: ModalUiState = {
 };
 
 const GRADIENT_COLORS = [
-	"#3b82f6",
-	"#6366f1",
-	"#8b5cf6",
-	"#1e1b4b",
+	"#f97316",
+	"#fb923c",
+	"#f59e0b",
+	"#431407",
 ] as const satisfies readonly [string, string, string, string];
 
 function summaryKey(organizationId: string): string {
