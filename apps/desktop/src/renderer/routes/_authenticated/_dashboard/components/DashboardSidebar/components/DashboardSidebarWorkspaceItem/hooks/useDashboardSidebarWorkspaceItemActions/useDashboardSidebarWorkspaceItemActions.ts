@@ -9,7 +9,10 @@ import { useNavigateAwayFromWorkspace } from "renderer/routes/_authenticated/_da
 import { useDashboardSidebarState } from "renderer/routes/_authenticated/hooks/useDashboardSidebarState";
 import { useOptimisticCollectionActions } from "renderer/routes/_authenticated/hooks/useOptimisticCollectionActions";
 import { useLocalHostService } from "renderer/routes/_authenticated/providers/LocalHostServiceProvider";
-import { useV2NotificationStore } from "renderer/stores/v2-notifications";
+import {
+	useV2NotificationStore,
+	useV2WorkspaceIsManuallyUnread,
+} from "renderer/stores/v2-notifications";
 
 interface UseDashboardSidebarWorkspaceItemActionsOptions {
 	workspaceId: string;
@@ -34,6 +37,9 @@ export function useDashboardSidebarWorkspaceItemActions({
 	const clearWorkspaceAttention = useV2NotificationStore(
 		(s) => s.clearWorkspaceAttention,
 	);
+	const setManualUnread = useV2NotificationStore((s) => s.setManualUnread);
+	const clearManualUnread = useV2NotificationStore((s) => s.clearManualUnread);
+	const isManuallyUnread = useV2WorkspaceIsManuallyUnread(workspaceId);
 	const { createSection, moveWorkspaceToSection, removeWorkspaceFromSidebar } =
 		useDashboardSidebarState();
 
@@ -128,6 +134,14 @@ export function useDashboardSidebarWorkspaceItemActions({
 		}
 	};
 
+	const handleToggleUnread = () => {
+		if (isManuallyUnread) {
+			clearManualUnread(workspaceId);
+		} else {
+			setManualUnread(workspaceId);
+		}
+	};
+
 	const handleCopyBranchName = async () => {
 		if (!branch) {
 			toast.error("Branch name is not available");
@@ -152,8 +166,10 @@ export function useDashboardSidebarWorkspaceItemActions({
 		handleDeleted,
 		handleOpenInFinder,
 		handleRemoveFromSidebar,
+		handleToggleUnread,
 		isActive,
 		isDeleteDialogOpen,
+		isManuallyUnread,
 		isRenaming,
 		moveWorkspaceToSection,
 		renameValue,
