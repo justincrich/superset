@@ -263,23 +263,34 @@ export function ChatPaneInterface({
 		[organizationId, sessionId, workspaceId],
 	);
 
+	// Memoize the select mapper so React Query can preserve the result's
+	// identity across polls — without this, every render produces a new
+	// mapper, every poll produces a new array, and every consumer of
+	// `slashCommands` rerenders even when nothing has changed.
+	const selectSlashCommands = useCallback(
+		(
+			commands: NonNullable<
+				inferRouterOutputs<AppRouter>["chat"]["getSlashCommands"]
+			>,
+		) =>
+			commands.map((command) => ({
+				...command,
+				kind:
+					command.kind === "builtin"
+						? ("builtin" as const)
+						: ("custom" as const),
+				source:
+					command.kind === "builtin"
+						? ("builtin" as const)
+						: ("project" as const),
+			})),
+		[],
+	);
+
 	const { data: slashCommands = [] } =
 		workspaceTrpc.chat.getSlashCommands.useQuery(
 			{ workspaceId },
-			{
-				select: (commands) =>
-					commands.map((command) => ({
-						...command,
-						kind:
-							command.kind === "builtin"
-								? ("builtin" as const)
-								: ("custom" as const),
-						source:
-							command.kind === "builtin"
-								? ("builtin" as const)
-								: ("project" as const),
-					})),
-			},
+			{ select: selectSlashCommands },
 		);
 
 	const chat = useChatDisplay({
@@ -360,7 +371,6 @@ export function ChatPaneInterface({
 							errorMessage: null,
 						} as SnapshotData["displayState"],
 						messages: [optimisticMessage],
-						observedAt: Date.now(),
 					};
 				});
 			}

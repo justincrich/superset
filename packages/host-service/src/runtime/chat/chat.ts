@@ -693,7 +693,6 @@ When you need to ask the user ANY question — including simple yes/no, confirma
 	}): Promise<{
 		displayState: ChatDisplayState;
 		messages: RuntimeMessages;
-		observedAt: number;
 	}> {
 		const runtime = await this.getOrCreateRuntime(
 			input.sessionId,
@@ -701,8 +700,11 @@ When you need to ask the user ANY question — including simple yes/no, confirma
 		);
 		const displayState = this.buildDisplayState(runtime);
 		const messages = await runtime.harness.listMessages();
-		const observedAt = Date.now();
-		return { displayState, messages, observedAt };
+		// Intentionally no observedAt: when the harness state hasn't changed,
+		// the response object is structurally identical to the previous poll's
+		// response, so React Query's structuralSharing preserves the object
+		// identity and idle polls don't trigger downstream rerenders.
+		return { displayState, messages };
 	}
 
 	async sendMessage(
