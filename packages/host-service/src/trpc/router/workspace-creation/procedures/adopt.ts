@@ -1,6 +1,6 @@
 import { getDeviceName, getHashedDeviceId } from "@superset/shared/device-info";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne, or } from "drizzle-orm";
 import { workspaces } from "../../../../db/schema";
 import type { HostServiceContext } from "../../../../types";
 import { protectedProcedure } from "../../../index";
@@ -70,29 +70,19 @@ function deleteLocalWorkspaceConflicts(
 		keepWorkspaceId: string;
 	},
 ): void {
-	const branchConflict = ctx.db.query.workspaces
-		.findFirst({
-			where: and(
+	ctx.db
+		.delete(workspaces)
+		.where(
+			and(
 				eq(workspaces.projectId, args.projectId),
-				eq(workspaces.branch, args.branch),
+				or(
+					eq(workspaces.branch, args.branch),
+					eq(workspaces.worktreePath, args.worktreePath),
+				),
+				ne(workspaces.id, args.keepWorkspaceId),
 			),
-		})
-		.sync();
-	if (branchConflict && branchConflict.id !== args.keepWorkspaceId) {
-		deleteLocalWorkspace(ctx, branchConflict.id);
-	}
-
-	const pathConflict = ctx.db.query.workspaces
-		.findFirst({
-			where: and(
-				eq(workspaces.projectId, args.projectId),
-				eq(workspaces.worktreePath, args.worktreePath),
-			),
-		})
-		.sync();
-	if (pathConflict && pathConflict.id !== args.keepWorkspaceId) {
-		deleteLocalWorkspace(ctx, pathConflict.id);
-	}
+		)
+		.run();
 }
 
 async function getHostWorkspace(
@@ -231,6 +221,12 @@ export const adopt = protectedProcedure
 		if (existingLocalByPath) {
 			const existingCloud = await getHostWorkspace(ctx, existingLocalByPath.id);
 			if (existingCloud) {
+				deleteLocalWorkspaceConflicts(ctx, {
+					projectId: input.projectId,
+					worktreePath,
+					branch,
+					keepWorkspaceId: existingLocalByPath.id,
+				});
 				const updatedCloud =
 					await ctx.api.v2Workspace.updateNameFromHost.mutate({
 						id: existingCloud.id,

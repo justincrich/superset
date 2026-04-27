@@ -5,6 +5,7 @@ import { Switch } from "@superset/ui/switch";
 import { LuRefreshCw } from "react-icons/lu";
 import { useIsV2CloudEnabled } from "renderer/hooks/useIsV2CloudEnabled";
 import { useMigrateV1DataToV2 } from "renderer/routes/_authenticated/hooks/useMigrateV1DataToV2";
+import type { MigrationSummary } from "renderer/routes/_authenticated/hooks/useMigrateV1DataToV2/migrate";
 import { useV2LocalOverrideStore } from "renderer/stores/v2-local-override";
 import {
 	isItemVisible,
@@ -110,26 +111,28 @@ function errorMessage(err: unknown): string {
 	return String(err);
 }
 
-function formatMigrationSuccess(summary: {
-	projectsCreated: number;
-	projectsLinked: number;
-	projectsErrored: number;
-	workspacesCreated: number;
-	workspacesSkipped: number;
-	workspacesErrored: number;
-	errors: Array<{ kind: string; name: string; message: string }>;
-}): string {
+function formatMigrationSuccess(summary: MigrationSummary): string {
 	const changed =
 		summary.projectsCreated +
 		summary.projectsLinked +
 		summary.projectsErrored +
 		summary.workspacesCreated +
+		summary.workspacesSkipped +
 		summary.workspacesErrored;
 	if (summary.errors.length > 0) {
 		const first = summary.errors[0];
+		const successful =
+			summary.projectsCreated +
+			summary.projectsLinked +
+			summary.workspacesCreated +
+			summary.workspacesSkipped;
+		const successSuffix =
+			successful > 0
+				? ` (${successful} item${successful === 1 ? "" : "s"} completed or skipped)`
+				: "";
 		return `Migration completed with ${summary.errors.length} error${
 			summary.errors.length === 1 ? "" : "s"
-		}: ${first.name}: ${first.message}`;
+		}${successSuffix}: ${first.name}: ${first.message}`;
 	}
 	if (
 		summary.projectsCreated + summary.projectsLinked === 0 &&

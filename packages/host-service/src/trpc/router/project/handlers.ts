@@ -40,7 +40,8 @@ async function createCloudProjectWithSlugRetry(
 ) {
 	const baseSlug = slugifyProjectName(args.name);
 	let lastError: unknown;
-	for (let attempt = 0; attempt < 10; attempt++) {
+	const maxAttempts = 10;
+	for (let attempt = 0; attempt < maxAttempts; attempt++) {
 		try {
 			return await ctx.api.v2Project.create.mutate({
 				organizationId: ctx.organizationId,
@@ -53,7 +54,11 @@ async function createCloudProjectWithSlugRetry(
 			lastError = err;
 		}
 	}
-	throw lastError;
+	throw new TRPCError({
+		code: "CONFLICT",
+		message: `Could not allocate a unique slug for "${args.name}" after ${maxAttempts} attempts`,
+		cause: lastError,
+	});
 }
 
 /**
