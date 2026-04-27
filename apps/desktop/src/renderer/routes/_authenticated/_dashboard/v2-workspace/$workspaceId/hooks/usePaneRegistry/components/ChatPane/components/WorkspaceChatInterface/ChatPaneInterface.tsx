@@ -46,8 +46,6 @@ import {
 } from "./utils/transientUserTurn";
 import { uploadFiles } from "./utils/uploadFiles";
 
-type SnapshotData = inferRouterOutputs<AppRouter>["chat"]["getSnapshot"];
-
 type HarnessFilePayload = {
 	data: string;
 	mediaType: string;
@@ -343,63 +341,20 @@ export function ChatPaneInterface({
 
 	const sendMessageToSession = useCallback(
 		async (targetSessionId: string, input: ChatSendMessageInput) => {
-			const queryInput = {
+			// Optimistic state for this path lives in `pendingUserTurn` (set by
+			// the caller in handleSend), NOT in the snapshot cache. Writing to
+			// the cache here was racing with the 4fps snapshot polls — a poll
+			// could resolve mid-mutation with the harness's pre-message state
+			// and clobber the optimistic write, making the user message vanish
+			// briefly. The pendingUserTurn local state is merged in via
+			// getVisibleMessagesWithPendingUserTurn so it survives stale polls.
+			await sendMessageMutation.mutateAsync({
 				sessionId: targetSessionId,
 				workspaceId,
-			};
-			const optimisticMessage = toOptimisticUserMessage(input);
-			if (optimisticMessage) {
-				// v2 reads messages from chat.getSnapshot, not chat.listMessages —
-				// the optimistic update has to land in the same cache the display
-				// reads from, otherwise the message disappears until the next
-				// snapshot poll (~250ms) and the user sees nothing.
-				workspaceTrpcUtils.chat.getSnapshot.setData(queryInput, (existing) => {
-					if (existing) {
-						return {
-							...existing,
-							messages: [...existing.messages, optimisticMessage],
-						};
-					}
-					// Fresh session — no snapshot in cache yet. Seed a minimal
-					// snapshot with just the optimistic message so the user sees
-					// it immediately; the next poll will fill in displayState.
-					return {
-						displayState: {
-							isRunning: false,
-							currentMessage: null,
-							pendingQuestion: null,
-							errorMessage: null,
-						} as SnapshotData["displayState"],
-						messages: [optimisticMessage],
-					};
-				});
-			}
-
-			try {
-				await sendMessageMutation.mutateAsync({
-					sessionId: targetSessionId,
-					workspaceId,
-					...input,
-				});
-			} catch (error) {
-				if (optimisticMessage) {
-					workspaceTrpcUtils.chat.getSnapshot.setData(
-						queryInput,
-						(existing) => {
-							if (!existing) return existing;
-							return {
-								...existing,
-								messages: existing.messages.filter(
-									(message) => message.id !== optimisticMessage.id,
-								),
-							};
-						},
-					);
-				}
-				throw error;
-			}
+				...input,
+			});
 		},
-		[workspaceTrpcUtils.chat.getSnapshot, sendMessageMutation, workspaceId],
+		[sendMessageMutation, workspaceId],
 	);
 
 	const canAbort = Boolean(isRunning);
@@ -637,7 +592,25 @@ export function ChatPaneInterface({
 				if (sessionId && targetSessionId === sessionId) {
 					await commands.sendMessage(sendInput);
 				} else {
-					await sendMessageToSession(targetSessionId, sendInput);
+					// New-session path: the existing-session path's optimistic
+					// state lives inside useChatDisplay, but we don't have a
+					// session subscribed there yet. Hold the user message in
+					// pendingUserTurn so getVisibleMessagesWithPendingUserTurn
+					// keeps it visible across stale snapshot polls until the
+					// harness's response includes it.
+					const optimisticMessage = toOptimisticUserMessage(sendInput);
+					if (optimisticMessage) {
+						setPendingUserTurn({
+							kind: "append",
+							message: optimisticMessage,
+						});
+					}
+					try {
+						await sendMessageToSession(targetSessionId, sendInput);
+					} catch (error) {
+						setPendingUserTurn(null);
+						throw error;
+					}
 				}
 				if (content) {
 					onUserMessageSubmitted?.(content);
