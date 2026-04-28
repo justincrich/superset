@@ -8,8 +8,6 @@ import {
 } from "renderer/react-query/projects";
 import { useLocalHostService } from "renderer/routes/_authenticated/providers/LocalHostServiceProvider";
 
-export type { ProjectSetupResult };
-
 export interface UseFolderFirstImportResult {
 	start: () => Promise<ProjectSetupResult | null>;
 }

@@ -59,7 +59,7 @@ export function ProjectPickerPill({
 		setOpen(false);
 		const result = await folderImport.start();
 		if (result) {
-			toast.success("Project ready — open it from the sidebar.");
+			toast.success("Project imported and selected.");
 			onSelectProject(result.projectId);
 		}
 	};

@@ -18,7 +18,11 @@ export function useHostProjectIds(hostUrl: string | null): Set<string> | null {
 				const client = getHostServiceClientByUrl(hostUrl);
 				const rows = await client.project.list.query();
 				return new Set(rows.map((row) => row.id));
-			} catch {
+			} catch (err) {
+				console.warn("useHostProjectIds: failed to list projects", {
+					hostUrl,
+					err,
+				});
 				return null;
 			}
 		},

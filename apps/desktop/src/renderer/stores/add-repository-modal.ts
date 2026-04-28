@@ -9,6 +9,13 @@ type ActiveModal = { kind: "none" } | { kind: "new-project" };
 
 interface AddRepositoryModalState {
 	active: ActiveModal;
+	/**
+	 * Opens the modal and resolves with the created project (or `null` if the
+	 * user closed it). Only one open call can be in flight at a time — calling
+	 * again while a previous open is pending resolves the prior promise to
+	 * `null` before opening fresh. Safe today because there is only one global
+	 * `NewProjectModal` instance.
+	 */
 	openNewProject: () => Promise<NewProjectResult | null>;
 	resolveNewProject: (result: NewProjectResult | null) => void;
 	close: () => void;
