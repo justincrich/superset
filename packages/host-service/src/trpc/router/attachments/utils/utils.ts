@@ -5,9 +5,9 @@ import {
 	statSync,
 	writeFileSync,
 } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { TRPCError } from "@trpc/server";
+import { supersetAttachmentsRoot } from "../../../../superset-home";
 
 export const ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024;
 
@@ -23,19 +23,17 @@ export const ATTACHMENT_MEDIA_TYPE_TO_EXT: Record<string, string> = {
 };
 
 export function attachmentsRoot(): string {
-	return join(homedir(), ".superset", "attachments");
+	return supersetAttachmentsRoot();
 }
 
 export function attachmentDir(attachmentId: string): string {
-	return join(attachmentsRoot(), attachmentId);
+	return join(supersetAttachmentsRoot(), attachmentId);
 }
 
 export function decodeAttachmentPayload(data: string): Buffer {
 	const commaIdx = data.indexOf(",");
 	const base64 =
-		data.startsWith("data:") && commaIdx >= 0
-			? data.slice(commaIdx + 1)
-			: data;
+		data.startsWith("data:") && commaIdx >= 0 ? data.slice(commaIdx + 1) : data;
 	return Buffer.from(base64, "base64");
 }
 

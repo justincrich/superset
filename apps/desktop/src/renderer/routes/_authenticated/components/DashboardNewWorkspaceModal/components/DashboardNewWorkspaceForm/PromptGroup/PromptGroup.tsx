@@ -28,8 +28,11 @@ import { IssueLinkCommand } from "renderer/components/Chat/ChatInterface/compone
 import { useAgentLaunchPreferences } from "renderer/hooks/useAgentLaunchPreferences";
 import { useEnabledAgents } from "renderer/hooks/useEnabledAgents";
 import { PLATFORM } from "renderer/hotkeys";
-import { useNewWorkspaceModalOpen } from "renderer/stores/new-workspace-modal";
-import { useDashboardNewWorkspaceDraft } from "../../../DashboardNewWorkspaceDraftContext";
+import {
+	useCloseNewWorkspaceModal,
+	useNewWorkspaceModalOpen,
+} from "renderer/stores/new-workspace-modal";
+import { useNewWorkspaceDraftStore } from "../../../stores/newWorkspaceDraft";
 import { DevicePicker } from "../components/DevicePicker";
 import { AttachmentButtons } from "./components/AttachmentButtons";
 import { CompareBaseBranchPicker } from "./components/CompareBaseBranchPicker";
@@ -66,7 +69,9 @@ export function PromptGroup({
 }: PromptGroupProps) {
 	const modKey = PLATFORM === "mac" ? "⌘" : "Ctrl";
 	const isNewWorkspaceModalOpen = useNewWorkspaceModalOpen();
-	const { closeModal, draft, updateDraft } = useDashboardNewWorkspaceDraft();
+	const closeModal = useCloseNewWorkspaceModal();
+	const draft = useNewWorkspaceDraftStore();
+	const updateDraft = useNewWorkspaceDraftStore((s) => s.updateDraft);
 	const navigate = useNavigate();
 	const attachments = useProviderAttachments();
 	const needsSetup = selectedProject?.needsSetup === true;
@@ -83,7 +88,7 @@ export function PromptGroup({
 		baseBranch,
 		hostTarget,
 		prompt,
-		workspaceName,
+		name,
 		branchName,
 		branchNameEdited,
 		linkedIssues,
@@ -126,30 +131,30 @@ export function PromptGroup({
 		}
 	}, [projectId, hostTarget, updateDraft]);
 
-	// ── Branch picker controller ─────────────────────────────────────
-	const { pickerProps } = useBranchPickerController({
-		projectId,
-		hostTarget,
-		baseBranch,
-		runSetupScript: draft.runSetupScript,
-		typedWorkspaceName: workspaceName,
-		onBaseBranchChange: (branch, source) =>
-			updateDraft({ baseBranch: branch, baseBranchSource: source }),
-		closeModal,
-	});
-
 	// ── Submit (fork) ────────────────────────────────────────────────
-	const createWorkspace = useSubmitWorkspace(projectId, selectedAgent);
+	const submit = useSubmitWorkspace(projectId, selectedAgent);
 	const handleSubmit = useCallback(
 		(files: SubmitAttachment[] = []) => {
 			if (needsSetup) {
 				handleGoToSetup();
 				return;
 			}
-			void createWorkspace(files);
+			void submit({ kind: "fork" }, files);
 		},
-		[createWorkspace, handleGoToSetup, needsSetup],
+		[submit, handleGoToSetup, needsSetup],
 	);
+
+	// ── Branch picker controller ─────────────────────────────────────
+	const { pickerProps } = useBranchPickerController({
+		projectId,
+		hostTarget,
+		baseBranch,
+		typedWorkspaceName: name,
+		onBaseBranchChange: (branch, source) =>
+			updateDraft({ baseBranch: branch, baseBranchSource: source }),
+		closeModal,
+		submit,
+	});
 	const handlePromptSubmit = useCallback(
 		(message: { text?: string; files?: FileUIPart[] }) => {
 			// Library converts blob: → data: URLs before calling us; pass them
@@ -189,7 +194,7 @@ export function PromptGroup({
 		removeLinkedIssue,
 		setLinkedPR,
 		removeLinkedPR,
-	} = useLinkedContext(linkedIssues, updateDraft);
+	} = useLinkedContext({ projectId, hostTarget });
 
 	// ── Render ────────────────────────────────────────────────────────
 	return (
@@ -199,16 +204,15 @@ export function PromptGroup({
 				<Input
 					className="border-none bg-transparent dark:bg-transparent shadow-none text-base font-medium px-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground/40 min-w-0 flex-1"
 					placeholder="Workspace name (optional)"
-					value={workspaceName}
+					value={name}
 					onChange={(e) =>
 						updateDraft({
-							workspaceName: e.target.value,
-							workspaceNameEdited: true,
+							name: e.target.value,
+							nameEdited: true,
 						})
 					}
 					onBlur={() => {
-						if (!workspaceName.trim())
-							updateDraft({ workspaceName: "", workspaceNameEdited: false });
+						if (!name.trim()) updateDraft({ name: "", nameEdited: false });
 					}}
 				/>
 				<div className="shrink min-w-0 ml-auto max-w-[50%]">
@@ -256,7 +260,7 @@ export function PromptGroup({
 									transition={{ duration: 0.15 }}
 								>
 									<LinkedPRPill
-										prNumber={linkedPR.prNumber}
+										prNumber={linkedPR.number}
 										title={linkedPR.title}
 										state={linkedPR.state}
 										onRemove={removeLinkedPR}
@@ -265,13 +269,13 @@ export function PromptGroup({
 							)}
 							{linkedIssues.map((issue) => (
 								<motion.div
-									key={issue.url ?? issue.slug}
+									key={issue.source === "github" ? issue.url : issue.slug}
 									initial={{ opacity: 0, scale: 0.8 }}
 									animate={{ opacity: 1, scale: 1 }}
 									exit={{ opacity: 0, scale: 0.8 }}
 									transition={{ duration: 0.15 }}
 								>
-									{issue.source === "github" && issue.number != null ? (
+									{issue.source === "github" ? (
 										<LinkedGitHubIssuePill
 											issueNumber={issue.number}
 											title={issue.title}
@@ -321,7 +325,10 @@ export function PromptGroup({
 						<AttachmentButtons
 							linearIssueTrigger={
 								<IssueLinkCommand
-									onSelect={addLinkedIssue}
+									onSelect={(slug, title, taskId, url) => {
+										if (!taskId) return;
+										addLinkedIssue(slug, title, taskId, url);
+									}}
 									tooltipLabel="Link issue"
 								>
 									<PromptInputButton
@@ -339,7 +346,6 @@ export function PromptGroup({
 											issue.issueNumber,
 											issue.title,
 											issue.url,
-											issue.state,
 										)
 									}
 									projectId={projectId}
@@ -407,7 +413,7 @@ export function PromptGroup({
 								className="flex items-center gap-1 text-xs text-muted-foreground"
 							>
 								<LuGitPullRequest className="size-3 shrink-0" />
-								based off PR #{linkedPR.prNumber}
+								based off PR #{linkedPR.number}
 							</motion.span>
 						) : (
 							<motion.div

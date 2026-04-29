@@ -260,11 +260,14 @@ export async function migrateV1DataToV2(args: Args): Promise<MigrationSummary> {
 			: undefined;
 
 		try {
-			const result = await hostService.workspaceCreation.adopt.mutate({
+			const result = await hostService.workspace.create.mutate({
 				projectId: v2ProjectId,
-				workspaceName: workspace.name,
-				branch: workspace.branch,
-				worktreePath: v1WorktreePath,
+				name: workspace.name,
+				mode: {
+					kind: "adopt",
+					branchName: workspace.branch,
+					worktreePath: v1WorktreePath,
+				},
 			});
 			await electronTrpc.migration.upsertState.mutate({
 				v1Id: workspace.id,

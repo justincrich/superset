@@ -4,13 +4,17 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 import { useLocalHostService } from "renderer/routes/_authenticated/providers/LocalHostServiceProvider";
-import type { BaseBranchSource } from "../../../../../DashboardNewWorkspaceDraftContext";
+import type { BaseBranchSource } from "../../../../../stores/newWorkspaceDraft";
 import type { WorkspaceHostTarget } from "../../../components/DevicePicker";
 import {
 	type BranchFilter,
 	useBranchContext,
 } from "../../../hooks/useBranchContext";
 import type { CompareBaseBranchPicker } from "../../components/CompareBaseBranchPicker";
+import type {
+	SubmitAttachment,
+	SubmitIntent,
+} from "../useSubmitWorkspace/useSubmitWorkspace";
 
 type PickerProps = React.ComponentProps<typeof CompareBaseBranchPicker>;
 
@@ -18,7 +22,6 @@ export interface UseBranchPickerControllerArgs {
 	projectId: string | null;
 	hostTarget: WorkspaceHostTarget;
 	baseBranch: string | null;
-	runSetupScript: boolean;
 	/** When set, used as the workspace name for picker actions; falls back to the branch name. */
 	typedWorkspaceName: string;
 	onBaseBranchChange: (
@@ -26,34 +29,29 @@ export interface UseBranchPickerControllerArgs {
 		source: BaseBranchSource | null,
 	) => void;
 	closeModal: () => void;
+	submit: (intent: SubmitIntent, files?: SubmitAttachment[]) => Promise<void>;
 }
 
 /**
- * Owns all state + handlers for the branch picker: the search/filter inputs,
- * the branch-context query, the host-id resolution that gates Open/Create
- * dispatch, and the three per-row action callbacks. Returns a single
- * `pickerProps` object ready to spread into `<CompareBaseBranchPicker />`.
- *
- * See V2_WORKSPACE_CREATION.md §2 for the action model and §3 for the
- * pending-row insert + navigate flow.
+ * Owns branch search/filter state, the branch-context query, and per-row
+ * actions. Open existing workspaces directly; checkout / adopt go through
+ * the unified `submit` so they share dispatch and AI-rename gating with
+ * the modal's main Submit button.
  */
 export function useBranchPickerController(args: UseBranchPickerControllerArgs) {
 	const {
 		projectId,
 		hostTarget,
 		baseBranch,
-		runSetupScript,
-		typedWorkspaceName,
 		onBaseBranchChange,
 		closeModal,
+		submit,
 	} = args;
 
 	const navigate = useNavigate();
 	const collections = useCollections();
 	const { machineId } = useLocalHostService();
 
-	// Branch list state — owned by the controller so the picker is purely
-	// presentational.
 	const [branchSearch, setBranchSearch] = useState("");
 	const [branchFilter, setBranchFilter] = useState<BranchFilter>("branch");
 
@@ -69,10 +67,6 @@ export function useBranchPickerController(args: UseBranchPickerControllerArgs) {
 
 	const effectiveCompareBaseBranch = baseBranch || defaultBranch || null;
 
-	// Authoritative "does a workspace already exist for this (project,
-	// branch, host)?" — driven by the cloud-synced collection rather than
-	// the server's per-row hasWorkspace snapshot, which can be stale after
-	// a delete. See V2_WORKSPACE_CREATION.md §2.
 	const { data: projectWorkspaces } = useLiveQuery(
 		(q) => q.from({ workspaces: collections.v2Workspaces }),
 		[collections],
@@ -82,8 +76,6 @@ export function useBranchPickerController(args: UseBranchPickerControllerArgs) {
 		[collections],
 	);
 
-	// `v2Workspaces` rows are keyed by host id; collapsing by branch alone
-	// would collide across hosts that happen to share a branch.
 	const targetHostId = useMemo<string | null>(() => {
 		if (hostTarget.kind === "host") return hostTarget.hostId;
 		if (!machineId || !allHosts) return null;
@@ -106,73 +98,18 @@ export function useBranchPickerController(args: UseBranchPickerControllerArgs) {
 		[workspaceByBranch],
 	);
 
-	// Picker actions (Create / Check out) bypass the modal's submit, so they
-	// don't get the `resolveNames` pass — fall back to the branch name when
-	// the user hasn't typed a workspace name.
-	const resolveActionWorkspaceName = useCallback(
-		(branchName: string) => typedWorkspaceName.trim() || branchName,
-		[typedWorkspaceName],
-	);
-
-	const insertPendingAndNavigate = useCallback(
-		(row: {
-			pendingId: string;
-			intent: "checkout" | "adopt";
-			workspaceName: string;
-			branchName: string;
-		}) => {
-			if (!projectId) {
-				toast.error("Select a project first");
-				return;
-			}
-			collections.pendingWorkspaces.insert({
-				id: row.pendingId,
-				projectId,
-				intent: row.intent,
-				name: row.workspaceName,
-				branchName: row.branchName,
-				prompt: "",
-				baseBranch: null,
-				baseBranchSource: null,
-				runSetupScript,
-				linkedIssues: [],
-				linkedPR: null,
-				hostTarget,
-				attachmentCount: 0,
-				status: "creating",
-				error: null,
-				workspaceId: null,
-				warnings: [],
-				createdAt: new Date(),
-			});
-			closeModal();
-			void navigate({ to: `/pending/${row.pendingId}` as string });
-		},
-		[projectId, collections, runSetupScript, hostTarget, closeModal, navigate],
-	);
-
 	const onAdoptWorktree = useCallback(
 		(branchName: string) => {
-			insertPendingAndNavigate({
-				pendingId: crypto.randomUUID(),
-				intent: "adopt",
-				workspaceName: resolveActionWorkspaceName(branchName),
-				branchName,
-			});
+			void submit({ kind: "adopt", branchName });
 		},
-		[insertPendingAndNavigate, resolveActionWorkspaceName],
+		[submit],
 	);
 
 	const onCheckoutBranch = useCallback(
 		(branchName: string) => {
-			insertPendingAndNavigate({
-				pendingId: crypto.randomUUID(),
-				intent: "checkout",
-				workspaceName: resolveActionWorkspaceName(branchName),
-				branchName,
-			});
+			void submit({ kind: "checkout", branchName });
 		},
-		[insertPendingAndNavigate, resolveActionWorkspaceName],
+		[submit],
 	);
 
 	const onOpenExisting = useCallback(

@@ -77,7 +77,7 @@ export function GitHubIssueLinkCommand({
 		queryFn: async () => {
 			if (!hostUrl || !projectId) return { issues: [] };
 			const client = getHostServiceClientByUrl(hostUrl);
-			return client.workspaceCreation.searchGitHubIssues.query({
+			return client.project.searchGitHubIssues.query({
 				projectId,
 				query: debouncedTrimmed || undefined,
 				limit: MAX_RESULTS,

@@ -17,14 +17,11 @@ import {
 	usePreSelectedProjectId,
 } from "renderer/stores/new-workspace-modal";
 import { DashboardNewWorkspaceModalContent } from "./components/DashboardNewWorkspaceModalContent";
-import {
-	DashboardNewWorkspaceDraftProvider,
-	useDashboardNewWorkspaceDraft,
-} from "./DashboardNewWorkspaceDraftContext";
+import { useNewWorkspaceDraftStore } from "./stores/newWorkspaceDraft";
 
 /** Clears the PromptInputProvider text & attachments when the draft resets. */
 function PromptInputResetSync() {
-	const { resetKey } = useDashboardNewWorkspaceDraft();
+	const resetKey = useNewWorkspaceDraftStore((s) => s.resetKey);
 	const { textInput, attachments } = usePromptInputController();
 	const prevResetKeyRef = useRef(resetKey);
 
@@ -48,30 +45,28 @@ export function DashboardNewWorkspaceModal() {
 	electronTrpc.settings.getAgentPresets.useQuery();
 
 	return (
-		<DashboardNewWorkspaceDraftProvider onClose={closeModal}>
-			<PromptInputProvider>
-				<PromptInputResetSync />
-				<Dialog
-					modal
-					open={isOpen}
-					onOpenChange={(open) => !open && closeModal()}
+		<PromptInputProvider>
+			<PromptInputResetSync />
+			<Dialog
+				modal
+				open={isOpen}
+				onOpenChange={(open) => !open && closeModal()}
+			>
+				<DialogHeader className="sr-only">
+					<DialogTitle>New Workspace</DialogTitle>
+					<DialogDescription>Create a new workspace</DialogDescription>
+				</DialogHeader>
+				<DialogContent
+					showCloseButton={false}
+					onFocusOutside={(e) => e.preventDefault()}
+					className="bg-popover text-popover-foreground sm:max-w-[560px] max-h-[min(70vh,600px)] !top-[calc(50%-min(35vh,300px))] !-translate-y-0 flex flex-col overflow-hidden p-0"
 				>
-					<DialogHeader className="sr-only">
-						<DialogTitle>New Workspace</DialogTitle>
-						<DialogDescription>Create a new workspace</DialogDescription>
-					</DialogHeader>
-					<DialogContent
-						showCloseButton={false}
-						onFocusOutside={(e) => e.preventDefault()}
-						className="bg-popover text-popover-foreground sm:max-w-[560px] max-h-[min(70vh,600px)] !top-[calc(50%-min(35vh,300px))] !-translate-y-0 flex flex-col overflow-hidden p-0"
-					>
-						<DashboardNewWorkspaceModalContent
-							isOpen={isOpen}
-							preSelectedProjectId={preSelectedProjectId}
-						/>
-					</DialogContent>
-				</Dialog>
-			</PromptInputProvider>
-		</DashboardNewWorkspaceDraftProvider>
+					<DashboardNewWorkspaceModalContent
+						isOpen={isOpen}
+						preSelectedProjectId={preSelectedProjectId}
+					/>
+				</DialogContent>
+			</Dialog>
+		</PromptInputProvider>
 	);
 }

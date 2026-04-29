@@ -78,7 +78,7 @@ export function PRLinkCommand({
 		queryFn: async () => {
 			if (!hostUrl || !projectId) return { pullRequests: [] };
 			const client = getHostServiceClientByUrl(hostUrl);
-			return client.workspaceCreation.searchPullRequests.query({
+			return client.project.searchPullRequests.query({
 				projectId,
 				query: debouncedTrimmed || undefined,
 				limit: 30,

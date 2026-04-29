@@ -7,6 +7,16 @@ import { z } from "zod";
 import { projects, workspaces } from "../../../db/schema";
 import { protectedProcedure, router } from "../../index";
 import { createFromClone, createFromImportLocal } from "./handlers";
+import {
+	searchBranches,
+	searchGitHubIssues,
+	searchPullRequests,
+} from "./procedures";
+import {
+	githubIssueContentInputSchema,
+	githubPullRequestContentInputSchema,
+} from "./procedures/schemas";
+import { resolveGithubRepo } from "./utils/local-project";
 import { persistLocalProject } from "./utils/persist-project";
 import {
 	cloneRepoInto,
@@ -16,6 +26,80 @@ import {
 } from "./utils/resolve-repo";
 
 export const projectRouter = router({
+	searchBranches,
+	searchGitHubIssues,
+	searchPullRequests,
+
+	getGitHubIssueContent: protectedProcedure
+		.input(githubIssueContentInputSchema)
+		.query(async ({ ctx, input }) => {
+			const repo = await resolveGithubRepo(ctx, input.projectId);
+			const octokit = await ctx.github();
+			try {
+				const { data: issue } = await octokit.issues.get({
+					owner: repo.owner,
+					repo: repo.name,
+					issue_number: input.issueNumber,
+				});
+				if (issue.pull_request) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: `#${input.issueNumber} is a pull request, not an issue`,
+					});
+				}
+				return {
+					number: issue.number,
+					title: issue.title,
+					body: issue.body ?? "",
+					url: issue.html_url,
+					state: issue.state.toLowerCase(),
+					author: issue.user?.login ?? null,
+					createdAt: issue.created_at,
+					updatedAt: issue.updated_at,
+				};
+			} catch (err) {
+				if (err instanceof TRPCError) throw err;
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: `Failed to fetch issue #${input.issueNumber}: ${err instanceof Error ? err.message : String(err)}`,
+				});
+			}
+		}),
+
+	getGitHubPullRequestContent: protectedProcedure
+		.input(githubPullRequestContentInputSchema)
+		.query(async ({ ctx, input }) => {
+			const repo = await resolveGithubRepo(ctx, input.projectId);
+			const octokit = await ctx.github();
+			try {
+				const { data: pr } = await octokit.pulls.get({
+					owner: repo.owner,
+					repo: repo.name,
+					pull_number: input.prNumber,
+				});
+				return {
+					number: pr.number,
+					title: pr.title,
+					body: pr.body ?? "",
+					url: pr.html_url,
+					state: pr.state.toLowerCase(),
+					branch: pr.head.ref,
+					baseBranch: pr.base.ref,
+					headRepositoryOwner: pr.head.repo?.owner.login ?? null,
+					isCrossRepository: pr.head.repo?.id !== pr.base.repo.id,
+					author: pr.user?.login ?? null,
+					isDraft: pr.draft ?? false,
+					createdAt: pr.created_at,
+					updatedAt: pr.updated_at,
+				};
+			} catch (err) {
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: `Failed to fetch PR #${input.prNumber}: ${err instanceof Error ? err.message : String(err)}`,
+				});
+			}
+		}),
+
 	list: protectedProcedure.query(({ ctx }) => {
 		return ctx.db.select({ id: projects.id }).from(projects).all();
 	}),

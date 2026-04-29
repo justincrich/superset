@@ -1,10 +1,10 @@
-import { fileURLToPath } from "node:url";
 import { Database } from "bun:sqlite";
-import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
+import { fileURLToPath } from "node:url";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import * as schema from "../../../db/schema";
 import type { HostDb } from "../../../db";
+import * as schema from "../../../db/schema";
 import type { HostServiceContext } from "../../../types";
 import { agentConfigsRouter } from "./agent-configs";
 

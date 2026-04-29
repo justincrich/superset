@@ -8,9 +8,9 @@ import { useLocalHostService } from "renderer/routes/_authenticated/providers/Lo
 import type { WorkspaceHostTarget } from "../../components/DevicePicker";
 
 type SearchBranchesInput =
-	inferRouterInputs<AppRouter>["workspaceCreation"]["searchBranches"];
+	inferRouterInputs<AppRouter>["project"]["searchBranches"];
 type SearchBranchesOutput =
-	inferRouterOutputs<AppRouter>["workspaceCreation"]["searchBranches"];
+	inferRouterOutputs<AppRouter>["project"]["searchBranches"];
 
 export type BranchFilter = NonNullable<SearchBranchesInput["filter"]>;
 export type BranchRow = SearchBranchesOutput["items"][number];
@@ -52,7 +52,7 @@ export function useBranchContext(
 				return { defaultBranch: null, items: [], nextCursor: null };
 			}
 			const client = getHostServiceClientByUrl(hostUrl);
-			return client.workspaceCreation.searchBranches.query({
+			return client.project.searchBranches.query({
 				projectId,
 				query: query || undefined,
 				cursor: pageParam,

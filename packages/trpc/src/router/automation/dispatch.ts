@@ -270,14 +270,13 @@ async function createWorkspaceOnHost(args: {
 
 	const result = await relayMutation<
 		{
-			pendingId: string;
 			projectId: string;
-			names: { workspaceName: string; branchName: string };
-			composer: { prompt?: string; runSetupScript?: boolean };
+			name: string;
+			mode: { kind: "fork"; branchName: string };
 		},
 		{
-			workspace: { id: string };
-			terminals: unknown[];
+			workspace: { id: string; branch: string };
+			launches: unknown[];
 			warnings: string[];
 		}
 	>(
@@ -289,12 +288,11 @@ async function createWorkspaceOnHost(args: {
 			// can comfortably take >25s. Give it real room.
 			timeoutMs: 90_000,
 		},
-		"workspaceCreation.create",
+		"workspace.create",
 		{
-			pendingId: args.runId,
 			projectId: args.projectId,
-			names: { workspaceName, branchName },
-			composer: { prompt: args.automation.prompt, runSetupScript: false },
+			name: workspaceName,
+			mode: { kind: "fork", branchName },
 		},
 	);
 

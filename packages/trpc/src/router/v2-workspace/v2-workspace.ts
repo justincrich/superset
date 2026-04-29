@@ -97,6 +97,11 @@ export const v2WorkspaceRouter = {
 	create: jwtProcedure
 		.input(
 			z.object({
+				// Optional client-supplied id. Used by the desktop pending-row
+				// pattern: the renderer mints a UUID, navigates immediately, and
+				// the create lands with the same id so the pending row resolves
+				// into the real row in place.
+				id: z.string().uuid().optional(),
 				organizationId: z.string().uuid(),
 				projectId: z.string().uuid(),
 				name: z.string().min(1),
@@ -121,6 +126,7 @@ export const v2WorkspaceRouter = {
 			const [workspace] = await dbWs
 				.insert(v2Workspaces)
 				.values({
+					...(input.id ? { id: input.id } : {}),
 					organizationId: project.organizationId,
 					projectId: project.id,
 					name: input.name,

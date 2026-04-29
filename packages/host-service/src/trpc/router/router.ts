@@ -13,7 +13,6 @@ import { settingsRouter } from "./settings";
 import { terminalRouter } from "./terminal";
 import { workspaceRouter } from "./workspace";
 import { workspaceCleanupRouter } from "./workspace-cleanup";
-import { workspaceCreationRouter } from "./workspace-creation";
 
 export const appRouter = router({
 	health: healthRouter,
@@ -30,7 +29,6 @@ export const appRouter = router({
 	terminal: terminalRouter,
 	workspace: workspaceRouter,
 	workspaceCleanup: workspaceCleanupRouter,
-	workspaceCreation: workspaceCreationRouter,
 });
 
 export type AppRouter = typeof appRouter;

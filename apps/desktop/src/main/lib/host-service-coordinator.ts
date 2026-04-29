@@ -35,9 +35,11 @@ import { HOOK_PROTOCOL_VERSION } from "./terminal/env";
  * which is how we prevent the renderer from talking to a stale host-service
  * that's missing newly-added procedures/params.
  *
- * 0.2.0: `workspaceCreation.adopt` gained optional `worktreePath`.
+ * 0.3.0: `workspaceCreation` router collapsed into `workspace.create` +
+ * `project.*`. The V2 modal and v1→v2 migration both depend on the new
+ * shape.
  */
-const MIN_HOST_SERVICE_VERSION = "0.2.0";
+const MIN_HOST_SERVICE_VERSION = "0.3.0";
 
 export type HostServiceStatus = "starting" | "running" | "stopped";
 

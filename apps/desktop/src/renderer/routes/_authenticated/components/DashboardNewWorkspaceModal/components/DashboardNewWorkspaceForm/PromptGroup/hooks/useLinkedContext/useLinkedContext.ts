@@ -1,68 +1,134 @@
+import { toast } from "@superset/ui/sonner";
 import { useCallback } from "react";
+import { env } from "renderer/env.renderer";
+import { getHostServiceClientByUrl } from "renderer/lib/host-service-client";
+import { useLocalHostService } from "renderer/routes/_authenticated/providers/LocalHostServiceProvider";
 import type {
-	DashboardNewWorkspaceDraft,
-	LinkedIssue,
-	LinkedPR,
-} from "../../../../../DashboardNewWorkspaceDraftContext";
+	LinkedIssueDraft,
+	LinkedPRDraft,
+} from "../../../../../stores/newWorkspaceDraft";
+import { useNewWorkspaceDraftStore } from "../../../../../stores/newWorkspaceDraft";
+import type { WorkspaceHostTarget } from "../../../components/DevicePicker";
 
 /**
- * Bundle of handlers that mutate `linkedIssues` / `linkedPR` on the draft.
- * Pure delegation — no state of its own. Co-located with PromptGroup
- * because that's the only consumer.
+ * Add/remove handlers for `linkedIssues` / `linkedPR` on the draft store.
  *
- * `linkedIssues` is needed to dedupe adds and to filter on remove;
- * setLinkedPR / removeLinkedPR don't need to read the current PR, so the
- * hook doesn't ask for it.
+ * GitHub issues and PRs go through their owning host-service to fetch full
+ * body+title, then store the resolved content on the draft. That way the
+ * submit-time `composePromptMarkdown` is sync — no spinner waiting on
+ * fetches at submit time. Internal tasks come pre-resolved from the
+ * Linear search component.
  */
-export function useLinkedContext(
-	linkedIssues: LinkedIssue[],
-	updateDraft: (patch: Partial<DashboardNewWorkspaceDraft>) => void,
-) {
-	const addLinkedIssue = useCallback(
-		(slug: string, title: string, taskId: string | undefined, url?: string) => {
-			if (linkedIssues.some((issue) => issue.slug === slug)) return;
+export function useLinkedContext(args: {
+	projectId: string | null;
+	hostTarget: WorkspaceHostTarget;
+}) {
+	const { projectId, hostTarget } = args;
+	const { activeHostUrl } = useLocalHostService();
+	const updateDraft = useNewWorkspaceDraftStore((s) => s.updateDraft);
+
+	const hostUrl =
+		hostTarget.kind === "local"
+			? activeHostUrl
+			: `${env.RELAY_URL}/hosts/${hostTarget.hostId}`;
+
+	const addLinkedInternalIssue = useCallback(
+		(slug: string, title: string, taskId: string, url?: string) => {
+			const issues = useNewWorkspaceDraftStore.getState().linkedIssues;
+			if (issues.some((i) => i.slug === slug)) return;
 			updateDraft({
 				linkedIssues: [
-					...linkedIssues,
-					{ slug, title, source: "internal", taskId, url },
+					...issues,
+					{ source: "internal", slug, title, taskId, url, body: "" },
 				],
 			});
 		},
-		[linkedIssues, updateDraft],
+		[updateDraft],
 	);
 
 	const addLinkedGitHubIssue = useCallback(
-		(issueNumber: number, title: string, url: string, state: string) => {
-			if (linkedIssues.some((i) => i.url === url)) return;
-			updateDraft({
-				linkedIssues: [
-					...linkedIssues,
-					{
-						slug: `#${issueNumber}`,
-						title,
-						source: "github",
-						url,
-						number: issueNumber,
-						state: state.toLowerCase() === "closed" ? "closed" : "open",
-					},
-				],
-			});
+		async (issueNumber: number, _title: string, _url: string) => {
+			if (!projectId || !hostUrl) {
+				toast.error("Select a project first");
+				return;
+			}
+			const issues = useNewWorkspaceDraftStore.getState().linkedIssues;
+			const slug = `#${issueNumber}`;
+			if (issues.some((i) => i.slug === slug)) return;
+			try {
+				const client = getHostServiceClientByUrl(hostUrl);
+				const issue = await client.project.getGitHubIssueContent.query({
+					projectId,
+					issueNumber,
+				});
+				const next: LinkedIssueDraft = {
+					source: "github",
+					number: issue.number,
+					slug,
+					title: issue.title,
+					body: issue.body,
+					url: issue.url,
+					state: issue.state === "closed" ? "closed" : "open",
+				};
+				updateDraft({
+					linkedIssues: [
+						...useNewWorkspaceDraftStore.getState().linkedIssues,
+						next,
+					],
+				});
+			} catch (err) {
+				toast.error(
+					err instanceof Error ? err.message : "Failed to fetch GitHub issue",
+				);
+			}
 		},
-		[linkedIssues, updateDraft],
+		[hostUrl, projectId, updateDraft],
 	);
 
 	const removeLinkedIssue = useCallback(
 		(slug: string) => {
 			updateDraft({
-				linkedIssues: linkedIssues.filter((i) => i.slug !== slug),
+				linkedIssues: useNewWorkspaceDraftStore
+					.getState()
+					.linkedIssues.filter((i) => i.slug !== slug),
 			});
 		},
-		[linkedIssues, updateDraft],
+		[updateDraft],
 	);
 
 	const setLinkedPR = useCallback(
-		(pr: LinkedPR) => updateDraft({ linkedPR: pr }),
-		[updateDraft],
+		async (pr: {
+			prNumber: number;
+			title: string;
+			url: string;
+			state: string;
+		}) => {
+			if (!projectId || !hostUrl) {
+				toast.error("Select a project first");
+				return;
+			}
+			try {
+				const client = getHostServiceClientByUrl(hostUrl);
+				const fetched = await client.project.getGitHubPullRequestContent.query({
+					projectId,
+					prNumber: pr.prNumber,
+				});
+				const next: LinkedPRDraft = {
+					number: fetched.number,
+					title: fetched.title,
+					body: fetched.body,
+					url: fetched.url,
+					state: fetched.state,
+					branch: fetched.branch,
+				};
+				updateDraft({ linkedPR: next });
+			} catch (err) {
+				toast.error(
+					err instanceof Error ? err.message : "Failed to fetch pull request",
+				);
+			}
+		},
+		[hostUrl, projectId, updateDraft],
 	);
 
 	const removeLinkedPR = useCallback(
@@ -71,7 +137,7 @@ export function useLinkedContext(
 	);
 
 	return {
-		addLinkedIssue,
+		addLinkedIssue: addLinkedInternalIssue,
 		addLinkedGitHubIssue,
 		removeLinkedIssue,
 		setLinkedPR,

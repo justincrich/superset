@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { supersetHomeDir } from "../../../../superset-home";
 
 const ENV_LINE = /^(?:export\s+)?[a-zA-Z_]\w*\s*=/;
 const CONFIG_FILE_NAME = "chat-anthropic-env.json";
@@ -90,9 +90,7 @@ export function getAnthropicEnvConfigPath(
 	options?: AnthropicEnvConfigDiskOptions,
 ): string {
 	if (options?.configPath) return options.configPath;
-	const supersetHome =
-		process.env.SUPERSET_HOME_DIR?.trim() || join(homedir(), ".superset");
-	return join(supersetHome, CONFIG_FILE_NAME);
+	return join(supersetHomeDir(), CONFIG_FILE_NAME);
 }
 
 export function parseAnthropicEnvText(envText: string): AnthropicEnvVariables {

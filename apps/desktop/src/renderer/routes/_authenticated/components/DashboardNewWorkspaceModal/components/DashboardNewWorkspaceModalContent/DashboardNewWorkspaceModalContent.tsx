@@ -5,7 +5,7 @@ import { env } from "renderer/env.renderer";
 import { authClient } from "renderer/lib/auth-client";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 import { MOCK_ORG_ID } from "shared/constants";
-import { useDashboardNewWorkspaceDraft } from "../../DashboardNewWorkspaceDraftContext";
+import { useNewWorkspaceDraftStore } from "../../stores/newWorkspaceDraft";
 import { PromptGroup } from "../DashboardNewWorkspaceForm/PromptGroup";
 import { useSelectedHostProjectIds } from "./hooks/useSelectedHostProjectIds";
 
@@ -25,7 +25,8 @@ export function DashboardNewWorkspaceModalContent({
 	isOpen,
 	preSelectedProjectId,
 }: DashboardNewWorkspaceModalContentProps) {
-	const { draft, updateDraft } = useDashboardNewWorkspaceDraft();
+	const draft = useNewWorkspaceDraftStore();
+	const updateDraft = useNewWorkspaceDraftStore((s) => s.updateDraft);
 	const collections = useCollections();
 	const { data: session } = authClient.useSession();
 	const activeOrganizationId = env.SKIP_ENV_VALIDATION
