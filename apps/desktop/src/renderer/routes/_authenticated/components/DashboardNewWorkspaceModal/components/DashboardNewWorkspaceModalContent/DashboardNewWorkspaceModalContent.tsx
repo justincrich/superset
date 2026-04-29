@@ -128,6 +128,10 @@ export function DashboardNewWorkspaceModalContent({
 		}
 
 		if (!areProjectsReady) return;
+		// Wait for org context. Without it, v2Projects is filtered by an empty
+		// org id and resolves to []; initializing here would lock in a null
+		// selection before the real project list arrives.
+		if (activeOrganizationId === null) return;
 
 		// Only auto-pick a default once. After init, leave the user's selection
 		// alone — including freshly created projects that may not be in the live
@@ -152,6 +156,7 @@ export function DashboardNewWorkspaceModalContent({
 	}, [
 		draft.selectedProjectId,
 		areProjectsReady,
+		activeOrganizationId,
 		isOpen,
 		preSelectedProjectId,
 		recentProjects,
