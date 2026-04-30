@@ -49,9 +49,7 @@ function withCors(request: Request, response: Response): Response {
 // Map CF colo/continent → DO `locationHint`. The hint is best-effort; CF
 // picks the closest available region. Fallback to `wnam` since we expect
 // most early traffic from US-West.
-function pickLocationHint(
-	req: Request,
-): DurableObjectLocationHint | undefined {
+function pickLocationHint(req: Request): DurableObjectLocationHint | undefined {
 	const cf = (req as Request & { cf?: IncomingRequestCfProperties }).cf;
 	const continent = cf?.continent;
 	switch (continent) {
@@ -82,8 +80,14 @@ function extractToken(req: Request): string | null {
 
 function extractHostId(url: URL): string | null {
 	if (url.pathname === "/tunnel") return url.searchParams.get("hostId");
-	const match = url.pathname.match(/^\/hosts\/([^/]+)/);
-	return match?.[1] ?? null;
+	// `url.pathname` preserves percent-encoding; the renderer-side path is
+	// already in canonical form because the renderer doesn't encode it, but
+	// the host-side terminal callback uses encodeURIComponent on hostId
+	// (which contains a colon), so we must decode the captured segment.
+	const hostsMatch = url.pathname.match(/^\/hosts\/([^/]+)/);
+	if (hostsMatch?.[1]) return decodeURIComponent(hostsMatch[1]);
+	const terminalMatch = url.pathname.match(/^\/terminal\/([^/]+)\/[^/]+$/);
+	return terminalMatch?.[1] ? decodeURIComponent(terminalMatch[1]) : null;
 }
 
 export default {

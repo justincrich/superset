@@ -5,10 +5,16 @@ import type {
 	TunnelWsClose,
 	TunnelWsFrame,
 	TunnelWsOpen,
+	TunnelWsOpenDedicated,
 } from "./types";
 
 const RECONNECT_BASE_MS = 1_000;
 const RECONNECT_MAX_MS = 30_000;
+
+interface DedicatedBridge {
+	relayWs: WebSocket;
+	localWs: WebSocket;
+}
 
 export interface TunnelClientOptions {
 	relayUrl: string;
@@ -26,6 +32,7 @@ export class TunnelClient {
 	private readonly hostServiceSecret: string;
 	private socket: WebSocket | null = null;
 	private localChannels = new Map<string, WebSocket>();
+	private dedicatedBridges = new Map<string, DedicatedBridge>();
 	private reconnectAttempts = 0;
 	private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 	private closed = false;
@@ -133,6 +140,9 @@ export class TunnelClient {
 			case "ws:open":
 				this.handleWsOpen(message);
 				break;
+			case "ws:open:dedicated":
+				this.handleWsOpenDedicated(message);
+				break;
 			case "ws:frame":
 				this.handleWsFrame(message);
 				break;
@@ -216,6 +226,84 @@ export class TunnelClient {
 		this.localChannels.set(request.id, localWs);
 	}
 
+	private handleWsOpenDedicated(request: TunnelWsOpenDedicated): void {
+		// Build the local pty URL the same way handleWsOpen does — same auth
+		// token and query passthrough rules.
+		const localUrl = new URL(request.path, `ws://127.0.0.1:${this.localPort}`);
+		localUrl.searchParams.set("token", this.hostServiceSecret);
+		if (request.query) {
+			const params = new URLSearchParams(request.query);
+			for (const [key, value] of params) {
+				if (key !== "token") {
+					localUrl.searchParams.set(key, value);
+				}
+			}
+		}
+
+		// Outbound callback to the relay's dedicated terminal endpoint. Frames
+		// are 1:1 between this WS and the local pty WS — no JSON wrapping.
+		const relayUrl = new URL(
+			`/terminal/${encodeURIComponent(request.hostId)}/${encodeURIComponent(request.terminalId)}`,
+			this.relayUrl,
+		);
+		relayUrl.protocol = relayUrl.protocol === "https:" ? "wss:" : "ws:";
+		relayUrl.searchParams.set("token", request.token);
+
+		const relayWs = new WebSocket(relayUrl.toString());
+		const localWs = new WebSocket(localUrl.toString());
+		this.dedicatedBridges.set(request.terminalId, { relayWs, localWs });
+
+		const closeBoth = (code: number, reason: string): void => {
+			this.dedicatedBridges.delete(request.terminalId);
+			try {
+				relayWs.close(1000, reason);
+			} catch {}
+			try {
+				localWs.close(1000, reason);
+			} catch {}
+			void code;
+		};
+
+		relayWs.onmessage = (event) => {
+			if (localWs.readyState === WebSocket.OPEN) {
+				try {
+					localWs.send(event.data as string | ArrayBuffer);
+				} catch {
+					// local side gone
+				}
+			}
+		};
+
+		localWs.onmessage = (event) => {
+			if (relayWs.readyState === WebSocket.OPEN) {
+				try {
+					relayWs.send(event.data as string | ArrayBuffer);
+				} catch {
+					// relay side gone
+				}
+			}
+		};
+
+		relayWs.onclose = (event) => {
+			closeBoth(event.code, "relay closed");
+		};
+		localWs.onclose = (event) => {
+			closeBoth(event.code, "local closed");
+		};
+		relayWs.onerror = (event) => {
+			console.error(
+				`[host-service:tunnel] dedicated relay WS error for terminal ${request.terminalId}:`,
+				event,
+			);
+		};
+		localWs.onerror = (event) => {
+			console.error(
+				`[host-service:tunnel] dedicated local WS error for terminal ${request.terminalId}:`,
+				event,
+			);
+		};
+	}
+
 	private handleWsFrame(message: TunnelWsFrame): void {
 		const localWs = this.localChannels.get(message.id);
 		if (localWs?.readyState === WebSocket.OPEN) {
@@ -245,6 +333,8 @@ export class TunnelClient {
 			} catch {}
 		}
 		this.localChannels.clear();
+		// Dedicated terminal bridges are independent of the control tunnel —
+		// they survive a control-WS reconnect. Don't tear them down here.
 	}
 
 	private scheduleReconnect(): void {

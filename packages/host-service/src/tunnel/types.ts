@@ -8,4 +8,5 @@ export type {
 	TunnelWsClose,
 	TunnelWsFrame,
 	TunnelWsOpen,
+	TunnelWsOpenDedicated,
 } from "@superset/shared/tunnel-protocol";
