@@ -17,7 +17,9 @@ const ALLOWED_MEDIA_TYPES = new Set([
 	"application/xml",
 ]);
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+// Capped at 3.5 MB raw so the base64-encoded payload stays under Anthropic's
+// 5 MB inline-image limit (base64 inflates by ~4/3).
+const MAX_FILE_SIZE_BYTES = 3.5 * 1024 * 1024;
 
 function getFileBuffer(fileData: string): Buffer {
 	const base64Data = fileData.includes("base64,")
