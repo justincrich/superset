@@ -10,6 +10,11 @@ export interface LoginResult {
 	expiresAt: number;
 }
 
+export interface LoginOptions {
+	signal: AbortSignal;
+	onAuthUrl?: (url: string) => void;
+}
+
 function generateState(): string {
 	return randomBytes(32).toString("base64url");
 }
@@ -85,7 +90,11 @@ function waitForCallback({
 			timeoutMs,
 		);
 		const onAbort = () => finish(new CLIError("Login cancelled"));
-		signal.addEventListener("abort", onAbort);
+		if (signal.aborted) {
+			queueMicrotask(onAbort);
+		} else {
+			signal.addEventListener("abort", onAbort);
+		}
 
 		server.on("request", (request, response) => {
 			const url = new URL(request.url ?? "/", `http://127.0.0.1:${port}`);
@@ -131,7 +140,10 @@ export function getWebUrl(): string {
 	return env.SUPERSET_API_URL.replace("api.superset.sh", "app.superset.sh");
 }
 
-export async function login(signal: AbortSignal): Promise<LoginResult> {
+export async function login({
+	signal,
+	onAuthUrl,
+}: LoginOptions): Promise<LoginResult> {
 	const apiUrl = env.SUPERSET_API_URL;
 	const webUrl = getWebUrl();
 
@@ -143,7 +155,9 @@ export async function login(signal: AbortSignal): Promise<LoginResult> {
 	authorizeUrl.searchParams.set("redirect_uri", redirectUri);
 	authorizeUrl.searchParams.set("state", state);
 
-	await openBrowser(authorizeUrl.toString());
+	const authorizeUrlString = authorizeUrl.toString();
+	onAuthUrl?.(authorizeUrlString);
+	await openBrowser(authorizeUrlString);
 
 	const code = await waitForCallback({
 		server,
