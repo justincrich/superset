@@ -135,7 +135,7 @@ const ws = await client.workspaces.create({
   ],
 });
 
-console.log(ws.id, ws.agentRuns.map((r) => r.id));
+console.log(ws.id, ws.agentRuns.map((r) => r.runId));
 ```
 
 Returns a `CreatedWorkspace` — a `HostWorkspace` plus an `agentRuns` array (one entry per agent in the request, empty if `agents` was omitted).

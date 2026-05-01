@@ -71,7 +71,7 @@ export class Workspaces extends APIResource {
 			const agentConfig: AgentConfig =
 				typeof spec.agentConfig === "object"
 					? spec.agentConfig
-					: { id: agentId, kind: "terminal" };
+					: { id: agentId, kind: "terminal", enabled: true };
 
 			const automation = await this._client.mutation<Automation>(
 				"automation.create",
@@ -88,10 +88,12 @@ export class Workspaces extends APIResource {
 					timezone: "UTC",
 					mcpScope: spec.mcpScope ?? [],
 				},
+				options,
 			);
 			const run = await this._client.mutation<AutomationRunDispatched>(
 				"automation.runNow",
 				{ id: automation.id },
+				options,
 			);
 			agentRuns.push(run);
 		}

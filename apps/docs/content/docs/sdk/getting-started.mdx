@@ -128,6 +128,8 @@ The SDK throws typed errors for any non-success response, so you can catch what 
 ```ts
 import Superset, { APIError, NotFoundError, RateLimitError } from '@superset_sh/sdk';
 
+const client = new Superset();
+
 try {
   await client.tasks.create({ title: '' });
 } catch (err) {
