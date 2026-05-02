@@ -203,23 +203,18 @@ export const v2WorkspaceRouter = {
 				.returning();
 
 			if (inserted) {
-				// Match v1 semantics: workspace_created is the user-initiated
-				// activation event. Main workspaces are auto-created by project
-				// setup (ensure-main-workspace) and would inflate activation.
-				if (inserted.type !== "main") {
-					posthog.capture({
-						distinctId: ctx.userId,
-						event: "workspace_created",
-						properties: {
-							workspace_id: inserted.id,
-							project_id: inserted.projectId,
-							organization_id: inserted.organizationId,
-							host_id: inserted.hostId,
-							branch: inserted.branch,
-							type: inserted.type,
-						},
-					});
-				}
+				posthog.capture({
+					distinctId: ctx.userId,
+					event: "workspace_created",
+					properties: {
+						workspace_id: inserted.id,
+						project_id: inserted.projectId,
+						organization_id: inserted.organizationId,
+						host_id: inserted.hostId,
+						branch: inserted.branch,
+						type: inserted.type,
+					},
+				});
 				return inserted;
 			}
 
