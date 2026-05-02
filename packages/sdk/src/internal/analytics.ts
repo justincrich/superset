@@ -1,21 +1,3 @@
-import { createHash } from "node:crypto";
-
-// PostHog public project token. Same value the desktop renderer + CLI ship with.
-// Hardcoded so SDK consumers don't need to configure anything to fire events.
-const POSTHOG_PROJECT_TOKEN = "phc_relI1yg6V5m77qT7U3JctNKULVQLh3LkGFb3PCjeQ0P";
-const POSTHOG_HOST = "https://us.i.posthog.com";
-
-/**
- * SDK distinct_id is a sha256 prefix of the API key — anonymous but stable
- * per credential, so we can answer "which API keys are calling the SDK" and
- * join to the user/organization in the cloud DB if needed. We deliberately
- * don't decode the JWT here because non-host requests never mint one, and
- * eagerly minting just for telemetry would add latency to every SDK init.
- */
-export function distinctIdForApiKey(apiKey: string): string {
-	return `sdk_${createHash("sha256").update(apiKey).digest("hex").slice(0, 16)}`;
-}
-
 export interface SdkCallEvent {
 	method: string;
 	kind: "mutation" | "query" | "hostMutation" | "hostQuery";
@@ -24,26 +6,38 @@ export interface SdkCallEvent {
 	sdkVersion: string;
 }
 
-export function captureSdkCall(distinctId: string, event: SdkCallEvent): void {
-	// Fire-and-forget. Errors are silently dropped so telemetry can never
-	// surface in caller code.
-	fetch(`${POSTHOG_HOST}/capture/`, {
+/**
+ * Fire-and-forget POST to the API's `telemetry.captureSdk` mutation. The API
+ * resolves the user.id from the same auth context the SDK uses for any other
+ * call, so events land in PostHog with the correct distinct_id and merge with
+ * the user's desktop / CLI / web identity.
+ */
+export function captureSdkCall(args: {
+	baseURL: string;
+	apiKey: string;
+	event: SdkCallEvent;
+}): void {
+	const url = `${args.baseURL.replace(/\/+$/, "")}/api/trpc/telemetry.captureSdk`;
+	void fetch(url, {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
+		keepalive: true,
+		headers: {
+			"Content-Type": "application/json",
+			"x-api-key": args.apiKey,
+		},
 		body: JSON.stringify({
-			api_key: POSTHOG_PROJECT_TOKEN,
-			event: "sdk_method_called",
-			distinct_id: distinctId,
-			properties: {
-				method: event.method,
-				kind: event.kind,
-				status: event.status,
-				duration_ms: event.durationMs,
-				sdk_version: event.sdkVersion,
+			json: {
+				event: "method_called",
+				properties: {
+					method: args.event.method,
+					kind: args.event.kind,
+					status: args.event.status,
+					duration_ms: args.event.durationMs,
+					sdk_version: args.event.sdkVersion,
+				},
 			},
-			timestamp: new Date().toISOString(),
 		}),
 	}).catch(() => {
-		// Swallow — telemetry must not break the SDK.
+		// Telemetry must never affect the SDK.
 	});
 }

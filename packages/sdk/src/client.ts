@@ -85,7 +85,7 @@ import {
 	WorkspaceListResponse,
 	Workspaces,
 } from "./resources/workspaces";
-import { captureSdkCall, distinctIdForApiKey } from "./internal/analytics";
+import { captureSdkCall } from "./internal/analytics";
 import { VERSION } from "./version";
 
 export interface ClientOptions {
@@ -211,7 +211,6 @@ export class Superset {
 	private _options: ClientOptions;
 	private _jwtCache: { token: string; expiresAt: number } | null = null;
 	private _jwtInflight: Promise<string> | null = null;
-	private _telemetryDistinctId: string | null = null;
 
 	/**
 	 * API Client for interfacing with the Superset API.
@@ -283,7 +282,6 @@ export class Superset {
 		this.apiKey = apiKey;
 		this.organizationId = organizationId ?? null;
 		this.relayURL = relayURL || "https://relay.superset.sh";
-		this._telemetryDistinctId = distinctIdForApiKey(apiKey);
 	}
 
 	private _trackCall(
@@ -291,26 +289,22 @@ export class Superset {
 		method: string,
 		promise: APIPromise<unknown>,
 	): void {
-		const distinctId = this._telemetryDistinctId;
-		if (!distinctId) return;
 		const startedAt = Date.now();
+		const fire = (status: "success" | "error") =>
+			captureSdkCall({
+				baseURL: this.baseURL,
+				apiKey: this.apiKey,
+				event: {
+					method,
+					kind,
+					status,
+					durationMs: Date.now() - startedAt,
+					sdkVersion: VERSION,
+				},
+			});
 		promise.then(
-			() =>
-				captureSdkCall(distinctId, {
-					method,
-					kind,
-					status: "success",
-					durationMs: Date.now() - startedAt,
-					sdkVersion: VERSION,
-				}),
-			() =>
-				captureSdkCall(distinctId, {
-					method,
-					kind,
-					status: "error",
-					durationMs: Date.now() - startedAt,
-					sdkVersion: VERSION,
-				}),
+			() => fire("success"),
+			() => fire("error"),
 		);
 	}
 
