@@ -63,8 +63,13 @@ export async function verifyToken(
 
 	if (bearer) {
 		if (!bearer.activeOrganizationId) {
-			console.error("[mcp/auth] Bearer missing organizationId");
-			return undefined;
+			// Bearer is structurally valid but has no usable org context.
+			// Throw rather than fall through — never let a bearer-bearing
+			// request authenticate via the victim's cookie session.
+			throw new BearerAuthError(
+				"invalid_token",
+				"Bearer token has no organization context",
+			);
 		}
 		return {
 			token: "bearer",

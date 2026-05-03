@@ -72,8 +72,15 @@ async function sessionToCtx(
 		...new Set(memberRows.map((row) => row.organizationId)),
 	];
 
-	const sessionOrgId = session.session.activeOrganizationId ?? null;
 	const headerOrgId = headers.get(ORGANIZATION_HEADER)?.trim() || null;
+	// Cached session.activeOrganizationId is re-validated against current
+	// memberships — a user removed from the org since the cookie was issued
+	// should not keep operating on it.
+	const sessionOrgId =
+		session.session.activeOrganizationId &&
+		organizationIds.includes(session.session.activeOrganizationId)
+			? session.session.activeOrganizationId
+			: null;
 
 	let activeOrganizationId = sessionOrgId ?? organizationIds[0] ?? null;
 	if (headerOrgId && headerOrgId !== sessionOrgId) {

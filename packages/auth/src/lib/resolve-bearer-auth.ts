@@ -96,8 +96,10 @@ async function listOrganizationIds(userId: string): Promise<string[]> {
 }
 
 /**
- * Pick the active org: header override (validated against membership) wins,
- * otherwise the claim (from JWT / API-key metadata).
+ * Pick the active org. Header override (when present) wins. Both the header
+ * and the claim are re-validated against current memberships — a stale
+ * organizationId in a long-lived JWT or API key must not survive a user
+ * being removed from that org.
  */
 function resolveActiveOrg(
 	headers: Headers,
@@ -105,14 +107,17 @@ function resolveActiveOrg(
 	claimed: string | null,
 ): string | null {
 	const requested = headers.get(ORGANIZATION_HEADER)?.trim() || null;
-	if (!requested) return claimed;
-	if (!organizationIds.includes(requested)) {
-		throw new BearerAuthError(
-			"forbidden_org",
-			`Not a member of organization ${requested}`,
-		);
+	if (requested) {
+		if (!organizationIds.includes(requested)) {
+			throw new BearerAuthError(
+				"forbidden_org",
+				`Not a member of organization ${requested}`,
+			);
+		}
+		return requested;
 	}
-	return requested;
+	if (claimed && organizationIds.includes(claimed)) return claimed;
+	return null;
 }
 
 /**

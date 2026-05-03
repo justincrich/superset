@@ -68,12 +68,15 @@ export const supportRouter = createTRPCRouter({
 		)
 		.mutation(async ({ ctx, input }) => {
 			const organizationId = ctx.activeOrganizationId;
+			// Fetch from the DB rather than ctx — API-key callers don't
+			// carry an email claim, and we need a real address for replyTo.
 			const userRow = await db.query.users.findFirst({
 				where: eq(users.id, ctx.userId),
-				columns: { name: true },
+				columns: { name: true, email: true },
 			});
+			const userEmail = userRow?.email ?? ctx.email;
 			const safeName = userRow?.name ? sanitizeEmailBodyLine(userRow.name) : "";
-			const userLabel = safeName ? `${safeName} <${ctx.email}>` : ctx.email;
+			const userLabel = safeName ? `${safeName} <${userEmail}>` : userEmail;
 
 			await assertSupportReportRateLimit({
 				userId: ctx.userId,
@@ -84,7 +87,7 @@ export const supportRouter = createTRPCRouter({
 				await resend.emails.send({
 					from: "Superset <noreply@superset.sh>",
 					to: SUPPORT_EMAIL,
-					replyTo: ctx.email,
+					replyTo: userEmail || undefined,
 					subject: "Superset V1 to V2 migration issue",
 					text: [
 						`User: ${userLabel}`,
