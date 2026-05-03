@@ -316,7 +316,12 @@ export async function getSearchIndex(
 
 	const cached = searchIndexCache.get(cacheKey);
 	if (cached) {
-		return bumpAndReturnCachedIndex(cacheKey, cached);
+		// TTL is the freshness contract — bypassing it on hits would let a hot
+		// key serve indefinitely-stale data. Memory is already bounded by LRU.
+		if (Date.now() - cached.lastAccessedAt <= SEARCH_INDEX_CACHE_TTL_MS) {
+			return bumpAndReturnCachedIndex(cacheKey, cached);
+		}
+		searchIndexCache.delete(cacheKey);
 	}
 
 	const inFlight = searchIndexBuilds.get(cacheKey);

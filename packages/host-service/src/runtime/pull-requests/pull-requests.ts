@@ -216,6 +216,7 @@ export class PullRequestRuntimeManager {
 	private projectRefreshTimer: ReturnType<typeof setInterval> | null = null;
 	private unsubscribeFromGitWatcher: (() => void) | null = null;
 	private readonly inFlightProjects = new Map<string, Promise<void>>();
+	private readonly workspaceSyncQueue = new Map<string, Promise<void>>();
 	private readonly repoPullRequestCache = new Map<
 		string,
 		{ promise: Promise<GraphQLPullRequestNode[]>; fetchedAt: number }
@@ -244,9 +245,11 @@ export class PullRequestRuntimeManager {
 
 		// Steady-state: react to real `.git/` activity per workspace. Per-workspace
 		// debounce lives in `GitWatcher` (300 ms), and concurrent project refreshes
-		// are deduplicated by `inFlightProjects`, so this is safe to call directly.
+		// are deduplicated by `inFlightProjects`. We additionally serialize per
+		// workspace so two debounce-separated bursts can't race their git reads
+		// and have the slower one overwrite the newer snapshot.
 		this.unsubscribeFromGitWatcher = this.gitWatcher.onChanged((event) => {
-			void this.syncOneWorkspace(event.workspaceId);
+			void this.enqueueWorkspaceSync(event.workspaceId);
 		});
 
 		// Long-cadence safety net for `GitWatcher` overflow / error paths.
@@ -350,6 +353,20 @@ export class PullRequestRuntimeManager {
 		await Promise.all(
 			[...changedProjectIds].map((projectId) => this.refreshProject(projectId)),
 		);
+	}
+
+	private enqueueWorkspaceSync(workspaceId: string): Promise<void> {
+		const prior = this.workspaceSyncQueue.get(workspaceId) ?? Promise.resolve();
+		const next = prior
+			.catch(() => undefined)
+			.then(() => this.syncOneWorkspace(workspaceId));
+		this.workspaceSyncQueue.set(workspaceId, next);
+		void next.finally(() => {
+			if (this.workspaceSyncQueue.get(workspaceId) === next) {
+				this.workspaceSyncQueue.delete(workspaceId);
+			}
+		});
+		return next;
 	}
 
 	private async syncOneWorkspace(workspaceId: string): Promise<void> {

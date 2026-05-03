@@ -323,7 +323,7 @@ describe("PullRequestRuntimeManager event-driven steady state", () => {
 		// Wait until the initial sweep AND any startup-related GitWatcher
 		// events have fully drained — otherwise we'd snapshot mid-flush and
 		// see leftover ops from another workspace counted as "event-driven".
-		await waitFor(() => scenario.gitOpLog.length > 0, { timeout: 10_000 });
+		await waitFor(() => scenario.gitOpLog.length > 0, { timeoutMs: 10_000 });
 		await waitUntilQuiet(() => scenario.gitOpLog.length, {
 			quietMs: 1_000,
 			timeoutMs: 15_000,
@@ -340,7 +340,7 @@ describe("PullRequestRuntimeManager event-driven steady state", () => {
 
 		// GitWatcher debounces 300 ms; wait for sync to fire and then settle.
 		await waitFor(() => scenario.gitOpLog.length > baselineLogLength, {
-			timeout: 10_000,
+			timeoutMs: 10_000,
 		});
 		await waitUntilQuiet(() => scenario.gitOpLog.length, {
 			quietMs: 1_000,
