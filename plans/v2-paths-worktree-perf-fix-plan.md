@@ -10,6 +10,26 @@ Each fix has a verification step against the existing reproduction tests / bench
 
 ---
 
+## Current state (handoff)
+
+- **Branch:** `v2-paths-worktree-perf`. Working tree clean.
+- **HEAD:** `b45aee0e3 perf(workspace-fs): cap searchIndexCache + pathTypes for worktree scaling` — Fixes #2 + #3 landed in this single commit. Adds findings doc, fix plan, reproduction tests, and benchmarks.
+- **Suite status:** `bun test` from `packages/workspace-fs` is 43/43 passing. `bun test` from `packages/host-service` was 455/455 before the changes; new pull-requests-scaling tests pass independently.
+- **What's left:** Fix #1 (the big one) and Fix #4 (one-line) remain. Fix #5 stays deferred until #1 is measured.
+
+### Pickup checklist for the next session
+
+1. Read the **Fix 1** section below — it's self-contained and prescribes file paths, the helper to extract, and the test mutations.
+2. Skim `packages/host-service/src/runtime/pull-requests/pull-requests.ts:200-378` to ground the existing class shape.
+3. Skim `packages/host-service/src/events/git-watcher.ts:81-94` for the `onChanged` API shape.
+4. Skim `packages/host-service/src/app.ts` to find where `GitWatcher` and `PullRequestRuntimeManager` are constructed — that's where the new wiring goes.
+5. Run the existing reproduction tests to anchor the BEFORE behavior:
+   - `cd packages/host-service && bun test test/integration/pull-requests-scaling.integration.test.ts` — should pass and print "[integration scaling] real git ops/tick: 2 workspaces=8, 5 workspaces=20".
+6. Implement Fix #1 + #4 together (#4 is one line in the same file).
+7. Update tests as described in **Fix 1 → Verification** below — the "second idle tick pays full cost" assertion needs to flip to "second idle tick pays 0 ops" (because no `.git/` event fires).
+
+---
+
 ## Fix order
 
 | # | Fix | Severity | Effort | Where | Status |
@@ -80,10 +100,61 @@ Order matters: #1 unblocks #4, and the structural argument for #5 weakens signif
 - The 5-min safety net handles the rare overflow/error path where `GitWatcher` resets a watcher and might miss an event.
 - Initial `syncWorkspaceBranches` call on `start()` ensures workspaces created before the runtime started are caught up.
 
+### Implementation notes (gotchas the next session will hit)
+
+**App.ts wiring order.** `GitWatcher` must be **constructed and started before** `PullRequestRuntimeManager.start()`, otherwise the subscription registers but the watcher hasn't begun emitting yet. In `packages/host-service/src/app.ts` the existing flow constructs `GitWatcher` already (search for `new GitWatcher`); just thread the same instance into `PullRequestRuntimeManager` constructor options and call `gitWatcher.start()` first.
+
+**Concurrency is already safe.** Multiple `git:changed` events for different workspaces will fire concurrent `syncOneWorkspace(workspaceId)` calls. Each calls `refreshProject(projectId)` if it detected a change. The existing `inFlightProjects` guard at `pull-requests.ts:384-388` already deduplicates concurrent refreshes for the same project. No new locking required.
+
+**Workspace deleted between event fire and sync handler.** If a workspace is deleted while a `git:changed` event is in flight, the `syncOneWorkspace` lookup against the workspaces table returns nothing — early-return is the right behavior. Don't throw.
+
+**`.git/config` changes.** Upstream resolution depends on `git config branch.X.merge` etc. `GitWatcher` watches `.git/` recursively (line 234), so config edits trigger `git:changed`. The `paths` field on `GitChangedEvent` will be absent (it's a `.git/*` event, see `git-watcher.ts:146-148`), but that's fine — we re-derive everything anyway.
+
+**Debounce window.** `GitWatcher` debounces at 300 ms (`git-watcher.ts:12`). Real branch-change latency under the new design: ~300 ms, vs up-to-30s under polling. Net win.
+
+**`syncWorkspaceBranches` stays.** Don't delete the existing method — extract `syncOneWorkspace(workspaceId)` and have `syncWorkspaceBranches` call it for each workspace. The full-sweep version is now used only for:
+1. The one-time call from `start()` (initial state catch-up).
+2. The 5-min safety-net interval (covers `GitWatcher` error/overflow paths).
+
 ### Verification
 
-- **`pull-requests-scaling.integration.test.ts`** — the second-tick assertion (`expect(totalAfterTwoTicks).toBe(firstTickCount * 2)`) should INVERT: after the fix, calling `syncOneWorkspace` for a workspace with no `.git/` changes still issues git ops (one workspace), but the steady-state event loop only fires when `.git/` changes. Add a new test: register the runtime with a `GitWatcher` against a real git fixture, then `git commit` in one repo and assert *only that* workspace's git-op counter incremented.
-- **`pull-requests-scaling.bench.test.ts`** — re-run after fix; the "steady ms" column should drop to ~0 ms because the second tick measurement no longer corresponds to anything the runtime does. Replace the benchmark with one that measures "ms per real branch change," not "ms per polling tick."
+Each existing test/benchmark needs an update. Map of changes:
+
+| File | Current behavior | Update |
+|------|------------------|--------|
+| `packages/host-service/test/pull-requests-scaling.test.ts` | unit test, mocks db + git, calls `syncWorkspaceBranches` directly. Asserts O(N) git ops per call. | KEEP AS-IS — the safety-net path still exists and still does O(N) when invoked. Rename the describe to clarify it tests "the safety-net sweep" rather than "the 30s tick." |
+| `packages/host-service/test/integration/pull-requests-scaling.integration.test.ts` | "idle tick still issues git calls for every workspace" — asserts `totalAfterTwoTicks === firstTickCount * 2`. | ADD a new test for event-driven path: construct manager with a real `GitWatcher`, `start()` it, do `git commit` in one of N fixture repos, assert only that workspace's git-op counter incremented (the other N-1 stay at 0). KEEP the existing test — it now tests the safety-net sweep behavior. |
+| `packages/host-service/test/integration/pull-requests-scaling.bench.test.ts` | measures wall-clock of `syncWorkspaceBranches` ticks. | REPLACE with a benchmark that measures event-to-DB-update latency for a single `git commit` event, plus the safety-net sweep cost. The "ms per polling tick" measurement no longer corresponds to runtime behavior. |
+| `packages/host-service/test/pull-requests.test.ts` | existing pre-audit unit tests for `syncWorkspaceBranches`. | LIKELY UNCHANGED — they call `syncWorkspaceBranches` directly which still exists. Run to confirm. |
+
+### New test for the event-driven path (sketch)
+
+```ts
+test("git:changed event triggers single-workspace sync, not full sweep", async () => {
+    // 5 fixture repos, 5 workspaces seeded.
+    const scenario = await createScalingScenario(5);
+
+    // Wire a real GitWatcher against the test host's filesystem manager.
+    const gitWatcher = new GitWatcher(scenario.host.db, scenario.host.runtime.filesystem);
+    // ...inject into manager...
+    scenario.manager.start();
+    await waitFor(() => gitWatcher.isWatchingAll(scenario.workspaceIds));
+
+    scenario.gitOpLog.length = 0;
+
+    // Commit in workspace 2 only.
+    await scenario.repos[2].commit("change");
+
+    // Wait for debounce window (300ms) + a small buffer.
+    await waitFor(() => scenario.gitOpLog.length > 0, { timeout: 2000 });
+    await new Promise((r) => setTimeout(r, 100));
+
+    // Only workspace 2's worktreePath should appear in the log.
+    const touched = new Set(scenario.gitOpLog.map((c) => c.worktreePath));
+    expect(touched.size).toBe(1);
+    expect(touched.has(scenario.repos[2].repoPath)).toBe(true);
+});
+```
 
 ### Target numbers
 
