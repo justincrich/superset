@@ -111,14 +111,6 @@ interface CachedIndex {
 const searchIndexCache = new Map<string, CachedIndex>();
 const searchIndexBuilds = new Map<string, Promise<SearchIndexEntry[]>>();
 
-function evictStaleSearchIndexEntries(now: number): void {
-	for (const [key, cached] of searchIndexCache) {
-		if (now - cached.lastAccessedAt > SEARCH_INDEX_CACHE_TTL_MS) {
-			searchIndexCache.delete(key);
-		}
-	}
-}
-
 function evictLruSearchIndexEntries(): void {
 	// Map iteration is insertion-order; re-inserting on hit moves an entry to
 	// the end, so the first key is least-recently-used.
@@ -127,17 +119,6 @@ function evictLruSearchIndexEntries(): void {
 		if (!oldestKey) break;
 		searchIndexCache.delete(oldestKey);
 	}
-}
-
-function bumpAndReturnCachedIndex(
-	cacheKey: string,
-	cached: CachedIndex,
-): SearchIndexEntry[] {
-	// Move to MRU position.
-	cached.lastAccessedAt = Date.now();
-	searchIndexCache.delete(cacheKey);
-	searchIndexCache.set(cacheKey, cached);
-	return cached.items;
 }
 
 function createSearchIndexEntry(
@@ -318,10 +299,12 @@ export async function getSearchIndex(
 	if (cached) {
 		// TTL is the freshness contract — bypassing it on hits would let a hot
 		// key serve indefinitely-stale data. Memory is already bounded by LRU.
-		if (Date.now() - cached.lastAccessedAt <= SEARCH_INDEX_CACHE_TTL_MS) {
-			return bumpAndReturnCachedIndex(cacheKey, cached);
-		}
 		searchIndexCache.delete(cacheKey);
+		if (Date.now() - cached.lastAccessedAt <= SEARCH_INDEX_CACHE_TTL_MS) {
+			cached.lastAccessedAt = Date.now();
+			searchIndexCache.set(cacheKey, cached); // re-insert at MRU position
+			return cached.items;
+		}
 	}
 
 	const inFlight = searchIndexBuilds.get(cacheKey);
@@ -331,7 +314,6 @@ export async function getSearchIndex(
 
 	const buildPromise = buildSearchIndex(options)
 		.then((items) => {
-			evictStaleSearchIndexEntries(Date.now());
 			evictLruSearchIndexEntries();
 			searchIndexCache.set(cacheKey, {
 				items,
