@@ -38,6 +38,18 @@ export function translateLineEditChord(
 		// Chat TUIs parse ESC+CR as Shift+Enter/newline in kitty mode.
 		if (key === "Enter") return "\x1b\r";
 	}
+	// Shift+Enter: kitty keyboard mode CSI-u-encodes this so most chat TUIs
+	// (Claude Code, etc.) don't see a newline. Send ESC+CR explicitly — the
+	// same sequence Mac Cmd+Enter already produces.
+	if (
+		key === "Enter" &&
+		event.shiftKey &&
+		!event.metaKey &&
+		!event.altKey &&
+		!event.ctrlKey
+	) {
+		return "\x1b\r";
+	}
 	if (isMac && onlyMod(event, "alt")) {
 		if (key === "ArrowLeft") return "\x1bb";
 		if (key === "ArrowRight") return "\x1bf";
