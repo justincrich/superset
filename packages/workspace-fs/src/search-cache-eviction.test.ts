@@ -57,7 +57,7 @@ describe("searchIndexCache LRU eviction", () => {
 			roots.push(await createTempWorktree(3));
 		}
 
-		const firstReads: unknown[] = [];
+		const firstReads: Awaited<ReturnType<typeof getSearchIndex>>[] = [];
 		for (const root of roots) {
 			firstReads.push(
 				await getSearchIndex({ rootPath: root, includeHidden: false }),
@@ -73,14 +73,16 @@ describe("searchIndexCache LRU eviction", () => {
 				rootPath: root,
 				includeHidden: false,
 			});
-			expect(cached).toBe(firstReads[i]);
+			const expected = firstReads[i];
+			if (!expected) throw new Error("missing first read");
+			expect(cached).toBe(expected);
 		}
 	});
 
 	it("evicts the least-recently-used entry when adding a (CACHE_MAX+1)th worktree", async () => {
 		// Build CACHE_MAX worktrees in order; entry 0 is the oldest.
 		const roots: string[] = [];
-		const initialReads: unknown[] = [];
+		const initialReads: Awaited<ReturnType<typeof getSearchIndex>>[] = [];
 		for (let i = 0; i < CACHE_MAX; i++) {
 			const root = await createTempWorktree(2);
 			roots.push(root);
@@ -107,7 +109,7 @@ describe("searchIndexCache LRU eviction", () => {
 
 	it("LRU bump on access — touching the oldest keeps it alive", async () => {
 		const roots: string[] = [];
-		const initialReads: unknown[] = [];
+		const initialReads: Awaited<ReturnType<typeof getSearchIndex>>[] = [];
 		for (let i = 0; i < CACHE_MAX; i++) {
 			const root = await createTempWorktree(2);
 			roots.push(root);
@@ -130,7 +132,9 @@ describe("searchIndexCache LRU eviction", () => {
 			rootPath: root0,
 			includeHidden: false,
 		});
-		expect(reread0).toBe(initialReads[0]);
+		const expected0 = initialReads[0];
+		if (!expected0) throw new Error("missing initial read");
+		expect(reread0).toBe(expected0);
 
 		// Entry 1 evicted.
 		const root1 = roots[1];
