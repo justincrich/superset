@@ -84,6 +84,7 @@ async function runSync(workspaceCount: number) {
 
 	const rawCalls: RawCallLog[] = [];
 
+	const workspacesById = new Map(workspaces.map((w) => [w.id, w]));
 	const db = {
 		select: mock(() => ({
 			from: mock(() => ({
@@ -116,6 +117,26 @@ async function runSync(workspaceCount: number) {
 			refreshProject: () => Promise<void>;
 		}
 	).refreshProject = mock(async () => undefined);
+
+	// The sweep now routes through enqueueWorkspaceSync → syncOneWorkspace,
+	// which re-reads each workspace via `select().from().where().get()`.
+	// Bypass the drizzle .where() chain (awkward to mock) by feeding rows
+	// from our local map; syncWorkspaceRow still drives the real git work.
+	(
+		manager as unknown as {
+			syncOneWorkspace: (id: string) => Promise<void>;
+		}
+	).syncOneWorkspace = async (id: string) => {
+		const workspace = workspacesById.get(id);
+		if (!workspace) return;
+		await (
+			manager as unknown as {
+				syncWorkspaceRow: (
+					w: ReturnType<typeof buildWorkspace>,
+				) => Promise<string | null>;
+			}
+		).syncWorkspaceRow(workspace);
+	};
 
 	await (
 		manager as unknown as { syncWorkspaceBranches: () => Promise<void> }

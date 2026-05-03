@@ -57,6 +57,23 @@ describe("PullRequestRuntimeManager branch sync", () => {
 			manager as unknown as { refreshProject: typeof refreshProjectMock }
 		).refreshProject = refreshProjectMock;
 
+		// The sweep now routes through enqueueWorkspaceSync → syncOneWorkspace,
+		// which re-reads each workspace via `select().from().where().get()`.
+		// Bypass the drizzle .where() chain (awkward to mock) by feeding the
+		// known row directly; syncWorkspaceRow still runs the production logic.
+		(
+			manager as unknown as {
+				syncOneWorkspace: (id: string) => Promise<void>;
+			}
+		).syncOneWorkspace = async () => {
+			const projectId = await (
+				manager as unknown as {
+					syncWorkspaceRow: (w: typeof workspace) => Promise<string | null>;
+				}
+			).syncWorkspaceRow(workspace);
+			if (projectId) await refreshProjectMock(projectId);
+		};
+
 		await (
 			manager as unknown as { syncWorkspaceBranches: () => Promise<void> }
 		).syncWorkspaceBranches();
@@ -117,6 +134,23 @@ describe("PullRequestRuntimeManager branch sync", () => {
 		(
 			manager as unknown as { refreshProject: typeof refreshProjectMock }
 		).refreshProject = refreshProjectMock;
+
+		// The sweep now routes through enqueueWorkspaceSync → syncOneWorkspace,
+		// which re-reads each workspace via `select().from().where().get()`.
+		// Bypass the drizzle .where() chain (awkward to mock) by feeding the
+		// known row directly; syncWorkspaceRow still runs the production logic.
+		(
+			manager as unknown as {
+				syncOneWorkspace: (id: string) => Promise<void>;
+			}
+		).syncOneWorkspace = async () => {
+			const projectId = await (
+				manager as unknown as {
+					syncWorkspaceRow: (w: typeof workspace) => Promise<string | null>;
+				}
+			).syncWorkspaceRow(workspace);
+			if (projectId) await refreshProjectMock(projectId);
+		};
 		const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
 
 		await (

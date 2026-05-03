@@ -341,21 +341,19 @@ export class PullRequestRuntimeManager {
 	}
 
 	private async syncWorkspaceBranches(): Promise<void> {
-		const allWorkspaces = this.db.select().from(workspaces).all();
-		const changedProjectIds = new Set<string>();
+		// Route every workspace through the same per-workspace queue as the
+		// watcher path, so a concurrent watcher-triggered sync can't race the
+		// sweep's read+write and clobber the newer snapshot. enqueueWorkspaceSync
+		// coalesces — if a sync is already running for a workspace, this just
+		// flips its rerunPending flag.
+		const ids = this.db.select({ id: workspaces.id }).from(workspaces).all();
 
-		for (const workspace of allWorkspaces) {
-			const projectId = await this.syncWorkspaceRow(workspace);
-			if (projectId) changedProjectIds.add(projectId);
+		// Sequential to keep git subprocess concurrency bounded; matches the
+		// original sweep's behavior. refreshProject inside each sync still
+		// dedupes across workspaces in the same project via inFlightProjects.
+		for (const row of ids) {
+			await this.enqueueWorkspaceSync(row.id);
 		}
-
-		// Branch changes use the shared 60s cache rather than bypassing it.
-		// The next refreshEligibleProjects tick will pick up newly-opened PRs;
-		// up to TTL_MS lag on attaching a brand-new external PR is acceptable
-		// and keeps high-churn workspaces from multiplying GraphQL traffic.
-		await Promise.all(
-			[...changedProjectIds].map((projectId) => this.refreshProject(projectId)),
-		);
 	}
 
 	private enqueueWorkspaceSync(workspaceId: string): Promise<void> {
