@@ -424,8 +424,11 @@ export const gitRouter = router({
 			const worktreePath = resolveWorktreePath(ctx, input.workspaceId);
 			const git = await ctx.git(worktreePath);
 			const status = await git.status();
+			// Capture before reset; afterwards these files become untracked
+			// and `git checkout` won't touch them.
 			const stagedAddedPaths = status.created;
 			await git.raw(["reset", "HEAD", "--", "."]);
+			await git.raw(["checkout", "--", "."]);
 			for (const filePath of stagedAddedPaths) {
 				await rm(join(worktreePath, filePath), { force: true });
 			}
