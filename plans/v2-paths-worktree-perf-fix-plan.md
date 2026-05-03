@@ -349,7 +349,7 @@ Each PR should re-run the corresponding benchmark from the findings doc and past
 
 After Fixes 1–4 land:
 
-- `pull-requests-scaling.integration.test.ts` "idle tick" test inverts: zero git ops on a tick where no `.git/` changed.
-- `pull-requests-scaling.bench.test.ts` reports ~0 ms steady-state cost (replaced with "ms per real change").
-- `cache-and-paths-memory.bench.test.ts` reports plateau heap deltas (~0.6 MB cache cap, ~4.3 MB pathTypes cap) regardless of input size.
+- `pull-requests-scaling.integration.test.ts` retains the safety-net sweep coverage and adds a single-workspace event-driven sync case asserting that a commit in one of N worktrees only spawns git ops for that one worktree.
+- `pull-requests-scaling.bench.test.ts` reports two metrics: (1) commit → DB-update latency (~430 ms at N=5), (2) safety-net sweep wall-clock at N ∈ {1, 5, 20}.
+- `cache-and-paths-memory.bench.test.ts` reports plateau heap deltas (~2 MB cache cap, ~2.5 MB pathTypes cap) regardless of input size.
 - Manual smoke: open 20 worktrees, leave the host-service idle for 10 minutes, verify CPU baseline is ≤ 1% and RSS is stable.

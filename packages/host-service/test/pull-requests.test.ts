@@ -159,6 +159,7 @@ describe("PullRequestRuntimeManager branch sync", () => {
 
 		expect(setMock).not.toHaveBeenCalled();
 		expect(refreshProjectMock).not.toHaveBeenCalled();
-		expect(warnSpy).toHaveBeenCalled();
+		// Pin to the sync-failure path so an unrelated console.warn can't pass.
+		expect(warnSpy.mock.calls[0]?.[0]).toContain("Failed to sync workspace");
 	});
 });

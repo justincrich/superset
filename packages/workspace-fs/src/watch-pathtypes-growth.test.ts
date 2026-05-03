@@ -30,12 +30,17 @@ interface FsWatcherManagerInternal {
 }
 
 const tempRoots: string[] = [];
+const managers: FsWatcherManager[] = [];
 
 afterEach(async () => {
+	// Close managers first (releases parcel subscriptions and frees the dir
+	// handles) so fs.rm doesn't race a live watcher. Tests don't bother with
+	// inline cleanup — if an assert throws, this still runs.
+	await Promise.all(managers.splice(0).map((m) => m.close()));
 	await Promise.all(
-		tempRoots.splice(0).map(async (rootPath) => {
-			await fs.rm(rootPath, { recursive: true, force: true });
-		}),
+		tempRoots
+			.splice(0)
+			.map((rootPath) => fs.rm(rootPath, { recursive: true, force: true })),
 	);
 });
 
@@ -44,6 +49,12 @@ async function createTempRoot(): Promise<string> {
 	// Resolve symlinks (e.g. macOS /var → /private/var) so absolute paths
 	// inside `pathTypes` match what we compute in the test.
 	return fs.realpath(tempPath);
+}
+
+function createManager(options?: { debounceMs?: number }): FsWatcherManager {
+	const manager = new FsWatcherManager(options);
+	managers.push(manager);
+	return manager;
 }
 
 function getPathTypes(
@@ -89,9 +100,9 @@ describe("FsWatcherManager.pathTypes — monotonic growth", () => {
 		const rootPath = await createTempRoot();
 		tempRoots.push(rootPath);
 
-		const manager = new FsWatcherManager({ debounceMs: 50 });
+		const manager = createManager({ debounceMs: 50 });
 		const events: string[] = [];
-		const unsubscribe = await manager.subscribe(
+		await manager.subscribe(
 			{ absolutePath: rootPath, recursive: true },
 			(batch) => {
 				for (const event of batch.events) {
@@ -116,18 +127,15 @@ describe("FsWatcherManager.pathTypes — monotonic growth", () => {
 		for (let i = 0; i < fileCount; i++) {
 			expect(pathTypes.has(path.join(rootPath, `gen-${i}.log`))).toBe(true);
 		}
-
-		await unsubscribe();
-		await manager.close();
 	});
 
 	it("updates to existing files do not grow pathTypes", async () => {
 		const rootPath = await createTempRoot();
 		tempRoots.push(rootPath);
 
-		const manager = new FsWatcherManager({ debounceMs: 50 });
+		const manager = createManager({ debounceMs: 50 });
 		const events: string[] = [];
-		const unsubscribe = await manager.subscribe(
+		await manager.subscribe(
 			{ absolutePath: rootPath, recursive: true },
 			(batch) => {
 				for (const event of batch.events) {
@@ -153,18 +161,15 @@ describe("FsWatcherManager.pathTypes — monotonic growth", () => {
 
 		const sizeAfterUpdates = getPathTypes(manager, rootPath).size;
 		expect(sizeAfterUpdates).toBe(sizeAfterCreate);
-
-		await unsubscribe();
-		await manager.close();
 	});
 
 	it("delete events remove entries; create-new events add fresh ones", async () => {
 		const rootPath = await createTempRoot();
 		tempRoots.push(rootPath);
 
-		const manager = new FsWatcherManager({ debounceMs: 50 });
+		const manager = createManager({ debounceMs: 50 });
 		const events: string[] = [];
-		const unsubscribe = await manager.subscribe(
+		await manager.subscribe(
 			{ absolutePath: rootPath, recursive: true },
 			(batch) => {
 				for (const event of batch.events) {
@@ -211,9 +216,6 @@ describe("FsWatcherManager.pathTypes — monotonic growth", () => {
 
 		const sizeAfterPhase3 = getPathTypes(manager, rootPath).size;
 		expect(sizeAfterPhase3).toBeGreaterThanOrEqual(sizeAfterDeletes + 5);
-
-		await unsubscribe();
-		await manager.close();
 	});
 
 	it("caps pathTypes at PATH_TYPES_MAX (10k) — older entries evicted on overflow", async () => {
@@ -223,8 +225,8 @@ describe("FsWatcherManager.pathTypes — monotonic growth", () => {
 		const rootPath = await createTempRoot();
 		tempRoots.push(rootPath);
 
-		const manager = new FsWatcherManager({ debounceMs: 50 });
-		const unsubscribe = await manager.subscribe(
+		const manager = createManager({ debounceMs: 50 });
+		await manager.subscribe(
 			{ absolutePath: rootPath, recursive: true },
 			() => {},
 		);
@@ -256,9 +258,6 @@ describe("FsWatcherManager.pathTypes — monotonic growth", () => {
 		// Most-recent paths should still be in the map.
 		const lastPath = path.join(rootPath, `cap-${total - 1}.tmp`);
 		expect(getPathTypes(manager, rootPath).has(lastPath)).toBe(true);
-
-		await unsubscribe();
-		await manager.close();
 	}, 120_000);
 
 	it("repeated create/delete with unique names grows pathTypes monotonically until delete catches up", async () => {
@@ -270,9 +269,9 @@ describe("FsWatcherManager.pathTypes — monotonic growth", () => {
 		const rootPath = await createTempRoot();
 		tempRoots.push(rootPath);
 
-		const manager = new FsWatcherManager({ debounceMs: 50 });
+		const manager = createManager({ debounceMs: 50 });
 		let createCount = 0;
-		const unsubscribe = await manager.subscribe(
+		await manager.subscribe(
 			{ absolutePath: rootPath, recursive: true },
 			(batch) => {
 				for (const event of batch.events) {
@@ -291,8 +290,5 @@ describe("FsWatcherManager.pathTypes — monotonic growth", () => {
 
 		const peakSize = getPathTypes(manager, rootPath).size;
 		expect(peakSize).toBeGreaterThanOrEqual(totalUnique);
-
-		await unsubscribe();
-		await manager.close();
 	});
 });

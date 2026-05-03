@@ -461,9 +461,13 @@ export class FsWatcherManager {
 			return;
 		}
 
-		const internalEvents = await Promise.all(
-			coalescedEvents.map((event) => this.normalizeEvent(state, event)),
-		);
+		// Sequential so LRU mutations land in event order, not stat-completion
+		// order. Batches are small (debounced ~75 ms) and stat is fast on a
+		// warm fs, so the parallelism wasn't worth the eviction nondeterminism.
+		const internalEvents: InternalWatchEvent[] = [];
+		for (const event of coalescedEvents) {
+			internalEvents.push(await this.normalizeEvent(state, event));
+		}
 		const reconciledEvents = reconcileRenameEvents(internalEvents);
 
 		const searchPatchEvents = reconciledEvents
