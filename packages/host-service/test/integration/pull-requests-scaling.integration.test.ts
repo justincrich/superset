@@ -9,25 +9,19 @@ import { createGitFixture, type GitFixture } from "../helpers/git-fixture";
 import { seedProject, seedWorkspace } from "../helpers/seed";
 
 /**
- * INTEGRATION coverage for finding #1 in
+ * INTEGRATION coverage for the event-driven path of finding #1 in
  * `plans/v2-paths-worktree-perf-findings.md`.
  *
- * Two scenarios:
+ * Wires a real `GitWatcher` into the runtime, lets the initial sweep settle,
+ * then fires a single real `git commit` in one workspace. Asserts that ONLY
+ * that workspace's sync runs — the other N-1 stay quiet. This is the
+ * post-fix steady state: idle workspaces do zero git work.
  *
- * 1. **Safety-net sweep cost** — exercises `syncWorkspaceBranches` directly
- *    (the long-cadence backup that runs every 5 min after the fix). Confirms
- *    the per-workspace cost is constant: ~3 git subprocesses per workspace,
- *    regardless of N. This is the cost the safety net pays *if it fires*.
- *
- * 2. **Event-driven steady state** — wires a real `GitWatcher` into the
- *    runtime, lets the initial sweep settle, then fires a single real
- *    `git commit` in one workspace. Asserts that ONLY that workspace's
- *    sync runs — the other N-1 stay quiet. This is the post-fix steady
- *    state: idle workspaces do zero git work.
- *
- * Uses real bun:sqlite via createTestHost, real on-disk git repos via
- * createGitFixture, and real `simple-git` subprocesses. Instrumentation
- * lives at the `GitFactory` boundary so the count is faithful.
+ * The safety-net sweep's per-workspace cost (linearity + always-walks-N) is
+ * covered by the mock-based unit test in
+ * `packages/host-service/test/pull-requests-scaling.test.ts`. Doing it here
+ * with real simple-git would just multiply the cost without adding signal,
+ * since the unit test already pins the shape.
  */
 
 interface GitOpLog {
@@ -41,10 +35,7 @@ function instrumentGit(
 	log: GitOpLog[],
 	worktreePath: string,
 ): SimpleGit {
-	// Wrap only the methods syncWorkspaceBranches actually exercises. Other
-	// SimpleGit methods are passed through untouched so the wrapper is a
-	// drop-in replacement and we don't accidentally hide other callers.
-	const proxied = new Proxy(realGit, {
+	return new Proxy(realGit, {
 		get(target, prop, receiver) {
 			if (prop === "raw" || prop === "revparse" || prop === "remote") {
 				return (args: string[]) => {
@@ -60,141 +51,7 @@ function instrumentGit(
 			return Reflect.get(target, prop, receiver);
 		},
 	});
-	return proxied;
 }
-
-interface ScalingScenario {
-	host: TestHost;
-	repos: GitFixture[];
-	workspaceIds: string[];
-	gitOpLog: GitOpLog[];
-	manager: PullRequestRuntimeManager;
-	dispose: () => Promise<void>;
-}
-
-async function createScalingScenario(
-	workspaceCount: number,
-): Promise<ScalingScenario> {
-	const host = await createTestHost();
-	const repos: GitFixture[] = [];
-	const workspaceIds: string[] = [];
-
-	for (let i = 0; i < workspaceCount; i++) {
-		const repo = await createGitFixture();
-		repos.push(repo);
-		const { id: projectId } = seedProject(host, {
-			repoPath: repo.repoPath,
-		});
-		// Seed the workspace row with the same branch / sha the freshly-init'd
-		// repo will have so syncWorkspaceBranches sees "no change" — that's the
-		// realistic steady-state where every tick is wasteful.
-		const headSha = await repo.git.revparse(["HEAD"]);
-		const { id } = seedWorkspace(host, {
-			projectId,
-			worktreePath: repo.repoPath,
-			branch: "main",
-			headSha: headSha.trim(),
-		});
-		workspaceIds.push(id);
-	}
-
-	const gitOpLog: GitOpLog[] = [];
-	const manager = new PullRequestRuntimeManager({
-		db: host.db as HostDb,
-		git: async (worktreePath: string) => {
-			return instrumentGit(simpleGit(worktreePath), gitOpLog, worktreePath);
-		},
-		github: async () => ({}) as never,
-		gitWatcher: { onChanged: () => () => {} } as never,
-	});
-
-	// Stub refreshProject — we want to isolate the per-workspace git cost,
-	// not the project-level GraphQL fan-out (which has its own 60s cache and
-	// a separate finding #4).
-	(
-		manager as unknown as { refreshProject: () => Promise<void> }
-	).refreshProject = async () => undefined;
-
-	const dispose = async () => {
-		for (const repo of repos) repo.dispose();
-		await host.dispose();
-	};
-
-	return { host, repos, workspaceIds, gitOpLog, manager, dispose };
-}
-
-describe("syncWorkspaceBranches safety-net sweep — integration scaling", () => {
-	let scenarios: ScalingScenario[] = [];
-
-	afterEach(async () => {
-		await Promise.all(scenarios.map((s) => s.dispose()));
-		scenarios = [];
-	});
-
-	test("real git subprocess count grows linearly with workspace count", async () => {
-		const small = await createScalingScenario(2);
-		scenarios.push(small);
-		await (
-			small.manager as unknown as {
-				syncWorkspaceBranches: () => Promise<void>;
-			}
-		).syncWorkspaceBranches();
-
-		const large = await createScalingScenario(5);
-		scenarios.push(large);
-		await (
-			large.manager as unknown as {
-				syncWorkspaceBranches: () => Promise<void>;
-			}
-		).syncWorkspaceBranches();
-
-		// Each workspace gets the same fixed set of git calls per tick.
-		const perWorkspaceSmall = small.gitOpLog.length / 2;
-		const perWorkspaceLarge = large.gitOpLog.length / 5;
-		expect(perWorkspaceSmall).toBe(perWorkspaceLarge);
-
-		// Sanity: at least branch + HEAD + push-ref = 3 git ops per workspace.
-		expect(perWorkspaceSmall).toBeGreaterThanOrEqual(3);
-
-		// Linearity is the headline assertion.
-		expect(large.gitOpLog.length).toBe((small.gitOpLog.length / 2) * 5);
-
-		console.log(
-			`[integration scaling] real git ops/tick: 2 workspaces=${small.gitOpLog.length}, 5 workspaces=${large.gitOpLog.length}, per-workspace=${perWorkspaceSmall}`,
-		);
-	});
-
-	test("safety-net sweep does the same work on every invocation", async () => {
-		// The safety-net runs every 5 min and always walks every workspace —
-		// that's its job. Two invocations with no real git activity in between
-		// should each pay the same cost. (After the fix, this only happens once
-		// per 5 min instead of once per 30 s, but the per-call shape is the
-		// same.)
-		const scenario = await createScalingScenario(3);
-		scenarios.push(scenario);
-
-		await (
-			scenario.manager as unknown as {
-				syncWorkspaceBranches: () => Promise<void>;
-			}
-		).syncWorkspaceBranches();
-		const firstTickCount = scenario.gitOpLog.length;
-
-		await (
-			scenario.manager as unknown as {
-				syncWorkspaceBranches: () => Promise<void>;
-			}
-		).syncWorkspaceBranches();
-		const totalAfterTwoTicks = scenario.gitOpLog.length;
-
-		expect(totalAfterTwoTicks).toBe(firstTickCount * 2);
-
-		const worktreesTouchedFirstTick = new Set(
-			scenario.gitOpLog.slice(0, firstTickCount).map((c) => c.worktreePath),
-		);
-		expect(worktreesTouchedFirstTick.size).toBe(3);
-	});
-});
 
 interface EventDrivenScenario {
 	host: TestHost;
@@ -313,10 +170,11 @@ describe("PullRequestRuntimeManager event-driven steady state", () => {
 	});
 
 	test("git:changed in one workspace triggers a single-workspace sync, not a full sweep", async () => {
-		const scenario = await createEventDrivenScenario(5);
+		// 3 worktrees is enough to prove "only the target's worktree got ops" —
+		// the other 2 must stay quiet. Larger N just multiplies setup cost.
+		const scenario = await createEventDrivenScenario(3);
 		scenarios.push(scenario);
 
-		// Initial start() does one full sweep + subscribes to GitWatcher.
 		scenario.gitWatcher.start();
 		scenario.manager.start();
 
@@ -331,7 +189,7 @@ describe("PullRequestRuntimeManager event-driven steady state", () => {
 		const baselineLogLength = scenario.gitOpLog.length;
 
 		// Commit in one workspace only.
-		const targetIndex = 2;
+		const targetIndex = 1;
 		const targetRepo = scenario.repos[targetIndex];
 		if (!targetRepo) throw new Error("missing target repo");
 		await targetRepo.commit("event-driven change", {
