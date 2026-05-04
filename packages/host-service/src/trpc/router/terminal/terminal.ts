@@ -5,6 +5,7 @@ import { getSupervisor, waitForDaemonReady } from "../../../daemon";
 import { terminalSessions, workspaces } from "../../../db/schema";
 import {
 	createTerminalSessionInternal,
+	disposeSession,
 	listTerminalSessions,
 	markSessionKilled,
 	parseThemeType,
@@ -130,6 +131,53 @@ export const terminalRouter = router({
 
 			markSessionKilled(input.terminalId, ctx.db);
 			return { terminalId: input.terminalId, status: "killed" as const };
+		}),
+
+	/**
+	 * Hard-remove a Killed session from the in-memory map and DB. Intended
+	 * for the trash-button-on-Killed flow in the dropdown — `killSession`
+	 * is idempotent on already-killed entries so users need an explicit
+	 * purge to clear the dropdown without waiting for the retention TTL.
+	 */
+	purgeSession: protectedProcedure
+		.input(
+			z.object({
+				terminalId: z.string(),
+				workspaceId: z.string(),
+			}),
+		)
+		.mutation(({ ctx, input }) => {
+			const workspace = ctx.db.query.workspaces
+				.findFirst({ where: eq(workspaces.id, input.workspaceId) })
+				.sync();
+
+			if (!workspace) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Workspace not found",
+				});
+			}
+
+			const session = ctx.db.query.terminalSessions
+				.findFirst({ where: eq(terminalSessions.id, input.terminalId) })
+				.sync();
+
+			if (!session) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Terminal session not found",
+				});
+			}
+
+			if (session.originWorkspaceId !== input.workspaceId) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Terminal session does not belong to this workspace",
+				});
+			}
+
+			disposeSession(input.terminalId, ctx.db);
+			return { terminalId: input.terminalId, status: "disposed" as const };
 		}),
 
 	daemon: daemonRouter,

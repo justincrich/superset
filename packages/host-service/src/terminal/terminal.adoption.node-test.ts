@@ -434,7 +434,10 @@ describe("createTerminalSessionInternal — host-service restart adoption", () =
 			db,
 			listed: true,
 		});
-		assert.ok(!("error" in first), `first create failed: ${JSON.stringify(first)}`);
+		assert.ok(
+			!("error" in first),
+			`first create failed: ${JSON.stringify(first)}`,
+		);
 		const firstPid = "error" in first ? -1 : first.pty.pid;
 
 		markSessionKilled(terminalId, db);
@@ -443,8 +446,15 @@ describe("createTerminalSessionInternal — host-service restart adoption", () =
 		// the dropdown's "Killed" status.
 		const afterKill = listTerminalSessions({ workspaceId });
 		const killedEntry = afterKill.find((s) => s.terminalId === terminalId);
-		assert.ok(killedEntry, "killed session should remain in listTerminalSessions");
-		assert.equal(killedEntry?.exited, true, "killed session should report exited=true");
+		assert.ok(
+			killedEntry,
+			"killed session should remain in listTerminalSessions",
+		);
+		assert.equal(
+			killedEntry?.exited,
+			true,
+			"killed session should report exited=true",
+		);
 
 		// Resurrect: same terminalId → fresh PTY, different pid.
 		const second = await createTerminalSessionInternal({
@@ -477,7 +487,12 @@ describe("createTerminalSessionInternal — host-service restart adoption", () =
 		disposeSession(terminalId, db);
 	});
 
-	test("markSessionKilled on an already-killed entry hard-disposes", async () => {
+	test("markSessionKilled is idempotent on already-killed entries", async () => {
+		// The renderer's pane-close path fires both a ws "dispose" frame and a
+		// trpc killSession in quick succession. Both land on markSessionKilled,
+		// and the second call must NOT escalate to a hard dispose — otherwise
+		// the entry never reaches the dropdown as "Killed". Use disposeSession
+		// directly (or the purgeSession trpc) for an explicit hard-remove.
 		const terminalId = `e2e-killed-twice-${randomUUID().slice(0, 8)}`;
 
 		const created = await createTerminalSessionInternal({
@@ -489,15 +504,20 @@ describe("createTerminalSessionInternal — host-service restart adoption", () =
 		assert.ok(!("error" in created));
 
 		markSessionKilled(terminalId, db);
-		assert.ok(
-			listTerminalSessions({ workspaceId }).some((s) => s.terminalId === terminalId),
-			"first kill should retain the entry",
-		);
-
 		markSessionKilled(terminalId, db);
 		assert.ok(
-			!listTerminalSessions({ workspaceId }).some((s) => s.terminalId === terminalId),
-			"second kill should remove the entry",
+			listTerminalSessions({ workspaceId }).some(
+				(s) => s.terminalId === terminalId,
+			),
+			"both calls should leave the entry retained",
+		);
+
+		disposeSession(terminalId, db);
+		assert.ok(
+			!listTerminalSessions({ workspaceId }).some(
+				(s) => s.terminalId === terminalId,
+			),
+			"explicit disposeSession should remove the entry",
 		);
 	});
 });

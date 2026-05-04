@@ -86,6 +86,8 @@ export function TerminalSessionDropdown({
 	const terminalInstanceId = context.pane.id;
 	const utils = workspaceTrpc.useUtils();
 	const killTerminalSession = workspaceTrpc.terminal.killSession.useMutation();
+	const purgeTerminalSession =
+		workspaceTrpc.terminal.purgeSession.useMutation();
 	const sessionsQuery = workspaceTrpc.terminal.listSessions.useQuery(
 		{ workspaceId },
 		{
@@ -199,21 +201,31 @@ export function TerminalSessionDropdown({
 
 	const removeTerminalSession = async (session: VisibleTerminalSession) => {
 		try {
-			await killTerminalSession.mutateAsync({
-				terminalId: session.terminalId,
-				workspaceId,
-			});
-			closePanesForTerminal(session.terminalId);
+			if (session.exited) {
+				// Already killed — second click on the trash icon is the user
+				// asking to purge the entry from the dropdown.
+				await purgeTerminalSession.mutateAsync({
+					terminalId: session.terminalId,
+					workspaceId,
+				});
+			} else {
+				await killTerminalSession.mutateAsync({
+					terminalId: session.terminalId,
+					workspaceId,
+				});
+				closePanesForTerminal(session.terminalId);
+			}
 		} finally {
 			await utils.terminal.listSessions.invalidate({ workspaceId });
 		}
 	};
 
 	const handleRemoveTerminal = (session: VisibleTerminalSession) => {
+		const isKilled = session.exited;
 		toast.promise(removeTerminalSession(session), {
-			loading: "Removing terminal...",
-			success: "Terminal removed",
-			error: "Failed to remove terminal",
+			loading: isKilled ? "Removing terminal..." : "Killing terminal...",
+			success: isKilled ? "Terminal removed" : "Terminal killed",
+			error: isKilled ? "Failed to remove terminal" : "Failed to kill terminal",
 		});
 	};
 
@@ -327,7 +339,10 @@ export function TerminalSessionDropdown({
 									<button
 										type="button"
 										aria-label={`Remove terminal ${session.createdAt ? createdAtLabel : "session"}`}
-										disabled={killTerminalSession.isPending}
+										disabled={
+											killTerminalSession.isPending ||
+											purgeTerminalSession.isPending
+										}
 										className="shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30 group-hover:opacity-100"
 										onClick={(event) => {
 											event.preventDefault();

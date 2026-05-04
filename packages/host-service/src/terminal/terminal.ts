@@ -567,12 +567,11 @@ export function markSessionKilled(terminalId: string, db: HostDb): void {
 		return;
 	}
 
-	// Trash button on an already-Killed entry: hard-dispose so it leaves the
-	// dropdown immediately instead of resetting the retention timer.
-	if (session.exited) {
-		disposeSession(terminalId, db);
-		return;
-	}
+	// Idempotent: pane-close fires both a ws "dispose" frame and a trpc
+	// killSession in quick succession; the second call lands on an already-
+	// exited entry. Don't re-tear-down or reset the TTL — just let the entry
+	// sit. Use `purgeKilledSession` for an explicit hard-remove.
+	if (session.exited) return;
 
 	if (session.shellReadyTimeoutId) {
 		clearTimeout(session.shellReadyTimeoutId);
@@ -1093,7 +1092,10 @@ export function registerWorkspaceTerminalRoute({
 					}
 
 					if (message.type === "dispose") {
-						disposeSession(terminalId ?? "", db);
+						// Mark-killed (not hard-dispose) so the entry survives in the
+						// dropdown as "Killed" — the trpc killSession call from the
+						// pane-close path lands here too and is idempotent.
+						markSessionKilled(terminalId ?? "", db);
 						return;
 					}
 
