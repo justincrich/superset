@@ -159,22 +159,20 @@ async function fetchPrMetadata(args: {
 	};
 }
 
-async function localBranchExists(
+async function getLocalBranchHead(
 	git: GitClient,
 	branchName: string,
-): Promise<boolean> {
+): Promise<string | null> {
 	try {
-		// Same trap as refs.ts: `--quiet` causes simple-git's `raw` to
-		// mis-resolve missing refs as success with empty stdout. Verify a
-		// sha was printed to confirm the ref actually exists.
 		const out = await git.raw([
-			"show-ref",
+			"rev-parse",
 			"--verify",
-			`refs/heads/${branchName}`,
+			`refs/heads/${branchName}^{commit}`,
 		]);
-		return /^[0-9a-f]{40,}/.test(out.trim());
+		const trimmed = out.trim();
+		return /^[0-9a-f]{40,}/.test(trimmed) ? trimmed : null;
 	} catch {
-		return false;
+		return null;
 	}
 }
 
@@ -536,10 +534,15 @@ export const workspacesRouter = router({
 					workspaceRow = existing;
 					alreadyExists = true;
 				} else {
-					if (await localBranchExists(git, resolvedBranch)) {
+					const localOid = await getLocalBranchHead(git, resolvedBranch);
+					const adoptLocalBranch =
+						localOid !== null &&
+						localOid.toLowerCase() ===
+							prMetadata.headRefOid.trim().toLowerCase();
+					if (localOid !== null && !adoptLocalBranch) {
 						throw new TRPCError({
 							code: "CONFLICT",
-							message: `Local branch "${resolvedBranch}" already exists outside Superset. Delete it (\`git branch -D ${resolvedBranch}\`) or rename it, then retry.`,
+							message: `Local branch "${resolvedBranch}" exists outside Superset and points at a different commit than PR #${input.pr} (local ${localOid.slice(0, 7)}, PR ${prMetadata.headRefOid.slice(0, 7)}). Inspect with \`git log ${resolvedBranch}\`, then \`git branch -D ${resolvedBranch}\` if safe.`,
 						});
 					}
 
@@ -560,56 +563,70 @@ export const workspacesRouter = router({
 						}
 					};
 
-					try {
-						await git.raw(["worktree", "add", "--detach", worktreePath]);
-					} catch (err) {
-						throw new TRPCError({
-							code: "CONFLICT",
-							message:
-								err instanceof Error
-									? err.message
-									: "Failed to add detached worktree",
-						});
-					}
-
-					try {
-						await execGh(
-							[
-								"pr",
-								"checkout",
-								String(input.pr),
-								"--branch",
-								resolvedBranch,
-								"--force",
-							],
-							{ cwd: worktreePath, timeout: 120_000 },
-						);
-					} catch (err) {
-						let recoveryError: unknown = null;
-						let recovered = false;
+					if (adoptLocalBranch) {
 						try {
-							const recovery = await recoverPrCheckoutAfterGhFailure({
-								git,
-								worktreePath,
-								branch: resolvedBranch,
-								prNumber: input.pr,
-								remoteName: localProject.remoteName ?? "origin",
-								expectedHeadOid: prMetadata.headRefOid,
-								error: err,
-							});
-							recovered = recovery.recovered;
-						} catch (e) {
-							recoveryError = e;
-						}
-						if (!recovered) {
-							await rollbackWorktree();
-							const recoveryMessage = recoveryError
-								? ` Recovery via refs/pull/${input.pr}/head also failed: ${getErrorMessage(recoveryError)}`
-								: "";
+							await git.raw(["worktree", "add", worktreePath, resolvedBranch]);
+						} catch (err) {
 							throw new TRPCError({
-								code: "INTERNAL_SERVER_ERROR",
-								message: `gh pr checkout failed: ${err instanceof Error ? err.message : String(err)}${recoveryMessage}`,
+								code: "CONFLICT",
+								message:
+									err instanceof Error
+										? err.message
+										: "Failed to add worktree for existing branch",
 							});
+						}
+					} else {
+						try {
+							await git.raw(["worktree", "add", "--detach", worktreePath]);
+						} catch (err) {
+							throw new TRPCError({
+								code: "CONFLICT",
+								message:
+									err instanceof Error
+										? err.message
+										: "Failed to add detached worktree",
+							});
+						}
+
+						try {
+							await execGh(
+								[
+									"pr",
+									"checkout",
+									String(input.pr),
+									"--branch",
+									resolvedBranch,
+									"--force",
+								],
+								{ cwd: worktreePath, timeout: 120_000 },
+							);
+						} catch (err) {
+							let recoveryError: unknown = null;
+							let recovered = false;
+							try {
+								const recovery = await recoverPrCheckoutAfterGhFailure({
+									git,
+									worktreePath,
+									branch: resolvedBranch,
+									prNumber: input.pr,
+									remoteName: localProject.remoteName ?? "origin",
+									expectedHeadOid: prMetadata.headRefOid,
+									error: err,
+								});
+								recovered = recovery.recovered;
+							} catch (e) {
+								recoveryError = e;
+							}
+							if (!recovered) {
+								await rollbackWorktree();
+								const recoveryMessage = recoveryError
+									? ` Recovery via refs/pull/${input.pr}/head also failed: ${getErrorMessage(recoveryError)}`
+									: "";
+								throw new TRPCError({
+									code: "INTERNAL_SERVER_ERROR",
+									message: `gh pr checkout failed: ${err instanceof Error ? err.message : String(err)}${recoveryMessage}`,
+								});
+							}
 						}
 					}
 
