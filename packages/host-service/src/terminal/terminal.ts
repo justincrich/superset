@@ -157,6 +157,14 @@ type TerminalServerMessage =
 	| { type: "title"; title: string | null };
 
 const MAX_BUFFER_BYTES = 64 * 1024;
+
+/**
+ * How long an exited (naturally or via killSession) terminal lingers in the
+ * sessions map before being fully disposed. Long enough that a user can pick
+ * it from the dropdown to start a fresh shell on the same terminalId; short
+ * enough that the map doesn't grow without bound.
+ */
+const KILLED_RETENTION_MS = 30 * 60 * 1000;
 const SOCKET_OPEN = 1;
 const SOCKET_CLOSING = 2;
 const SOCKET_CLOSED = 3;
@@ -232,6 +240,21 @@ interface TerminalSession {
 /** PTY lifetime is independent of socket lifetime — sockets detach/reattach freely. */
 const sessions = new Map<string, TerminalSession>();
 
+/**
+ * Pending `disposeSession` timers for killed-but-retained sessions. Keyed by
+ * terminalId. Cleared when the session is resurrected, hard-disposed, or the
+ * timer fires.
+ */
+const killedRetentionTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function clearKilledRetention(terminalId: string): void {
+	const timer = killedRetentionTimers.get(terminalId);
+	if (timer) {
+		clearTimeout(timer);
+		killedRetentionTimers.delete(terminalId);
+	}
+}
+
 // When the daemon disconnects, close every WS socket so the renderer's
 // existing exponential-backoff reconnect kicks in. On reconnect, host-service
 // rebuilds the DaemonClient (next getDaemonClient() call), and the adoption-
@@ -265,6 +288,10 @@ onDaemonDisconnect((err) => {
 			session.unsubscribeDaemon = null;
 		}
 	}
+	for (const timer of killedRetentionTimers.values()) {
+		clearTimeout(timer);
+	}
+	killedRetentionTimers.clear();
 	sessions.clear();
 });
 
@@ -286,6 +313,10 @@ export function __resetSessionsForTesting(): void {
 			}
 		}
 	}
+	for (const timer of killedRetentionTimers.values()) {
+		clearTimeout(timer);
+	}
+	killedRetentionTimers.clear();
 	sessions.clear();
 }
 
@@ -478,6 +509,7 @@ function queueInitialCommand(
  */
 export function disposeSession(terminalId: string, db: HostDb) {
 	const session = sessions.get(terminalId);
+	clearKilledRetention(terminalId);
 
 	if (session) {
 		if (session.shellReadyTimeoutId) {
@@ -513,6 +545,83 @@ export function disposeSession(terminalId: string, db: HostDb) {
 		.set({ status: "disposed", endedAt: Date.now() })
 		.where(eq(terminalSessions.id, terminalId))
 		.run();
+}
+
+/**
+ * Kill the PTY but keep the session entry in memory so it remains visible in
+ * the dropdown as "Killed" until either (a) the user resurrects it by
+ * selecting it (which `createTerminalSessionInternal` translates into a fresh
+ * shell on the same terminalId) or (b) the retention TTL fires and we hard-
+ * dispose the entry.
+ *
+ * Sockets are closed and the daemon subscription is dropped right away — only
+ * the metadata (terminalId, workspaceId, title, createdAt, exit code) sticks
+ * around for the dropdown to render.
+ */
+export function markSessionKilled(terminalId: string, db: HostDb): void {
+	const session = sessions.get(terminalId);
+	if (!session) {
+		// No live entry — fall back to a normal dispose so the DB row gets
+		// updated and any zombie state is cleaned up.
+		disposeSession(terminalId, db);
+		return;
+	}
+
+	// Trash button on an already-Killed entry: hard-dispose so it leaves the
+	// dropdown immediately instead of resetting the retention timer.
+	if (session.exited) {
+		disposeSession(terminalId, db);
+		return;
+	}
+
+	if (session.shellReadyTimeoutId) {
+		clearTimeout(session.shellReadyTimeoutId);
+		session.shellReadyTimeoutId = null;
+	}
+	for (const socket of session.sockets) {
+		socket.close(1000, "Session killed");
+	}
+	session.sockets.clear();
+	if (!session.exited) {
+		try {
+			session.pty.kill();
+		} catch {
+			// PTY may already be dead
+		}
+	}
+	if (session.unsubscribeDaemon) {
+		try {
+			session.unsubscribeDaemon();
+		} catch {
+			// best-effort
+		}
+		session.unsubscribeDaemon = null;
+	}
+	// Mark exited synchronously — the daemon's onExit callback may not fire
+	// after we drop the subscription, so the dropdown would otherwise show
+	// the killed session as "Attached" until the natural exit raced through.
+	session.exited = true;
+	if (session.exitCode === 0 && session.exitSignal === 0) {
+		// Synthesize a SIGTERM signal so listeners can distinguish kill from
+		// clean exit. Real signal arrives later via daemon onExit if it fires.
+		session.exitSignal = 15;
+	}
+
+	portManager.unregisterSession(terminalId);
+
+	db.update(terminalSessions)
+		.set({ status: "exited", endedAt: Date.now() })
+		.where(eq(terminalSessions.id, terminalId))
+		.run();
+
+	clearKilledRetention(terminalId);
+	const timer = setTimeout(() => {
+		killedRetentionTimers.delete(terminalId);
+		disposeSession(terminalId, db);
+	}, KILLED_RETENTION_MS);
+	// Don't keep the host-service process alive just to fire this cleanup.
+	if (typeof timer.unref === "function") timer.unref();
+	killedRetentionTimers.set(terminalId, timer);
 }
 
 /**
@@ -578,8 +687,16 @@ export async function createTerminalSessionInternal({
 }: CreateTerminalSessionOptions): Promise<TerminalSession | { error: string }> {
 	const existing = sessions.get(terminalId);
 	if (existing) {
-		if (listed) existing.listed = true;
-		return existing;
+		if (existing.exited) {
+			// Resurrect: the previous shell is dead but we kept the entry around
+			// for the dropdown. Wipe it so the code below spawns a fresh PTY on
+			// the same terminalId — the DB row gets re-activated below too.
+			clearKilledRetention(terminalId);
+			sessions.delete(terminalId);
+		} else {
+			if (listed) existing.listed = true;
+			return existing;
+		}
 	}
 
 	const workspace = db.query.workspaces
@@ -802,6 +919,17 @@ export async function createTerminalSessionInternal({
 					signal: session.exitSignal,
 					occurredAt: Date.now(),
 				});
+
+				// Keep the entry around long enough for the user to spot it as
+				// "Killed" in the dropdown and resurrect it. After the TTL we
+				// hard-dispose so the map doesn't grow without bound.
+				clearKilledRetention(terminalId);
+				const timer = setTimeout(() => {
+					killedRetentionTimers.delete(terminalId);
+					disposeSession(terminalId, db);
+				}, KILLED_RETENTION_MS);
+				if (typeof timer.unref === "function") timer.unref();
+				killedRetentionTimers.set(terminalId, timer);
 			},
 		},
 	);

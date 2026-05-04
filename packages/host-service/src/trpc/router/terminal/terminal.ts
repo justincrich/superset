@@ -5,8 +5,8 @@ import { getSupervisor, waitForDaemonReady } from "../../../daemon";
 import { terminalSessions, workspaces } from "../../../db/schema";
 import {
 	createTerminalSessionInternal,
-	disposeSession,
 	listTerminalSessions,
+	markSessionKilled,
 	parseThemeType,
 } from "../../../terminal/terminal";
 import { protectedProcedure, router } from "../../index";
@@ -87,7 +87,7 @@ export const terminalRouter = router({
 		.query(({ input }) => ({
 			sessions: listTerminalSessions({
 				workspaceId: input.workspaceId,
-				includeExited: false,
+				includeExited: true,
 			}),
 		})),
 
@@ -128,8 +128,8 @@ export const terminalRouter = router({
 				});
 			}
 
-			disposeSession(input.terminalId, ctx.db);
-			return { terminalId: input.terminalId, status: "disposed" as const };
+			markSessionKilled(input.terminalId, ctx.db);
+			return { terminalId: input.terminalId, status: "killed" as const };
 		}),
 
 	daemon: daemonRouter,

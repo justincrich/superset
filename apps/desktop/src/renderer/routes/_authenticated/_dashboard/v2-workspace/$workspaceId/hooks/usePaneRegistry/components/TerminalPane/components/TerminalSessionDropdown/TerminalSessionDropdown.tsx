@@ -99,6 +99,8 @@ export function TerminalSessionDropdown({
 		const ordered = [...liveSessions].sort((a, b) => {
 			if (a.terminalId === terminalId) return -1;
 			if (b.terminalId === terminalId) return 1;
+			// Live sessions ahead of killed; within each group, newest first.
+			if (a.exited !== b.exited) return a.exited ? 1 : -1;
 			return (b.createdAt ?? 0) - (a.createdAt ?? 0);
 		});
 		if (ordered.some((session) => session.terminalId === terminalId)) {
@@ -146,7 +148,13 @@ export function TerminalSessionDropdown({
 
 		const state = context.store.getState();
 		const terminalPaneLocations = getTerminalPaneLocations(context);
-		const existingLocation = terminalPaneLocations.get(nextTerminalId)?.[0];
+		// Killed sessions exist on the server only as metadata — they have no
+		// open pane to switch to. Always rebind the current pane and let the
+		// host-service's createTerminalSessionInternal spawn a fresh shell on
+		// the same terminalId.
+		const existingLocation = session.exited
+			? undefined
+			: terminalPaneLocations.get(nextTerminalId)?.[0];
 		if (existingLocation) {
 			state.setActiveTab(existingLocation.tabId);
 			state.setActivePane({
@@ -287,9 +295,11 @@ export function TerminalSessionDropdown({
 								? "Current"
 								: session.pending
 									? "Starting"
-									: session.attached
-										? "Attached"
-										: "Detached";
+									: session.exited
+										? "Killed"
+										: session.attached
+											? "Attached"
+											: "Detached";
 							const title = isCurrent
 								? triggerTitle
 								: (session.title ?? location?.titleOverride ?? "Terminal");

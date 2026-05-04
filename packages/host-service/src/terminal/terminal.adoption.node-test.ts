@@ -31,6 +31,7 @@ import {
 	createTerminalSessionInternal,
 	disposeSession,
 	listTerminalSessions,
+	markSessionKilled,
 } from "./terminal.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -422,6 +423,82 @@ describe("createTerminalSessionInternal — host-service restart adoption", () =
 		);
 
 		disposeSession(terminalId, db);
+	});
+
+	test("markSessionKilled keeps the entry visible as exited; resurrect spawns a fresh shell", async () => {
+		const terminalId = `e2e-killed-${randomUUID().slice(0, 8)}`;
+
+		const first = await createTerminalSessionInternal({
+			terminalId,
+			workspaceId,
+			db,
+			listed: true,
+		});
+		assert.ok(!("error" in first), `first create failed: ${JSON.stringify(first)}`);
+		const firstPid = "error" in first ? -1 : first.pty.pid;
+
+		markSessionKilled(terminalId, db);
+
+		// Should still appear in the list, marked exited — that's what powers
+		// the dropdown's "Killed" status.
+		const afterKill = listTerminalSessions({ workspaceId });
+		const killedEntry = afterKill.find((s) => s.terminalId === terminalId);
+		assert.ok(killedEntry, "killed session should remain in listTerminalSessions");
+		assert.equal(killedEntry?.exited, true, "killed session should report exited=true");
+
+		// Resurrect: same terminalId → fresh PTY, different pid.
+		const second = await createTerminalSessionInternal({
+			terminalId,
+			workspaceId,
+			db,
+			listed: true,
+		});
+		assert.ok(
+			!("error" in second),
+			`resurrect after markSessionKilled failed: ${JSON.stringify(second)}`,
+		);
+		if ("error" in second) return;
+
+		assert.notEqual(
+			second.pty.pid,
+			firstPid,
+			"resurrect should spawn a fresh shell, not return the dead session",
+		);
+
+		const afterResurrect = listTerminalSessions({ workspaceId });
+		const liveEntry = afterResurrect.find((s) => s.terminalId === terminalId);
+		assert.ok(liveEntry, "resurrected session should be in the list");
+		assert.equal(
+			liveEntry?.exited,
+			false,
+			"resurrected session should not be marked exited",
+		);
+
+		disposeSession(terminalId, db);
+	});
+
+	test("markSessionKilled on an already-killed entry hard-disposes", async () => {
+		const terminalId = `e2e-killed-twice-${randomUUID().slice(0, 8)}`;
+
+		const created = await createTerminalSessionInternal({
+			terminalId,
+			workspaceId,
+			db,
+			listed: true,
+		});
+		assert.ok(!("error" in created));
+
+		markSessionKilled(terminalId, db);
+		assert.ok(
+			listTerminalSessions({ workspaceId }).some((s) => s.terminalId === terminalId),
+			"first kill should retain the entry",
+		);
+
+		markSessionKilled(terminalId, db);
+		assert.ok(
+			!listTerminalSessions({ workspaceId }).some((s) => s.terminalId === terminalId),
+			"second kill should remove the entry",
+		);
 	});
 });
 

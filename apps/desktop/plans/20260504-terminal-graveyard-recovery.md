@@ -1,116 +1,104 @@
-# Terminal graveyard: recover scrollback after pty death
+# Killed terminals stay in the dropdown for resurrect
 
 ## Problem
 
-Today scrollback recovery only works while the `Session` object is alive in
-memory. The plumbing exists — `SerializeAddon` keeps a live snapshot
-(`apps/desktop/src/main/lib/terminal/session.ts:35`) and `recoverScrollback`
-replays an `existingScrollback` string into a fresh headless terminal
-(`session.ts:48-58`) — but `handleSessionExit` →
-`scheduleSessionCleanup` disposes the session 5s after the pty exits with
-no clients attached
-(`apps/desktop/src/main/terminal-host/terminal-host.ts:393-433`). Once
-disposed, the buffer is gone. A user who closes a pane (or whose pty is
-killed by `shutdownIfRunning({ killSessions: true })`) cannot reattach to
-the same `paneId` and see prior output.
+Today the v2 terminal-pane dropdown
+(`apps/desktop/src/renderer/.../TerminalSessionDropdown.tsx`) lists only
+live host-service sessions. Statuses are `Current`, `Starting`,
+`Attached`, `Detached`. When a terminal is killed — either via the trash
+icon in the dropdown, the pane's close button, or a natural shell exit —
+the entry vanishes:
 
-## Goal
+- User-kill goes through `terminal.killSession` → `disposeSession`,
+  which calls `sessions.delete(terminalId)` in
+  `packages/host-service/src/terminal/terminal.ts`. Gone.
+- Natural shell exit fires the daemon's `onExit` callback, which sets
+  `session.exited = true` but leaves the entry in the map. The trpc
+  `listSessions` then filtered with `includeExited: false`, so the entry
+  was hidden anyway.
 
-Persist the serialized buffer at session death so a later
-`createSession({ paneId })` can replay it via the existing
-`existingScrollback` path. No protocol changes; no UI changes required.
+Result: a user who closes a terminal can't get back to "the terminal I
+just had" without retyping its workspace context, environment, etc. They
+also have no visibility into recently-dead sessions.
 
-## Design
+## What ships
 
-### Storage
+The dropdown now lists killed terminals as `Killed` next to existing
+statuses. Selecting one rebinds the current pane to that `terminalId`
+and the host-service spawns a fresh shell on the same id — exactly what
+the user clarified: "load in and just have a new terminal session". No
+scrollback replay (that's a follow-up).
 
-- One file per paneId at `app.getPath('userData')/terminal-graveyard/<paneId>.txt`.
-- Plain text (the SerializeAddon output is already an ANSI-replayable
-  string). No JSON wrapper — keep it cheap to read/write.
-- Metadata (exitCode, exitedAt, byteSize) lives in a sidecar
-  `index.json` updated atomically. Used for GC and diagnostics; never
-  required to replay.
+### Server (host-service)
 
-Why files instead of `local-db`: scrollbacks are large binary-ish blobs
-(tens to hundreds of KB each), the access pattern is single-key
-read/write, and we don't query across them. SQLite would just be
-overhead.
+- `markSessionKilled(terminalId, db)` — kills the PTY, closes sockets,
+  drops the daemon subscription, but **keeps the session entry in the
+  in-memory `sessions` map** with `exited = true`. Schedules a one-shot
+  `disposeSession` after `KILLED_RETENTION_MS` (30 minutes). Calling
+  `markSessionKilled` on an already-killed entry hard-disposes
+  immediately, so the trash button removes a Killed entry from the list.
+- The natural-exit path (`wireSession.onExit`) also schedules the same
+  TTL timer, so a session that ends via the shell's own `exit` shows as
+  Killed for 30 min before being pruned.
+- `createTerminalSessionInternal` early-returns the existing session
+  unless it's exited; an exited entry is wiped (timer cleared) so the
+  rest of the function spawns a fresh PTY on the same id. The DB row's
+  status is re-activated by the `onConflictDoUpdate` that already exists
+  there.
+- `terminal.killSession` trpc procedure swaps `disposeSession` for
+  `markSessionKilled`. Other dispose callers (workspace teardown,
+  daemon-disconnect cleanup, `__resetSessionsForTesting`) keep using
+  `disposeSession` — they need to fully evict.
+- `terminal.listSessions` trpc procedure swaps `includeExited: false`
+  for `includeExited: true` so killed entries reach the renderer.
+- The `KILLED_RETENTION_MS` timers are tracked in
+  `killedRetentionTimers` and cleared on resurrect, hard-dispose, and
+  daemon-disconnect.
 
-### Write path
+### Renderer
 
-In `handleSessionExit` (`terminal-host.ts:393`), before scheduling
-cleanup:
+`TerminalSessionDropdown.tsx`:
 
-1. Call `getSerializedScrollback(session)`.
-2. If non-empty and under the per-entry cap (e.g. 256 KB), write to
-   `terminal-graveyard/<paneId>.txt` and update `index.json`.
-3. Continue to `scheduleSessionCleanup` as today.
+- Status renderer adds a `session.exited ? "Killed" : ...` branch.
+- Sort prefers live entries above killed within the dropdown body.
+- `handleSelectSession` skips the "switch to existing pane location"
+  shortcut when the picked session is killed (it has no live pane to
+  switch to). Falls through to the rebind path → host-service spawns a
+  fresh shell on the same id.
+- The trash-icon flow is unchanged from the user's perspective: first
+  click marks killed (entry stays as "Killed"), second click hard-
+  disposes (entry leaves the list).
 
-Also write opportunistically on a timer (every ~30s) for *attached* but
-long-lived sessions, so a hard crash of the host process still leaves a
-recent snapshot. Skip the timer write if the buffer hash is unchanged.
+## Out of scope (intentional follow-ups)
 
-### Read path
+- **Scrollback replay.** Resurrect today gives a fresh shell with no
+  prior output. Restoring scrollback would require persisting the host-
+  service `session.buffer` to disk on kill — separate change.
+- **Cross-restart persistence.** Killed sessions live only in the host-
+  service's in-memory map. A host-service restart still loses them.
+- **Per-pane TTL override / settings UI.** 30 minutes is hard-coded.
+- **"Recently killed" sub-section header.** All entries flow through the
+  same list; only the status text differentiates them.
 
-In `createSession` (`session.ts:79`), if `existingScrollback` is null,
-look up `terminal-graveyard/<paneId>.txt` and pass its contents. The
-existing `recoverScrollback` call handles the rest. Delete the file
-immediately after a successful read so we don't double-replay if the
-session later exits and gets a new scrollback.
+## Risk
 
-### Garbage collection
+- **Resource pin until TTL.** The session entry holds a `TerminalSession`
+  record with `buffer: Uint8Array[]` (capped at 64 KB) plus metadata.
+  At 30 min and a 64 KB ceiling per entry, worst-case footprint is
+  bounded; pruning races are handled because resurrect/hard-dispose
+  always clear the timer first via `clearKilledRetention`.
+- **DB row status.** Killed sessions sit in `terminalSessions` with
+  status `exited` until the TTL fires `disposeSession`, which sets
+  `disposed`. Existing consumers of that table look only at non-disposed
+  rows, so the extra `exited` lifetime is harmless.
 
-Run on app start, then daily:
+## Tests
 
-- Drop entries older than **48 hours** (configurable).
-- Cap total directory size at **50 MB**; evict oldest until under.
-- Drop entries whose `paneId` no longer appears in any persisted
-  workspace (cross-reference the pane store on app start).
-
-Also: prune on settings change "clear terminal history" and on
-`shutdownIfRunning({ killSessions: true })` when invoked by user-driven
-quit (not by auto-update — see memory).
-
-## Risks
-
-**Secrets in scrollback.** Serialized output can include API keys,
-`env` dumps, oauth flows the user expected to die with the process.
-Mitigations:
-
-- Default 48h TTL, not "forever".
-- User-facing setting: "Recover terminal scrollback after close"
-  (default on; off disables both write and read, and triggers a one-shot
-  purge of the directory).
-- File mode `0600`. Directory mode `0700`.
-- No graveyard writes when `process.env.SUPERSET_TERMINAL_DEBUG` is
-  unset *and* the user has opted out — but we always honor the
-  per-pane size cap to bound exposure.
-
-**Replay produces stale output.** The recovered buffer is a snapshot of
-a dead pty. We should make this visually obvious — prepend a single
-dim line like `── recovered from previous session (exited 2h ago) ──`
-to the replayed bytes. The recovery flag (`session.wasRecovered`) is
-already plumbed; surface it in the renderer.
-
-**Disk write on the hot exit path.** Writing synchronously in
-`handleSessionExit` adds latency. Use `fs.promises.writeFile` and don't
-await it from the exit handler — fire-and-forget, log errors.
-
-## Out of scope
-
-- Cross-machine sync.
-- Recovering the *cwd* / shell env of a dead pty (we can record it in
-  the sidecar but we won't auto-restore the working directory; that's a
-  bigger UX decision).
-- v1 vs v2 — both code paths share `session.ts`, so this lands once.
-
-## Test plan
-
-- Unit: graveyard write/read round-trip; GC honors TTL and size cap;
-  index.json stays consistent under concurrent writes.
-- Integration: kill a pty, create a new session for the same paneId,
-  assert `wasRecovered === true` and the headless buffer contains the
-  pre-kill output.
-- Manual: opt-out toggle wipes the directory; recovered banner renders;
-  `shutdownIfRunning({ killSessions: true })` from auto-update path
-  does *not* purge graveyard (memory: services survive Electron swaps).
+- `terminal.adoption.node-test.ts`:
+  - `markSessionKilled` keeps the entry visible as exited; resurrect
+    spawns a fresh shell with a different pid.
+  - Calling `markSessionKilled` twice on the same id removes the entry
+    on the second call.
+- Existing integration tests in
+  `packages/host-service/test/integration/terminal.integration.test.ts`
+  still pass (41/41).
