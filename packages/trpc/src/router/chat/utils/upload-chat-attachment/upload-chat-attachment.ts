@@ -29,6 +29,13 @@ function getFileBuffer(fileData: string): Buffer {
 	return Buffer.from(base64Data, "base64");
 }
 
+function sanitizeExtension(candidate: string | undefined): string | null {
+	if (!candidate) return null;
+	const cleaned = candidate.toLowerCase().replace(/[^a-z0-9]/g, "");
+	if (!cleaned) return null;
+	return cleaned.slice(0, 16);
+}
+
 function getFileExtension({
 	filename,
 	mediaType,
@@ -36,12 +43,13 @@ function getFileExtension({
 	filename: string;
 	mediaType: string;
 }): string {
-	const filenameExtension = filename.split(".").pop()?.trim().toLowerCase();
-	if (filenameExtension) {
-		return filenameExtension;
-	}
+	const dotIndex = filename.lastIndexOf(".");
+	const fromFilename =
+		dotIndex >= 0 ? sanitizeExtension(filename.slice(dotIndex + 1)) : null;
+	if (fromFilename) return fromFilename;
 
-	return mediaType.split("/").pop()?.trim().toLowerCase() || "bin";
+	const fromMediaType = sanitizeExtension(mediaType.split("/").pop());
+	return fromMediaType ?? "bin";
 }
 
 export async function uploadChatAttachment({

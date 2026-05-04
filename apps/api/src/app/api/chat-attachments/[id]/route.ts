@@ -74,6 +74,7 @@ export async function GET(
 		status: 200,
 		headers: {
 			"Content-Type": attachment.mediaType,
+			"X-Content-Type-Options": "nosniff",
 			"Content-Disposition": buildContentDisposition(
 				attachment.filename,
 				attachment.mediaType,
