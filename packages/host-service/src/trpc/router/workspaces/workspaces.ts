@@ -31,6 +31,10 @@ import {
 import { execGh } from "../workspace-creation/utils/exec-gh";
 import { listBranchNames } from "../workspace-creation/utils/list-branch-names";
 import { derivePrLocalBranchName } from "../workspace-creation/utils/pr-branch-name";
+import {
+	getErrorMessage,
+	recoverPrCheckoutAfterGhFailure,
+} from "../workspace-creation/utils/pr-checkout-recovery";
 import { resolveStartPoint } from "../workspace-creation/utils/resolve-start-point";
 import { deduplicateBranchName } from "../workspace-creation/utils/sanitize-branch";
 
@@ -103,6 +107,7 @@ interface PrMetadata {
 	url: string;
 	title: string;
 	headRefName: string;
+	headRefOid: string;
 	baseRefName: string;
 	headRepositoryOwner: string;
 	isCrossRepository: boolean;
@@ -119,7 +124,7 @@ async function fetchPrMetadata(args: {
 			"view",
 			String(args.prNumber),
 			"--json",
-			"number,url,title,headRefName,baseRefName,headRepositoryOwner,isCrossRepository,state",
+			"number,url,title,headRefName,headRefOid,baseRefName,headRepositoryOwner,isCrossRepository,state",
 		],
 		{ cwd: args.cwd, timeout: 30_000 },
 	);
@@ -128,6 +133,7 @@ async function fetchPrMetadata(args: {
 		url: string;
 		title: string;
 		headRefName: string;
+		headRefOid: string;
 		baseRefName: string;
 		headRepositoryOwner: { login: string } | null;
 		isCrossRepository: boolean;
@@ -145,6 +151,7 @@ async function fetchPrMetadata(args: {
 		url: parsed.url,
 		title: parsed.title,
 		headRefName: parsed.headRefName,
+		headRefOid: parsed.headRefOid,
 		baseRefName: parsed.baseRefName,
 		headRepositoryOwner: parsed.headRepositoryOwner?.login ?? "",
 		isCrossRepository: parsed.isCrossRepository,
@@ -578,11 +585,32 @@ export const workspacesRouter = router({
 							{ cwd: worktreePath, timeout: 120_000 },
 						);
 					} catch (err) {
-						await rollbackWorktree();
-						throw new TRPCError({
-							code: "INTERNAL_SERVER_ERROR",
-							message: `gh pr checkout failed: ${err instanceof Error ? err.message : String(err)}`,
-						});
+						let recoveryError: unknown = null;
+						let recovered = false;
+						try {
+							const recovery = await recoverPrCheckoutAfterGhFailure({
+								git,
+								worktreePath,
+								branch: resolvedBranch,
+								prNumber: input.pr,
+								remoteName: localProject.remoteName ?? "origin",
+								expectedHeadOid: prMetadata.headRefOid,
+								error: err,
+							});
+							recovered = recovery.recovered;
+						} catch (e) {
+							recoveryError = e;
+						}
+						if (!recovered) {
+							await rollbackWorktree();
+							const recoveryMessage = recoveryError
+								? ` Recovery via refs/pull/${input.pr}/head also failed: ${getErrorMessage(recoveryError)}`
+								: "";
+							throw new TRPCError({
+								code: "INTERNAL_SERVER_ERROR",
+								message: `gh pr checkout failed: ${err instanceof Error ? err.message : String(err)}${recoveryMessage}`,
+							});
+						}
 					}
 
 					await enablePushAutoSetupRemote(
