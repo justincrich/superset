@@ -164,7 +164,7 @@ export const FileRow = memo(function FileRow({
 							<ChevronDown className="size-3.5" />
 						</button>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-56">
+					<DropdownMenuContent align="end" className="w-64">
 						<DropdownMenuItem onSelect={() => onSelect?.(file.path)}>
 							<GitCompare />
 							Open Diff
@@ -210,7 +210,7 @@ export const FileRow = memo(function FileRow({
 				</ContextMenuTrigger>
 				<TooltipContent side="right">{CLICK_HINT_TOOLTIP}</TooltipContent>
 			</Tooltip>
-			<ContextMenuContent className="w-56">
+			<ContextMenuContent className="w-64">
 				<ContextMenuItem onSelect={() => onSelect?.(file.path)}>
 					<GitCompare />
 					Open Diff

@@ -24,7 +24,7 @@ export function FolderContextMenu({
 	onDelete,
 }: FolderContextMenuProps) {
 	return (
-		<ContextMenuContent className="w-56">
+		<ContextMenuContent className="w-64">
 			<ContextMenuItem onSelect={() => setTimeout(onNewFile, 0)}>
 				<FilePlus />
 				New File...

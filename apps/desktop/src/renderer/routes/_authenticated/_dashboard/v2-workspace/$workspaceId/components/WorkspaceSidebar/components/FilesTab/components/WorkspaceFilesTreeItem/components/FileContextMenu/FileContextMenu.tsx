@@ -37,7 +37,7 @@ export function FileContextMenu({
 	onDelete,
 }: FileContextMenuProps) {
 	return (
-		<ContextMenuContent className="w-56">
+		<ContextMenuContent className="w-64">
 			<ContextMenuItem onSelect={onOpen}>
 				<FileText />
 				Open
