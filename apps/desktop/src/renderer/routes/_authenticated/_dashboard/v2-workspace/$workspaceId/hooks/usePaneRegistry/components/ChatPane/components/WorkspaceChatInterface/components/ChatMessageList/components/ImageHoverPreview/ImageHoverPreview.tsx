@@ -24,7 +24,7 @@ export function ImageHoverPreview({
 	children,
 }: ImageHoverPreviewProps) {
 	return (
-		<HoverCard openDelay={0} closeDelay={0}>
+		<HoverCard openDelay={200} closeDelay={50}>
 			<HoverCardTrigger asChild>
 				<span className={cn("inline-flex max-w-full", triggerClassName)}>
 					{children}
