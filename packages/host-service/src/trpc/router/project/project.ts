@@ -141,22 +141,44 @@ export const projectRouter = router({
 				!!cloneUrl &&
 				cloneUrl.toLowerCase() === expectedUrlLower;
 
-			// Local-DB lookup by path. Don't short-circuit — we still want to
-			// surface other v2 projects in the org so the picker can offer
-			// alternatives when the local row is stale.
+			// Local-DB short-circuit: when this device already has a v2
+			// project at the requested path AND cloud confirms it still
+			// exists, return just that one candidate. Re-walking all remotes
+			// would surface org-level duplicates that aren't actionable for
+			// callers who already linked this folder (folder-first import in
+			// particular). Migration importer rarely hits this branch — v1
+			// paths typically have no local-DB row yet.
 			const localProject = ctx.db.query.projects
 				.findFirst({ where: eq(projects.repoPath, gitRoot) })
 				.sync();
 			if (localProject) {
-				byId.set(localProject.id, {
-					id: localProject.id,
-					name: localProject.repoName ?? basename(gitRoot),
-					repoCloneUrl: localProject.repoUrl ?? null,
-					source: "local-path",
-					matchesExpected: matches(localProject.repoUrl ?? null),
-					// Filled in below after we hear back from cloud.
-					staleLocalLink: false,
-				});
+				let stale = false;
+				try {
+					await ctx.api.v2Project.get.query({
+						organizationId: ctx.organizationId,
+						id: localProject.id,
+					});
+				} catch {
+					stale = true;
+				}
+				if (!stale) {
+					return {
+						candidates: [
+							{
+								id: localProject.id,
+								name: localProject.repoName ?? basename(gitRoot),
+								repoCloneUrl: localProject.repoUrl ?? null,
+								source: "local-path" as const,
+								matchesExpected: matches(localProject.repoUrl ?? null),
+								staleLocalLink: false,
+							},
+						],
+						cloudErrors: [] as { url: string; message: string }[],
+					};
+				}
+				// Stale local row: fall through to multi-remote cloud walk so
+				// callers see the real cloud projects (or nothing) instead of
+				// linking to a deleted v2 project.
 			}
 
 			// Cloud lookup for every URL we know about.
@@ -196,24 +218,6 @@ export const projectRouter = router({
 						parsed.url,
 						err,
 					);
-				}
-			}
-
-			// Detect stale local-DB row: returned by the path lookup but cloud
-			// never confirmed it via any remote URL. Two ways this happens:
-			// (a) the cloud project was deleted; (b) the local row's tracked
-			// remote URL no longer matches any current remote on the repo.
-			if (localProject) {
-				const candidate = byId.get(localProject.id);
-				if (candidate && candidate.source === "local-path") {
-					try {
-						await ctx.api.v2Project.get.query({
-							organizationId: ctx.organizationId,
-							id: localProject.id,
-						});
-					} catch {
-						candidate.staleLocalLink = true;
-					}
 				}
 			}
 
