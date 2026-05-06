@@ -34,7 +34,7 @@ export function ImportPresetsPage({ organizationId }: ImportPresetsPageProps) {
 		[v2Presets],
 	);
 	const importedNames = useMemo(
-		() => new Set(v2Presets.map((p) => p.name)),
+		() => new Set(v2Presets.flatMap((p) => (p.agentId ? [] : [p.name]))),
 		[v2Presets],
 	);
 
@@ -152,7 +152,7 @@ function PresetRow({
 	return (
 		<ImportRow
 			icon={<LuTerminal className="size-3.5" strokeWidth={2} />}
-			primary={preset.name}
+			primary={v2Name}
 			secondary={preset.description ?? preset.commands[0]}
 			action={action}
 		/>
