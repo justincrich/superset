@@ -122,6 +122,7 @@ export function ImportWorkspacesPage({
 		workspacesQuery.isPending ||
 		worktreesQuery.isPending ||
 		hostProjectListQuery.isPending ||
+		cloudWorkspacesQuery.isPending ||
 		worktreeListQueries.some((q) => q.isPending);
 
 	const [isRefreshing, setIsRefreshing] = useState(false);
