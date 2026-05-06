@@ -88,39 +88,36 @@ export const projectRouter = router({
 			z.object({
 				repoPath: z.string().min(1),
 				/**
-				 * Optional hint from the caller (e.g. v1→v2 importer) about the
-				 * remote URL the caller *thinks* this project tracks. We cloud-
-				 * query this URL even if it's not currently among the local
-				 * repo's remotes, and tag the matching candidate as
-				 * `matchesExpected: true` so the UI can recommend it. Lets us
-				 * surface the right v2 project when local git remotes have
-				 * drifted (e.g. user cloned a fork as origin).
+				 * Opt-in to the v1→v2 importer's discovery semantics: walk
+				 * every GitHub remote on the repo (not just origin/first),
+				 * try `expectedRemoteUrl` against cloud, and surface stale
+				 * local-DB rows. Default `false` preserves the long-standing
+				 * folder-first import behavior — local-DB hit short-circuits
+				 * before any cloud call, and only the primary remote is
+				 * cloud-queried.
+				 */
+				walkAllRemotes: z.boolean().optional(),
+				/**
+				 * Hint about the remote URL the caller *thinks* this project
+				 * tracks (e.g. v1's recorded githubOwner). Only consulted
+				 * when `walkAllRemotes` is true.
 				 */
 				expectedRemoteUrl: z.string().optional(),
 			}),
 		)
 		.query(async ({ ctx, input }) => {
-			// `resolveLocalRepo` validates the path is a git working tree and
-			// returns the canonical git root. We then re-read all remotes
-			// (rather than just origin/first) so callers see every cloud
-			// project that could plausibly match.
 			const resolved = await resolveLocalRepo(input.repoPath);
 			const gitRoot = resolved.repoPath;
-			const allRemotes = await getGitHubRemotes(simpleGit(gitRoot));
 
-			const expectedParsed = input.expectedRemoteUrl
-				? parseGitHubRemote(input.expectedRemoteUrl)
-				: null;
-
-			// Build the set of GitHub URLs to ask cloud about: every parseable
-			// remote on this repo, plus the caller's expected URL if any.
-			const urlsToQuery = new Map<string, ParsedGitHubRemote>();
-			for (const parsed of allRemotes.values()) {
-				urlsToQuery.set(parsed.url.toLowerCase(), parsed);
-			}
-			if (expectedParsed) {
-				urlsToQuery.set(expectedParsed.url.toLowerCase(), expectedParsed);
-			}
+			const expectedParsed =
+				input.walkAllRemotes && input.expectedRemoteUrl
+					? parseGitHubRemote(input.expectedRemoteUrl)
+					: null;
+			const expectedUrlLower = expectedParsed?.url.toLowerCase();
+			const matches = (cloneUrl: string | null) =>
+				!!expectedUrlLower &&
+				!!cloneUrl &&
+				cloneUrl.toLowerCase() === expectedUrlLower;
 
 			interface Candidate {
 				id: string;
@@ -130,38 +127,19 @@ export const projectRouter = router({
 				matchesExpected: boolean;
 				/** True when this v2 project is no longer reachable in cloud
 				 *  (e.g. deleted) but a stale row still lives in this device's
-				 *  local DB. The UI should drop or visibly mark these. */
+				 *  local DB. Caller-side filter drops these. */
 				staleLocalLink: boolean;
 			}
-			const byId = new Map<string, Candidate>();
 
-			const expectedUrlLower = expectedParsed?.url.toLowerCase();
-			const matches = (cloneUrl: string | null) =>
-				!!expectedUrlLower &&
-				!!cloneUrl &&
-				cloneUrl.toLowerCase() === expectedUrlLower;
-
-			// Local-DB short-circuit: when this device already has a v2
-			// project at the requested path AND cloud confirms it still
-			// exists, return just that one candidate. Re-walking all remotes
-			// would surface org-level duplicates that aren't actionable for
-			// callers who already linked this folder (folder-first import in
-			// particular). Migration importer rarely hits this branch — v1
-			// paths typically have no local-DB row yet.
 			const localProject = ctx.db.query.projects
 				.findFirst({ where: eq(projects.repoPath, gitRoot) })
 				.sync();
-			if (localProject) {
-				let stale = false;
-				try {
-					await ctx.api.v2Project.get.query({
-						organizationId: ctx.organizationId,
-						id: localProject.id,
-					});
-				} catch {
-					stale = true;
-				}
-				if (!stale) {
+
+			// Default behavior (folder-first import): local-DB hit wins,
+			// otherwise one cloud query against origin/first. Preserves the
+			// pre-importer-rewrite contract.
+			if (!input.walkAllRemotes) {
+				if (localProject) {
 					return {
 						candidates: [
 							{
@@ -169,16 +147,67 @@ export const projectRouter = router({
 								name: localProject.repoName ?? basename(gitRoot),
 								repoCloneUrl: localProject.repoUrl ?? null,
 								source: "local-path" as const,
-								matchesExpected: matches(localProject.repoUrl ?? null),
+								matchesExpected: false,
 								staleLocalLink: false,
 							},
 						],
 						cloudErrors: [] as { url: string; message: string }[],
 					};
 				}
-				// Stale local row: fall through to multi-remote cloud walk so
-				// callers see the real cloud projects (or nothing) instead of
-				// linking to a deleted v2 project.
+				const { parsed } = resolved;
+				if (!parsed) return { candidates: [], cloudErrors: [] };
+				try {
+					const { candidates } =
+						await ctx.api.v2Project.findByGitHubRemote.query({
+							organizationId: ctx.organizationId,
+							repoCloneUrl: parsed.url,
+						});
+					return {
+						candidates: candidates.map((c) => ({
+							id: c.id,
+							name: c.name,
+							repoCloneUrl: parsed.url,
+							source: "remote" as const,
+							matchesExpected: false,
+							staleLocalLink: false,
+						})),
+						cloudErrors: [] as { url: string; message: string }[],
+					};
+				} catch (err) {
+					return {
+						candidates: [],
+						cloudErrors: [
+							{
+								url: parsed.url,
+								message: err instanceof Error ? err.message : String(err),
+							},
+						],
+					};
+				}
+			}
+
+			// walkAllRemotes branch — v1→v2 importer.
+			const allRemotes = await getGitHubRemotes(simpleGit(gitRoot));
+
+			const urlsToQuery = new Map<string, ParsedGitHubRemote>();
+			for (const parsed of allRemotes.values()) {
+				urlsToQuery.set(parsed.url.toLowerCase(), parsed);
+			}
+			if (expectedParsed) {
+				urlsToQuery.set(expectedParsed.url.toLowerCase(), expectedParsed);
+			}
+
+			const byId = new Map<string, Candidate>();
+
+			if (localProject) {
+				byId.set(localProject.id, {
+					id: localProject.id,
+					name: localProject.repoName ?? basename(gitRoot),
+					repoCloneUrl: localProject.repoUrl ?? null,
+					source: "local-path",
+					matchesExpected: matches(localProject.repoUrl ?? null),
+					staleLocalLink: false,
+				});
 			}
 
 			// Cloud lookup for every URL we know about.
@@ -218,6 +247,23 @@ export const projectRouter = router({
 						parsed.url,
 						err,
 					);
+				}
+			}
+
+			// Detect stale local-DB row: returned by the path lookup but
+			// cloud never confirmed it via any remote URL. Most likely the
+			// cloud project was deleted by another device or user.
+			if (localProject) {
+				const candidate = byId.get(localProject.id);
+				if (candidate && candidate.source === "local-path") {
+					try {
+						await ctx.api.v2Project.get.query({
+							organizationId: ctx.organizationId,
+							id: localProject.id,
+						});
+					} catch {
+						candidate.staleLocalLink = true;
+					}
 				}
 			}
 

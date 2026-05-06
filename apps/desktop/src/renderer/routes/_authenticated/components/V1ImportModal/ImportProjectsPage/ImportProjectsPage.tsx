@@ -193,6 +193,7 @@ function ProjectRow({
 			const client = getHostServiceClientByUrl(activeHostUrl);
 			return client.project.findByPath.query({
 				repoPath: project.mainRepoPath,
+				walkAllRemotes: true,
 				expectedRemoteUrl,
 			});
 		},
