@@ -1,4 +1,3 @@
-import { FEATURE_FLAGS } from "@superset/shared/constants";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -9,7 +8,6 @@ import { toast } from "@superset/ui/sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import { cn } from "@superset/ui/utils";
 import { useMatchRoute, useNavigate } from "@tanstack/react-router";
-import { useFeatureFlagEnabled } from "posthog-js/react";
 import { HiMiniPlus, HiOutlineClipboardDocumentList } from "react-icons/hi2";
 import {
 	LuClock,
@@ -71,10 +69,6 @@ export function DashboardSidebarHeader({
 	const isWorkspacesListOpen = !!matchRoute({ to: "/v2-workspaces" });
 	const isTasksOpen = !!matchRoute({ to: "/tasks", fuzzy: true });
 	const isAutomationsOpen = !!matchRoute({ to: "/automations", fuzzy: true });
-
-	const showAutomations = useFeatureFlagEnabled(
-		FEATURE_FLAGS.AUTOMATIONS_ACCESS,
-	);
 
 	const {
 		tab: lastTab,
@@ -143,25 +137,23 @@ export function DashboardSidebarHeader({
 					<TooltipContent side="right">Tasks</TooltipContent>
 				</Tooltip>
 
-				{showAutomations && (
-					<Tooltip delayDuration={300}>
-						<TooltipTrigger asChild>
-							<button
-								type="button"
-								onClick={handleAutomationsClick}
-								className={cn(
-									"flex size-8 items-center justify-center rounded-md transition-colors",
-									isAutomationsOpen
-										? "bg-accent text-foreground"
-										: "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-								)}
-							>
-								<LuClock className="size-4" />
-							</button>
-						</TooltipTrigger>
-						<TooltipContent side="right">Automations</TooltipContent>
-					</Tooltip>
-				)}
+				<Tooltip delayDuration={300}>
+					<TooltipTrigger asChild>
+						<button
+							type="button"
+							onClick={handleAutomationsClick}
+							className={cn(
+								"flex size-8 items-center justify-center rounded-md transition-colors",
+								isAutomationsOpen
+									? "bg-accent text-foreground"
+									: "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+							)}
+						>
+							<LuClock className="size-4" />
+						</button>
+					</TooltipTrigger>
+					<TooltipContent side="right">Automations</TooltipContent>
+				</Tooltip>
 
 				<Tooltip delayDuration={300}>
 					<TooltipTrigger asChild>
@@ -239,21 +231,19 @@ export function DashboardSidebarHeader({
 				<span className="flex-1 text-left">Workspaces</span>
 			</button>
 
-			{showAutomations && (
-				<button
-					type="button"
-					onClick={handleAutomationsClick}
-					className={cn(
-						"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors",
-						isAutomationsOpen
-							? "bg-accent text-foreground"
-							: "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-					)}
-				>
-					<LuClock className="size-4 shrink-0" />
-					<span className="flex-1 text-left">Automations</span>
-				</button>
-			)}
+			<button
+				type="button"
+				onClick={handleAutomationsClick}
+				className={cn(
+					"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors",
+					isAutomationsOpen
+						? "bg-accent text-foreground"
+						: "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+				)}
+			>
+				<LuClock className="size-4 shrink-0" />
+				<span className="flex-1 text-left">Automations</span>
+			</button>
 
 			<button
 				type="button"
