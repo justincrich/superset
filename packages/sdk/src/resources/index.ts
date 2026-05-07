@@ -23,11 +23,8 @@ export {
 export { type Host, type HostListResponse, Hosts } from "./hosts";
 export {
 	type Member,
-	type MemberAddParams,
 	type MemberListParams,
 	type MemberListResponse,
-	type MemberRemoveParams,
-	type MemberRemoveResult,
 	Members,
 	Organization,
 	type OrganizationRole,

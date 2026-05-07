@@ -75,11 +75,8 @@ import { Host, HostListResponse, Hosts } from "./resources/hosts";
 import * as API from "./resources/index";
 import {
 	Member,
-	MemberAddParams,
 	MemberListParams,
 	MemberListResponse,
-	MemberRemoveParams,
-	MemberRemoveResult,
 	Members,
 	Organization,
 	OrganizationRole,
@@ -1125,7 +1122,7 @@ export class Superset {
 	automations: API.Automations = new API.Automations(this);
 	/** Agents (per-host terminal-agent rows): list, run. */
 	agents: API.Agents = new API.Agents(this);
-	/** Active-organization config: nested `organization.members.list/add/remove`. */
+	/** Active-organization config: nested `organization.members.list`. */
 	organization: API.Organization = new API.Organization(this);
 }
 
@@ -1159,9 +1156,6 @@ export declare namespace Superset {
 		Member,
 		MemberListResponse,
 		MemberListParams,
-		MemberAddParams,
-		MemberRemoveParams,
-		MemberRemoveResult,
 		OrganizationRole,
 	};
 
