@@ -31,6 +31,7 @@ import {
 import { initTerminalBaseEnv } from "./env.ts";
 import {
 	__resetSessionsForTesting,
+	__testStripTerminalQueries,
 	createTerminalSessionInternal,
 	disposeSession,
 	listTerminalSessions,
@@ -531,11 +532,17 @@ describe("createTerminalSessionInternal — host-service restart adoption", () =
 		const firstPid = "error" in first ? -1 : first.pty.pid;
 		if ("error" in first) return;
 
-		// Seed a title so we can assert it carries across the kill→resurrect
-		// boundary. Scrollback is intentionally NOT carried — replaying TUI
-		// state into a fresh xterm corrupts the new session.
+		// Seed scrollback + title so we can assert they carry across the
+		// kill→resurrect boundary.
+		first.pty.write("echo before-kill\n");
+		await waitForOutput(first.pty, "before-kill", 3000);
 		const seededTitle = "carry-me-across-kill";
 		first.title = seededTitle;
+		const seededScrollbackBytes = first.scrollbackBytes;
+		assert.ok(
+			seededScrollbackBytes > 0,
+			"expected scrollback ring populated before kill",
+		);
 
 		markSessionKilled(terminalId, db);
 
@@ -580,6 +587,19 @@ describe("createTerminalSessionInternal — host-service restart adoption", () =
 			second.title,
 			seededTitle,
 			"resurrected session should inherit the killed session's title",
+		);
+		assert.ok(
+			second.bufferBytes > 0,
+			"resurrected session should have scrollback front-loaded into the replay buffer",
+		);
+		const buffered = Buffer.concat(
+			second.buffer.map((b) =>
+				Buffer.from(b.buffer, b.byteOffset, b.byteLength),
+			),
+		).toString("utf8");
+		assert.ok(
+			buffered.includes("before-kill"),
+			"resurrected replay buffer should contain pre-kill output",
 		);
 
 		const afterResurrect = listTerminalSessions({ workspaceId });
@@ -626,6 +646,56 @@ describe("createTerminalSessionInternal — host-service restart adoption", () =
 			),
 			"explicit disposeSession should remove the entry",
 		);
+	});
+});
+
+describe("stripTerminalQueries", () => {
+	const enc = new TextEncoder();
+	const dec = new TextDecoder();
+
+	function strip(s: string): string {
+		return dec.decode(__testStripTerminalQueries(enc.encode(s)));
+	}
+
+	test("strips Primary DA query (CSI c)", () => {
+		assert.equal(strip("hello\x1b[cworld"), "helloworld");
+		assert.equal(strip("a\x1b[0cb"), "ab");
+	});
+
+	test("strips Secondary DA query (CSI > c)", () => {
+		assert.equal(strip("x\x1b[>cy"), "xy");
+		assert.equal(strip("x\x1b[>0cy"), "xy");
+	});
+
+	test("strips DECRQM (CSI ? Pn $ p)", () => {
+		assert.equal(strip("a\x1b[?2026$pb"), "ab");
+	});
+
+	test("strips DSR (CSI 6 n)", () => {
+		assert.equal(strip("a\x1b[6nb"), "ab");
+	});
+
+	test("strips OSC color queries (?-prefixed)", () => {
+		assert.equal(strip("a\x1b]10;?\x07b"), "ab");
+		assert.equal(strip("a\x1b]11;?\x1b\\b"), "ab");
+	});
+
+	test("strips DCS XTGETTCAP (+q ... ST)", () => {
+		assert.equal(strip("a\x1bP+q5453\x1b\\b"), "ab");
+	});
+
+	test("keeps cursor moves and SGR (no responses elicited)", () => {
+		assert.equal(strip("\x1b[31mred\x1b[0m"), "\x1b[31mred\x1b[0m");
+		assert.equal(strip("\x1b[H\x1b[2J"), "\x1b[H\x1b[2J");
+		assert.equal(strip("\x1b[?1049h"), "\x1b[?1049h"); // alt screen mode set
+	});
+
+	test("keeps non-query OSC sequences (e.g. set title)", () => {
+		assert.equal(strip("\x1b]0;my title\x07"), "\x1b]0;my title\x07");
+	});
+
+	test("keeps incomplete trailing sequences as-is", () => {
+		assert.equal(strip("ok\x1b[31"), "ok\x1b[31");
 	});
 });
 

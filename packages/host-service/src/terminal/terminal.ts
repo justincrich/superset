@@ -156,7 +156,11 @@ type TerminalServerMessage =
 	| { type: "exit"; exitCode: number; signal: number }
 	| { type: "title"; title: string | null };
 
-const MAX_BUFFER_BYTES = 64 * 1024;
+// Replay buffer is sized to match the scrollback ring so a resurrect's
+// carry-over isn't immediately trimmed by the new shell's startup output.
+// Both cap memory growth on long-running detached sessions.
+const MAX_BUFFER_BYTES = 256 * 1024;
+const MAX_SCROLLBACK_BYTES = 256 * 1024;
 
 /**
  * How long an exited (naturally or via killSession) terminal lingers in the
@@ -215,6 +219,14 @@ interface TerminalSession {
 	 */
 	buffer: Uint8Array[];
 	bufferBytes: number;
+	/**
+	 * Rolling scrollback ring — a separate buffer from `buffer` that is
+	 * always populated (regardless of attach state) and never cleared by
+	 * `replayBuffer`. Only consulted on kill→resurrect to carry recent
+	 * output forward. Capped at MAX_SCROLLBACK_BYTES.
+	 */
+	scrollbackRing: Uint8Array[];
+	scrollbackBytes: number;
 	createdAt: number;
 	exited: boolean;
 	exitCode: number;
@@ -417,6 +429,148 @@ function bufferOutput(session: TerminalSession, data: Uint8Array) {
 		if (removed) session.bufferBytes -= removed.byteLength;
 	}
 }
+
+function appendScrollback(session: TerminalSession, data: Uint8Array) {
+	session.scrollbackRing.push(data);
+	session.scrollbackBytes += data.byteLength;
+
+	while (
+		session.scrollbackBytes > MAX_SCROLLBACK_BYTES &&
+		session.scrollbackRing.length > 1
+	) {
+		const removed = session.scrollbackRing.shift();
+		if (removed) session.scrollbackBytes -= removed.byteLength;
+	}
+}
+
+/**
+ * Strip terminal-query escape sequences (CSI/OSC/DCS) that elicit a response
+ * from xterm. Replaying these into a fresh xterm during resurrect causes the
+ * new shell to receive unsolicited responses on stdin and echo them at its
+ * prompt (e.g. `xterm.js(...)` after a DA2 query). Stateful sequences
+ * (cursor, color, mode set/reset) are kept — they're what makes scrollback
+ * actually look right.
+ *
+ * Stripped:
+ * - CSI ending in `c`        → DA1/DA2/DA3 (Device Attributes)
+ * - CSI ending in `n`        → DSR / Cursor Position Report
+ * - CSI with `$` final-prefix and `p` final → DECRQM (Request Mode)
+ * - OSC containing `?`       → color/palette/etc. queries
+ * - DCS starting with `+q`   → XTGETTCAP
+ */
+function stripTerminalQueries(input: Uint8Array): Uint8Array {
+	const chunks: Uint8Array[] = [];
+	let total = 0;
+	const keep = (start: number, endExclusive: number) => {
+		if (endExclusive <= start) return;
+		const slice = input.subarray(start, endExclusive);
+		chunks.push(slice);
+		total += slice.byteLength;
+	};
+
+	let i = 0;
+	while (i < input.length) {
+		if (input[i] !== 0x1b /* ESC */ || i + 1 >= input.length) {
+			keep(i, i + 1);
+			i++;
+			continue;
+		}
+		const next = input[i + 1];
+		if (next === 0x5b /* [ */) {
+			// CSI: scan to final byte 0x40-0x7e
+			let j = i + 2;
+			while (j < input.length) {
+				const c = input[j] ?? 0;
+				if (c >= 0x40 && c <= 0x7e) break;
+				j++;
+			}
+			if (j >= input.length) {
+				keep(i, input.length);
+				i = input.length;
+				continue;
+			}
+			const final = input[j];
+			const lastParam = j > i + 2 ? (input[j - 1] ?? 0) : 0;
+			const isQuery =
+				final === 0x63 /* c */ ||
+				final === 0x6e /* n */ ||
+				(final === 0x70 /* p */ && lastParam === 0x24) /* $ */;
+			if (!isQuery) keep(i, j + 1);
+			i = j + 1;
+			continue;
+		}
+		if (next === 0x5d /* ] */) {
+			// OSC: terminator BEL (0x07) or ST (ESC \)
+			let j = i + 2;
+			let endLen = 0;
+			while (j < input.length) {
+				if (input[j] === 0x07) {
+					endLen = 1;
+					break;
+				}
+				if (
+					input[j] === 0x1b &&
+					j + 1 < input.length &&
+					input[j + 1] === 0x5c
+				) {
+					endLen = 2;
+					break;
+				}
+				j++;
+			}
+			if (j >= input.length) {
+				keep(i, input.length);
+				i = input.length;
+				continue;
+			}
+			const content = input.subarray(i + 2, j);
+			const isQuery = content.indexOf(0x3f /* ? */) !== -1;
+			if (!isQuery) keep(i, j + endLen);
+			i = j + endLen;
+			continue;
+		}
+		if (next === 0x50 /* P */) {
+			// DCS: terminator ST (ESC \)
+			let j = i + 2;
+			let endLen = 0;
+			while (j < input.length) {
+				if (
+					input[j] === 0x1b &&
+					j + 1 < input.length &&
+					input[j + 1] === 0x5c
+				) {
+					endLen = 2;
+					break;
+				}
+				j++;
+			}
+			if (j >= input.length) {
+				keep(i, input.length);
+				i = input.length;
+				continue;
+			}
+			const content = input.subarray(i + 2, j);
+			const isQuery =
+				content.length >= 2 &&
+				content[0] === 0x2b /* + */ &&
+				content[1] === 0x71 /* q */;
+			if (!isQuery) keep(i, j + endLen);
+			i = j + endLen;
+			continue;
+		}
+		keep(i, i + 1);
+		i++;
+	}
+	const out = new Uint8Array(total);
+	let offset = 0;
+	for (const chunk of chunks) {
+		out.set(chunk, offset);
+		offset += chunk.byteLength;
+	}
+	return out;
+}
+
+export const __testStripTerminalQueries = stripTerminalQueries;
 
 function normalizeTerminalDimension(
 	value: number | null | undefined,
@@ -706,15 +860,26 @@ export async function createTerminalSessionInternal({
 }: CreateTerminalSessionOptions): Promise<TerminalSession | { error: string }> {
 	const existing = sessions.get(terminalId);
 	let resurrectedTitle: string | null = null;
+	let resurrectedScrollback: Uint8Array | null = null;
 	if (existing) {
 		if (existing.exited) {
-			// Resurrect: the previous shell is dead but we kept the entry around
-			// for the dropdown. Carry the title forward so the dropdown label
-			// doesn't snap back to "Terminal"; the new shell's OSC scanner
-			// overrides this once it broadcasts a title. Don't carry buffered
-			// output — replaying TUI/escape state into a fresh xterm corrupts
-			// the new session (queries get re-issued and echoed at the prompt).
+			// Resurrect: keep the title (dropdown label) and the killed shell's
+			// scrollback. The scrollback is run through stripTerminalQueries to
+			// drop CSI/OSC/DCS sequences that would elicit a response from the
+			// new xterm — those are why the previous shell's queries used to
+			// echo at the new prompt. Stateful sequences (cursor, color, alt
+			// screen mode) pass through so the visible output looks right.
 			resurrectedTitle = existing.title;
+			if (existing.scrollbackBytes > 0) {
+				const total = existing.scrollbackBytes;
+				const combined = new Uint8Array(total);
+				let offset = 0;
+				for (const chunk of existing.scrollbackRing) {
+					combined.set(chunk, offset);
+					offset += chunk.byteLength;
+				}
+				resurrectedScrollback = stripTerminalQueries(combined);
+			}
 			clearKilledRetention(terminalId);
 			sessions.delete(terminalId);
 		} else {
@@ -871,6 +1036,8 @@ export async function createTerminalSessionInternal({
 		sockets: new Set(),
 		buffer: [],
 		bufferBytes: 0,
+		scrollbackRing: [],
+		scrollbackBytes: 0,
 		createdAt,
 		exited: false,
 		exitCode: 0,
@@ -894,6 +1061,17 @@ export async function createTerminalSessionInternal({
 	};
 	sessions.set(terminalId, session);
 	portManager.upsertSession(terminalId, workspaceId, pty.pid);
+
+	// Front-load the carried-over scrollback into the replay buffer so the
+	// renderer sees prior output above the fresh shell prompt on first attach.
+	// Bypass bufferOutput's 64KB cap since the scrollback ring is sized to
+	// its own (larger) ceiling — we want the user to see real history, not a
+	// one-screen sliver. New shell startup output appended after will still
+	// trigger trimming via bufferOutput once the cap is exceeded.
+	if (resurrectedScrollback && resurrectedScrollback.byteLength > 0) {
+		session.buffer.push(resurrectedScrollback);
+		session.bufferBytes += resurrectedScrollback.byteLength;
+	}
 
 	// If the marker never arrives (broken wrapper, unsupported config),
 	// the timeout unblocks so the session degrades gracefully.
@@ -940,6 +1118,11 @@ export async function createTerminalSessionInternal({
 				);
 				if (hintText.length > 0) portManager.checkOutputForHint(hintText);
 
+				// Always feed the scrollback ring so kill→resurrect has
+				// something to carry over even when the session was actively
+				// attached at kill time. This is independent of the replay
+				// buffer below; replay still operates on detach-window output.
+				appendScrollback(session, bytes);
 				if (broadcastBytes(session, bytes) === 0) {
 					bufferOutput(session, bytes);
 				}
