@@ -69,7 +69,10 @@ export function useRemoteHostStatus(
 	if (!workspace) return { status: "loading" };
 	if (isLocal) return { status: "skip" };
 	if (!isReady) return { status: "loading" };
-	if (!hostRow) return { status: "loading" };
+	// No matching v2Hosts row once the collection is ready — host was
+	// deregistered while the workspace record stuck around. Surface the
+	// offline screen so users have a recovery path instead of a blank div.
+	if (!hostRow) return { status: "offline", hostName: "Unknown host" };
 
 	if (!hostRow.isOnline) {
 		return { status: "offline", hostName: hostRow.name };
@@ -85,7 +88,14 @@ export function useRemoteHostStatus(
 	}
 
 	const hostVersion = infoQuery.data.version;
-	if (!semver.satisfies(hostVersion, `>=${MIN_HOST_SERVICE_VERSION}`)) {
+	// `includePrerelease` keeps dev/staging builds (e.g. 0.9.0-dev.1) from
+	// being rejected by `>=0.8.0` — by default, semver excludes prereleases
+	// from range comparisons unless the range itself names one.
+	if (
+		!semver.satisfies(hostVersion, `>=${MIN_HOST_SERVICE_VERSION}`, {
+			includePrerelease: true,
+		})
+	) {
 		return {
 			status: "incompatible",
 			hostName: hostRow.name,
