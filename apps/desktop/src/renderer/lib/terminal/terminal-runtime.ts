@@ -263,7 +263,9 @@ export function attachToContainer(
 	// context count low and avoid the "all panes lose context at once"
 	// cascade under heavy redraw bursts.
 	if (runtime.webglAddon === null) {
-		runtime.webglAddon = attachWebglRenderer(runtime.terminal);
+		runtime.webglAddon = attachWebglRenderer(runtime.terminal, () => {
+			runtime.webglAddon = null;
+		});
 	}
 
 	if (measureAndResize(runtime)) onResize?.();

@@ -53,9 +53,15 @@ export function loadAddons(terminal: XTerm): LoadAddonsResult {
  * Attach the WebGL renderer to a terminal whose wrapper is in the live DOM.
  * Returns null when WebGL is unavailable (construction failed or a prior
  * context loss flipped the session to DOM-only). On context loss, the addon
- * disposes itself and the session falls back to DOM rendering.
+ * disposes itself and the session falls back to DOM rendering. The caller
+ * supplies `onLost` so it can clear its own reference to the now-disposed
+ * addon (the runtime keeps a `webglAddon` field that would otherwise hold a
+ * stale handle until the next attach/detach cycle).
  */
-export function attachWebglRenderer(terminal: XTerm): WebglAddon | null {
+export function attachWebglRenderer(
+	terminal: XTerm,
+	onLost?: () => void,
+): WebglAddon | null {
 	if (suggestedRendererType === "dom") return null;
 
 	let addon: WebglAddon;
@@ -71,6 +77,7 @@ export function attachWebglRenderer(terminal: XTerm): WebglAddon | null {
 		try {
 			addon.dispose();
 		} catch {}
+		onLost?.();
 		terminal.refresh(0, terminal.rows - 1);
 	});
 
