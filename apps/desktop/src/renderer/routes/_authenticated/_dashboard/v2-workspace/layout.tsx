@@ -7,7 +7,10 @@ import { useCollections } from "renderer/routes/_authenticated/providers/Collect
 import { useWorkspaceCreatesStore } from "renderer/stores/workspace-creates";
 import { WorkspaceCreateErrorState } from "./components/WorkspaceCreateErrorState";
 import { WorkspaceCreatingState } from "./components/WorkspaceCreatingState";
+import { WorkspaceHostIncompatibleState } from "./components/WorkspaceHostIncompatibleState";
+import { WorkspaceHostOfflineState } from "./components/WorkspaceHostOfflineState";
 import { WorkspaceNotFoundState } from "./components/WorkspaceNotFoundState";
+import { useRemoteHostStatus } from "./hooks/useRemoteHostStatus";
 import { WorkspaceProvider } from "./providers/WorkspaceProvider";
 
 export const Route = createFileRoute("/_authenticated/_dashboard/v2-workspace")(
@@ -48,6 +51,8 @@ function V2WorkspaceLayout() {
 		ensureWorkspaceInSidebar(workspace.id, workspace.projectId);
 	}, [ensureWorkspaceInSidebar, workspace]);
 
+	const hostStatus = useRemoteHostStatus(workspace);
+
 	if (!workspaceId || !isReady || !workspaces) {
 		return <div className="flex h-full w-full" />;
 	}
@@ -73,6 +78,22 @@ function V2WorkspaceLayout() {
 			);
 		}
 		return <WorkspaceNotFoundState workspaceId={workspaceId} />;
+	}
+
+	if (hostStatus.status === "offline") {
+		return <WorkspaceHostOfflineState hostName={hostStatus.hostName} />;
+	}
+	if (hostStatus.status === "incompatible") {
+		return (
+			<WorkspaceHostIncompatibleState
+				hostName={hostStatus.hostName}
+				hostVersion={hostStatus.hostVersion}
+				minVersion={hostStatus.minVersion}
+			/>
+		);
+	}
+	if (hostStatus.status === "loading") {
+		return <div className="flex h-full w-full" />;
 	}
 
 	return (
