@@ -2,9 +2,6 @@ import { spawn } from "node:child_process";
 import { boolean, CLIError, positional } from "@superset/cli-framework";
 import { command } from "../../../lib/command";
 
-const UUID_RE =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 function openUrl(url: string): Promise<void> {
 	const [bin, args]: [string, string[]] =
 		process.platform === "darwin"
@@ -38,38 +35,26 @@ export default command({
 			throw new CLIError("No active organization", "Run: superset auth login");
 		}
 
-		let id: string;
-		let name: string;
-		if (UUID_RE.test(query)) {
-			const found = await ctx.api.v2Workspace.getFromHost.query({
-				organizationId,
-				id: query,
-			});
-			if (!found) {
-				throw new CLIError(`Workspace not found: ${query}`);
-			}
-			id = found.id;
-			name = found.name;
-		} else {
-			const workspaces = await ctx.api.v2Workspace.list.query({
-				organizationId,
-			});
-			const matches = workspaces.filter((w) => w.name === query);
-			if (matches.length === 0) {
-				throw new CLIError(
-					`No workspace matched: ${query}`,
-					"Pass a workspace ID or exact name. List options with: superset workspaces list",
-				);
-			}
-			if (matches.length > 1) {
-				throw new CLIError(
-					`Multiple workspaces named "${query}"`,
-					`Pass the workspace ID instead. Matches: ${matches.map((w) => w.id).join(", ")}`,
-				);
-			}
-			id = matches[0]!.id;
-			name = matches[0]!.name;
+		const workspaces = await ctx.api.v2Workspace.list.query({
+			organizationId,
+		});
+		const matches = workspaces.filter(
+			(w) => w.id === query || w.name === query,
+		);
+		if (matches.length === 0) {
+			throw new CLIError(
+				`No workspace matched: ${query}`,
+				"Pass a workspace ID or exact name. List options with: superset workspaces list",
+			);
 		}
+		const exactById = matches.find((w) => w.id === query);
+		if (!exactById && matches.length > 1) {
+			throw new CLIError(
+				`Multiple workspaces named "${query}"`,
+				`Pass the workspace ID instead. Matches: ${matches.map((w) => w.id).join(", ")}`,
+			);
+		}
+		const { id, name } = exactById ?? matches[0]!;
 
 		const url = `superset://v2-workspace/${id}`;
 
