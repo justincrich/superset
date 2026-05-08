@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@superset/ui/popover";
 import { useLiveQuery } from "@tanstack/react-db";
 import { useMemo, useState } from "react";
 import { HiCheck, HiChevronDown, HiOutlineFolder } from "react-icons/hi2";
+import { ProjectThumbnail } from "renderer/routes/_authenticated/components/ProjectThumbnail";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 
 interface ProjectFilterProps {
@@ -59,10 +60,19 @@ export function ProjectFilter({ value, onChange }: ProjectFilterProps) {
 				<Button
 					variant="ghost"
 					size="sm"
+					title={selected ? selected.name : "Project"}
 					className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
 				>
-					<HiOutlineFolder className="size-4" />
-					<span className="text-sm">
+					{selected ? (
+						<ProjectThumbnail
+							projectName={selected.name}
+							iconUrl={selected.iconUrl}
+							className="size-4 rounded-[3px]"
+						/>
+					) : (
+						<HiOutlineFolder className="size-4" />
+					)}
+					<span className="text-sm hidden @4xl:inline">
 						{selected ? selected.name : "Project"}
 					</span>
 					<HiChevronDown className="size-3" />
@@ -92,7 +102,11 @@ export function ProjectFilter({ value, onChange }: ProjectFilterProps) {
 										key={project.id}
 										onSelect={() => handleSelect(project.id)}
 									>
-										<HiOutlineFolder className="size-4 shrink-0" />
+										<ProjectThumbnail
+											projectName={project.name}
+											iconUrl={project.iconUrl}
+											className="size-4 shrink-0 rounded-[3px]"
+										/>
 										<span className="text-sm truncate">{project.name}</span>
 										{project.id === value && (
 											<HiCheck className="ml-auto size-3.5 shrink-0" />

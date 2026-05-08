@@ -1,10 +1,10 @@
 import { Button } from "@superset/ui/button";
 import { Checkbox } from "@superset/ui/checkbox";
-import { useQuery } from "@tanstack/react-query";
-import { useId, useMemo, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { GoIssueClosed, GoIssueOpened } from "react-icons/go";
 import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2";
-import { LuPlus } from "react-icons/lu";
+import { LuMinus, LuPlus } from "react-icons/lu";
 import { useHostUrl } from "renderer/hooks/host-service/useHostTargetUrl";
 import { useDebouncedValue } from "renderer/hooks/useDebouncedValue";
 import { getHostServiceClientByUrl } from "renderer/lib/host-service-client";
@@ -17,13 +17,15 @@ import { useOpenNewWorkspaceModal } from "renderer/stores/new-workspace-modal";
 interface GitHubIssuesContentProps {
 	projectFilter: string | null;
 	searchQuery: string;
-	sectioned?: boolean;
+	onCollapse?: () => void;
 }
+
+const PAGE_SIZE = 30;
 
 export function GitHubIssuesContent({
 	projectFilter,
 	searchQuery,
-	sectioned = false,
+	onCollapse,
 }: GitHubIssuesContentProps) {
 	const [showClosed, setShowClosed] = useState(false);
 	const showClosedId = useId();
@@ -33,7 +35,14 @@ export function GitHubIssuesContent({
 	const resetDraft = useNewWorkspaceDraftStore((s) => s.resetDraft);
 	const openModal = useOpenNewWorkspaceModal();
 
-	const { data, isFetching, error } = useQuery({
+	const {
+		data,
+		isFetching,
+		isFetchingNextPage,
+		fetchNextPage,
+		hasNextPage,
+		error,
+	} = useInfiniteQuery({
 		queryKey: [
 			"tasks",
 			"searchGitHubIssues",
@@ -42,23 +51,56 @@ export function GitHubIssuesContent({
 			debouncedQuery.trim(),
 			showClosed,
 		],
-		queryFn: async () => {
-			if (!hostUrl || !projectFilter) return { issues: [] };
+		queryFn: async ({ pageParam }) => {
+			if (!hostUrl || !projectFilter) {
+				return {
+					issues: [],
+					totalCount: 0,
+					hasNextPage: false,
+					page: pageParam,
+				};
+			}
 			const client = getHostServiceClientByUrl(hostUrl);
 			return client.workspaceCreation.searchGitHubIssues.query({
 				projectId: projectFilter,
 				query: debouncedQuery.trim() || undefined,
-				limit: 50,
+				limit: PAGE_SIZE,
 				includeClosed: showClosed,
+				page: pageParam,
 			});
 		},
+		initialPageParam: 1,
+		getNextPageParam: (lastPage) =>
+			lastPage.hasNextPage ? lastPage.page + 1 : undefined,
 		enabled: !!projectFilter && !!hostUrl,
 		retry: false,
 	});
 
-	const issues = useMemo(() => data?.issues ?? [], [data]);
-	const repoMismatch =
-		data && "repoMismatch" in data ? data.repoMismatch : null;
+	const issues = useMemo(
+		() => data?.pages.flatMap((p) => p.issues) ?? [],
+		[data],
+	);
+	const totalCount = data?.pages[0]?.totalCount ?? 0;
+	const repoMismatch = useMemo(() => {
+		const first = data?.pages[0];
+		return first && "repoMismatch" in first ? first.repoMismatch : null;
+	}, [data]);
+
+	const scrollRef = useRef<HTMLDivElement>(null);
+	const sentinelRef = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		const el = sentinelRef.current;
+		const root = scrollRef.current;
+		if (!el || !root || !hasNextPage || isFetchingNextPage) return;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting) fetchNextPage();
+			},
+			{ root, rootMargin: "200px" },
+		);
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
 	const handleAddToWorkspace = (issue: (typeof issues)[number]) => {
 		if (!projectFilter) return;
@@ -84,7 +126,7 @@ export function GitHubIssuesContent({
 
 	if (!projectFilter) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-8">
+			<div className="flex h-full items-center justify-center p-8">
 				<div className="flex flex-col items-center gap-2 text-muted-foreground text-center">
 					<GoIssueOpened className="h-8 w-8" />
 					<span className="text-sm">Select a project to see issues.</span>
@@ -93,21 +135,36 @@ export function GitHubIssuesContent({
 		);
 	}
 
-	return (
-		<div className="flex flex-col min-h-0">
-			{sectioned && (
-				<div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/30">
-					<GoIssueOpened className="size-3.5 text-muted-foreground" />
-					<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-						GitHub issues
-					</span>
-					<span className="text-xs text-muted-foreground tabular-nums">
-						{issues.length}
-					</span>
-				</div>
-			)}
+	const isInitialLoad = isFetching && issues.length === 0;
+	const countLabel = isInitialLoad
+		? "Loading…"
+		: totalCount === 0
+			? "0"
+			: `${issues.length} of ${totalCount}`;
 
-			<div className="flex items-center gap-2 px-4 py-1.5 border-b text-xs">
+	return (
+		<div className="@container flex flex-col h-full overflow-hidden">
+			<div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/30 shrink-0">
+				<GoIssueOpened className="size-3.5 text-muted-foreground" />
+				<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+					GitHub issues
+				</span>
+				<span className="ml-auto text-xs text-muted-foreground tabular-nums">
+					{countLabel}
+				</span>
+				{onCollapse && (
+					<Button
+						variant="ghost"
+						size="icon-xs"
+						title="Minimize"
+						onClick={onCollapse}
+					>
+						<LuMinus className="size-3.5" />
+					</Button>
+				)}
+			</div>
+
+			<div className="flex items-center gap-2 px-4 py-1.5 border-b text-xs shrink-0">
 				<Checkbox
 					id={showClosedId}
 					checked={showClosed}
@@ -119,97 +176,110 @@ export function GitHubIssuesContent({
 				>
 					Show closed
 				</label>
-				{isFetching && (
+				{isFetching && !isInitialLoad && (
 					<span className="ml-auto text-muted-foreground">Loading…</span>
 				)}
 			</div>
 
-			{error instanceof Error && (
-				<div className="px-4 py-3 text-sm text-destructive select-text cursor-text">
-					{error.message}
-				</div>
-			)}
+			<div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
+				{error instanceof Error && (
+					<div className="px-4 py-3 text-sm text-destructive select-text cursor-text">
+						{error.message}
+					</div>
+				)}
 
-			{repoMismatch && (
-				<div className="px-4 py-3 text-sm text-muted-foreground">
-					Issue URL must match {repoMismatch}.
-				</div>
-			)}
+				{repoMismatch && (
+					<div className="px-4 py-3 text-sm text-muted-foreground">
+						Issue URL must match {repoMismatch}.
+					</div>
+				)}
 
-			{issues.length === 0 && !isFetching && !error ? (
-				<div className="flex-1 flex items-center justify-center p-8">
-					<span className="text-sm text-muted-foreground">
-						{showClosed ? "No issues found." : "No open issues."}
-					</span>
-				</div>
-			) : (
-				<div className="flex flex-col">
-					{issues.map((issue) => {
-						const isClosed = issue.state.toLowerCase() === "closed";
-						const StateIcon = isClosed ? GoIssueClosed : GoIssueOpened;
-						return (
-							// biome-ignore lint/a11y/useSemanticElements: row contains nested action buttons, so the outer element is a div with role/tabIndex
-							<div
-								key={issue.issueNumber}
-								className="group flex items-center gap-3 px-4 py-2 border-b hover:bg-accent/40 cursor-pointer"
-								onClick={() => handleOpenUrl(issue.url)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" || e.key === " ") {
-										e.preventDefault();
-										handleOpenUrl(issue.url);
-									}
-								}}
-								role="button"
-								tabIndex={0}
-							>
-								<StateIcon
-									className={
-										isClosed
-											? "size-4 shrink-0 text-violet-500"
-											: "size-4 shrink-0 text-emerald-500"
-									}
-								/>
-								<span className="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">
-									#{issue.issueNumber}
-								</span>
-								<span className="min-w-0 flex-1 truncate text-sm">
-									{issue.title}
-								</span>
-								{issue.authorLogin && (
-									<span className="hidden shrink-0 text-xs text-muted-foreground md:inline">
-										{issue.authorLogin}
-									</span>
-								)}
-								<div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-									<Button
-										variant="ghost"
-										size="icon-xs"
-										title="Open in browser"
-										onClick={(e) => {
-											e.stopPropagation();
+				{totalCount === 0 && !isFetching && !error ? (
+					<div className="flex h-full items-center justify-center p-8">
+						<span className="text-sm text-muted-foreground">
+							{showClosed ? "No issues found." : "No open issues."}
+						</span>
+					</div>
+				) : (
+					<div className="flex flex-col">
+						{issues.map((issue) => {
+							const isClosed = issue.state.toLowerCase() === "closed";
+							const StateIcon = isClosed ? GoIssueClosed : GoIssueOpened;
+							return (
+								// biome-ignore lint/a11y/useSemanticElements: row contains nested action buttons, so the outer element is a div with role/tabIndex
+								<div
+									key={issue.issueNumber}
+									className="group flex items-center gap-3 px-4 h-9 cursor-pointer border-b border-border/50 hover:bg-accent/50"
+									onClick={() => handleOpenUrl(issue.url)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" || e.key === " ") {
+											e.preventDefault();
 											handleOpenUrl(issue.url);
-										}}
-									>
-										<HiOutlineArrowTopRightOnSquare className="size-3.5" />
-									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										className="h-7 gap-1.5 px-2 text-xs"
-										onClick={(e) => {
-											e.stopPropagation();
-											handleAddToWorkspace(issue);
-										}}
-									>
-										<LuPlus className="size-3.5" />
-										Add to workspace
-									</Button>
+										}
+									}}
+									role="button"
+									tabIndex={0}
+								>
+									<StateIcon
+										className={
+											isClosed
+												? "size-4 shrink-0 text-violet-500"
+												: "size-4 shrink-0 text-emerald-500"
+										}
+									/>
+									<span className="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">
+										#{issue.issueNumber}
+									</span>
+									<span className="min-w-0 flex-1 truncate text-sm font-medium">
+										{issue.title}
+									</span>
+									{issue.authorLogin && (
+										<span className="hidden shrink-0 text-xs text-muted-foreground @md:inline">
+											{issue.authorLogin}
+										</span>
+									)}
+									<div className="flex items-center gap-1">
+										<Button
+											variant="ghost"
+											size="icon-xs"
+											title="Open in browser"
+											onClick={(e) => {
+												e.stopPropagation();
+												handleOpenUrl(issue.url);
+											}}
+										>
+											<HiOutlineArrowTopRightOnSquare className="size-3.5" />
+										</Button>
+										<Button
+											variant="outline"
+											size="sm"
+											title="Add to workspace"
+											className="h-7 gap-1.5 px-2 text-xs"
+											onClick={(e) => {
+												e.stopPropagation();
+												handleAddToWorkspace(issue);
+											}}
+										>
+											<LuPlus className="size-3.5" />
+											<span className="hidden @lg:inline">
+												Add to workspace
+											</span>
+										</Button>
+									</div>
 								</div>
+							);
+						})}
+						{hasNextPage && (
+							<div
+								ref={sentinelRef}
+								className="flex items-center justify-center py-3 text-xs text-muted-foreground"
+							>
+								{isFetchingNextPage ? "Loading more…" : ""}
 							</div>
-						);
-					})}
-				</div>
-			)}
+						)}
+					</div>
+				)}
+			</div>
 		</div>
 	);
 }

@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 import { useTasksFilterStore } from "../../stores/tasks-filter-state";
+import { AllModePanels } from "./components/AllModePanels";
 import { BoardContent } from "./components/BoardContent";
 import { GitHubIssuesContent } from "./components/GitHubIssuesContent";
 import { LinearCTA } from "./components/LinearCTA";
@@ -180,9 +181,7 @@ export function TasksView({
 	};
 
 	const showLinearCTA =
-		integrations !== undefined &&
-		!isLinearConnected &&
-		(typeTab === "all" || typeTab === "tasks");
+		integrations !== undefined && !isLinearConnected && typeTab === "tasks";
 
 	const showTasks = typeTab === "all" || typeTab === "tasks";
 	const showPRs = typeTab === "all" || typeTab === "prs";
@@ -211,8 +210,14 @@ export function TasksView({
 
 			{showLinearCTA ? (
 				<LinearCTA />
+			) : typeTab === "all" ? (
+				<AllModePanels
+					projectFilter={projectFilter}
+					searchQuery={searchQuery}
+					onTaskClick={handleTaskClick}
+				/>
 			) : (
-				<div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-auto">
+				<div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
 					{showTasks &&
 						(viewMode === "board" ? (
 							<BoardContent
@@ -234,14 +239,12 @@ export function TasksView({
 						<PullRequestsContent
 							projectFilter={projectFilter}
 							searchQuery={searchQuery}
-							sectioned={typeTab === "all"}
 						/>
 					)}
 					{showIssues && (
 						<GitHubIssuesContent
 							projectFilter={projectFilter}
 							searchQuery={searchQuery}
-							sectioned={typeTab === "all"}
 						/>
 					)}
 				</div>
