@@ -3,7 +3,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 import { useTasksFilterStore } from "../../stores/tasks-filter-state";
-import { AllModePanels } from "./components/AllModePanels";
 import { BoardContent } from "./components/BoardContent";
 import { GitHubIssuesContent } from "./components/GitHubIssuesContent";
 import { LinearCTA } from "./components/LinearCTA";
@@ -16,7 +15,7 @@ interface TasksViewProps {
 	initialTab?: "all" | "active" | "backlog";
 	initialAssignee?: string;
 	initialSearch?: string;
-	initialType?: "all" | "tasks" | "prs" | "issues";
+	initialType?: "tasks" | "prs" | "issues";
 	initialProject?: string;
 }
 
@@ -32,7 +31,7 @@ export function TasksView({
 	const currentTab: TabValue = initialTab ?? "all";
 	const [searchQuery, setSearchQuery] = useState(initialSearch ?? "");
 	const assigneeFilter = initialAssignee ?? null;
-	const typeTab = initialType ?? "all";
+	const typeTab = initialType ?? "tasks";
 	const projectFilter = initialProject ?? null;
 
 	const {
@@ -52,7 +51,7 @@ export function TasksView({
 			tab?: TabValue;
 			assignee?: string | null;
 			search?: string;
-			type?: "all" | "tasks" | "prs" | "issues";
+			type?: "tasks" | "prs" | "issues";
 			project?: string | null;
 		}) => {
 			const tab = overrides.tab ?? currentTab;
@@ -68,7 +67,7 @@ export function TasksView({
 			if (tab !== "all") search.tab = tab;
 			if (assignee) search.assignee = assignee;
 			if (query) search.search = query;
-			if (type !== "all") search.type = type;
+			if (type !== "tasks") search.type = type;
 			if (project) search.project = project;
 			return search;
 		},
@@ -149,7 +148,7 @@ export function TasksView({
 		});
 	};
 
-	const handleTypeTabChange = (type: "all" | "tasks" | "prs" | "issues") => {
+	const handleTypeTabChange = (type: "tasks" | "prs" | "issues") => {
 		navigate({ to: "/tasks", search: buildSearch({ type }), replace: true });
 	};
 
@@ -183,9 +182,9 @@ export function TasksView({
 	const showLinearCTA =
 		integrations !== undefined && !isLinearConnected && typeTab === "tasks";
 
-	const showTasks = typeTab === "all" || typeTab === "tasks";
-	const showPRs = typeTab === "all" || typeTab === "prs";
-	const showIssues = typeTab === "all" || typeTab === "issues";
+	const showTasks = typeTab === "tasks";
+	const showPRs = typeTab === "prs";
+	const showIssues = typeTab === "issues";
 
 	return (
 		<div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
@@ -210,12 +209,6 @@ export function TasksView({
 
 			{showLinearCTA ? (
 				<LinearCTA />
-			) : typeTab === "all" ? (
-				<AllModePanels
-					projectFilter={projectFilter}
-					searchQuery={searchQuery}
-					onTaskClick={handleTaskClick}
-				/>
 			) : (
 				<div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
 					{showTasks &&

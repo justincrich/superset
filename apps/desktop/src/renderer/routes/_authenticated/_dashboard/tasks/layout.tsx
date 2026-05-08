@@ -4,7 +4,7 @@ export type TasksSearch = {
 	tab?: "all" | "active" | "backlog";
 	assignee?: string;
 	search?: string;
-	type?: "all" | "tasks" | "prs" | "issues";
+	type?: "tasks" | "prs" | "issues";
 	project?: string;
 };
 
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/_dashboard/tasks")({
 			: undefined,
 		assignee: typeof search.assignee === "string" ? search.assignee : undefined,
 		search: typeof search.search === "string" ? search.search : undefined,
-		type: ["all", "tasks", "prs", "issues"].includes(search.type as string)
+		type: ["tasks", "prs", "issues"].includes(search.type as string)
 			? (search.type as TasksSearch["type"])
 			: undefined,
 		project: typeof search.project === "string" ? search.project : undefined,

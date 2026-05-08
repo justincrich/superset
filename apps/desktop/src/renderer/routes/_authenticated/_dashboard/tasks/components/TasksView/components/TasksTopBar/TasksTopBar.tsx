@@ -16,7 +16,6 @@ import { useHotkey } from "renderer/hotkeys";
 import type { TypeTab, ViewMode } from "../../../../stores/tasks-filter-state";
 import type { TaskWithStatus } from "../../hooks/useTasksData";
 import { ActiveIcon } from "../shared/icons/ActiveIcon";
-import { AllIssuesIcon } from "../shared/icons/AllIssuesIcon";
 import { AssigneeFilter } from "./components/AssigneeFilter";
 import { CreateTaskDialog } from "./components/CreateTaskDialog";
 import { ProjectFilter } from "./components/ProjectFilter";
@@ -44,7 +43,6 @@ interface TasksTopBarProps {
 }
 
 const TYPE_TABS = [
-	{ value: "all" as const, label: "All", Icon: AllIssuesIcon },
 	{ value: "tasks" as const, label: "Tasks", Icon: ActiveIcon },
 	{ value: "prs" as const, label: "PRs", Icon: GoGitPullRequest },
 	{ value: "issues" as const, label: "Issues", Icon: GoIssueOpened },

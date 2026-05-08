@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export type ViewMode = "table" | "board";
-export type TypeTab = "all" | "tasks" | "prs" | "issues";
+export type TypeTab = "tasks" | "prs" | "issues";
 
 interface TasksFilterState {
 	tab: "all" | "active" | "backlog";
@@ -23,7 +23,7 @@ export const useTasksFilterStore = create<TasksFilterState>()((set) => ({
 	assignee: null,
 	search: "",
 	viewMode: "table",
-	typeTab: "all",
+	typeTab: "tasks",
 	projectFilter: null,
 	setTab: (tab) => set({ tab }),
 	setAssignee: (assignee) => set({ assignee }),
