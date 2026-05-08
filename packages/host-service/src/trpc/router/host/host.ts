@@ -1,9 +1,16 @@
 import os from "node:os";
+import hostServicePackageJson from "@superset/host-service/package.json" with {
+	type: "json",
+};
 import { getHostId, getHostName } from "@superset/shared/host-info";
-import { HOST_SERVICE_VERSION } from "@superset/shared/host-version";
 import { TRPCError } from "@trpc/server";
 import type { ApiClient } from "../../../types";
 import { protectedProcedure, router } from "../../index";
+
+// Auto-derived from this package's package.json so a host-service version
+// bump automatically flows through to `host.info` and the desktop's
+// strict-equality adoption check (see host-service-coordinator.tryAdopt).
+const HOST_SERVICE_VERSION: string = hostServicePackageJson.version;
 
 const ORGANIZATION_CACHE_TTL_MS = 60 * 60 * 1000;
 

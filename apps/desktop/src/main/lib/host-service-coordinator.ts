@@ -3,9 +3,11 @@ import { randomBytes } from "node:crypto";
 import { EventEmitter } from "node:events";
 import * as fs from "node:fs";
 import path from "node:path";
+import hostServicePackageJson from "@superset/host-service/package.json" with {
+	type: "json",
+};
 import { settings } from "@superset/local-db";
 import { getHostId, getHostName } from "@superset/shared/host-info";
-import { HOST_SERVICE_VERSION as BUNDLED_HOST_SERVICE_VERSION } from "@superset/shared/host-version";
 import { app } from "electron";
 import { env } from "main/env.main";
 import { env as sharedEnv } from "shared/env.shared";
@@ -28,6 +30,10 @@ import {
 } from "./host-service-utils";
 import { localDb } from "./local-db";
 import { HOOK_PROTOCOL_VERSION } from "./terminal/env";
+
+// Bundled at compile time — kept in lockstep with what `host.info` reports
+// because both sides read the same package.json.
+const BUNDLED_HOST_SERVICE_VERSION: string = hostServicePackageJson.version;
 
 export type HostServiceStatus = "starting" | "running" | "stopped";
 

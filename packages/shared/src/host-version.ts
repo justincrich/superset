@@ -1,22 +1,9 @@
 /**
- * Canonical version of host-service in this checkout. Reported by
- * `host.info` at runtime, and bundled into the desktop main process as
- * the version the Electron build expects to run against. Bump on every
- * host-service change shipping a new build.
- *
- * The desktop coordinator pins adoption to this exact value: if a running
- * host-service reports a different version (older or newer), it is killed
- * and respawned from the bundled binary. Pty-daemon — which holds durable
- * session state — has its own manifest + supervisor and survives the swap.
- */
-export const HOST_SERVICE_VERSION = "0.8.0";
-
-/**
  * Minimum host-service version a v2 workspace UI can work with against a
  * **remote** host whose binary we don't control (gates renderer mounting
  * via `useRemoteHostStatus`). For the local host-service we bundle, the
- * desktop coordinator pins to `HOST_SERVICE_VERSION` exactly — this floor
- * does not apply.
+ * desktop coordinator pins to the bundled version exactly (read from
+ * `@superset/host-service/package.json`) — this floor does not apply.
  *
  * 0.4.0: terminal launch moved from `terminal.ensureSession` to
  * `terminal.launchSession` plus WebSocket attach params.

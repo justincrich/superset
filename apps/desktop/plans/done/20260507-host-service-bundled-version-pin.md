@@ -20,7 +20,9 @@ Real PTY state stays in the daemon across the swap.
 
 Replace the floor check with an equality check against the host-service bundled into this Electron build. Reuse the existing kill+respawn path.
 
-1. Promote the host-service version to `HOST_SERVICE_VERSION` in `packages/shared/src/host-version.ts` as the single source of truth. Both `host.info` (runtime, returned to the desktop on adoption probe) and the desktop coordinator (compile-time import as `BUNDLED_HOST_SERVICE_VERSION`) read from this constant — so the value the desktop checks against is the same value the bundled host-service reports. Drift between this constant and `packages/host-service/package.json#version` is a manual concern; the auto-derive-from-package.json approach (mirroring `EXPECTED_DAEMON_VERSION` at `packages/host-service/src/daemon/expected-version.ts`) was deferred because host-service's package.json has historically lagged the runtime-reported version (`packages/host-service/src/trpc/router/host/host.ts` previously hardcoded "0.8.0" while `package.json` was still at "0.1.0"); reconciling that is its own change.
+1. `packages/host-service/package.json#version` is the single source of truth, mirroring the `EXPECTED_DAEMON_VERSION` pattern at `packages/host-service/src/daemon/expected-version.ts`. Both `host.info` (runtime, returned to the desktop on adoption probe) and the desktop coordinator import the package.json directly with `with { type: "json" }` and read `.version`. Bumping `packages/host-service/package.json` automatically bumps both — no shared constant to keep in sync.
+
+   To enable the cross-package import on the desktop side, `packages/host-service/package.json` adds `"./package.json": "./package.json"` to its `exports` map (same as `packages/pty-daemon/package.json`). The package.json version is also bumped from `0.1.0` to `0.8.0` to reconcile a pre-existing drift: `host.info` had been hard-coding `"0.8.0"` for several breaking-change ratchets while `package.json` was never bumped past `0.1.0`. After this PR, `package.json` becomes load-bearing — bumping it kills every running host-service on the next launch.
 2. In `apps/desktop/src/main/lib/host-service-coordinator.ts:289-308`, replace
    ```ts
    !semver.satisfies(version, `>=${MIN_HOST_SERVICE_VERSION}`)
@@ -54,8 +56,9 @@ Everything else is unchanged: `detached: true` spawn, manifest re-adoption on ne
 ## Outcomes & Retrospective
 
 **Shipped:**
-- Promoted the host-service version constant to `HOST_SERVICE_VERSION` in `packages/shared/src/host-version.ts` (single source of truth). `host.info` now reads from there, replacing the previously hardcoded `HOST_SERVICE_VERSION = "0.8.0"` in `packages/host-service/src/trpc/router/host/host.ts`.
-- Desktop coordinator (`apps/desktop/src/main/lib/host-service-coordinator.ts`) imports it as `BUNDLED_HOST_SERVICE_VERSION`. Adoption now requires strict equality — `version !== BUNDLED_HOST_SERVICE_VERSION` triggers kill + respawn.
+- `packages/host-service/package.json#version` is now the single source of truth. Bumped `0.1.0` → `0.8.0` to reconcile with the previously hard-coded value, and added `"./package.json": "./package.json"` to its `exports` map so consumers can import it (same pattern as `packages/pty-daemon/package.json`).
+- `host.info` (`packages/host-service/src/trpc/router/host/host.ts`) imports the package.json with `with { type: "json" }` and returns `pkg.version` — no more hard-coded constant.
+- Desktop coordinator (`apps/desktop/src/main/lib/host-service-coordinator.ts`) imports the same package.json as `BUNDLED_HOST_SERVICE_VERSION`. Adoption now requires strict equality — `version !== BUNDLED_HOST_SERVICE_VERSION` triggers kill + respawn.
 - `MIN_HOST_SERVICE_VERSION` retained for the **remote**-host renderer gate (`useRemoteHostStatus.ts`) where a floor is still the right shape.
 - `semver` import dropped from the coordinator — no longer needed there.
 
