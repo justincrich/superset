@@ -1,21 +1,26 @@
-import { exec } from "node:child_process";
+import { spawn } from "node:child_process";
 import { boolean, CLIError, positional } from "@superset/cli-framework";
 import { command } from "../../../lib/command";
 
 const UUID_RE =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function openUrl(url: string): void {
-	switch (process.platform) {
-		case "darwin":
-			exec(`open "${url}"`);
-			break;
-		case "win32":
-			exec(`start "" "${url}"`);
-			break;
-		default:
-			exec(`xdg-open "${url}"`);
-	}
+function openUrl(url: string): Promise<void> {
+	const [bin, args]: [string, string[]] =
+		process.platform === "darwin"
+			? ["open", [url]]
+			: process.platform === "win32"
+				? ["cmd", ["/c", "start", "", url]]
+				: ["xdg-open", [url]];
+
+	return new Promise((resolve, reject) => {
+		const child = spawn(bin, args, { stdio: "ignore", detached: true });
+		child.once("error", reject);
+		child.once("spawn", () => {
+			child.unref();
+			resolve();
+		});
+	});
 }
 
 export default command({
@@ -69,7 +74,14 @@ export default command({
 		const url = `superset://v2-workspace/${id}`;
 
 		if (!options.print) {
-			openUrl(url);
+			try {
+				await openUrl(url);
+			} catch (err) {
+				throw new CLIError(
+					"Failed to open desktop app",
+					err instanceof Error ? err.message : String(err),
+				);
+			}
 		}
 
 		return {
