@@ -56,9 +56,10 @@ Everything else is unchanged: `detached: true` spawn, manifest re-adoption on ne
 ## Outcomes & Retrospective
 
 **Shipped:**
-- `packages/host-service/package.json#version` is now the single source of truth. Bumped `0.1.0` → `0.8.0` to reconcile with the previously hard-coded value, and added `"./package.json": "./package.json"` to its `exports` map so consumers can import it (same pattern as `packages/pty-daemon/package.json`).
+- `packages/host-service/package.json#version` is now the single source of truth. Bumped `0.1.0` → `0.8.0` to reconcile with the previously hard-coded value, then `0.8.0` → `0.8.1` so existing installs respawn once on next launch. Added `"./package.json": "./package.json"` to its `exports` map so consumers can import it (same pattern as `packages/pty-daemon/package.json`).
 - `host.info` (`packages/host-service/src/trpc/router/host/host.ts`) imports the package.json with `with { type: "json" }` and returns `pkg.version` — no more hard-coded constant.
 - Desktop coordinator (`apps/desktop/src/main/lib/host-service-coordinator.ts`) imports the same package.json as `BUNDLED_HOST_SERVICE_VERSION`. Adoption now requires strict equality — `version !== BUNDLED_HOST_SERVICE_VERSION` triggers kill + respawn.
+- **App-version pin (belt + suspenders).** Added `spawnedByAppVersion` to the host-service manifest; the child writes it from `SUPERSET_APP_VERSION` (passed by the coordinator from `app.getVersion()`). On adoption the coordinator additionally requires `manifest.spawnedByAppVersion === app.getVersion()`. Either pin mismatching triggers respawn — so every desktop auto-update guarantees a fresh host-service even if someone forgets to bump the host-service version on a host-service code change. Pre-existing manifests without the field are coerced to empty string and naturally trip the pin on first launch.
 - `MIN_HOST_SERVICE_VERSION` retained for the **remote**-host renderer gate (`useRemoteHostStatus.ts`) where a floor is still the right shape.
 - `semver` import dropped from the coordinator — no longer needed there.
 

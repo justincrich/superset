@@ -291,6 +291,21 @@ export class HostServiceCoordinator extends EventEmitter {
 		const url = new URL(manifest.endpoint);
 		const port = Number(url.port);
 
+		const currentAppVersion = app.getVersion();
+		if (manifest.spawnedByAppVersion !== currentAppVersion) {
+			const reason = manifest.spawnedByAppVersion
+				? `spawned by app ${manifest.spawnedByAppVersion} != current ${currentAppVersion}`
+				: "no recorded app version (pre-upgrade manifest)";
+			console.log(
+				`[host-service:${organizationId}] Adopted service ${reason}, killing`,
+			);
+			try {
+				process.kill(manifest.pid, "SIGTERM");
+			} catch {}
+			removeManifest(organizationId);
+			return null;
+		}
+
 		const version = await this.fetchHostVersion(
 			manifest.endpoint,
 			manifest.authToken,
@@ -494,6 +509,7 @@ export class HostServiceCoordinator extends EventEmitter {
 			SUPERSET_HOME_DIR: SUPERSET_HOME_DIR,
 			SUPERSET_AGENT_HOOK_PORT: String(sharedEnv.DESKTOP_NOTIFICATIONS_PORT),
 			SUPERSET_AGENT_HOOK_VERSION: HOOK_PROTOCOL_VERSION,
+			SUPERSET_APP_VERSION: app.getVersion(),
 			AUTH_TOKEN: config.authToken,
 			SUPERSET_API_URL: config.cloudApiUrl,
 		});
