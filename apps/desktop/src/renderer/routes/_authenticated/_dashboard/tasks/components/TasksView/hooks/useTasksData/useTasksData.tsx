@@ -20,12 +20,14 @@ interface UseTasksDataParams {
 	filterTab: TabValue;
 	searchQuery: string;
 	assigneeFilter: string | null;
+	projectFilter: string | null;
 }
 
 export function useTasksData({
 	filterTab,
 	searchQuery,
 	assigneeFilter,
+	projectFilter,
 }: UseTasksDataParams): {
 	data: TaskWithStatus[];
 	allStatuses: SelectTaskStatus[];
@@ -59,6 +61,22 @@ export function useTasksData({
 		[collections],
 	);
 
+	const { data: projectMatch } = useLiveQuery(
+		(q) =>
+			q
+				.from({ projects: collections.v2Projects })
+				.where(({ projects }) => eq(projects.id, projectFilter ?? ""))
+				.select(({ projects }) => ({
+					linearConnectionId: projects.linearConnectionId,
+				})),
+		[collections, projectFilter],
+	);
+
+	const projectLinearConnectionId =
+		projectFilter && projectMatch?.[0]
+			? (projectMatch[0].linearConnectionId ?? null)
+			: null;
+
 	const allStatuses = useMemo(() => statusData ?? [], [statusData]);
 
 	const sortedData = useMemo(() => {
@@ -87,6 +105,16 @@ export function useTasksData({
 	const filteredData = useMemo(() => {
 		let result = searchedData;
 
+		// When the selected project is assigned to a Linear workspace, only
+		// show Linear-synced tasks for that workspace plus local (non-Linear)
+		// tasks. When the project has no assignment, show everything.
+		if (projectLinearConnectionId) {
+			result = result.filter((task) => {
+				if (task.externalProvider !== "linear") return true;
+				return task.linearConnectionId === projectLinearConnectionId;
+			});
+		}
+
 		if (filterTab !== "all") {
 			result = result.filter((task) => {
 				const statusType = task.status.type;
@@ -113,7 +141,7 @@ export function useTasksData({
 		}
 
 		return result;
-	}, [searchedData, filterTab, assigneeFilter]);
+	}, [searchedData, filterTab, assigneeFilter, projectLinearConnectionId]);
 
 	return {
 		data: filteredData,

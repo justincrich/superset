@@ -63,12 +63,14 @@ interface UseTasksTableParams {
 	filterTab: TabValue;
 	searchQuery: string;
 	assigneeFilter: string | null;
+	projectFilter: string | null;
 }
 
 export function useTasksTable({
 	filterTab,
 	searchQuery,
 	assigneeFilter,
+	projectFilter,
 }: UseTasksTableParams): {
 	table: Table<TaskWithStatus>;
 	slugColumnWidth: string;
@@ -105,9 +107,32 @@ export function useTasksTable({
 		[collections],
 	);
 
+	const { data: projectMatch } = useLiveQuery(
+		(q) =>
+			q
+				.from({ projects: collections.v2Projects })
+				.where(({ projects }) => eq(projects.id, projectFilter ?? ""))
+				.select(({ projects }) => ({
+					linearConnectionId: projects.linearConnectionId,
+				})),
+		[collections, projectFilter],
+	);
+
+	const projectLinearConnectionId =
+		projectFilter && projectMatch?.[0]
+			? (projectMatch[0].linearConnectionId ?? null)
+			: null;
+
 	const sortedData = useMemo(() => {
 		if (!allData) return [];
-		return allData
+		const filtered = projectLinearConnectionId
+			? allData.filter(
+					(task) =>
+						task.externalProvider !== "linear" ||
+						task.linearConnectionId === projectLinearConnectionId,
+				)
+			: allData;
+		return filtered
 			.map((task) => ({
 				...task,
 				assignee:
@@ -116,7 +141,7 @@ export function useTasksTable({
 						: null,
 			}))
 			.sort(compareTasks);
-	}, [allData]);
+	}, [allData, projectLinearConnectionId]);
 
 	const { search } = useHybridSearch(sortedData);
 
