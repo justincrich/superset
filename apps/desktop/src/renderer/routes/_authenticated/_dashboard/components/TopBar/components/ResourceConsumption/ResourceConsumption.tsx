@@ -1,3 +1,4 @@
+import type { WorkspaceState } from "@superset/panes";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -15,14 +16,19 @@ import {
 	HiOutlineBarsArrowDown,
 	HiOutlineCpuChip,
 } from "react-icons/hi2";
+import { authClient } from "renderer/lib/auth-client";
 import { electronTrpc } from "renderer/lib/electron-trpc";
+import {
+	navigateToWorkspace as navigateToV1Workspace,
+	navigateToV2Workspace,
+} from "renderer/routes/_authenticated/_dashboard/utils/workspace-navigation";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 import { getVisibleSidebarWorkspaces } from "renderer/routes/_authenticated/providers/CollectionsProvider/dashboardSidebarLocal";
 import { useTabsStore } from "renderer/stores/tabs/store";
 import { AppResourceSection } from "./components/AppResourceSection";
 import { MetricBadge } from "./components/MetricBadge";
 import { WorkspaceResourceSection } from "./components/WorkspaceResourceSection";
-import type { SortOption, UsageValues } from "./types";
+import type { SessionMetrics, SortOption, UsageValues } from "./types";
 import { formatCpu, formatMemory, formatPercent } from "./utils/formatters";
 import { normalizeResourceMetricsSnapshot } from "./utils/normalizeSnapshot";
 
@@ -51,7 +57,42 @@ function getTrackedMemorySharePercent(
 	return (totalMemory / hostTotalMemory) * 100;
 }
 
-export function ResourceConsumption() {
+function getTerminalIdFromPaneData(data: unknown): string | null {
+	if (!data || typeof data !== "object") return null;
+	const terminalId = (data as { terminalId?: unknown }).terminalId;
+	return typeof terminalId === "string" && terminalId.length > 0
+		? terminalId
+		: null;
+}
+
+function getTerminalTitleOverrides(
+	rows: Array<{ paneLayout: unknown }>,
+): Map<string, string> {
+	const overrides = new Map<string, string>();
+	for (const row of rows) {
+		const layout = row.paneLayout as WorkspaceState<unknown> | undefined;
+		if (!Array.isArray(layout?.tabs)) continue;
+		for (const tab of layout.tabs) {
+			if (!tab.panes || typeof tab.panes !== "object") continue;
+			for (const pane of Object.values(tab.panes)) {
+				if (pane.kind !== "terminal" || !pane.titleOverride) continue;
+				const terminalId = getTerminalIdFromPaneData(pane.data);
+				if (terminalId && !overrides.has(terminalId)) {
+					overrides.set(terminalId, pane.titleOverride);
+				}
+			}
+		}
+	}
+	return overrides;
+}
+
+interface ResourceConsumptionProps {
+	surface?: "v1" | "v2";
+}
+
+export function ResourceConsumption({
+	surface = "v1",
+}: ResourceConsumptionProps) {
 	const [open, setOpen] = useState(false);
 	const [sortOption, setSortOption] = useState<SortOption>("memory");
 	const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(
@@ -66,9 +107,14 @@ export function ResourceConsumption() {
 	const setActiveTab = useTabsStore((state) => state.setActiveTab);
 	const setFocusedPane = useTabsStore((state) => state.setFocusedPane);
 	const collections = useCollections();
+	const isV2 = surface === "v2";
+	const { data: session } = authClient.useSession();
+	const organizationId = session?.session?.activeOrganizationId ?? undefined;
 
 	const { data: enabled } =
 		electronTrpc.settings.getShowResourceMonitor.useQuery();
+	const shouldQueryMetrics =
+		enabled === true && (!isV2 || Boolean(organizationId));
 
 	const { data: rawSidebarProjects = [] } = useLiveQuery(
 		(q) =>
@@ -87,6 +133,7 @@ export function ResourceConsumption() {
 				.select(({ ws }) => ({
 					workspaceId: ws.workspaceId,
 					isHidden: ws.sidebarState.isHidden,
+					paneLayout: ws.paneLayout,
 				})),
 		[collections],
 	);
@@ -104,38 +151,119 @@ export function ResourceConsumption() {
 		[rawSidebarWorkspaces],
 	);
 
+	const terminalTitleOverrides = useMemo(
+		() => getTerminalTitleOverrides(rawSidebarWorkspaces),
+		[rawSidebarWorkspaces],
+	);
+
+	const { data: rawV2Projects = [] } = useLiveQuery(
+		(q) =>
+			q.from({ project: collections.v2Projects }).select(({ project }) => ({
+				id: project.id,
+				name: project.name,
+			})),
+		[collections],
+	);
+
+	const { data: rawV2Workspaces = [] } = useLiveQuery(
+		(q) =>
+			q
+				.from({ workspace: collections.v2Workspaces })
+				.select(({ workspace }) => ({
+					id: workspace.id,
+					projectId: workspace.projectId,
+					name: workspace.name,
+				})),
+		[collections],
+	);
+
 	const {
 		data: snapshot,
 		refetch,
 		isFetching,
 	} = electronTrpc.resourceMetrics.getSnapshot.useQuery(
-		{ mode: open ? "interactive" : "idle" },
 		{
-			enabled: enabled === true,
+			mode: open ? "interactive" : "idle",
+			surface,
+			organizationId,
+		},
+		{
+			enabled: shouldQueryMetrics,
 			refetchInterval: open ? 2000 : 15000,
 		},
 	);
 
-	if (!enabled) return null;
-	const normalizedSnapshot = normalizeResourceMetricsSnapshot(snapshot);
+	const normalizedSnapshot = useMemo(() => {
+		const normalized = normalizeResourceMetricsSnapshot(snapshot);
+		if (!normalized || !isV2) return normalized;
 
-	const getPaneName = (paneId: string): string => {
-		const pane = panes[paneId];
-		return pane?.name || `Pane ${paneId.slice(0, 6)}`;
+		const projectById = new Map(
+			rawV2Projects.map((project) => [project.id, project]),
+		);
+		const workspaceById = new Map(
+			rawV2Workspaces.map((workspace) => [workspace.id, workspace]),
+		);
+
+		return {
+			...normalized,
+			workspaces: normalized.workspaces.map((workspace) => {
+				const v2Workspace = workspaceById.get(workspace.workspaceId);
+				const projectId = v2Workspace?.projectId ?? workspace.projectId;
+				const project = projectById.get(projectId);
+				return {
+					...workspace,
+					projectId,
+					projectName: project?.name ?? workspace.projectName,
+					workspaceName: v2Workspace?.name ?? workspace.workspaceName,
+					sessions: workspace.sessions.map((session) => ({
+						...session,
+						title:
+							session.title ??
+							terminalTitleOverrides.get(session.sessionId) ??
+							null,
+					})),
+				};
+			}),
+		};
+	}, [snapshot, isV2, rawV2Projects, rawV2Workspaces, terminalTitleOverrides]);
+
+	if (!enabled) return null;
+
+	const getPaneName = (session: SessionMetrics): string => {
+		if (isV2) {
+			return session.title ?? `Terminal ${session.sessionId.slice(0, 8)}`;
+		}
+		const pane = panes[session.paneId];
+		return pane?.name || `Pane ${session.paneId.slice(0, 6)}`;
 	};
 
 	const navigateToWorkspace = (workspaceId: string) => {
-		navigate({ to: `/workspace/${workspaceId}` });
+		if (isV2) {
+			void navigateToV2Workspace(workspaceId, navigate);
+		} else {
+			void navigateToV1Workspace(workspaceId, navigate);
+		}
 		setOpen(false);
 	};
 
 	const navigateToPane = (workspaceId: string, paneId: string) => {
+		if (isV2) {
+			void navigateToV2Workspace(workspaceId, navigate, {
+				search: {
+					terminalId: paneId,
+					focusRequestId: crypto.randomUUID(),
+				},
+			});
+			setOpen(false);
+			return;
+		}
+
 		const pane = panes[paneId];
 		if (pane) {
 			setActiveTab(workspaceId, pane.tabId);
 			setFocusedPane(pane.tabId, paneId);
 		}
-		navigate({ to: `/workspace/${workspaceId}` });
+		void navigateToV1Workspace(workspaceId, navigate);
 		setOpen(false);
 	};
 

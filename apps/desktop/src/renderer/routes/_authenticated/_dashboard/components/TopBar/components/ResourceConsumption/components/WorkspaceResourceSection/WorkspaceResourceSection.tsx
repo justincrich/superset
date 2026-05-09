@@ -31,7 +31,7 @@ interface WorkspaceResourceSectionProps {
 	toggleWorkspace: (workspaceId: string) => void;
 	navigateToWorkspace: (workspaceId: string) => void;
 	navigateToPane: (workspaceId: string, paneId: string) => void;
-	getPaneName: (paneId: string) => string;
+	getPaneName: (session: WorkspaceMetrics["sessions"][number]) => string;
 }
 
 function groupWorkspacesByProject(
@@ -323,7 +323,7 @@ export function WorkspaceResourceSection({
 															sessionClasses.labelClass,
 														)}
 													>
-														{getPaneName(session.paneId)}
+														{getPaneName(session)}
 													</span>
 													<div
 														className={cn(

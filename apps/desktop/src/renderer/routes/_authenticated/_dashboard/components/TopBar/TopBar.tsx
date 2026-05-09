@@ -56,7 +56,7 @@ export function TopBar() {
 						<NavigationControls />
 					</>
 				)}
-				{!isV2CloudEnabled && <ResourceConsumption />}
+				<ResourceConsumption surface={isV2CloudEnabled ? "v2" : "v1"} />
 			</div>
 
 			{!isV2WorkspaceRoute && workspaceId && (
