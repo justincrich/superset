@@ -231,8 +231,8 @@ export function ResourceConsumption({
 					sessions: workspace.sessions.map((session) => ({
 						...session,
 						title:
+							terminalTitleOverrides.get(session.paneId) ??
 							session.title ??
-							terminalTitleOverrides.get(session.sessionId) ??
 							null,
 					})),
 				};
