@@ -6,6 +6,7 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 } from "@superset/ui/dropdown-menu";
+import { cn } from "@superset/ui/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@superset/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import { useLiveQuery } from "@tanstack/react-db";
@@ -31,6 +32,7 @@ import { WorkspaceResourceSection } from "./components/WorkspaceResourceSection"
 import type { SessionMetrics, SortOption, UsageValues } from "./types";
 import { formatCpu, formatMemory, formatPercent } from "./utils/formatters";
 import { normalizeResourceMetricsSnapshot } from "./utils/normalizeSnapshot";
+import { getTrackedHostMemorySeverity } from "./utils/resourceSeverity";
 
 const SORT_LABELS: Record<SortOption, string> = {
 	memory: "Memory",
@@ -320,6 +322,23 @@ export function ResourceConsumption({
 				normalizedSnapshot.host.totalMemory,
 			)
 		: 0;
+
+	const hostShareSeverity = getTrackedHostMemorySeverity(
+		trackedMemorySharePercent,
+	);
+	const shareBarColorClass =
+		hostShareSeverity === "high"
+			? "bg-red-500/80"
+			: hostShareSeverity === "elevated"
+				? "bg-amber-500/80"
+				: "bg-foreground/40";
+	const triggerDotColorClass =
+		hostShareSeverity === "high"
+			? "bg-red-500"
+			: hostShareSeverity === "elevated"
+				? "bg-amber-500"
+				: null;
+
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
 			<Tooltip delayDuration={150}>
@@ -327,12 +346,22 @@ export function ResourceConsumption({
 					<PopoverTrigger asChild>
 						<button
 							type="button"
-							className="no-drag flex items-center gap-1.5 h-6 px-1.5 rounded border border-border/60 bg-secondary/50 hover:bg-secondary hover:border-border transition-all duration-150 ease-out focus:outline-none focus:ring-1 focus:ring-ring"
+							className="no-drag inline-flex items-center gap-1.5 h-6 px-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 							aria-label="Resource consumption"
 						>
-							<HiOutlineCpuChip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+							<span className="relative flex items-center">
+								<HiOutlineCpuChip className="h-3.5 w-3.5 shrink-0" />
+								{triggerDotColorClass && (
+									<span
+										className={cn(
+											"absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full ring-2 ring-background",
+											triggerDotColorClass,
+										)}
+									/>
+								)}
+							</span>
 							{normalizedSnapshot && (
-								<span className="text-xs font-medium tabular-nums text-muted-foreground hidden md:inline">
+								<span className="text-xs font-medium tabular-nums tracking-tight hidden md:inline">
 									{formatMemory(normalizedSnapshot.totalMemory)}
 								</span>
 							)}
@@ -351,18 +380,18 @@ export function ResourceConsumption({
 				)}
 			</Tooltip>
 
-			<PopoverContent align="start" className="w-[26rem] p-0">
-				<div className="p-3 border-b border-border">
+			<PopoverContent align="start" className="w-[28rem] p-0 overflow-hidden">
+				<div className="px-3.5 pt-3 pb-3 border-b border-border/60">
 					<div className="flex items-center justify-between">
-						<h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-							Resource Usage
+						<h4 className="text-[13px] font-medium tracking-tight text-foreground">
+							Resources
 						</h4>
 						<div className="flex items-center gap-0.5">
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<button
 										type="button"
-										className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] text-muted-foreground hover:bg-muted transition-colors"
+										className="flex items-center gap-1 h-6 px-1.5 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
 										aria-label="Sort workspaces"
 									>
 										<HiOutlineBarsArrowDown className="h-3.5 w-3.5" />
@@ -394,34 +423,65 @@ export function ResourceConsumption({
 							<button
 								type="button"
 								onClick={() => refetch()}
-								className="p-0.5 rounded hover:bg-muted transition-colors"
+								className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
 								aria-label="Refresh metrics"
 							>
 								<HiOutlineArrowPath
-									className={`h-3.5 w-3.5 text-muted-foreground ${isFetching ? "animate-spin" : ""}`}
+									className={cn(
+										"h-3.5 w-3.5",
+										isFetching && "animate-spin",
+									)}
 								/>
 							</button>
 						</div>
 					</div>
 
 					{normalizedSnapshot && (
-						<div className="mt-2 grid grid-cols-3 gap-2">
-							<MetricBadge
-								label="CPU"
-								value={formatCpu(normalizedSnapshot.totalCpu)}
-								tooltip="Sum of CPU used by Superset and monitored terminal process trees. Over 100% means multiple CPU cores are busy. Sustained high values usually cause UI sluggishness and higher battery drain."
-							/>
-							<MetricBadge
-								label="Memory"
-								value={formatMemory(normalizedSnapshot.totalMemory)}
-								tooltip="Resident memory used by Superset and monitored terminal process trees. If this keeps climbing without dropping, a workspace process may be retaining memory. High values increase swap risk and can cause stutter."
-							/>
-							<MetricBadge
-								label="RAM Share"
-								value={formatPercent(trackedMemorySharePercent)}
-								tooltip="Percent of total system RAM used by monitored Superset resources only (not all apps). A high share means Superset is a major contributor to system memory pressure; a low share means pressure is likely elsewhere."
-							/>
-						</div>
+						<>
+							<div className="mt-3 grid grid-cols-3 divide-x divide-border/50">
+								<MetricBadge
+									label="CPU"
+									value={formatCpu(normalizedSnapshot.totalCpu)}
+									tooltip="Sum of CPU used by Superset and monitored terminal process trees. Over 100% means multiple CPU cores are busy. Sustained high values usually cause UI sluggishness and higher battery drain."
+								/>
+								<MetricBadge
+									label="Memory"
+									value={formatMemory(normalizedSnapshot.totalMemory)}
+									tooltip="Resident memory used by Superset and monitored terminal process trees. If this keeps climbing without dropping, a workspace process may be retaining memory. High values increase swap risk and can cause stutter."
+								/>
+								<MetricBadge
+									label="RAM Share"
+									value={formatPercent(trackedMemorySharePercent)}
+									tooltip="Percent of total system RAM used by monitored Superset resources only (not all apps). A high share means Superset is a major contributor to system memory pressure; a low share means pressure is likely elsewhere."
+								/>
+							</div>
+							<Tooltip delayDuration={150}>
+								<TooltipTrigger asChild>
+									<div
+										className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted/60"
+										role="progressbar"
+										aria-label="System RAM share"
+										aria-valuenow={Math.round(trackedMemorySharePercent)}
+										aria-valuemin={0}
+										aria-valuemax={100}
+									>
+										<div
+											className={cn(
+												"h-full rounded-full transition-[width] duration-300",
+												shareBarColorClass,
+											)}
+											style={{
+												width: `${Math.min(100, Math.max(0, trackedMemorySharePercent))}%`,
+											}}
+										/>
+									</div>
+								</TooltipTrigger>
+								<TooltipContent side="bottom" sideOffset={6} showArrow={false}>
+									Superset uses {formatPercent(trackedMemorySharePercent)} of
+									system RAM
+								</TooltipContent>
+							</Tooltip>
+						</>
 					)}
 				</div>
 
@@ -450,14 +510,14 @@ export function ResourceConsumption({
 					)}
 
 					{normalizedSnapshot && normalizedSnapshot.workspaces.length === 0 && (
-						<div className="px-3 py-4 text-center text-xs text-muted-foreground">
+						<div className="px-3.5 py-6 text-center text-[11px] text-muted-foreground">
 							No active terminal sessions
 						</div>
 					)}
 
 					{!normalizedSnapshot && (
-						<div className="px-3 py-4 text-center text-xs text-muted-foreground">
-							Loading...
+						<div className="px-3.5 py-6 text-center text-[11px] text-muted-foreground">
+							Loading…
 						</div>
 					)}
 				</div>
