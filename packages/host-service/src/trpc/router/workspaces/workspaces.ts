@@ -68,14 +68,11 @@ const createInputSchema = z
 		taskId: z.string().uuid().optional(),
 		agents: z.array(agentLaunchSchema).optional(),
 		id: z.string().uuid().optional(),
-		// Path-driven adoption: skip the branch→path inference (and its
-		// `git worktree add` fallback) and adopt the worktree git already
-		// has at this path. Used by the adopt-existing-worktrees onboarding
-		// flow, which discovers the path via `git worktree list` and
-		// shouldn't re-resolve it. Bypasses the failure mode where the
-		// pre-check misses a worktree (race with `worktree prune`, path
-		// canonicalization edges, …) and falls through to a doomed `git
-		// worktree add` for a branch already checked out elsewhere.
+		// Adopt the worktree git already has at this path instead of
+		// inferring the path from `branch`. Set by callers that listed
+		// the path themselves (e.g. adopt-existing-worktrees onboarding)
+		// — pre-empts the `worktreeMap` miss that #4229's catch-arm
+		// recovers from for branch-name-only callers.
 		worktreePath: z.string().min(1).optional(),
 	})
 	.refine((value) => !(value.branch && value.pr), {
@@ -723,13 +720,9 @@ export const workspacesRouter = router({
 					}
 				}
 			} else if (input.worktreePath) {
-				// Caller already located the worktree (e.g. adopt-existing-worktrees
-				// onboarding listing `git worktree list`) — adopt at that path
-				// directly. Skips the branch→path lookup that occasionally misses
-				// entries and would fall through to `git worktree add` for a
-				// branch that's already checked out elsewhere. Reads back the
-				// actual checked-out branch so a stale typed branch doesn't
-				// mis-target.
+				// Read the branch from git rather than trusting `input.branch`
+				// — a stale name on the caller side would otherwise mis-target
+				// the registration.
 				const actualBranch = await getWorktreeBranchAtPath(
 					git,
 					input.worktreePath,
