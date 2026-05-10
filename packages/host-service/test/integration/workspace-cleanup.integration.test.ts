@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
-import { writeFileSync } from "node:fs";
+import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { TRPCClientError } from "@trpc/client";
 import { eq } from "drizzle-orm";
@@ -135,6 +135,21 @@ describe("workspaceCleanup.destroy integration", () => {
 			workspaceId: scenario.featureWorkspaceId,
 			deleteBranch: true,
 		});
+		expect(result.branchDeleted).toBe(true);
+
+		const branches = await scenario.repo.git.branchLocal();
+		expect(branches.all).not.toContain(scenario.branch);
+	});
+
+	test("missing worktree is pruned and can still delete the branch", async () => {
+		rmSync(scenario.worktreePath, { recursive: true, force: true });
+
+		const result = await scenario.host.trpc.workspaceCleanup.destroy.mutate({
+			workspaceId: scenario.featureWorkspaceId,
+			deleteBranch: true,
+		});
+		expect(result.success).toBe(true);
+		expect(result.worktreeRemoved).toBe(true);
 		expect(result.branchDeleted).toBe(true);
 
 		const branches = await scenario.repo.git.branchLocal();
