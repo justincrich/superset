@@ -134,6 +134,38 @@ async function ensureUserOnHost(
 	}
 }
 
+// Best-effort tear-down on the host. The cloud row should already be
+// transitioned to `revoked` BEFORE calling this so future viewer attaches
+// fail even if the relay call below fails.
+async function callHostRevoke(args: {
+	organizationId: string;
+	hostId: string;
+	sessionId: string;
+	actorUserId: string;
+	actorEmail?: string;
+}): Promise<void> {
+	try {
+		const jwt = await mintUserJwt({
+			userId: args.actorUserId,
+			email: args.actorEmail,
+			organizationIds: [args.organizationId],
+			scope: "remote-control",
+			ttlSeconds: 60,
+		});
+		const routingKey = buildHostRoutingKey(args.organizationId, args.hostId);
+		await relayMutation<{ sessionId: string }, unknown>(
+			{ relayUrl: env.RELAY_URL, hostId: routingKey, jwt, timeoutMs: 5000 },
+			"terminal.remoteControl.revoke",
+			{ sessionId: args.sessionId },
+		);
+	} catch (err) {
+		console.warn(
+			"[remote-control] best-effort host revoke failed:",
+			err instanceof Error ? err.message : String(err),
+		);
+	}
+}
+
 export const remoteControlRouter = createTRPCRouter({
 	create: protectedProcedure
 		.input(createInput)
@@ -247,6 +279,10 @@ export const remoteControlRouter = createTRPCRouter({
 		};
 	}),
 
+	// Owner / host-member revoke. Requires both an active org membership
+	// AND host membership — otherwise an org member who isn't on the host
+	// could revoke other people's sessions on a host they have no claim
+	// to. Anonymous viewers reach `revokeWithToken` below instead.
 	revoke: protectedProcedure
 		.input(sessionIdInput)
 		.mutation(async ({ ctx, input }) => {
@@ -264,6 +300,7 @@ export const remoteControlRouter = createTRPCRouter({
 					message: "Remote control session not found",
 				});
 			}
+			await ensureUserOnHost(userId, organizationId, row.hostId);
 			// The cloud row gets revoked first so even if the host call fails,
 			// future attaches via the host see "session not found" or are denied
 			// when the host is told later via retry / re-sync.
@@ -287,39 +324,94 @@ export const remoteControlRouter = createTRPCRouter({
 					),
 				);
 
-			try {
-				const [owner] = await dbWs
-					.select({ email: users.email })
-					.from(users)
-					.where(eq(users.id, userId))
-					.limit(1);
-				const jwt = await mintUserJwt({
-					userId,
-					email: owner?.email,
-					organizationIds: [organizationId],
-					scope: "remote-control",
-					ttlSeconds: 60,
-				});
-				const routingKey = buildHostRoutingKey(organizationId, row.hostId);
-				await relayMutation<{ sessionId: string }, unknown>(
-					{ relayUrl: env.RELAY_URL, hostId: routingKey, jwt, timeoutMs: 5000 },
-					"terminal.remoteControl.revoke",
-					{ sessionId: input.sessionId },
-				);
-			} catch (err) {
-				console.warn(
-					"[remote-control] best-effort host revoke failed:",
-					err instanceof Error ? err.message : String(err),
-				);
-			}
+			const [owner] = await dbWs
+				.select({ email: users.email })
+				.from(users)
+				.where(eq(users.id, userId))
+				.limit(1);
+			await callHostRevoke({
+				organizationId,
+				hostId: row.hostId,
+				sessionId: input.sessionId,
+				actorUserId: userId,
+				actorEmail: owner?.email,
+			});
 
 			return { sessionId: input.sessionId, status: "revoked" as const };
 		}),
 
+	// Anonymous-viewer revoke. The bearer token IS the credential; if you
+	// hold it, you have the same authority as whoever you got the link
+	// from. We hash the token in constant time, then revoke the matching
+	// row. `revokedByUserId` is left null because we don't know which (if
+	// any) Superset user is on the other end of this WebSocket.
+	revokeWithToken: publicProcedure
+		.input(getInput)
+		.mutation(async ({ input }) => {
+			const row = await dbWs.query.v2RemoteControlSessions.findFirst({
+				where: eq(v2RemoteControlSessions.id, input.sessionId),
+			});
+			if (!row) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Remote control session not found",
+				});
+			}
+			const providedHash = sha256Hex(input.token);
+			if (!constantTimeHexEqual(providedHash, row.tokenHash)) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "Invalid remote control token",
+				});
+			}
+			await dbWs
+				.update(v2RemoteControlSessions)
+				.set({ status: "revoked", revokedAt: new Date() })
+				.where(
+					and(
+						eq(v2RemoteControlSessions.id, input.sessionId),
+						eq(v2RemoteControlSessions.organizationId, row.organizationId),
+						eq(v2RemoteControlSessions.status, "active"),
+					),
+				);
+			// Best-effort host tear-down using the row creator's identity
+			// (the JWT only needs to be valid enough to traverse the relay).
+			const [owner] = await dbWs
+				.select({ email: users.email })
+				.from(users)
+				.where(eq(users.id, row.createdByUserId))
+				.limit(1);
+			await callHostRevoke({
+				organizationId: row.organizationId,
+				hostId: row.hostId,
+				sessionId: input.sessionId,
+				actorUserId: row.createdByUserId,
+				actorEmail: owner?.email,
+			});
+			return { sessionId: input.sessionId, status: "revoked" as const };
+		}),
+
+	// Lists sessions for a workspace, scoped to host members. Org-wide
+	// visibility would let anyone in the org enumerate other people's
+	// share sessions on hosts they don't belong to.
 	listForWorkspace: protectedProcedure
 		.input(listInput)
 		.query(async ({ ctx, input }) => {
 			const organizationId = await requireActiveOrgMembership(ctx);
+			const userId = ctx.session.user.id;
+			const workspace = await dbWs.query.v2Workspaces.findFirst({
+				where: and(
+					eq(v2Workspaces.id, input.workspaceId),
+					eq(v2Workspaces.organizationId, organizationId),
+				),
+			});
+			if (!workspace) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Workspace not found in this organization",
+				});
+			}
+			await ensureUserOnHost(userId, organizationId, workspace.hostId);
 			const rows = await dbWs.query.v2RemoteControlSessions.findMany({
 				where: and(
 					eq(v2RemoteControlSessions.workspaceId, input.workspaceId),

@@ -324,11 +324,19 @@ export function RemoteTerminal({ sessionId, token }: RemoteTerminalProps) {
 
 	const onStop = useCallback(async () => {
 		try {
-			await trpcClient.remoteControl.revoke.mutate({ sessionId });
+			// `revoke` is a `protectedProcedure` (org member + host member) —
+			// anonymous viewers (the common case for shared links) wouldn't be
+			// able to call it. `revokeWithToken` is gated by the same HMAC the
+			// viewer used to attach, so anyone who can see the terminal can
+			// also stop it.
+			await trpcClient.remoteControl.revokeWithToken.mutate({
+				sessionId,
+				token,
+			});
 		} catch (err) {
 			setErrorMsg(err instanceof Error ? err.message : String(err));
 		}
-	}, [sessionId]);
+	}, [sessionId, token]);
 
 	const isFull = meta?.mode === "full" && state === "open";
 

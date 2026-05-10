@@ -12,6 +12,20 @@ import { captureSentryException, initSentry } from "./sentry";
 import { startSyntheticCheck } from "./synthetic";
 import { TunnelManager } from "./tunnel";
 
+// Bearer tokens we never want in stdout. The remote-control viewer must
+// put its token on the WS upgrade URL because browser WebSockets can't
+// send custom headers, and Hono's default `logger()` echoes the full
+// query string. Mask the values before they reach the log sink so the
+// raw token doesn't end up in Fly logs / Sentry breadcrumbs.
+const SENSITIVE_QUERY_RE = /([?&])(remoteControlToken|token)=[^&\s]+/g;
+const redactingLogger = logger((message, ...rest) => {
+	const redacted =
+		typeof message === "string"
+			? message.replace(SENSITIVE_QUERY_RE, "$1$2=REDACTED")
+			: message;
+	console.log(redacted, ...rest);
+});
+
 initSentry();
 
 type AppContext = {
@@ -26,7 +40,7 @@ const app = new Hono<AppContext>();
 const tunnelManager = new TunnelManager();
 const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
-app.use("*", logger());
+app.use("*", redactingLogger);
 app.use("*", cors());
 
 app.get("/health", (c) => c.json({ ok: true, region: env.FLY_REGION }));
@@ -181,13 +195,24 @@ app.get("/hosts/:hostId/_whoowns", async (c) => {
 // that is verified by the host-service, not by us. Skip the user-JWT
 // gate for those paths only — the HMAC is the credential the cloud
 // hands to viewers, who may not have a Superset user JWT in the URL.
+//
+// We must still run the tunnel-presence + maybeReplay logic that
+// `authMiddleware` does, otherwise viewer links break in multi-region
+// Fly deployments whenever the load balancer lands a request on a
+// relay instance that doesn't own the destination tunnel.
 
 app.use("/hosts/:hostId/*", async (c, next) => {
 	const path = new URL(c.req.url).pathname;
 	const hostId = c.req.param("hostId") ?? "";
+	if (!hostId) return c.json({ error: "Missing hostId" }, 400);
 	const prefix = `/hosts/${hostId}`;
 	const rest = path.slice(prefix.length);
 	if (rest.startsWith("/remote-control/")) {
+		if (!tunnelManager.hasTunnel(hostId)) {
+			const replay = await maybeReplay(hostId);
+			if (replay) return c.body(null, 200, replay.header);
+			return c.json({ error: "Host not connected" }, 503);
+		}
 		c.set("hostId", hostId);
 		return next();
 	}
