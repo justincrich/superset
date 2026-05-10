@@ -9,7 +9,13 @@ import { toast } from "@superset/ui/sonner";
 import { cn } from "@superset/ui/utils";
 import { workspaceTrpc } from "@superset/workspace-client";
 import { useEffect, useState } from "react";
-import { LuChevronRight, LuExternalLink, LuLoaderCircle } from "react-icons/lu";
+import {
+	LuCheck,
+	LuChevronRight,
+	LuCopy,
+	LuExternalLink,
+	LuLoaderCircle,
+} from "react-icons/lu";
 import { CommentMarkdown } from "renderer/components/CommentMarkdown";
 import "./comment-thread.css";
 
@@ -43,6 +49,23 @@ export function CommentThread({
 	focusTick,
 }: CommentThreadProps) {
 	const [open, setOpen] = useState(!isResolved && !isOutdated);
+	const [isLinkCopied, setIsLinkCopied] = useState(false);
+	useEffect(() => {
+		if (!isLinkCopied) return;
+		const timer = setTimeout(() => setIsLinkCopied(false), 2000);
+		return () => clearTimeout(timer);
+	}, [isLinkCopied]);
+	const handleCopyLink = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		if (!url) return;
+		navigator.clipboard
+			.writeText(url)
+			.then(() => setIsLinkCopied(true))
+			.catch((err) => {
+				console.error("[CommentThread/copyLink] Failed to copy:", err);
+				toast.error("Couldn't copy link");
+			});
+	};
 	// Auto-collapse on resolve/outdated (matches GitHub).
 	useEffect(() => {
 		if (isResolved || isOutdated) setOpen(false);
@@ -71,7 +94,7 @@ export function CommentThread({
 			open={open}
 			onOpenChange={setOpen}
 			className={cn(
-				"diff-comment my-1 overflow-hidden rounded-md border border-border bg-card text-card-foreground",
+				"diff-comment mx-3 my-1 overflow-hidden rounded-md border border-border bg-card text-card-foreground",
 				isResolved && "opacity-70",
 			)}
 		>
@@ -103,16 +126,30 @@ export function CommentThread({
 					)}
 				</CollapsibleTrigger>
 				{url && (
-					<a
-						href={url}
-						target="_blank"
-						rel="noreferrer"
-						onClick={(e) => e.stopPropagation()}
-						className="shrink-0 text-muted-foreground hover:text-foreground"
-						aria-label="Open on GitHub"
-					>
-						<LuExternalLink className="size-3" />
-					</a>
+					<>
+						<button
+							type="button"
+							onClick={handleCopyLink}
+							className="shrink-0 text-muted-foreground hover:text-foreground"
+							aria-label={isLinkCopied ? "Copied" : "Copy link"}
+						>
+							{isLinkCopied ? (
+								<LuCheck className="size-3 text-green-500" />
+							) : (
+								<LuCopy className="size-3" />
+							)}
+						</button>
+						<a
+							href={url}
+							target="_blank"
+							rel="noreferrer"
+							onClick={(e) => e.stopPropagation()}
+							className="shrink-0 text-muted-foreground hover:text-foreground"
+							aria-label="Open on GitHub"
+						>
+							<LuExternalLink className="size-3" />
+						</a>
+					</>
 				)}
 			</div>
 			<CollapsibleContent className="overflow-hidden border-t border-border data-[state=closed]:animate-none">
@@ -147,6 +184,21 @@ export function CommentThread({
 }
 
 function CommentRow({ comment }: { comment: Comment }) {
+	const [isCopied, setIsCopied] = useState(false);
+	useEffect(() => {
+		if (!isCopied) return;
+		const timer = setTimeout(() => setIsCopied(false), 2000);
+		return () => clearTimeout(timer);
+	}, [isCopied]);
+	const handleCopy = () => {
+		navigator.clipboard
+			.writeText(comment.body)
+			.then(() => setIsCopied(true))
+			.catch((err) => {
+				console.error("[CommentRow/copy] Failed to copy:", err);
+				toast.error("Couldn't copy comment");
+			});
+	};
 	return (
 		<li className="flex gap-2 px-2.5 py-2">
 			<Avatar className="mt-0.5 size-5 shrink-0">
@@ -170,6 +222,18 @@ function CommentRow({ comment }: { comment: Comment }) {
 							{formatRelative(comment.createdAt)}
 						</time>
 					)}
+					<button
+						type="button"
+						onClick={handleCopy}
+						className="ml-auto shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:bg-accent hover:text-muted-foreground"
+						aria-label={isCopied ? "Copied" : "Copy comment"}
+					>
+						{isCopied ? (
+							<LuCheck className="size-3 text-green-500" />
+						) : (
+							<LuCopy className="size-3" />
+						)}
+					</button>
 				</div>
 				<div className="diff-comment-body mt-1">
 					<CommentMarkdown body={comment.body} />
