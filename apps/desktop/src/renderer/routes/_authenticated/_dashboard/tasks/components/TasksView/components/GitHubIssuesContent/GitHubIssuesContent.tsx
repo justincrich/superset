@@ -27,7 +27,6 @@ export interface SelectedIssue {
 	title: string;
 	url: string;
 	state: string;
-	authorLogin: string | null;
 }
 
 interface GitHubIssuesContentProps {
@@ -314,7 +313,6 @@ export function GitHubIssuesContent({
 													title: issue.title,
 													url: issue.url,
 													state: issue.state,
-													authorLogin: issue.authorLogin,
 												},
 												checked === true,
 											)

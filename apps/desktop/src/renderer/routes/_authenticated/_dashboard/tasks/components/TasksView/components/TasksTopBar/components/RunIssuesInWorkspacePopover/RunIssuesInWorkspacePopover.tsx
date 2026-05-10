@@ -216,6 +216,8 @@ export function RunIssuesInWorkspacePopover({
 			return;
 		}
 
+		setLastProjectId(selectedProjectId);
+
 		const submissions = issues.map((issue) =>
 			submit({
 				hostId,
