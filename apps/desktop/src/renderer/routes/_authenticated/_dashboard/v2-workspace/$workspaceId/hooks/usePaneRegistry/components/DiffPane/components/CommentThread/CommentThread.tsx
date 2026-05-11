@@ -49,21 +49,24 @@ export function CommentThread({
 	focusTick,
 }: CommentThreadProps) {
 	const [open, setOpen] = useState(!isResolved && !isOutdated);
-	const [isLinkCopied, setIsLinkCopied] = useState(false);
+	const [isCopied, setIsCopied] = useState(false);
 	useEffect(() => {
-		if (!isLinkCopied) return;
-		const timer = setTimeout(() => setIsLinkCopied(false), 2000);
+		if (!isCopied) return;
+		const timer = setTimeout(() => setIsCopied(false), 2000);
 		return () => clearTimeout(timer);
-	}, [isLinkCopied]);
-	const handleCopyLink = (e: React.MouseEvent) => {
+	}, [isCopied]);
+	const handleCopy = (e: React.MouseEvent) => {
 		e.stopPropagation();
-		if (!url) return;
+		const text =
+			comments.length === 1
+				? comments[0].body
+				: comments.map((c) => `@${c.authorLogin}:\n${c.body}`).join("\n\n");
 		navigator.clipboard
-			.writeText(url)
-			.then(() => setIsLinkCopied(true))
+			.writeText(text)
+			.then(() => setIsCopied(true))
 			.catch((err) => {
-				console.error("[CommentThread/copyLink] Failed to copy:", err);
-				toast.error("Couldn't copy link");
+				console.error("[CommentThread/copy] Failed to copy:", err);
+				toast.error("Couldn't copy comment");
 			});
 	};
 	// Auto-collapse on resolve/outdated (matches GitHub).
@@ -125,31 +128,35 @@ export function CommentThread({
 						</span>
 					)}
 				</CollapsibleTrigger>
+				<button
+					type="button"
+					onClick={handleCopy}
+					className="shrink-0 text-muted-foreground hover:text-foreground"
+					aria-label={
+						isCopied
+							? "Copied"
+							: comments.length === 1
+								? "Copy comment"
+								: "Copy comments"
+					}
+				>
+					{isCopied ? (
+						<LuCheck className="size-3 text-green-500" />
+					) : (
+						<LuCopy className="size-3" />
+					)}
+				</button>
 				{url && (
-					<>
-						<button
-							type="button"
-							onClick={handleCopyLink}
-							className="shrink-0 text-muted-foreground hover:text-foreground"
-							aria-label={isLinkCopied ? "Copied" : "Copy link"}
-						>
-							{isLinkCopied ? (
-								<LuCheck className="size-3 text-green-500" />
-							) : (
-								<LuCopy className="size-3" />
-							)}
-						</button>
-						<a
-							href={url}
-							target="_blank"
-							rel="noreferrer"
-							onClick={(e) => e.stopPropagation()}
-							className="shrink-0 text-muted-foreground hover:text-foreground"
-							aria-label="Open on GitHub"
-						>
-							<LuExternalLink className="size-3" />
-						</a>
-					</>
+					<a
+						href={url}
+						target="_blank"
+						rel="noreferrer"
+						onClick={(e) => e.stopPropagation()}
+						className="shrink-0 text-muted-foreground hover:text-foreground"
+						aria-label="Open on GitHub"
+					>
+						<LuExternalLink className="size-3" />
+					</a>
 				)}
 			</div>
 			<CollapsibleContent className="overflow-hidden border-t border-border data-[state=closed]:animate-none">
