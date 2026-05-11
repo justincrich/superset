@@ -56,5 +56,4 @@ SELECT id, name, slug FROM "auth"."organizations";--> statement-breakpoint
 INSERT INTO "auth"."team_members" (team_id, user_id)
 SELECT t.id, m.user_id
 FROM "auth"."teams" t
-JOIN "auth"."members" m ON m.organization_id = t.organization_id
-ON CONFLICT (team_id, user_id) DO NOTHING;
+JOIN "auth"."members" m ON m.organization_id = t.organization_id;
