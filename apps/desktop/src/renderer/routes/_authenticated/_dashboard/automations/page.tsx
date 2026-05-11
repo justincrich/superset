@@ -274,8 +274,7 @@ function AutomationsPage() {
 			</header>
 
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-				{!automationsReady ? null : visible.length === 0 &&
-					(automations.length === 0 || scope === "mine") ? (
+				{!automationsReady ? null : visible.length === 0 && scope === "mine" ? (
 					<div className="flex-1 overflow-y-auto px-8 py-8">
 						<AutomationsEmptyState onSelectTemplate={handleSelectTemplate} />
 					</div>
