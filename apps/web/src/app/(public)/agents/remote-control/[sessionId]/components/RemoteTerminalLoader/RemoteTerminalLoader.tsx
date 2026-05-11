@@ -2,7 +2,7 @@
 
 import { REMOTE_CONTROL_TOKEN_PARAM } from "@superset/shared/remote-control-protocol";
 import { useEffect, useState } from "react";
-import { RemoteTerminal } from "./RemoteTerminal";
+import { RemoteTerminal } from "../RemoteTerminal";
 
 interface RemoteTerminalLoaderProps {
 	sessionId: string;

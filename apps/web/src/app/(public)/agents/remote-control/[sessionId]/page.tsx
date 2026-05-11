@@ -1,5 +1,5 @@
 import { use } from "react";
-import { RemoteTerminalLoader } from "./components/RemoteTerminal";
+import { RemoteTerminalLoader } from "./components/RemoteTerminalLoader";
 
 interface PageProps {
 	params: Promise<{ sessionId: string }>;
