@@ -67,6 +67,10 @@ export function CreateTeamButton({ organizationId }: CreateTeamButtonProps) {
 			toast.success(`Created team "${trimmedName}"`);
 			reset();
 			setIsOpen(false);
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Failed to create team",
+			);
 		} finally {
 			setIsSubmitting(false);
 		}

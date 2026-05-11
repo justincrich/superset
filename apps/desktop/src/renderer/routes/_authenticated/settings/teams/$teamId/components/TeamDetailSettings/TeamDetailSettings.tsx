@@ -147,6 +147,10 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
 				return;
 			}
 			toast.success("Saved");
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Failed to save team",
+			);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -166,6 +170,10 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
 			}
 			toast.success(`Deleted "${team?.name ?? "team"}"`);
 			navigate({ to: "/settings/teams" });
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Failed to delete team",
+			);
 		} finally {
 			setIsSubmitting(false);
 		}
