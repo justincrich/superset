@@ -28,14 +28,21 @@ CREATE UNIQUE INDEX "teams_org_slug_unique" ON "auth"."teams" USING btree ("orga
 
 -- Auto-populate team_members.organization_id from the row's team. Lets
 -- Electric (and any other consumer) filter team_members by organization_id
--- with a plain equality, instead of joining through teams.
+-- with a plain equality, instead of joining through teams. Always overwrite
+-- so a caller can't persist a mismatched org_id and break the shape filter.
 CREATE OR REPLACE FUNCTION "auth"."team_members_set_organization_id"()
 RETURNS TRIGGER AS $$
+DECLARE
+	team_org_id uuid;
 BEGIN
-	IF NEW.organization_id IS NULL THEN
-		SELECT organization_id INTO NEW.organization_id
-		FROM "auth"."teams" WHERE id = NEW.team_id;
+	SELECT organization_id INTO team_org_id
+	FROM "auth"."teams" WHERE id = NEW.team_id;
+
+	IF team_org_id IS NULL THEN
+		RAISE EXCEPTION 'team % not found', NEW.team_id;
 	END IF;
+
+	NEW.organization_id = team_org_id;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;--> statement-breakpoint
@@ -49,10 +56,9 @@ FOR EACH ROW EXECUTE FUNCTION "auth"."team_members_set_organization_id"();--> st
 INSERT INTO "auth"."teams" (organization_id, name, slug)
 SELECT id, name, slug FROM "auth"."organizations";--> statement-breakpoint
 
--- Backfill: every existing org member is added to that org's default team
--- so pre-teams users don't land on an empty Teams page. Going forward
--- membership is opt-in (new org members are NOT auto-added). organization_id
--- is filled in by the trigger above.
+-- Backfill: every existing org member is added to that org's default team.
+-- Going forward, afterAddMember auto-adds new org members to the oldest
+-- team. organization_id is filled in by the trigger above.
 INSERT INTO "auth"."team_members" (team_id, user_id)
 SELECT t.id, m.user_id
 FROM "auth"."teams" t

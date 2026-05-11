@@ -35,6 +35,7 @@ const SECTION_ORDER: SettingsSection[] = [
 	"links",
 	"models",
 	"organization",
+	"teams",
 	"integrations",
 	"billing",
 	"apikeys",

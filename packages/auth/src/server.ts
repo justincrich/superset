@@ -509,11 +509,17 @@ export const auth = betterAuth({
 						columns: { id: true },
 					});
 					if (defaultTeam) {
-						await db.insert(authSchema.teamMembers).values({
-							teamId: defaultTeam.id,
-							userId: member.userId,
-							organizationId: organization.id,
-						});
+						// onConflictDoNothing keeps addMember robust if a stale row
+						// ever exists from a partial earlier run — we never want this
+						// hook to fail a member-add.
+						await db
+							.insert(authSchema.teamMembers)
+							.values({
+								teamId: defaultTeam.id,
+								userId: member.userId,
+								organizationId: organization.id,
+							})
+							.onConflictDoNothing();
 					}
 
 					const subscription = await db.query.subscriptions.findFirst({
