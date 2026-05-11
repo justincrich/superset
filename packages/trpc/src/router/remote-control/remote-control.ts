@@ -68,6 +68,24 @@ function constantTimeHexEqual(a: string, b: string): boolean {
 	return crypto.timingSafeEqual(ab, bb);
 }
 
+// Fixed dummy used for constant-time compare when the row lookup misses,
+// so that "session doesn't exist" and "session exists but wrong token"
+// take the same amount of CPU and emit the same response. Prevents
+// sessionId enumeration via timing or error-code differentiation.
+const DUMMY_TOKEN_HASH = sha256Hex(
+	"remote-control:nonexistent-session:not-a-real-token",
+);
+
+// Single generic response for both "session not found" and "wrong token"
+// — see DUMMY_TOKEN_HASH. Always 401; never 404, so an attacker can't
+// distinguish the two states.
+function throwInvalidTokenError(): never {
+	throw new TRPCError({
+		code: "UNAUTHORIZED",
+		message: "Invalid remote control session or token",
+	});
+}
+
 function buildWebUrl(sessionId: string, token: string): string {
 	const base = env.NEXT_PUBLIC_WEB_URL.replace(/\/$/, "");
 	const t = encodeURIComponent(token);
@@ -237,6 +255,7 @@ export const remoteControlRouter = createTRPCRouter({
 					expiresAt,
 				});
 			} catch (insertErr) {
+				let orphanRevokeFailed = false;
 				try {
 					await callHostRevoke({
 						organizationId,
@@ -246,12 +265,38 @@ export const remoteControlRouter = createTRPCRouter({
 						actorEmail: owner?.email,
 					});
 				} catch (revokeErr) {
-					console.warn(
-						"[remote-control] orphan-cleanup revoke failed:",
-						revokeErr instanceof Error ? revokeErr.message : String(revokeErr),
-					);
+					// Both the cloud INSERT and the orphan-cleanup host revoke
+					// failed. The host still has a live session keyed to a
+					// token-hash the cloud never persisted, invisible to
+					// `listForWorkspace`/`revoke` until the host TTL sweep.
+					// `console.error` with a structured marker so the log
+					// scraper can alert. Use a distinct prefix so future
+					// Sentry `captureConsoleIntegration` picks it up.
+					orphanRevokeFailed = true;
+					console.error("[remote-control:orphan-host-session]", {
+						sessionId,
+						hostId: host.machineId,
+						organizationId,
+						insertError:
+							insertErr instanceof Error
+								? insertErr.message
+								: String(insertErr),
+						revokeError:
+							revokeErr instanceof Error
+								? revokeErr.message
+								: String(revokeErr),
+					});
 				}
-				throw insertErr;
+				// Wrap the raw drizzle/pg error so its message (which often
+				// contains constraint / column names — schema info) does
+				// not leak to the client through tRPC's default serializer.
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: orphanRevokeFailed
+						? "Failed to create remote control session; an orphan host session may still exist and will expire on its own."
+						: "Failed to create remote control session.",
+					cause: insertErr,
+				});
 			}
 
 			return {
@@ -280,19 +325,14 @@ export const remoteControlRouter = createTRPCRouter({
 		const row = await dbWs.query.v2RemoteControlSessions.findFirst({
 			where: eq(v2RemoteControlSessions.id, input.sessionId),
 		});
-		if (!row) {
-			throw new TRPCError({
-				code: "NOT_FOUND",
-				message: "Remote control session not found",
-			});
-		}
+		// Always run the constant-time compare — against the row's hash
+		// when present, otherwise a fixed dummy — so missing-session and
+		// wrong-token paths are indistinguishable in both timing and
+		// response (single UNAUTHORIZED, generic message).
 		const providedHash = sha256Hex(input.token);
-		if (!constantTimeHexEqual(providedHash, row.tokenHash)) {
-			throw new TRPCError({
-				code: "UNAUTHORIZED",
-				message: "Invalid remote control token",
-			});
-		}
+		const expectedHash = row?.tokenHash ?? DUMMY_TOKEN_HASH;
+		const matches = constantTimeHexEqual(providedHash, expectedHash);
+		if (!row || !matches) throwInvalidTokenError();
 		// Cloud-side gate: refuse to hand out a WS endpoint for sessions
 		// that are revoked, expired, or past their TTL even if the sweep
 		// hasn't promoted the row to `expired` yet. Host auth would also
@@ -408,19 +448,12 @@ export const remoteControlRouter = createTRPCRouter({
 			const row = await dbWs.query.v2RemoteControlSessions.findFirst({
 				where: eq(v2RemoteControlSessions.id, input.sessionId),
 			});
-			if (!row) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Remote control session not found",
-				});
-			}
+			// Single response for missing-row and wrong-token — see `get`
+			// for the rationale.
 			const providedHash = sha256Hex(input.token);
-			if (!constantTimeHexEqual(providedHash, row.tokenHash)) {
-				throw new TRPCError({
-					code: "UNAUTHORIZED",
-					message: "Invalid remote control token",
-				});
-			}
+			const expectedHash = row?.tokenHash ?? DUMMY_TOKEN_HASH;
+			const matches = constantTimeHexEqual(providedHash, expectedHash);
+			if (!row || !matches) throwInvalidTokenError();
 			await dbWs
 				.update(v2RemoteControlSessions)
 				.set({ status: "revoked", revokedAt: new Date() })
