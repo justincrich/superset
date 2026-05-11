@@ -1,3 +1,4 @@
+import { FEATURE_FLAGS } from "@superset/shared/constants";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -7,7 +8,8 @@ import {
 import { toast } from "@superset/ui/sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import { cn } from "@superset/ui/utils";
-import { Radio } from "lucide-react";
+import { ExternalLink, Radio } from "lucide-react";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useCallback, useEffect, useState } from "react";
 import { apiTrpcClient } from "renderer/lib/api-trpc-client";
 
@@ -33,6 +35,11 @@ export function TerminalRemoteControlButton({
 	workspaceId,
 	terminalId,
 }: TerminalRemoteControlButtonProps) {
+	// Hooks must run unconditionally — gate at render time instead of
+	// short-circuiting before `useState` etc.
+	const hasAccess = useFeatureFlagEnabled(
+		FEATURE_FLAGS.WEB_REMOTE_CONTROL_ACCESS,
+	);
 	const [phase, setPhase] = useState<Phase>("loading");
 	const [active, setActive] = useState<ActiveSession | null>(null);
 
@@ -81,6 +88,10 @@ export function TerminalRemoteControlButton({
 	);
 
 	useEffect(() => {
+		// Don't run the cloud hydrate poll when the user isn't in the cohort
+		// — that just wastes a tRPC call every 30s for a button that won't
+		// render anyway.
+		if (!hasAccess) return;
 		const ac = new AbortController();
 		void hydrate(ac.signal);
 		const timer = setInterval(
@@ -91,7 +102,9 @@ export function TerminalRemoteControlButton({
 			ac.abort();
 			clearInterval(timer);
 		};
-	}, [hydrate]);
+	}, [hydrate, hasAccess]);
+
+	if (!hasAccess) return null;
 
 	async function copyLink(url: string) {
 		try {
@@ -212,6 +225,19 @@ export function TerminalRemoteControlButton({
 				</button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
+				<DropdownMenuItem
+					onClick={() => {
+						// `window.open(url, "_blank")` is the convention used elsewhere
+						// in the renderer (e.g. DashboardSidebarHelpMenu) — Electron's
+						// main process intercepts and routes to the system browser
+						// so the share opens outside the Superset app.
+						if (active?.webUrl) window.open(active.webUrl, "_blank");
+					}}
+					disabled={!canCopy}
+				>
+					<ExternalLink className="h-4 w-4" />
+					Open in browser
+				</DropdownMenuItem>
 				<DropdownMenuItem
 					onClick={() => {
 						if (active?.webUrl) void copyLink(active.webUrl);
