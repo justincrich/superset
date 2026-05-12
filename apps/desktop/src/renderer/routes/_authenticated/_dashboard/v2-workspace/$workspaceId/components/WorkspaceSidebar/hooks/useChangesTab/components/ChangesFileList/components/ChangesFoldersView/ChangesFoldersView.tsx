@@ -78,7 +78,9 @@ export const ChangesFoldersView = memo(function ChangesFoldersView({
 				const isRoot = group.folderPath === ROOT_FOLDER_KEY;
 				const isOpen = !closedFolders.has(group.folderPath);
 				return (
-					<div key={isRoot ? "__root__" : group.folderPath}>
+					{/* `folderPath` (`""` for the root group) is already the unique
+					    discriminator — `groupFilesByFolder` keys a Map by it. */}
+					<div key={group.folderPath}>
 						<FolderHeader
 							label={isRoot ? ROOT_FOLDER_LABEL : group.folderPath}
 							fileCount={group.files.length}
