@@ -69,7 +69,11 @@ export const v2HostRouter = {
 		.input(
 			z.object({
 				hostId: z.string().min(1),
-				name: z.string().min(1).max(120),
+				name: z
+					.string()
+					.max(120)
+					.transform((value) => value.trim())
+					.pipe(z.string().min(1, "Host name cannot be empty")),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {

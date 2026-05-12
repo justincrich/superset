@@ -20,6 +20,7 @@ export function HostHeader({
 	const [isEditing, setIsEditing] = useState(false);
 	const [draft, setDraft] = useState(name);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const cancelledRef = useRef(false);
 
 	useEffect(() => {
 		if (!isEditing) setDraft(name);
@@ -27,12 +28,17 @@ export function HostHeader({
 
 	useLayoutEffect(() => {
 		if (isEditing) {
+			cancelledRef.current = false;
 			inputRef.current?.focus();
 			inputRef.current?.select();
 		}
 	}, [isEditing]);
 
 	const commit = () => {
+		if (cancelledRef.current) {
+			cancelledRef.current = false;
+			return;
+		}
 		const trimmed = draft.trim();
 		setIsEditing(false);
 		if (!trimmed || trimmed === name) {
@@ -43,6 +49,7 @@ export function HostHeader({
 	};
 
 	const cancel = () => {
+		cancelledRef.current = true;
 		setDraft(name);
 		setIsEditing(false);
 	};
@@ -66,6 +73,7 @@ export function HostHeader({
 						</span>
 						<input
 							ref={inputRef}
+							aria-label="Host name"
 							size={1}
 							className="col-start-1 row-start-1 bg-transparent border-b border-border outline-none focus:border-foreground w-full p-0"
 							value={draft}
