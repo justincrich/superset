@@ -1,7 +1,7 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangesetFile } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/useChangeset";
+import type { FoldSignal } from "../../ChangesFileList";
 import { FileRow } from "../FileRow";
-import { SectionToolbar } from "../SectionToolbar";
 import { FolderHeader } from "./components/FolderHeader";
 
 const ROOT_FOLDER_KEY = "";
@@ -11,6 +11,8 @@ interface ChangesFoldersViewProps {
 	files: ChangesetFile[];
 	workspaceId: string;
 	worktreePath?: string;
+	/** Bumped by the toolbar's expand-all / collapse-all buttons. */
+	foldSignal: FoldSignal;
 	onSelectFile?: (path: string, openInNewTab?: boolean) => void;
 	onOpenFile?: (absolutePath: string, openInNewTab?: boolean) => void;
 	onOpenInEditor?: (path: string) => void;
@@ -38,6 +40,7 @@ export const ChangesFoldersView = memo(function ChangesFoldersView({
 	files,
 	workspaceId,
 	worktreePath,
+	foldSignal,
 	onSelectFile,
 	onOpenFile,
 	onOpenInEditor,
@@ -54,15 +57,23 @@ export const ChangesFoldersView = memo(function ChangesFoldersView({
 		});
 	}, []);
 
-	const collapseAll = useCallback(
-		() => setClosedFolders(new Set(groups.map((g) => g.folderPath))),
-		[groups],
-	);
-	const expandAll = useCallback(() => setClosedFolders(new Set()), []);
+	// React to expand-all / collapse-all from the toolbar — but only on a new
+	// signal, not when `groups` changes (which would re-apply the last action
+	// and stomp any folder the user re-toggled in between).
+	const lastFoldEpochRef = useRef(0);
+	useEffect(() => {
+		if (foldSignal.epoch === 0 || foldSignal.epoch === lastFoldEpochRef.current)
+			return;
+		lastFoldEpochRef.current = foldSignal.epoch;
+		setClosedFolders(
+			foldSignal.action === "collapse"
+				? new Set(groups.map((g) => g.folderPath))
+				: new Set(),
+		);
+	}, [foldSignal, groups]);
 
 	return (
 		<div>
-			<SectionToolbar onCollapseAll={collapseAll} onExpandAll={expandAll} />
 			{groups.map((group) => {
 				const isRoot = group.folderPath === ROOT_FOLDER_KEY;
 				const isOpen = !closedFolders.has(group.folderPath);

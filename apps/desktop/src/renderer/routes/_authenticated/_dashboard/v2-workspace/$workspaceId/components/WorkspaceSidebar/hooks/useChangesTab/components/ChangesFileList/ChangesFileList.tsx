@@ -5,6 +5,12 @@ import { ChangesFoldersView } from "./components/ChangesFoldersView";
 import { ChangesSection } from "./components/ChangesSection";
 import { ChangesTreeView } from "./components/ChangesTreeView";
 
+/** Pulse from the toolbar's expand-all / collapse-all buttons. `epoch` is 0 until the first press. */
+export interface FoldSignal {
+	epoch: number;
+	action: "collapse" | "expand";
+}
+
 interface ChangesFileListProps {
 	files: ChangesetFile[];
 	workspaceId: string;
@@ -12,6 +18,7 @@ interface ChangesFileListProps {
 	viewMode: ChangesViewMode;
 	worktreePath?: string;
 	selectedFilePath?: string;
+	foldSignal: FoldSignal;
 	onSelectFile?: (path: string, openInNewTab?: boolean) => void;
 	onOpenFile?: (absolutePath: string, openInNewTab?: boolean) => void;
 	onOpenInEditor?: (path: string) => void;
@@ -40,6 +47,7 @@ export const ChangesFileList = memo(function ChangesFileList({
 	viewMode,
 	worktreePath,
 	selectedFilePath,
+	foldSignal,
 	onSelectFile,
 	onOpenFile,
 	onOpenInEditor,
@@ -97,6 +105,7 @@ export const ChangesFileList = memo(function ChangesFileList({
 								workspaceId={workspaceId}
 								worktreePath={worktreePath}
 								selectedFilePath={selectedFilePath}
+								foldSignal={foldSignal}
 								onSelectFile={onSelectFile}
 								onOpenFile={onOpenFile}
 								onOpenInEditor={onOpenInEditor}
@@ -106,6 +115,7 @@ export const ChangesFileList = memo(function ChangesFileList({
 								files={groupFiles}
 								workspaceId={workspaceId}
 								worktreePath={worktreePath}
+								foldSignal={foldSignal}
 								onSelectFile={onSelectFile}
 								onOpenFile={onOpenFile}
 								onOpenInEditor={onOpenInEditor}

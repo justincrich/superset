@@ -25,7 +25,7 @@ import type { FileStatus } from "renderer/routes/_authenticated/_dashboard/v2-wo
 import { PierreRowContextMenu } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/components/WorkspaceSidebar/components/PierreRowContextMenu";
 import type { ChangesetFile } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/useChangeset";
 import { toRelativeWorkspacePath } from "shared/absolute-paths";
-import { SectionToolbar } from "../SectionToolbar";
+import type { FoldSignal } from "../../ChangesFileList";
 import { FileRowContextMenuItems } from "./components/FileRowContextMenuItems";
 import { FolderContextMenuItems } from "./components/FolderContextMenuItems";
 import { ShadowRowHoverActions } from "./components/ShadowRowHoverActions";
@@ -95,6 +95,8 @@ interface ChangesTreeViewProps {
 	worktreePath?: string;
 	/** Absolute path of the file whose diff is currently open, if any. */
 	selectedFilePath?: string;
+	/** Bumped by the toolbar's expand-all / collapse-all buttons. */
+	foldSignal: FoldSignal;
 	onSelectFile?: (path: string, openInNewTab?: boolean) => void;
 	onOpenFile?: (absolutePath: string, openInNewTab?: boolean) => void;
 	onOpenInEditor?: (path: string) => void;
@@ -122,6 +124,7 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 	workspaceId,
 	worktreePath,
 	selectedFilePath,
+	foldSignal,
 	onSelectFile,
 	onOpenFile,
 	onOpenInEditor,
@@ -210,6 +213,16 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 			if (!dirHandle.isExpanded()) dirHandle.expand();
 		}
 	}, [model, dirs]);
+
+	// React to expand-all / collapse-all from the toolbar (new signal only).
+	const lastFoldEpochRef = useRef(0);
+	useEffect(() => {
+		if (foldSignal.epoch === 0 || foldSignal.epoch === lastFoldEpochRef.current)
+			return;
+		lastFoldEpochRef.current = foldSignal.epoch;
+		if (foldSignal.action === "collapse") collapseAll();
+		else expandAll();
+	}, [foldSignal, collapseAll, expandAll]);
 
 	// Echo the diff pane's open file back into the tree's selection — but only
 	// when it belongs to this section. `lastUserSelectRef` guards the loop:
@@ -361,7 +374,6 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 
 	return (
 		<div onClickCapture={onClickCapture}>
-			<SectionToolbar onCollapseAll={collapseAll} onExpandAll={expandAll} />
 			<ShadowClickHint hint={filePolicy.hint} findRow={findFileRow}>
 				<ShadowRowHoverActions
 					findFileRow={findFileRow}

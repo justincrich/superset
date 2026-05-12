@@ -1,13 +1,15 @@
 import type { AppRouter } from "@superset/host-service";
 import type { inferRouterOutputs } from "@trpc/server";
-import { memo } from "react";
+import { memo, useCallback, useState } from "react";
 import type {
 	ChangesFilter,
 	ChangesViewMode,
 } from "renderer/routes/_authenticated/providers/CollectionsProvider/dashboardSidebarLocal/schema";
 import type { ChangesetFile } from "../../../../../../hooks/useChangeset";
+import type { FoldSignal } from "../ChangesFileList";
 import { ChangesFileList } from "../ChangesFileList";
 import { ChangesHeader } from "../ChangesHeader";
+import { ChangesToolbar } from "../ChangesToolbar";
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 
@@ -63,6 +65,19 @@ export const ChangesTabContent = memo(function ChangesTabContent({
 	onRenameBranch,
 	canRenameBranch,
 }: ChangesTabContentProps) {
+	const [foldSignal, setFoldSignal] = useState<FoldSignal>({
+		epoch: 0,
+		action: "expand",
+	});
+	const collapseAll = useCallback(
+		() => setFoldSignal((s) => ({ epoch: s.epoch + 1, action: "collapse" })),
+		[],
+	);
+	const expandAll = useCallback(
+		() => setFoldSignal((s) => ({ epoch: s.epoch + 1, action: "expand" })),
+		[],
+	);
+
 	if (status.isLoading) {
 		return (
 			<div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -90,8 +105,6 @@ export const ChangesTabContent = memo(function ChangesTabContent({
 				totalDeletions={totalDeletions}
 				filter={filter}
 				onFilterChange={onFilterChange}
-				viewMode={viewMode}
-				onViewModeChange={onViewModeChange}
 				commits={commits.data?.commits ?? []}
 				uncommittedCount={
 					status.data.staged.length + status.data.unstaged.length
@@ -101,6 +114,12 @@ export const ChangesTabContent = memo(function ChangesTabContent({
 				onRenameBranch={onRenameBranch}
 				canRename={canRenameBranch}
 			/>
+			<ChangesToolbar
+				viewMode={viewMode}
+				onViewModeChange={onViewModeChange}
+				onCollapseAll={collapseAll}
+				onExpandAll={expandAll}
+			/>
 			<div className="min-h-0 flex-1 overflow-y-auto">
 				<ChangesFileList
 					files={files}
@@ -109,6 +128,7 @@ export const ChangesTabContent = memo(function ChangesTabContent({
 					viewMode={viewMode}
 					worktreePath={worktreePath}
 					selectedFilePath={selectedFilePath}
+					foldSignal={foldSignal}
 					onSelectFile={onSelectFile}
 					onOpenFile={onOpenFile}
 					onOpenInEditor={onOpenInEditor}
