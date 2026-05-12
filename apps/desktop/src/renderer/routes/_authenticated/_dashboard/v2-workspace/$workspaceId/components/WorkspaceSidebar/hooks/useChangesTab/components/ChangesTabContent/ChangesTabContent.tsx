@@ -69,12 +69,17 @@ export const ChangesTabContent = memo(function ChangesTabContent({
 		epoch: 0,
 		action: "expand",
 	});
-	const collapseAll = useCallback(
-		() => setFoldSignal((s) => ({ epoch: s.epoch + 1, action: "collapse" })),
-		[],
-	);
-	const expandAll = useCallback(
-		() => setFoldSignal((s) => ({ epoch: s.epoch + 1, action: "expand" })),
+	const foldCollapsed =
+		foldSignal.epoch > 0 && foldSignal.action === "collapse";
+	const toggleFold = useCallback(
+		() =>
+			setFoldSignal((s) => {
+				const wasCollapsed = s.epoch > 0 && s.action === "collapse";
+				return {
+					epoch: s.epoch + 1,
+					action: wasCollapsed ? "expand" : "collapse",
+				};
+			}),
 		[],
 	);
 
@@ -117,8 +122,8 @@ export const ChangesTabContent = memo(function ChangesTabContent({
 			<ChangesToolbar
 				viewMode={viewMode}
 				onViewModeChange={onViewModeChange}
-				onCollapseAll={collapseAll}
-				onExpandAll={expandAll}
+				collapsed={foldCollapsed}
+				onToggleFold={toggleFold}
 			/>
 			<div className="min-h-0 flex-1 overflow-y-auto">
 				<ChangesFileList
