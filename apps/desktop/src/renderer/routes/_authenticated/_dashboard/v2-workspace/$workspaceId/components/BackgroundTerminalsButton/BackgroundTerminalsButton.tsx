@@ -132,7 +132,10 @@ export function BackgroundTerminalsButton({
 								type="button"
 								aria-label="Close terminal session"
 								title="Close terminal session"
-								disabled={killSession.isPending}
+								disabled={
+									killSession.isPending &&
+									killSession.variables?.terminalId === session.terminalId
+								}
 								className="shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive disabled:pointer-events-none disabled:opacity-30 group-hover:opacity-100"
 								onClick={(event) => {
 									event.preventDefault();
