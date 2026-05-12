@@ -1,4 +1,6 @@
 import type {
+	FileTree,
+	FileTreeDirectoryHandle,
 	FileTreeRowDecoration,
 	FileTreeRowDecorationContext,
 	ContextMenuItem as PierreContextMenuItem,
@@ -8,7 +10,7 @@ import {
 	FileTree as PierreFileTree,
 	useFileTree as usePierreFileTree,
 } from "@pierre/trees/react";
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
 	ShadowClickHint,
 	usePierreRowClickPolicy,
@@ -19,8 +21,14 @@ import { PierreRowContextMenu } from "renderer/routes/_authenticated/_dashboard/
 import type { ChangesetFile } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/useChangeset";
 import { FileRowContextMenuItems } from "./components/FileRowContextMenuItems";
 
+const ITEM_HEIGHT = 24;
+// Pierre rows carry `margin-block: 1px`, so each row occupies ITEM_HEIGHT + 2px.
+const ROW_BOX = ITEM_HEIGHT + 2;
+// Small cushion so the last row never clips against the host's `overflow: hidden`.
+const HEIGHT_CUSHION = 8;
+
 const TREE_STYLE: React.CSSProperties = {
-	"--trees-row-height-override": "24px",
+	"--trees-row-height-override": `${ITEM_HEIGHT}px`,
 	"--trees-level-gap-override": "8px",
 	"--trees-padding-inline-override": "0",
 	"--trees-item-margin-x-override": "0",
@@ -109,6 +117,12 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 		return map;
 	}, [files]);
 
+	// Pierre's host element is `height: 100%` when virtualized — inside this
+	// section's auto-height container that collapses to 0, so the tree would be
+	// invisible. We size the tree explicitly to its content. `dirs` is sorted
+	// shallow→deep so `countVisibleRows` can resolve each dir's ancestors first.
+	const { dirs, fileParents } = useMemo(() => buildTreeShape(paths), [paths]);
+
 	const initialGitStatusEntriesRef = useRef(buildPierreGitStatus(files));
 
 	// Callbacks routed through a ref so Pierre's stable handler closures
@@ -128,7 +142,7 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 		search: false,
 		gitStatus: initialGitStatusEntriesRef.current,
 		icons: { set: "complete", colored: true },
-		itemHeight: 24,
+		itemHeight: ITEM_HEIGHT,
 		overscan: 20,
 		stickyFolders: true,
 		onSelectionChange: (selected) => {
@@ -147,6 +161,19 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 	useEffect(() => {
 		model.setGitStatus(buildPierreGitStatus(files));
 	}, [model, files]);
+
+	// Track the visible row count (shrinks when the user collapses a folder) so
+	// the explicit tree height tracks the actual content height.
+	const [visibleRowCount, setVisibleRowCount] = useState(
+		() => dirs.length + paths.length,
+	);
+	useEffect(() => {
+		const recompute = () =>
+			setVisibleRowCount(countVisibleRows(model, dirs, fileParents));
+		recompute();
+		return model.subscribe(recompute);
+	}, [model, dirs, fileParents]);
+	const treeHeight = visibleRowCount * ROW_BOX + HEIGHT_CUSHION;
 
 	handlersRef.current.onSelect = (treePath) => {
 		onSelectFile?.(treePath, false);
@@ -202,13 +229,77 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 			<ShadowClickHint hint={filePolicy.hint} findRow={findFileRow}>
 				<PierreFileTree
 					model={model}
-					style={TREE_STYLE}
+					style={{ ...TREE_STYLE, height: treeHeight }}
 					renderContextMenu={renderContextMenu}
 				/>
 			</ShadowClickHint>
 		</div>
 	);
 });
+
+/**
+ * From a flat list of file paths, return every directory path implied by them
+ * (sorted shallow→deep) and the parent directory of each file. Root-level
+ * files report `""` as their parent.
+ */
+function buildTreeShape(paths: string[]): {
+	dirs: string[];
+	fileParents: string[];
+} {
+	const dirs: string[] = [];
+	const seen = new Set<string>();
+	const fileParents: string[] = [];
+	for (const path of paths) {
+		const segments = path.split("/");
+		fileParents.push(
+			segments.length > 1 ? segments.slice(0, -1).join("/") : "",
+		);
+		let acc = "";
+		for (let i = 0; i < segments.length - 1; i++) {
+			acc = acc ? `${acc}/${segments[i]}` : segments[i];
+			if (!seen.has(acc)) {
+				seen.add(acc);
+				dirs.push(acc);
+			}
+		}
+	}
+	dirs.sort(
+		(a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b),
+	);
+	return { dirs, fileParents };
+}
+
+/**
+ * Count the rows Pierre currently renders: every directory whose ancestors are
+ * all expanded, plus every file under such a directory. `dirs` must be sorted
+ * shallow→deep. Pierre defaults directories to expanded (`initialExpansion`),
+ * so a missing/unknown handle counts as expanded.
+ */
+function countVisibleRows(
+	model: FileTree,
+	dirs: string[],
+	fileParents: string[],
+): number {
+	const renderedDirs = new Set<string>();
+	const expandedAndVisible = new Set<string>();
+	for (const dir of dirs) {
+		const lastSlash = dir.lastIndexOf("/");
+		const parent = lastSlash < 0 ? "" : dir.slice(0, lastSlash);
+		if (parent !== "" && !expandedAndVisible.has(parent)) continue;
+		renderedDirs.add(dir);
+		const handle = model.getItem(`${dir}/`);
+		const expanded =
+			handle?.isDirectory() === true
+				? (handle as FileTreeDirectoryHandle).isExpanded()
+				: true;
+		if (expanded) expandedAndVisible.add(dir);
+	}
+	let count = renderedDirs.size;
+	for (const parent of fileParents) {
+		if (parent === "" || expandedAndVisible.has(parent)) count += 1;
+	}
+	return count;
+}
 
 function buildPierreGitStatus(files: ChangesetFile[]): {
 	path: string;
