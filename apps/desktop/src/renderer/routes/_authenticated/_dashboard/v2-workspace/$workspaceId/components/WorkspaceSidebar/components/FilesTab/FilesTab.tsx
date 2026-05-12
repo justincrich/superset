@@ -27,7 +27,7 @@ import {
 	usePierreRowClickPolicy,
 	useSidebarFilePolicy,
 } from "renderer/lib/clickPolicy";
-import { loadFallthroughIcons } from "renderer/lib/fileIcons";
+import { useFallthroughIcons } from "renderer/lib/fileIcons";
 import { createPierreTreeStyle } from "renderer/lib/pierreTree";
 import { useOpenInExternalEditor } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/useOpenInExternalEditor";
 import { PierreRowContextMenu } from "../PierreRowContextMenu";
@@ -148,21 +148,7 @@ export function FilesTab({
 		);
 	}, [model, fileStatusByPath, folderStatusByPath, ignoredPaths]);
 
-	// Layer our Material-icon coverage on top of Pierre's built-ins: file types
-	// Pierre doesn't recognize (`.toml`, `.lock`, framework dirs, etc) plus a
-	// Material default-file icon for anything still unmatched. Initial render
-	// uses Pierre's defaults; ours fill in once the sprite finishes loading.
-	// The cache inside loadFallthroughIcons makes subsequent mounts a no-op.
-	useEffect(() => {
-		let cancelled = false;
-		void loadFallthroughIcons().then((config) => {
-			if (cancelled) return;
-			model.setIcons({ set: "complete", colored: true, ...config });
-		});
-		return () => {
-			cancelled = true;
-		};
-	}, [model]);
+	useFallthroughIcons(model);
 
 	// Reflect external selection changes (e.g. tab switch) back into the model.
 	useEffect(() => {

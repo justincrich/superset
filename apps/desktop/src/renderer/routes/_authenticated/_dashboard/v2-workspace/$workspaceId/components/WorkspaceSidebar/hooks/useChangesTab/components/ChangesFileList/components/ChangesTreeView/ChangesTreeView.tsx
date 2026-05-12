@@ -19,7 +19,7 @@ import {
 	usePierreRowClickPolicy,
 	useSidebarFilePolicy,
 } from "renderer/lib/clickPolicy";
-import { loadFallthroughIcons } from "renderer/lib/fileIcons";
+import { useFallthroughIcons } from "renderer/lib/fileIcons";
 import {
 	createPierreTreeStyle,
 	FILE_STATUS_TO_PIERRE,
@@ -140,20 +140,7 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 		model.setGitStatus(buildPierreGitStatus(files));
 	}, [model, files]);
 
-	// Fill in Material icons for file types Pierre's built-in set doesn't cover,
-	// plus a Material default-file icon for anything still unmatched (matches
-	// the Files tab). Initial render uses Pierre's defaults; the sprite-loading
-	// cache makes repeat mounts a no-op.
-	useEffect(() => {
-		let cancelled = false;
-		void loadFallthroughIcons().then((config) => {
-			if (cancelled) return;
-			model.setIcons({ set: "complete", colored: true, ...config });
-		});
-		return () => {
-			cancelled = true;
-		};
-	}, [model]);
+	useFallthroughIcons(model);
 
 	// Size the host to Pierre's measured content height (it renders `height:
 	// 100%`, which collapses to 0 inside this section's auto-height container);
