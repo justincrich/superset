@@ -20,8 +20,12 @@ import {
 	useSidebarFilePolicy,
 } from "renderer/lib/clickPolicy";
 import { loadFallthroughIcons } from "renderer/lib/fileIcons";
+import {
+	createPierreTreeStyle,
+	FILE_STATUS_TO_PIERRE,
+	type PierreGitStatusEntry,
+} from "renderer/lib/pierreTree";
 import { DiscardConfirmDialog } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/components/DiscardConfirmDialog";
-import type { FileStatus } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/components/StatusIndicator";
 import { PierreRowContextMenu } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/components/WorkspaceSidebar/components/PierreRowContextMenu";
 import type { ChangesetFile } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/useChangeset";
 import { toRelativeWorkspacePath } from "shared/absolute-paths";
@@ -29,6 +33,8 @@ import type { FoldSignal } from "../../ChangesFileList";
 import { FileRowContextMenuItems } from "./components/FileRowContextMenuItems";
 import { FolderContextMenuItems } from "./components/FolderContextMenuItems";
 import { ShadowRowHoverActions } from "./components/ShadowRowHoverActions";
+import { useMeasuredTreeHeight } from "./hooks/useMeasuredTreeHeight";
+import { buildTreeShape } from "./utils/buildTreeShape";
 
 const ITEM_HEIGHT = 24;
 // Pierre rows carry `margin-block: 1px`, so each row occupies ITEM_HEIGHT + 2px.
@@ -36,53 +42,10 @@ const ROW_BOX = ITEM_HEIGHT + 2;
 // Small cushion so the last row never clips against the host's `overflow: hidden`.
 const HEIGHT_CUSHION = 8;
 
-const TREE_STYLE: React.CSSProperties = {
-	"--trees-row-height-override": `${ITEM_HEIGHT}px`,
-	"--trees-level-gap-override": "8px",
-	"--trees-padding-inline-override": "0",
-	"--trees-item-margin-x-override": "0",
-	"--trees-item-padding-x-override": "calc(var(--spacing) * 3)",
-	"--trees-item-row-gap-override": "calc(var(--spacing) * 1.5)",
-	"--trees-icon-width-override": "calc(var(--spacing) * 3.5)",
-	"--trees-border-radius-override": "0",
-
-	"--trees-bg-override": "var(--background)",
-	"--trees-fg-override": "var(--foreground)",
-	"--trees-fg-muted-override": "var(--muted-foreground)",
-	"--trees-bg-muted-override":
-		"color-mix(in oklab, var(--accent) 50%, transparent)",
-	"--trees-accent-override": "var(--accent)",
-	"--trees-border-color-override": "var(--border)",
-
-	"--trees-selected-bg-override": "var(--accent)",
-	"--trees-selected-fg-override": "var(--accent-foreground)",
-	"--trees-selected-focused-border-color-override": "var(--ring)",
-
-	"--trees-focus-ring-color-override": "var(--ring)",
-	"--trees-focus-ring-offset-override": "0px",
-
-	"--trees-status-added-override": "oklch(0.627 0.194 149.214)",
-	"--trees-status-untracked-override": "oklch(0.627 0.194 149.214)",
-	"--trees-status-modified-override": "oklch(0.681 0.162 75.834)",
-	"--trees-status-deleted-override": "oklch(0.577 0.245 27.325)",
-	"--trees-status-renamed-override": "oklch(0.6 0.118 244.557)",
-	"--trees-status-ignored-override": "var(--muted-foreground)",
-
-	"--trees-font-size-override": "var(--text-xs)",
-} as React.CSSProperties;
-
-const PIERRE_GIT_STATUS: Record<
-	FileStatus,
-	"added" | "deleted" | "modified" | "renamed" | "untracked"
-> = {
-	added: "added",
-	changed: "modified",
-	copied: "added",
-	deleted: "deleted",
-	modified: "modified",
-	renamed: "renamed",
-	untracked: "untracked",
-};
+const TREE_STYLE = createPierreTreeStyle({
+	rowHeight: ITEM_HEIGHT,
+	levelIndent: 8,
+});
 
 type SectionKind = ChangesetFile["source"]["kind"];
 
@@ -192,45 +155,10 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 		};
 	}, [model]);
 
-	// Pierre's host is `height: 100%` when virtualized — inside this section's
-	// auto-height container that collapses to 0, so the tree would be
-	// invisible. Size it to the content. Pierre already computes that height
-	// (rendered rows × itemHeight, *after* it flattens single-child directory
-	// chains into one row) and writes it to the virtualized list's inline
-	// `style.height` — mirror that. A naive `dirs + files` count would
-	// massively over-estimate because it doesn't know about flattening.
-	const [contentHeight, setContentHeight] = useState<number | null>(null);
-	useEffect(() => {
-		const readHeight = (): boolean => {
-			const list = model
-				.getFileTreeContainer()
-				?.shadowRoot?.querySelector<HTMLElement>(
-					"[data-file-tree-virtualized-list]",
-				);
-			const h = list ? Number.parseFloat(list.style.height) : Number.NaN;
-			if (Number.isFinite(h) && h > 0) {
-				setContentHeight(h);
-				return true;
-			}
-			return false;
-		};
-		let raf = 0;
-		let attempts = 0;
-		const retryUntilReady = () => {
-			if (readHeight() || attempts++ > 30) return;
-			raf = requestAnimationFrame(retryUntilReady);
-		};
-		retryUntilReady();
-		// Pierre rewrites `style.height` when the rendered row count changes
-		// (resetPaths, expand/collapse); re-read on the next frame after each.
-		const unsubscribe = model.subscribe(() => {
-			raf = requestAnimationFrame(readHeight);
-		});
-		return () => {
-			cancelAnimationFrame(raf);
-			unsubscribe();
-		};
-	}, [model]);
+	// Size the host to Pierre's measured content height (it renders `height:
+	// 100%`, which collapses to 0 inside this section's auto-height container);
+	// fall back to a row-count estimate until that first measurement lands.
+	const contentHeight = useMeasuredTreeHeight(model);
 	const treeHeight =
 		contentHeight != null
 			? contentHeight + HEIGHT_CUSHION
@@ -441,43 +369,10 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 	);
 });
 
-/**
- * From a flat list of file paths, return every directory path implied by them
- * (sorted shallow→deep, so a directory's ancestors precede it) and a map of
- * directory → count of files anywhere beneath it.
- */
-function buildTreeShape(paths: string[]): {
-	dirs: string[];
-	dirFileCount: Map<string, number>;
-} {
-	const dirs: string[] = [];
-	const seen = new Set<string>();
-	const dirFileCount = new Map<string, number>();
-	for (const path of paths) {
-		const segments = path.split("/");
-		let acc = "";
-		for (let i = 0; i < segments.length - 1; i++) {
-			acc = acc ? `${acc}/${segments[i]}` : segments[i];
-			if (!seen.has(acc)) {
-				seen.add(acc);
-				dirs.push(acc);
-			}
-			dirFileCount.set(acc, (dirFileCount.get(acc) ?? 0) + 1);
-		}
-	}
-	dirs.sort(
-		(a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b),
-	);
-	return { dirs, dirFileCount };
-}
-
-function buildPierreGitStatus(files: ChangesetFile[]): {
-	path: string;
-	status: "added" | "deleted" | "modified" | "renamed" | "untracked";
-}[] {
+function buildPierreGitStatus(files: ChangesetFile[]): PierreGitStatusEntry[] {
 	return files.map((file) => ({
 		path: file.path,
-		status: PIERRE_GIT_STATUS[file.status],
+		status: FILE_STATUS_TO_PIERRE[file.status],
 	}));
 }
 
