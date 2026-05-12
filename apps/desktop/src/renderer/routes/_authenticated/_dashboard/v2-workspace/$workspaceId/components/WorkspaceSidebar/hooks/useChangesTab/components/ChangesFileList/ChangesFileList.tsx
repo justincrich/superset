@@ -24,7 +24,7 @@ interface ChangesFileListProps {
 	onOpenInEditor?: (path: string) => void;
 }
 
-type GroupKey = "unstaged" | "staged" | "against-base" | "commit";
+type GroupKey = ChangesetFile["source"]["kind"];
 
 const GROUP_ORDER: GroupKey[] = [
 	"unstaged",
@@ -82,7 +82,7 @@ export const ChangesFileList = memo(function ChangesFileList({
 	}
 
 	return (
-		<div className="min-h-0 flex-1 overflow-y-auto">
+		<div className="min-h-0 flex-1 space-y-2 overflow-y-auto pt-1">
 			{GROUP_ORDER.map((key) => {
 				const groupFiles = grouped[key];
 				if (groupFiles.length === 0) return null;

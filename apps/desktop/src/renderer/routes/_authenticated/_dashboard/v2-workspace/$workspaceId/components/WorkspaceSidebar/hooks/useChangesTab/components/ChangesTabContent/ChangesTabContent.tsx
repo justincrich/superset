@@ -125,20 +125,18 @@ export const ChangesTabContent = memo(function ChangesTabContent({
 				collapsed={foldCollapsed}
 				onToggleFold={toggleFold}
 			/>
-			<div className="min-h-0 flex-1 overflow-y-auto">
-				<ChangesFileList
-					files={files}
-					workspaceId={workspaceId}
-					isLoading={isLoading}
-					viewMode={viewMode}
-					worktreePath={worktreePath}
-					selectedFilePath={selectedFilePath}
-					foldSignal={foldSignal}
-					onSelectFile={onSelectFile}
-					onOpenFile={onOpenFile}
-					onOpenInEditor={onOpenInEditor}
-				/>
-			</div>
+			<ChangesFileList
+				files={files}
+				workspaceId={workspaceId}
+				isLoading={isLoading}
+				viewMode={viewMode}
+				worktreePath={worktreePath}
+				selectedFilePath={selectedFilePath}
+				foldSignal={foldSignal}
+				onSelectFile={onSelectFile}
+				onOpenFile={onOpenFile}
+				onOpenInEditor={onOpenInEditor}
+			/>
 		</div>
 	);
 });

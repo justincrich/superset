@@ -23,6 +23,7 @@ export function FolderHeader({
 			type="button"
 			onClick={onToggle}
 			aria-expanded={isOpen}
+			title={label}
 			className="flex w-full items-center gap-1.5 py-1 pr-3 pl-3 text-left text-xs text-muted-foreground hover:bg-accent/30"
 		>
 			{/* `dir="rtl"` right-truncates long paths so the deepest segment stays visible. */}

@@ -48,18 +48,18 @@ export function ChangesToolbar({
 	const Icon = collapsed ? UnfoldVertical : FoldVertical;
 	return (
 		<div className="flex items-center justify-between gap-2 border-b border-border px-2 pt-0.5 pb-1.5">
-			<div className="flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground">
+			<div className="flex min-w-0 items-center gap-2 overflow-hidden text-[11px] text-muted-foreground">
 				<CommitFilterDropdown
 					filter={filter}
 					onFilterChange={onFilterChange}
 					commits={commits}
 					uncommittedCount={uncommittedCount}
 				/>
-				<span className="shrink-0">
+				<span className="whitespace-nowrap">
 					{totalFiles} {totalFiles === 1 ? "file" : "files"}
 				</span>
 				{(totalAdditions > 0 || totalDeletions > 0) && (
-					<span className="shrink-0">
+					<span className="whitespace-nowrap">
 						{totalAdditions > 0 && (
 							<span className="text-green-400">+{totalAdditions}</span>
 						)}

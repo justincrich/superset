@@ -22,6 +22,7 @@ import {
 import { DiscardConfirmDialog } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/components/DiscardConfirmDialog";
 import type { FileStatus } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/components/StatusIndicator";
 import { PierreRowContextMenu } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/components/WorkspaceSidebar/components/PierreRowContextMenu";
+import { loadFallthroughIcons } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/components/WorkspaceSidebar/utils/loadFallthroughIcons";
 import type { ChangesetFile } from "renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/useChangeset";
 import { toRelativeWorkspacePath } from "shared/absolute-paths";
 import type { FoldSignal } from "../../ChangesFileList";
@@ -83,7 +84,7 @@ const PIERRE_GIT_STATUS: Record<
 	untracked: "untracked",
 };
 
-type SectionKind = "unstaged" | "staged" | "against-base" | "commit";
+type SectionKind = ChangesetFile["source"]["kind"];
 
 interface ChangesTreeViewProps {
 	/** Files for a single section — caller has already pre-grouped by `source.kind`. */
@@ -176,6 +177,28 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 		model.setGitStatus(buildPierreGitStatus(files));
 	}, [model, files]);
 
+	// Fill in Material icons for file types Pierre's built-in set doesn't cover
+	// (matches the Files tab). Initial render uses Pierre's defaults; the
+	// sprite-loading cache makes repeat mounts a no-op.
+	useEffect(() => {
+		let cancelled = false;
+		void loadFallthroughIcons().then(
+			({ spriteSheet, byFileName, byFileExtension }) => {
+				if (cancelled) return;
+				model.setIcons({
+					set: "complete",
+					colored: true,
+					spriteSheet,
+					byFileName,
+					byFileExtension,
+				});
+			},
+		);
+		return () => {
+			cancelled = true;
+		};
+	}, [model]);
+
 	// Pierre's host is `height: 100%` when virtualized — inside this section's
 	// auto-height container that collapses to 0, so the tree would be
 	// invisible. Size it to the content. Pierre already computes that height
@@ -220,22 +243,19 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 			? contentHeight + HEIGHT_CUSHION
 			: (dirs.length + paths.length) * ROW_BOX + HEIGHT_CUSHION;
 
-	const collapseAll = useCallback(() => {
-		for (const dir of dirs) {
-			const handle = model.getItem(`${dir}/`);
-			if (handle?.isDirectory() !== true) continue;
-			const dirHandle = handle as FileTreeDirectoryHandle;
-			if (dirHandle.isExpanded()) dirHandle.collapse();
-		}
-	}, [model, dirs]);
-	const expandAll = useCallback(() => {
-		for (const dir of dirs) {
-			const handle = model.getItem(`${dir}/`);
-			if (handle?.isDirectory() !== true) continue;
-			const dirHandle = handle as FileTreeDirectoryHandle;
-			if (!dirHandle.isExpanded()) dirHandle.expand();
-		}
-	}, [model, dirs]);
+	const setAllDirsExpanded = useCallback(
+		(expanded: boolean) => {
+			for (const dir of dirs) {
+				const handle = model.getItem(`${dir}/`);
+				if (handle?.isDirectory() !== true) continue;
+				const dirHandle = handle as FileTreeDirectoryHandle;
+				if (dirHandle.isExpanded() === expanded) continue;
+				if (expanded) dirHandle.expand();
+				else dirHandle.collapse();
+			}
+		},
+		[model, dirs],
+	);
 
 	// React to expand-all / collapse-all from the toolbar (new signal only).
 	const lastFoldEpochRef = useRef(0);
@@ -243,9 +263,8 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 		if (foldSignal.epoch === 0 || foldSignal.epoch === lastFoldEpochRef.current)
 			return;
 		lastFoldEpochRef.current = foldSignal.epoch;
-		if (foldSignal.action === "collapse") collapseAll();
-		else expandAll();
-	}, [foldSignal, collapseAll, expandAll]);
+		setAllDirsExpanded(foldSignal.action === "expand");
+	}, [foldSignal, setAllDirsExpanded]);
 
 	// Echo the diff pane's open file back into the tree's selection — but only
 	// when it belongs to this section. `lastUserSelectRef` guards the loop:
@@ -309,42 +328,43 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 		},
 	});
 
+	const fileMenuItems = (file: ChangesetFile) => (
+		<FileRowContextMenuItems
+			file={file}
+			worktreePath={worktreePath}
+			sectionKind={sectionKind}
+			onSelectFile={onSelectFile}
+			onOpenFile={onOpenFile}
+			onOpenInEditor={onOpenInEditor}
+			onRequestDiscard={setDiscardTarget}
+		/>
+	);
+
 	const renderContextMenu = (
 		item: PierreContextMenuItem,
 		ctx: PierreContextMenuOpenContext,
 	) => {
-		if (item.kind === "directory") {
-			return (
-				<PierreRowContextMenu
-					anchorRect={ctx.anchorRect}
-					onClose={ctx.close}
-					data-file-tree-context-menu-root="true"
-				>
+		const menuItems = (() => {
+			if (item.kind === "directory") {
+				return (
 					<FolderContextMenuItems
 						relativePath={stripTrailingSlash(item.path)}
 						worktreePath={worktreePath}
 						onOpenInEditor={onOpenInEditor}
 					/>
-				</PierreRowContextMenu>
-			);
-		}
-		const file = fileByPath.get(item.path);
-		if (!file) return null;
+				);
+			}
+			const file = fileByPath.get(item.path);
+			return file ? fileMenuItems(file) : null;
+		})();
+		if (!menuItems) return null;
 		return (
 			<PierreRowContextMenu
 				anchorRect={ctx.anchorRect}
 				onClose={ctx.close}
 				data-file-tree-context-menu-root="true"
 			>
-				<FileRowContextMenuItems
-					file={file}
-					worktreePath={worktreePath}
-					sectionKind={sectionKind}
-					onSelectFile={onSelectFile}
-					onOpenFile={onOpenFile}
-					onOpenInEditor={onOpenInEditor}
-					onRequestDiscard={setDiscardTarget}
-				/>
+				{menuItems}
 			</PierreRowContextMenu>
 		);
 	};
@@ -375,18 +395,7 @@ export const ChangesTreeView = memo(function ChangesTreeView({
 
 	const renderHoverMenuContent = (treePath: string) => {
 		const file = fileByPath.get(treePath);
-		if (!file) return null;
-		return (
-			<FileRowContextMenuItems
-				file={file}
-				worktreePath={worktreePath}
-				sectionKind={sectionKind}
-				onSelectFile={onSelectFile}
-				onOpenFile={onOpenFile}
-				onOpenInEditor={onOpenInEditor}
-				onRequestDiscard={setDiscardTarget}
-			/>
-		);
+		return file ? fileMenuItems(file) : null;
 	};
 
 	const discardIsDelete =

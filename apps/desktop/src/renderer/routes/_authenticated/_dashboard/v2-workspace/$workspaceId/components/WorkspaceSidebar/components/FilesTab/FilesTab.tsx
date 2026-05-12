@@ -37,11 +37,11 @@ import {
 	ROW_HEIGHT,
 	TREE_INDENT,
 } from "renderer/screens/main/components/WorkspaceView/RightSidebar/FilesView/constants";
+import { loadFallthroughIcons } from "../../utils/loadFallthroughIcons";
 import { PierreRowContextMenu } from "../PierreRowContextMenu";
 import { FileMenuItems } from "./components/FileMenuItems";
 import { FolderMenuItems } from "./components/FolderMenuItems";
 import { useFilesTabBridge } from "./hooks/useFilesTabBridge";
-import { loadFallthroughIcons } from "./utils/loadFallthroughIcons";
 import {
 	asDirectoryHandle,
 	basename,
