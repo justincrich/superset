@@ -9,25 +9,32 @@ import { getPresetIcon } from "@superset/ui/icons/preset-icons";
 import { useNavigate } from "@tanstack/react-router";
 import { HiCheck } from "react-icons/hi2";
 import { LuCpu, LuSettings } from "react-icons/lu";
-import {
-	useIsDarkTheme,
-	usePresetIcon,
-} from "renderer/assets/app-icons/preset-icons";
+import { useIsDarkTheme } from "renderer/assets/app-icons/preset-icons";
 import { PickerTrigger } from "renderer/components/PickerTrigger";
-import { useEnabledAgents } from "renderer/hooks/useEnabledAgents";
+import { useHostUrl } from "renderer/hooks/host-service/useHostTargetUrl";
+import { useV2AgentChoices } from "renderer/hooks/useV2AgentChoices";
 
 interface AgentPickerProps {
+	hostId: string | null | undefined;
 	value: string;
 	onChange: (next: string) => void;
 	className?: string;
 }
 
-export function AgentPicker({ value, onChange, className }: AgentPickerProps) {
+export function AgentPicker({
+	hostId,
+	value,
+	onChange,
+	className,
+}: AgentPickerProps) {
 	const navigate = useNavigate();
-	const { agents } = useEnabledAgents();
+	const hostUrl = useHostUrl(hostId);
+	const { agents } = useV2AgentChoices(hostUrl);
 	const isDark = useIsDarkTheme();
 	const selectedAgent = agents.find((agent) => agent.id === value);
-	const selectedIcon = usePresetIcon(value);
+	const selectedIcon = selectedAgent
+		? getPresetIcon(selectedAgent.iconId ?? selectedAgent.id, isDark)
+		: null;
 
 	return (
 		<DropdownMenu>
@@ -50,7 +57,7 @@ export function AgentPicker({ value, onChange, className }: AgentPickerProps) {
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-56">
 				{agents.map((agent) => {
-					const icon = getPresetIcon(agent.id, isDark);
+					const icon = getPresetIcon(agent.iconId ?? agent.id, isDark);
 					return (
 						<DropdownMenuItem
 							key={agent.id}
