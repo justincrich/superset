@@ -606,9 +606,9 @@ export const SETTINGS_ITEMS: SettingsItem[] = [
 	{
 		id: SETTING_ITEM_ID.BEHAVIOR_OPEN_LINKS_IN_APP,
 		section: "behavior",
-		title: "Open links in app browser",
+		title: "Open links in Superset browser",
 		description:
-			"Open links from chat and terminal in the built-in browser instead of your default browser",
+			"Open links from chat and terminal in the Superset browser instead of an external browser",
 		keywords: [
 			"browser",
 			"links",

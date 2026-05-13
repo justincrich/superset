@@ -210,11 +210,11 @@ export function BehaviorSettings({ visibleItems }: BehaviorSettingsProps) {
 								htmlFor="open-links-in-app"
 								className="text-sm font-medium"
 							>
-								Open links in app browser
+								Open links in Superset browser
 							</Label>
 							<p className="text-xs text-muted-foreground">
-								Open links from chat and terminal in the built-in browser
-								instead of your default browser
+								Open links from chat and terminal in the Superset browser
+								instead of an external browser
 							</p>
 						</div>
 						<Switch
