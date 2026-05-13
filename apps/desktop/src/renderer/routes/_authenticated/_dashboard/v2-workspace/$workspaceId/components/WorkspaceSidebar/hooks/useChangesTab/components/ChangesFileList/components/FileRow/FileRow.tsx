@@ -108,14 +108,21 @@ export const FileRow = memo(function FileRow({
 			>
 				<FileIcon fileName={basename} className="size-3.5 shrink-0" />
 				<span className="flex min-w-0 flex-1 items-baseline overflow-hidden">
-					{dir && <span className="truncate text-muted-foreground">{dir}</span>}
+					{dir && (
+						<span
+							className="min-w-0 truncate text-muted-foreground"
+							style={{ direction: "rtl", textAlign: "left" }}
+						>
+							<bdi>{dir}</bdi>
+						</span>
+					)}
 					{oldBasename && (
 						<span className="truncate text-muted-foreground">
 							{oldBasename}
 							<span className="px-1">→</span>
 						</span>
 					)}
-					<span className="min-w-[120px] truncate font-medium text-foreground">
+					<span className="shrink-0 truncate font-medium text-foreground">
 						{basename}
 					</span>
 				</span>
