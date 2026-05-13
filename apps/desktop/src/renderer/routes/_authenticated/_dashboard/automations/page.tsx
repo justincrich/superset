@@ -1,9 +1,4 @@
-import type {
-	SelectAutomation,
-	SelectUser,
-	SelectV2Host,
-	SelectV2Workspace,
-} from "@superset/db/schema";
+import type { SelectAutomation } from "@superset/db/schema";
 import { COMPANY } from "@superset/shared/constants";
 import { describeSchedule } from "@superset/shared/rrule";
 import {
@@ -124,13 +119,9 @@ function AutomationsPage() {
 				.select(({ a }) => ({ ...a })),
 		[collections.automations],
 	);
-	// Defensive filter: the live-query result has occasionally surfaced nullish
-	// entries (see #4519), which makes `automation.id` throw deeper in render.
+	// Live queries can briefly surface nullish rows while syncing.
 	const automations = useMemo(
-		() =>
-			(automationRows as Array<SelectAutomation | null | undefined>).filter(
-				(a): a is SelectAutomation => a != null,
-			),
+		() => automationRows.filter((automation) => automation != null),
 		[automationRows],
 	);
 
@@ -159,38 +150,17 @@ function AutomationsPage() {
 		[collections.v2Hosts],
 	);
 
-	const usersById = useMemo(
-		() =>
-			indexBy(
-				userRows as Array<
-					Pick<SelectUser, "id" | "name" | "email"> | null | undefined
-				>,
-				(u) => u.id,
-			),
-		[userRows],
-	);
+	const usersById = useMemo(() => indexBy(userRows, (u) => u.id), [userRows]);
 	const projectsById = useMemo(
 		() => indexBy(recentProjects, (p) => p.id),
 		[recentProjects],
 	);
 	const workspacesById = useMemo(
-		() =>
-			indexBy(
-				workspaceRows as Array<
-					Pick<SelectV2Workspace, "id" | "name"> | null | undefined
-				>,
-				(w) => w.id,
-			),
+		() => indexBy(workspaceRows, (w) => w.id),
 		[workspaceRows],
 	);
 	const hostsById = useMemo(
-		() =>
-			indexBy(
-				hostRows as Array<
-					Pick<SelectV2Host, "machineId" | "name"> | null | undefined
-				>,
-				(h) => h.machineId,
-			),
+		() => indexBy(hostRows, (h) => h.machineId),
 		[hostRows],
 	);
 
