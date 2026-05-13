@@ -4,11 +4,15 @@ import { MarkdownSearch } from "renderer/screens/main/components/WorkspaceView/C
 import { useMarkdownSearch } from "renderer/screens/main/components/WorkspaceView/ContentView/TabsContent/TabView/FileViewerPane/hooks/useMarkdownSearch";
 import type { ViewProps } from "../../types";
 
-export function MarkdownPreviewView({ document, filePath }: ViewProps) {
+export function MarkdownPreviewView({
+	document,
+	filePath,
+	isActive,
+}: ViewProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const search = useMarkdownSearch({
 		containerRef,
-		isFocused: true,
+		isFocused: isActive,
 		isRenderedMode: true,
 		filePath,
 	});
