@@ -243,6 +243,19 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 								"h-5 w-full -ml-1 border-none bg-transparent px-1 py-0 text-[13px] leading-tight outline-none",
 							)}
 						/>
+					) : isMainWorkspace ? (
+						<span
+							className={cn(
+								"flex min-w-0 items-baseline gap-1.5 truncate text-[13px] leading-tight transition-colors",
+								isActive ? "text-foreground" : "text-foreground/80",
+							)}
+						>
+							<span className="shrink-0">local</span>
+							<span className="text-muted-foreground/60">·</span>
+							<span className="truncate font-mono text-[11px] text-muted-foreground/60">
+								{branch}
+							</span>
+						</span>
 					) : (
 						<span
 							className={cn(
