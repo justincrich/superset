@@ -575,6 +575,93 @@ bun --cwd apps/desktop stress:renderer -- \
     `/tmp/superset-v2qa-home.LGrti0/tanstack-db.sqlite` did not exist.
 - Automated total for this pass: 787 tests passed, 0 failed, plus MCP v2
   typecheck passed.
+- Seeded renderer stress smoke fixtures into the initialized local
+  `superset-dev-data` home:
+  - `bun --cwd apps/desktop stress:renderer:fixtures -- --workspace-count 2 --changed-files 20 --lines-per-file 20 --base-files 80 --json`
+  - Org: `mock-org-id`
+  - Project: `0398bad7-9802-4fff-8270-a75155ff0662`
+  - Workspaces:
+    `22885ca9-fb49-45a4-8a85-6b13c4b2a099`,
+    `d29d1179-5775-45da-baa5-f31f03984574`
+- Started desktop dev with CDP enabled:
+  - `SKIP_ENV_VALIDATION=1 SUPERSET_HOME_DIR="$PWD/superset-dev-data" SUPERSET_RENDERER_STRESS_CDP_PORT=9333 bun --cwd apps/desktop dev`
+- Ran renderer stress smoke:
+  - `bun --cwd apps/desktop stress:renderer -- --port 9333 --scenario all --workspace-ids 22885ca9-fb49-45a4-8a85-6b13c4b2a099,d29d1179-5775-45da-baa5-f31f03984574 --iterations 100 --route-iterations 60 --heavy-iterations 80 --terminal-iterations 40 --timeout-ms 180000 --progress-every 10 --json`
+  - Cold result: non-zero because max heartbeat delay was `953.7ms` against
+    the strict `500ms` threshold. No renderer errors, unhandled rejections, or
+    stress action errors were reported.
+  - Warm rerun result: pass. Max heartbeat delay `160.7ms`, max long task
+    `115ms`, 0 renderer errors.
+- Ran targeted renderer stress isolation:
+  - `workspace-switch`: pass. Max heartbeat delay `212.6ms`, 0 renderer
+    errors.
+  - `route-sweep`: pass. Max heartbeat delay `257.9ms`, 0 renderer errors.
+  - `workspace-heavy`: pass. Max heartbeat delay `105.9ms`, 0 renderer
+    errors.
+  - `terminal-heavy`: pass. Max heartbeat delay `155.3ms`, 0 renderer errors.
+- Ran root lint:
+  - `bun run lint`
+  - Result: pass, 4490 files checked, no fixes applied.
+- Expanded renderer stress fixtures to force higher-volume V2 pane, route, diff,
+  and terminal behavior:
+  - `bun --cwd apps/desktop stress:renderer:fixtures -- --workspace-count 4 --changed-files 120 --lines-per-file 60 --base-files 220 --json`
+  - Project: `bccdd107-e716-4d68-9d5f-c10d1624d877`
+  - Workspaces:
+    `566cced4-e116-47b5-b012-c32ff74651d6`,
+    `f88a4a57-bd0b-487e-adaf-916a4e4b9e6f`,
+    `db01ab8a-6cd6-4f85-9983-358f8ffeacc9`,
+    `11150899-9cd1-4884-b7d4-cc6f949c35f2`
+- Re-ran desktop dev with CDP on port `9334`:
+  - `SKIP_ENV_VALIDATION=1 SUPERSET_HOME_DIR="$PWD/superset-dev-data" SUPERSET_RENDERER_STRESS_CDP_PORT=9334 bun --cwd apps/desktop dev`
+- Expanded stress found and fixed a real git environment bug:
+  - Host-service and main-process git helpers inherited `PAGER`, `GIT_PAGER`,
+    `GH_PAGER`, and `LESS` from the interactive shell.
+  - `simple-git@3.36.0` rejects those env vars unless unsafe pager mode is
+    enabled, producing `GitPluginError: Use of "PAGER" is not permitted without
+    enabling allowUnsafePager`.
+  - Fix: strip those vars from app-owned simple-git/host-service environments
+    while preserving interactive terminal env behavior.
+  - Regression:
+    `bun --cwd apps/desktop test src/lib/trpc/routers/workspaces/utils/shell-env.test.ts src/main/lib/host-service-coordinator.test.ts`
+    -> 16 pass, 0 fail.
+- Expanded terminal stress found and fixed a host-service WebSocket close bug:
+  - The attach error path passed full dynamic terminal errors as WebSocket close
+    reasons, but close reasons are capped at 123 bytes.
+  - Stress reproduced repeated `RangeError: The message must not be greater than
+    123 bytes` from terminal attach cleanup.
+  - Fix: clamp terminal WebSocket close reasons to the protocol byte limit while
+    still sending the full error as the JSON terminal error message.
+  - Regression: `bun test packages/host-service/src/terminal/terminal.test.ts`
+    -> 2 pass, 0 fail.
+- Expanded terminal stress found and fixed a renderer responsiveness bug:
+  - `terminal-heavy` with 32 tabs x 4 panes failed heartbeat
+    (`3793.5ms > 500ms`) and profiled synchronous xterm fit/visibility reads in
+    `apps/desktop/src/renderer/lib/terminal/terminal-runtime.ts`.
+  - Fix: queue terminal resize/fit measurements across animation frames so
+    rapid attach/detach churn coalesces instead of forcing layout synchronously.
+  - Regression:
+    `bun --cwd apps/desktop test src/renderer/lib/terminal/terminal-runtime-registry.test.ts src/renderer/lib/terminal/terminal-ws-transport.test.ts`
+    -> 12 pass, 0 fail.
+  - Stress rerun:
+    `bun --cwd apps/desktop stress:renderer -- --port 9334 --scenario terminal-heavy --workspace-ids 566cced4-e116-47b5-b012-c32ff74651d6,f88a4a57-bd0b-487e-adaf-916a4e4b9e6f,db01ab8a-6cd6-4f85-9983-358f8ffeacc9,11150899-9cd1-4884-b7d4-cc6f949c35f2 --terminal-iterations 100 --terminal-tab-count 32 --terminal-panes-per-tab 4 --terminal-lines 80 --terminal-payload-bytes 4096 --timeout-ms 180000 --progress-every 25 --profile-cpu --json`
+    -> pass, 0 action errors, 0 renderer errors.
+  - Full expanded stress rerun:
+    `bun --cwd apps/desktop stress:renderer -- --port 9334 --scenario all --workspace-ids 566cced4-e116-47b5-b012-c32ff74651d6,f88a4a57-bd0b-487e-adaf-916a4e4b9e6f,db01ab8a-6cd6-4f85-9983-358f8ffeacc9,11150899-9cd1-4884-b7d4-cc6f949c35f2 --iterations 300 --route-iterations 120 --heavy-iterations 200 --terminal-iterations 100 --terminal-tab-count 32 --terminal-panes-per-tab 4 --terminal-lines 80 --terminal-payload-bytes 4096 --timeout-ms 300000 --progress-every 25 --profile-cpu --json`
+    -> pass, 0 action errors, 0 renderer errors, no threshold failures.
+- Post-`origin/main` merge verification:
+  - Merged `origin/main` at `f95b8f45a`; resolved conflicts by keeping main's
+    simplified terminal runtime and reapplying only the queued resize fix.
+  - `origin/main` removed the renderer stress fixture/runner scripts and
+    package scripts, so the stress commands above are historical and cannot be
+    rerun in the merged tree without restoring a harness.
+  - `bun install` was required after the merge to sync `node_modules` with the
+    merged `bun.lock`; before that, `@superset/host-service` typecheck failed
+    because `@mastra/memory` was declared but not linked locally.
+  - `bun run lint` -> pass.
+  - `bun run typecheck` -> pass, 28/28 Turbo tasks successful.
+  - `bun run test` -> pass, 11/11 Turbo tasks successful. Desktop reported
+    1,930 passing tests; host-service reported 632 passing tests and 8 existing
+    todos.
 
 ## Findings
 
@@ -585,3 +672,18 @@ bun --cwd apps/desktop stress:renderer -- \
   that initializes the TanStack persistence DB. This blocks the documented
   "prepare fixture workspaces" step in `apps/desktop/docs/RENDERER_STRESS_QA.md`
   for otherwise clean local QA environments.
+- Renderer stress finding: the first cold `all` smoke run exceeded the strict
+  heartbeat threshold once (`953.7ms > 500ms`) without renderer/action errors.
+  The same command passed on warm rerun, and targeted `workspace-switch`,
+  `route-sweep`, `workspace-heavy`, and `terminal-heavy` runs stayed below
+  threshold. Treat this as a cold-path responsiveness signal, not a functional
+  failure.
+- Expanded renderer stress is now catching real failures:
+  - inherited pager env broke app-owned git calls through simple-git;
+  - long terminal attach errors could crash WebSocket close cleanup;
+  - synchronous terminal fit/visibility work could block the renderer heartbeat
+    under high tab/pane churn.
+- Residual stress profile signal: `hostIsVisible`/`measureAndResize` and xterm
+  ligature/WebGL work still dominate CPU in terminal-heavy profiles. The queued
+  resize fix moves the behavior under the current heartbeat threshold, but this
+  remains the next performance area if larger terminal fixtures are added.
