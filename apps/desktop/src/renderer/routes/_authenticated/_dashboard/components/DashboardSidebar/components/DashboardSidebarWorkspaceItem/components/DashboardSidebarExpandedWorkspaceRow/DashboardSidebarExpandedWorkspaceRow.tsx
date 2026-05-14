@@ -1,6 +1,5 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import { cn } from "@superset/ui/utils";
-import { useQuery } from "@tanstack/react-query";
 import {
 	type ComponentPropsWithoutRef,
 	forwardRef,
@@ -12,8 +11,6 @@ import { HiMiniMinus, HiMiniXMark } from "react-icons/hi2";
 import type { DiffStats } from "renderer/hooks/host-service/useDiffStats";
 import { HotkeyLabel } from "renderer/hotkeys";
 import { electronTrpc } from "renderer/lib/electron-trpc";
-import { getHostServiceClientByUrl } from "renderer/lib/host-service-client";
-import { useLocalHostService } from "renderer/routes/_authenticated/providers/LocalHostServiceProvider";
 import { RenameInput } from "renderer/screens/main/components/WorkspaceSidebar/RenameInput";
 import type { ActivePaneStatus } from "shared/tabs-types";
 import type {
@@ -119,24 +116,6 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 					? "remote"
 					: "cloud"
 			: null;
-
-		const { activeHostUrl } = useLocalHostService();
-		const isLocalMainWorkspace = isMainWorkspace && hostType === "local-device";
-		const { data: liveBranch } = useQuery({
-			queryKey: ["dashboardSidebarLiveBranch", workspace.id],
-			queryFn: async () => {
-				if (!activeHostUrl) return null;
-				const status = await getHostServiceClientByUrl(
-					activeHostUrl,
-				).workspace.gitStatus.query({ id: workspace.id });
-				return status?.branch ?? null;
-			},
-			enabled: isLocalMainWorkspace && !!activeHostUrl && !creationStatus,
-			refetchInterval: 10_000,
-			refetchOnWindowFocus: true,
-			staleTime: 5_000,
-		});
-		const displayedBranch = liveBranch ?? branch;
 
 		return (
 			// biome-ignore lint/a11y/noStaticElementInteractions: Mirrors the legacy sidebar row UI, which includes nested action buttons.
@@ -281,7 +260,7 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 							<span className="shrink-0">{mainWorkspaceHostLabel}</span>
 							<span className="text-muted-foreground/60">·</span>
 							<span className="truncate font-mono text-[11px] text-muted-foreground/60">
-								{displayedBranch}
+								{branch}
 							</span>
 						</span>
 					) : (
