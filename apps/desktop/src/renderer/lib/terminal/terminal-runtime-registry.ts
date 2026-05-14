@@ -343,13 +343,15 @@ class TerminalRuntimeRegistryImpl {
 	): Promise<boolean> {
 		const entry = this.getEntry(terminalId, instanceId);
 		if (!entry?.runtime) return Promise.resolve(false);
+		const { terminal } = entry.runtime;
 
-		try {
-			entry.runtime.terminal.write(data);
-			return Promise.resolve(true);
-		} catch {
-			return Promise.resolve(false);
-		}
+		return new Promise((resolve) => {
+			try {
+				terminal.write(data, () => resolve(true));
+			} catch {
+				resolve(false);
+			}
+		});
 	}
 
 	getStressDebugInfo(

@@ -910,9 +910,29 @@ function rendererStress(options: {
 		}
 	};
 
+	let preferredBridgeWorkspaceId: string | undefined;
 	const findWorkspaceBridge = async (workspaceIds: string[]) => {
+		const mountedBridge = getBridge();
+		if (
+			mountedBridge &&
+			(workspaceIds.length === 0 ||
+				workspaceIds.includes(mountedBridge.workspaceId))
+		) {
+			return {
+				workspaceId: mountedBridge.workspaceId,
+				bridge: mountedBridge,
+			};
+		}
+
+		const orderedWorkspaceIds = Array.from(
+			new Set(
+				[preferredBridgeWorkspaceId, ...workspaceIds].filter(
+					(value): value is string => Boolean(value),
+				),
+			),
+		);
 		const failures: string[] = [];
-		for (const candidateWorkspaceId of workspaceIds) {
+		for (const candidateWorkspaceId of orderedWorkspaceIds) {
 			await navigateTo(
 				`/v2-workspace/${encodeURIComponent(candidateWorkspaceId)}/`,
 			);
@@ -928,7 +948,7 @@ function rendererStress(options: {
 			}
 		}
 		throw new Error(
-			`No V2 workspace stress bridge mounted. Tried ${workspaceIds.length} workspace route(s): ${failures.join(
+			`No V2 workspace stress bridge mounted. Tried ${orderedWorkspaceIds.length} workspace route(s): ${failures.join(
 				"; ",
 			)}`,
 		);
@@ -1040,6 +1060,7 @@ function rendererStress(options: {
 		const startedAt = performance.now();
 		const startMemory = stressWindow.performance.memory ?? null;
 		const targets = getTargets();
+		preferredBridgeWorkspaceId = getBridge()?.workspaceId;
 		const requiredTargetCount = shouldRunWorkspaceSwitch ? 2 : 1;
 		if (targets.length < requiredTargetCount) {
 			throw new Error(

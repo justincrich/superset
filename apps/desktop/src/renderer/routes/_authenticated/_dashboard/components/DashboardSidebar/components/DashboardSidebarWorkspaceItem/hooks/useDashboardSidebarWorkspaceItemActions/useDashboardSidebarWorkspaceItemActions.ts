@@ -5,6 +5,7 @@ import { useCopyToClipboard } from "renderer/hooks/useCopyToClipboard";
 import { getHostServiceClientByUrl } from "renderer/lib/host-service-client";
 import { electronTrpcClient } from "renderer/lib/trpc-client";
 import { useDashboardSidebarSectionRename } from "renderer/routes/_authenticated/_dashboard/components/DashboardSidebar/components/DashboardSidebarSectionRenameContext";
+import { navigateToV2Workspace } from "renderer/routes/_authenticated/_dashboard/utils/workspace-navigation";
 import { useDashboardSidebarState } from "renderer/routes/_authenticated/hooks/useDashboardSidebarState";
 import { useOptimisticCollectionActions } from "renderer/routes/_authenticated/hooks/useOptimisticCollectionActions";
 import { useLocalHostService } from "renderer/routes/_authenticated/providers/LocalHostServiceProvider";
@@ -56,10 +57,8 @@ export function useDashboardSidebarWorkspaceItemActions({
 	const handleClick = () => {
 		if (isRenaming) return;
 		clearWorkspaceAttention(workspaceId);
-		navigate({
-			to: "/v2-workspace/$workspaceId",
-			params: { workspaceId },
-		});
+		if (isActive) return;
+		void navigateToV2Workspace(workspaceId, navigate);
 	};
 
 	const startRename = () => {

@@ -86,7 +86,9 @@ function createFakeTerminal(): FakeTerminal {
 	return {
 		cols: 120,
 		rows: 32,
-		write: mock((_data: string | Uint8Array) => {}),
+		write: mock((_data: string | Uint8Array, callback?: () => void) => {
+			callback?.();
+		}),
 		getSelection: mock(() => ""),
 		clear: mock(() => {}),
 		scrollToBottom: mock(() => {}),
@@ -239,23 +241,40 @@ describe("terminalRuntimeRegistry", () => {
 		).toEqual([]);
 	});
 
-	it("accepts stress output without waiting for xterm write completion", async () => {
+	it("resolves stress output after xterm write completion", async () => {
 		terminalRuntimeRegistry.mount(
 			"terminal-1",
 			createContainer(),
 			appearance,
 			"workspace-a",
 		);
+		const writeState: { flush: (() => void) | null } = { flush: null };
+		createdRuntimes[0]?.terminal.write.mockImplementation(
+			(_data: string | Uint8Array, callback?: () => void) => {
+				writeState.flush = () => callback?.();
+			},
+		);
 
-		const accepted = await terminalRuntimeRegistry.writeForStress(
+		const acceptedPromise = terminalRuntimeRegistry.writeForStress(
 			"terminal-1",
 			"large output",
 			"workspace-a",
 		);
+		let resolved = false;
+		void acceptedPromise.then(() => {
+			resolved = true;
+		});
+		await Promise.resolve();
 
+		expect(resolved).toBe(false);
+		if (!writeState.flush) {
+			throw new Error("Expected xterm write callback to be captured");
+		}
+		writeState.flush();
+		const accepted = await acceptedPromise;
 		expect(accepted).toBe(true);
-		expect(createdRuntimes[0]?.terminal.write).toHaveBeenCalledWith(
-			"large output",
-		);
+		const writeCall = createdRuntimes[0]?.terminal.write.mock.calls[0];
+		expect(writeCall?.[0]).toBe("large output");
+		expect(typeof writeCall?.[1]).toBe("function");
 	});
 });
