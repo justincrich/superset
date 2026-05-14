@@ -112,6 +112,13 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 		const workspaceKindDescription = isMainWorkspace
 			? "Uses the repository checkout on this host"
 			: "Isolated copy for parallel development";
+		const mainWorkspaceHostLabel = isMainWorkspace
+			? hostType === "local-device"
+				? "local"
+				: hostType === "remote-device"
+					? "remote"
+					: "cloud"
+			: null;
 
 		const { activeHostUrl } = useLocalHostService();
 		const isLocalMainWorkspace = isMainWorkspace && hostType === "local-device";
@@ -271,7 +278,7 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 								isActive ? "text-foreground" : "text-foreground/80",
 							)}
 						>
-							<span className="shrink-0">local</span>
+							<span className="shrink-0">{mainWorkspaceHostLabel}</span>
 							<span className="text-muted-foreground/60">·</span>
 							<span className="truncate font-mono text-[11px] text-muted-foreground/60">
 								{displayedBranch}
