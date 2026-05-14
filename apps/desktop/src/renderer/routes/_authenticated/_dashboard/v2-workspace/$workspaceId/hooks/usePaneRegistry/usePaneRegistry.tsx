@@ -41,11 +41,8 @@ import type {
 	PaneViewerData,
 	TerminalPaneData,
 } from "../../types";
-import {
-	BrowserPane,
-	BrowserPaneToolbar,
-	browserRuntimeRegistry,
-} from "./components/BrowserPane";
+import type { TerminalLauncher } from "../useV2TerminalLauncher";
+import { BrowserPane, BrowserPaneToolbar } from "./components/BrowserPane";
 import { ChatPane } from "./components/ChatPane";
 import { ChatPaneTitle } from "./components/ChatPane/components/ChatPaneTitle";
 import { CommentPane } from "./components/CommentPane";
@@ -106,11 +103,13 @@ const MOD_KEY = navigator.platform.toLowerCase().includes("mac")
 interface UsePaneRegistryOptions {
 	onOpenFile: (path: string, openInNewTab?: boolean) => void;
 	onRevealPath: (path: string) => void;
+	launcher: TerminalLauncher;
 }
 
 export function usePaneRegistry({
 	onOpenFile,
 	onRevealPath,
+	launcher,
 }: UsePaneRegistryOptions): PaneRegistry<PaneViewerData> {
 	const { workspace } = useWorkspace();
 	const workspaceId = workspace.id;
@@ -286,7 +285,11 @@ export function usePaneRegistry({
 				},
 				renderTitle: (ctx: RendererContext<PaneViewerData>) => (
 					<div className="flex min-w-0 flex-1 items-center gap-1.5">
-						<TerminalSessionDropdown context={ctx} workspaceId={workspaceId} />
+						<TerminalSessionDropdown
+							context={ctx}
+							launcher={launcher}
+							workspaceId={workspaceId}
+						/>
 						<V2NotificationStatusIndicator
 							sources={getV2NotificationSourcesForPane(ctx.pane)}
 						/>
@@ -420,9 +423,7 @@ export function usePaneRegistry({
 				renderToolbar: (ctx: RendererContext<PaneViewerData>) => (
 					<BrowserPaneToolbar ctx={ctx} />
 				),
-				onAfterClose: (pane) => {
-					browserRuntimeRegistry.destroy(pane.id);
-				},
+				// Destruction handled by useGlobalBrowserLifecycle for now.
 				contextMenuActions: (_ctx, defaults) =>
 					defaults.map((d) =>
 						d.key === "close-pane" ? { ...d, label: "Close Browser" } : d,
@@ -507,6 +508,7 @@ export function usePaneRegistry({
 			killTerminalSession,
 			killTerminalSessionSilently,
 			isKillingTerminalSession,
+			launcher,
 			onOpenFile,
 			onRevealPath,
 		],
