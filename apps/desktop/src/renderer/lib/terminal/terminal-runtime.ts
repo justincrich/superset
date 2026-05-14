@@ -24,7 +24,6 @@ type TerminalOutputData = string | Uint8Array;
 
 interface TerminalOutputQueueItem {
 	data: TerminalOutputData;
-	byteLength: number;
 	callback?: () => void;
 }
 
@@ -51,7 +50,6 @@ export interface TerminalRuntime {
 	_disposeImagePasteFallback: (() => void) | null;
 	_outputQueue: TerminalOutputQueueItem[];
 	_outputEnqueued: boolean;
-	_outputQueuedBytes: number;
 	hasBufferedContent: boolean;
 }
 
@@ -73,7 +71,7 @@ function splitOutputData(
 ): TerminalOutputQueueItem[] {
 	const byteLength = getOutputByteLength(data);
 	if (byteLength <= OUTPUT_CHUNK_BYTES) {
-		return [{ data, byteLength, callback }];
+		return [{ data, callback }];
 	}
 
 	const items: TerminalOutputQueueItem[] = [];
@@ -81,13 +79,13 @@ function splitOutputData(
 		for (let start = 0; start < data.length; ) {
 			const end = splitStringAtOutputBoundary(data, start);
 			const chunk = data.slice(start, end);
-			items.push({ data: chunk, byteLength: chunk.length });
+			items.push({ data: chunk });
 			start = end;
 		}
 	} else {
 		for (let start = 0; start < data.byteLength; start += OUTPUT_CHUNK_BYTES) {
 			const chunk = data.slice(start, start + OUTPUT_CHUNK_BYTES);
-			items.push({ data: chunk, byteLength: chunk.byteLength });
+			items.push({ data: chunk });
 		}
 	}
 
@@ -115,10 +113,6 @@ function flushQueuedOutput() {
 	let processed = 0;
 	for (const runtime of Array.from(runtimesWithQueuedOutput)) {
 		runtimesWithQueuedOutput.delete(runtime);
-		if (!runtime.container) {
-			flushQueuedRuntimeOutputNow(runtime);
-			continue;
-		}
 		const item = runtime._outputQueue.shift();
 		if (!item) {
 			runtime._outputEnqueued = false;
@@ -126,10 +120,6 @@ function flushQueuedOutput() {
 		}
 
 		processed += 1;
-		runtime._outputQueuedBytes = Math.max(
-			0,
-			runtime._outputQueuedBytes - item.byteLength,
-		);
 		runtime.terminal.write(item.data, item.callback);
 
 		if (runtime._outputQueue.length > 0) {
@@ -146,43 +136,24 @@ function flushQueuedOutput() {
 	}
 }
 
+function scheduleRuntimeQueuedOutput(runtime: TerminalRuntime) {
+	if (runtime._outputQueue.length === 0 || runtime._outputEnqueued) return;
+	runtime._outputEnqueued = true;
+	runtimesWithQueuedOutput.add(runtime);
+	scheduleQueuedOutputFlush();
+}
+
 function enqueueRuntimeOutput(
 	runtime: TerminalRuntime,
 	item: TerminalOutputQueueItem,
 ) {
-	if (!runtime.container) {
-		runtime.terminal.write(item.data, item.callback);
-		return;
-	}
-
-	runtime._outputQueuedBytes += item.byteLength;
 	runtime._outputQueue.push(item);
-	if (!runtime._outputEnqueued) {
-		runtime._outputEnqueued = true;
-		runtimesWithQueuedOutput.add(runtime);
-	}
-	scheduleQueuedOutputFlush();
-}
-
-function flushQueuedRuntimeOutputNow(runtime: TerminalRuntime) {
-	runtimesWithQueuedOutput.delete(runtime);
-	runtime._outputEnqueued = false;
-	while (runtime._outputQueue.length > 0) {
-		const item = runtime._outputQueue.shift();
-		if (!item) break;
-		runtime._outputQueuedBytes = Math.max(
-			0,
-			runtime._outputQueuedBytes - item.byteLength,
-		);
-		runtime.terminal.write(item.data, item.callback);
-	}
-	runtime._outputQueuedBytes = 0;
+	scheduleRuntimeQueuedOutput(runtime);
 }
 
 function clearQueuedRuntimeOutput(runtime: TerminalRuntime) {
 	runtimesWithQueuedOutput.delete(runtime);
 	runtime._outputEnqueued = false;
-	runtime._outputQueuedBytes = 0;
 	const queue = runtime._outputQueue.splice(0);
 	for (const item of queue) {
 		item.callback?.();
@@ -421,7 +392,6 @@ export function createRuntime(
 		_disposeImagePasteFallback: disposeImagePasteFallback,
 		_outputQueue: [],
 		_outputEnqueued: false,
-		_outputQueuedBytes: 0,
 		hasBufferedContent,
 	};
 }
@@ -439,14 +409,6 @@ export function writeRuntimeOutput(
 	if (byteLength > 0) {
 		runtime.hasBufferedContent = true;
 	}
-	if (!runtime.container) {
-		if (runtime._outputQueue.length > 0) {
-			flushQueuedRuntimeOutputNow(runtime);
-		}
-		runtime.terminal.write(data, callback);
-		return;
-	}
-
 	const items = splitOutputData(data, callback);
 	if (runtime._outputQueue.length === 0 && items.length === 1) {
 		runtime.terminal.write(data, callback);
@@ -486,11 +448,7 @@ export function attachToContainer(
 	runtime.resizeObserver = observer;
 	runtime._disposeResizeObserver = scheduler.dispose;
 
-	if (runtime._outputQueue.length > 0 && !runtime._outputEnqueued) {
-		runtime._outputEnqueued = true;
-		runtimesWithQueuedOutput.add(runtime);
-		scheduleQueuedOutputFlush();
-	}
+	scheduleRuntimeQueuedOutput(runtime);
 }
 
 function focusRuntimeNow(runtime: TerminalRuntime) {
@@ -527,7 +485,7 @@ export function detachFromContainer(runtime: TerminalRuntime) {
 	// see getTerminalParkingContainer.
 	getTerminalParkingContainer().appendChild(runtime.wrapper);
 	runtime.container = null;
-	flushQueuedRuntimeOutputNow(runtime);
+	scheduleRuntimeQueuedOutput(runtime);
 }
 
 export function updateRuntimeAppearance(

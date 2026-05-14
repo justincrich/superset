@@ -147,7 +147,6 @@ function createFakeRuntime(terminalId: string): FakeRuntime {
 		_disposeImagePasteFallback: null,
 		_outputQueue: [],
 		_outputEnqueued: false,
-		_outputQueuedBytes: 0,
 		hasBufferedContent: false,
 	};
 }
