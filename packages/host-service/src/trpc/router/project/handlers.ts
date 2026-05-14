@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { rmSync } from "node:fs";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
@@ -50,10 +50,6 @@ interface CreateResult {
 	mainWorkspaceId: string;
 }
 
-function slugWithSuffix(baseSlug: string, attempt: number): string {
-	return attempt === 0 ? baseSlug : `${baseSlug}-${attempt + 1}`;
-}
-
 // Cloud v2Project.create catches v2_projects_org_slug_unique and re-throws
 // as TRPCError CONFLICT with this exact message — kept stable so the slug
 // retry below can detect it. If you change the cloud message, change this
@@ -70,10 +66,32 @@ async function createCloudProjectWithSlugRetry(
 	args: { id: string; name: string; repoCloneUrl?: string },
 ) {
 	const baseSlug = slugifyProjectName(args.name);
+
+	// Ask the cloud for a slug it knows is currently free, so the common
+	// case is one round-trip. The retry loop below is only there to handle
+	// races (another device claiming the same slug between proposal and
+	// insert) — those retries jump straight to random hex suffixes since
+	// any sequential `${baseSlug}-${N}` we'd try is already known taken.
+	let firstSlug = baseSlug;
+	try {
+		const proposed = await ctx.api.v2Project.proposeSlug.query({
+			organizationId: ctx.organizationId,
+			baseSlug,
+		});
+		firstSlug = proposed.slug;
+	} catch (err) {
+		console.warn("[project.create] proposeSlug failed, using baseSlug", {
+			err: err instanceof Error ? err.message : String(err),
+		});
+	}
+
 	let lastError: unknown;
-	const maxAttempts = 10;
+	const maxAttempts = 50;
 	for (let attempt = 0; attempt < maxAttempts; attempt++) {
-		const slug = slugWithSuffix(baseSlug, attempt);
+		const slug =
+			attempt === 0
+				? firstSlug
+				: `${baseSlug}-${randomBytes(2).toString("hex")}`;
 		try {
 			return await ctx.api.v2Project.create.mutate({
 				organizationId: ctx.organizationId,
@@ -95,7 +113,7 @@ async function createCloudProjectWithSlugRetry(
 	}
 	throw new TRPCError({
 		code: "CONFLICT",
-		message: `Could not allocate a unique slug for "${args.name}" after ${maxAttempts} attempts`,
+		message: `Could not allocate a unique slug for "${args.name}" after ${maxAttempts} attempts. Try a different project name.`,
 		cause: lastError,
 	});
 }
