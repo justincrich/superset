@@ -30,6 +30,10 @@ function archivePreviousSession(): void {
 	finalizeIfNeeded(archivedPath);
 }
 
+const EVENT_ARRAY_MARKER = Buffer.from('"events":[');
+const EVENT_BOUNDARY = Buffer.from("},\n");
+const CLOSING = Buffer.from("\n]}");
+
 function finalizeIfNeeded(filePath: string): void {
 	const stats = fs.statSync(filePath);
 	if (stats.size < 4) return;
@@ -38,13 +42,14 @@ function finalizeIfNeeded(filePath: string): void {
 	const fd = fs.openSync(filePath, "r+");
 	try {
 		fs.readSync(fd, buffer, 0, tailWindow, stats.size - tailWindow);
-		const tail = buffer.toString("utf8");
-		if (tail.trimEnd().endsWith("]}")) return;
-		const lastBoundary = tail.lastIndexOf("},\n");
+		if (buffer.toString("utf8").trimEnd().endsWith("]}")) return;
+		const lastBoundary = buffer.lastIndexOf(EVENT_BOUNDARY);
 		if (lastBoundary === -1) return;
+		const eventsMarker = buffer.indexOf(EVENT_ARRAY_MARKER);
+		if (eventsMarker !== -1 && lastBoundary < eventsMarker) return;
 		const truncateAt = stats.size - tailWindow + lastBoundary + 1;
 		fs.ftruncateSync(fd, truncateAt);
-		fs.writeSync(fd, "\n]}", truncateAt);
+		fs.writeSync(fd, CLOSING, 0, CLOSING.length, truncateAt);
 	} finally {
 		fs.closeSync(fd);
 	}
@@ -87,9 +92,9 @@ export async function startNetworkLogger(): Promise<void> {
 
 export async function stopNetworkLogger(): Promise<void> {
 	if (!started) return;
-	started = false;
 	try {
 		await session.fromPartition(PARTITION).netLog.stopLogging();
+		started = false;
 	} catch (error) {
 		console.warn("[network-logger] stopLogging failed:", error);
 	}

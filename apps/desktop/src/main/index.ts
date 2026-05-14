@@ -232,9 +232,10 @@ app.on("before-quit", async (event) => {
 		}
 		shutdownTanstackDbPersistence();
 		disposeTray();
-		await stopNetworkLogger();
 	} catch (error) {
 		console.error("[main] Cleanup during quit failed:", error);
+	} finally {
+		await stopNetworkLogger();
 	}
 	app.exit(0);
 });
