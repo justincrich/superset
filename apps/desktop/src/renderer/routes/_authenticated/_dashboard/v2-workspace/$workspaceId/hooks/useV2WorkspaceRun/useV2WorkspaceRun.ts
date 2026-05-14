@@ -71,7 +71,7 @@ interface UseV2WorkspaceRunArgs {
 	store: StoreApi<WorkspaceStore<PaneViewerData>>;
 	launcher: TerminalLauncher;
 	matchedPresets: V2TerminalPresetRow[];
-	resolvePresetCommands: (preset: V2TerminalPresetRow) => Promise<string[]>;
+	resolvePresetCommands: (preset: V2TerminalPresetRow) => string[];
 }
 
 export function useV2WorkspaceRun({
