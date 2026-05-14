@@ -2,10 +2,21 @@ import { create } from "zustand";
 
 export type PromptContextBody = { text: string };
 
+type PromptContextKind = "github-issue" | "pr" | "task";
+
 export type PromptContextEntry =
 	| { state: "loading"; promise: Promise<PromptContextBody | null> }
 	| { state: "ready"; body: PromptContextBody }
 	| { state: "failed" };
+
+export function makePromptContextKey(
+	kind: PromptContextKind,
+	id: string | number,
+	scope?: string | null,
+): string {
+	const base = `${kind}:${id}`;
+	return scope ? `${scope}|${base}` : base;
+}
 
 interface PromptContextState {
 	entries: Map<string, PromptContextEntry>;
