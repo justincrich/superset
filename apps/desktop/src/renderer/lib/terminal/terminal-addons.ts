@@ -49,7 +49,6 @@ export function loadAddons(terminal: XTerm): LoadAddonsResult {
 		try {
 			webglAddon = new WebglAddon();
 			webglAddon.onContextLoss(() => {
-				suggestedRendererType = "dom";
 				webglAddon?.dispose();
 				webglAddon = null;
 				terminal.refresh(0, terminal.rows - 1);
