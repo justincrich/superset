@@ -17,18 +17,17 @@ cd superset
 bun install
 ```
 
-**1. Start Postgres**
+**1. Start Postgres + Electric**
 
 ```bash
-docker run -d --name superset-pg \
-  -e POSTGRES_USER=superset \
-  -e POSTGRES_PASSWORD=superset \
-  -e POSTGRES_DB=superset \
-  -p 5433:5432 \
-  postgres:16 -c wal_level=logical
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-Port `5433` avoids clobbering a host Postgres on the default `5432`. `wal_level=logical` is required for Electric SQL replication.
+Brings up:
+- **Postgres 16** on host port `5433` with `wal_level=logical` (Electric replication requires it). Port 5433 avoids clobbering any host Postgres on the default 5432.
+- **Electric SQL** on host port `4649`, replicating from the Postgres above.
+
+These containers stay running between sessions; `docker compose down -v` to wipe them.
 
 **2. Create your `.env`**
 
@@ -54,13 +53,15 @@ bun run db:migrate
 
 This creates the `auth` and `public` schemas and runs all Drizzle migrations. ~42 tables.
 
-**4. Set up Caddy (HTTPS proxy)**
+**4. Wire electric-proxy + Caddy (HTTPS proxy)**
 
 ```bash
+cp apps/electric-proxy/.dev.vars.example apps/electric-proxy/.dev.vars
 cp Caddyfile.example Caddyfile
 caddy trust   # one-time, prompts for sudo
 ```
 
+`.dev.vars` tells the Cloudflare Worker (electric-proxy) where to find your local Electric server (host port 4649 from docker-compose).
 Without `caddy trust`, Chromium will reject `https://localhost:*` with `ERR_CERT_AUTHORITY_INVALID`.
 
 ## Run it
@@ -173,9 +174,9 @@ pkill -f "turbo run dev"
 # Wipe data (auth token, host DBs, local app state)
 rm -rf superset-dev-data
 
-# Wipe Postgres
-docker rm -f superset-pg
-# then re-run the docker run from step 1
+# Wipe Postgres + Electric (including volume)
+docker compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 ## Architecture notes for contributors

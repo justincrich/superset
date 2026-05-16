@@ -10,6 +10,11 @@ const DEV_PASSWORD = "supersetdev";
 const DEV_NAME = "Local Admin";
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
+// API may take a few seconds to compile on first dev launch (Turbo starts
+// services concurrently). Poll /api/auth/ok before giving up.
+const HEALTH_POLL_INTERVAL_MS = 1000;
+const HEALTH_POLL_TIMEOUT_MS = 60_000;
+
 interface SignInResponse {
 	token?: string;
 	user?: { id: string };
@@ -36,11 +41,31 @@ async function postAuth<T>(
 	return { ok: res.ok, status: res.status, data };
 }
 
+async function waitForApiReady(): Promise<boolean> {
+	const start = Date.now();
+	const url = `${mainEnv.NEXT_PUBLIC_API_URL}/api/auth/ok`;
+	while (Date.now() - start < HEALTH_POLL_TIMEOUT_MS) {
+		try {
+			const res = await fetch(url, {
+				signal: AbortSignal.timeout(2000),
+			});
+			if (res.ok) return true;
+		} catch {
+			// connection refused / timeout — keep polling
+		}
+		await new Promise((r) => setTimeout(r, HEALTH_POLL_INTERVAL_MS));
+	}
+	return false;
+}
+
 /**
- * Dev-only: if SKIP_ENV_VALIDATION is set and no usable token is on disk,
- * sign in (or sign up) as the seed admin user and persist the token so
- * the renderer's AuthProvider can hydrate normally — no special renderer code.
- * Best-effort: failure is logged but doesn't crash boot.
+ * Dev-only: in the oss-dev profile, sign in (or sign up) as the seed
+ * admin user and persist the token so the renderer's AuthProvider can
+ * hydrate normally — no special renderer code.
+ *
+ * Polls the API for readiness before attempting sign-in (Turbo starts
+ * services concurrently and the API may still be compiling on first
+ * launch). Best-effort: failure is logged but doesn't crash boot.
  */
 export async function ensureDevAuthToken(): Promise<void> {
 	// OSS-dev only — internal devs, self-hosters, and prod all use real auth.
@@ -50,6 +75,14 @@ export async function ensureDevAuthToken(): Promise<void> {
 	if (stored.token && stored.expiresAt) {
 		const isExpired = new Date(stored.expiresAt) < new Date();
 		if (!isExpired) return;
+	}
+
+	const ready = await waitForApiReady();
+	if (!ready) {
+		console.warn(
+			`[dev-auto-sign-in] API at ${mainEnv.NEXT_PUBLIC_API_URL} did not respond within ${HEALTH_POLL_TIMEOUT_MS}ms — skipping. Use the sign-in form once the API is up.`,
+		);
+		return;
 	}
 
 	try {

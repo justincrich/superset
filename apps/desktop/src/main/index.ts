@@ -425,11 +425,13 @@ if (!gotTheLock) {
 			console.error("[main] Failed to install bundled CLI shim:", error);
 		}
 
-		// Dev-only: auto-sign-in as the seed admin if SKIP_ENV_VALIDATION is
-		// set and no token is on disk. Lets fresh-clone contributors boot the
-		// desktop without OAuth. Runs before host-service discovery so the
-		// renderer's AuthProvider hydrates with a valid token on first paint.
-		await ensureDevAuthToken();
+		// OSS-dev only: auto-sign-in as the seed admin if no token is on disk.
+		// Fire-and-forget — the function polls the API for readiness internally
+		// (Turbo starts services concurrently, the API may still be compiling).
+		// AuthProvider in the renderer subscribes to auth.onTokenChanged and
+		// will re-hydrate when the token lands, so window creation doesn't
+		// block on this.
+		void ensureDevAuthToken();
 
 		// Discover and adopt host-services that survived a previous quit
 		// before the tray initializes, so it shows accurate status immediately.

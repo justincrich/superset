@@ -89,8 +89,12 @@ export const auth = betterAuth({
 			generateId: false,
 		},
 	},
+	// Dev-only: email+password is enabled for OSS contributors and
+	// internal devs (NODE_ENV=development). In production builds the
+	// /sign-up/email and /sign-in/email endpoints are disabled — auth
+	// is OAuth-only there. Matches the UI form gating in apps/web.
 	emailAndPassword: {
-		enabled: true,
+		enabled: process.env.NODE_ENV !== "production",
 		autoSignIn: true,
 	},
 	socialProviders: {
@@ -358,19 +362,21 @@ export const auth = betterAuth({
 				},
 
 				afterCreateOrganization: async ({ organization, user }) => {
-					const customer = await stripeClient.customers.create({
-						name: organization.name,
-						email: user.email,
-						metadata: {
-							organizationId: organization.id,
-							organizationSlug: organization.slug,
-						},
-					});
+					if (env.STRIPE_SECRET_KEY) {
+						const customer = await stripeClient.customers.create({
+							name: organization.name,
+							email: user.email,
+							metadata: {
+								organizationId: organization.id,
+								organizationSlug: organization.slug,
+							},
+						});
 
-					await db
-						.update(authSchema.organizations)
-						.set({ stripeCustomerId: customer.id })
-						.where(eq(authSchema.organizations.id, organization.id));
+						await db
+							.update(authSchema.organizations)
+							.set({ stripeCustomerId: customer.id })
+							.where(eq(authSchema.organizations.id, organization.id));
+					}
 
 					await seedDefaultStatuses(organization.id);
 				},

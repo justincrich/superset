@@ -93,10 +93,9 @@ Short version:
 git clone https://github.com/superset-sh/superset.git
 cd superset
 bun install
-docker run -d --name superset-pg \
-  -e POSTGRES_USER=superset -e POSTGRES_PASSWORD=superset -e POSTGRES_DB=superset \
-  -p 5433:5432 postgres:16 -c wal_level=logical
+docker compose -f docker-compose.dev.yml up -d   # Postgres + Electric
 cp .env.example .env   # then edit DATABASE_URL + BETTER_AUTH_SECRET
+cp apps/electric-proxy/.dev.vars.example apps/electric-proxy/.dev.vars
 bun run db:migrate
 cp Caddyfile.example Caddyfile && caddy trust
 SUPERSET_OSS=1 bun dev
