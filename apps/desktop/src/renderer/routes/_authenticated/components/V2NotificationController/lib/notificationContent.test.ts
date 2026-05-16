@@ -24,7 +24,7 @@ describe("getV2NativeNotificationContent", () => {
 			}),
 		).toEqual({
 			title: "Agent Complete - Codex",
-			body: "Workspace: Improve notifications",
+			body: "Improve notifications",
 		});
 	});
 
@@ -39,7 +39,7 @@ describe("getV2NativeNotificationContent", () => {
 			}),
 		).toMatchObject({
 			title: "Agent Needs Input - Claude",
-			body: "Workspace: Improve notifications",
+			body: "Improve notifications",
 		});
 	});
 
@@ -51,7 +51,7 @@ describe("getV2NativeNotificationContent", () => {
 			}),
 		).toEqual({
 			title: "Agent Complete - Droid",
-			body: "Workspace: Workspace",
+			body: "Workspace",
 		});
 
 		expect(
@@ -61,7 +61,7 @@ describe("getV2NativeNotificationContent", () => {
 			}),
 		).toMatchObject({
 			title: "Agent Complete",
-			body: "Workspace: Workspace",
+			body: "Workspace",
 		});
 	});
 });

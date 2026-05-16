@@ -26,7 +26,7 @@ export function getV2NativeNotificationContent({
 			agentLabel === "Agent"
 				? `Agent ${action}`
 				: `Agent ${action} - ${agentLabel}`,
-		body: `Workspace: ${workspaceLabel}`,
+		body: workspaceLabel,
 	};
 }
 
