@@ -1,0 +1,50 @@
+# Agent-only strict pre-commit/pre-push gate.
+#
+# WHY
+#   Superset is a multi-harness coding-agent platform. Agents are held to
+#   stricter validation requirements than humans (see ~/.claude/CLAUDE.md
+#   on "Pre-existing claims" and verification discipline). This file runs
+#   strict checks ONLY for agent commits and leaves human commits unchanged.
+#
+# HOW
+#   Every wrapped agent CLI in apps/desktop/src/main/lib/agent-setup/
+#   exports SUPERSET_AGENT_ID="<agent-name>" before exec-ing the real
+#   binary (claude, codex, opencode, mastracode, cursor, gemini, copilot,
+#   droid, pi, amp). Git commits spawned by those agents inherit the env
+#   var. Phase-level `skip:` short-circuits the entire phase when the env
+#   var is absent — humans in plain terminals pay only the ~10–30ms
+#   lefthook startup cost.
+#
+# MANUAL OVERRIDE
+#   Humans who want the strict checks can set the env explicitly:
+#     SUPERSET_AGENT_ID=manual git commit -m "..."
+#
+# PER-DEVELOPER OPT-OUT (belt-and-suspenders)
+#   Wrapped agents can disable the strict gate per-shell without
+#   touching this config:
+#     SUPERSET_AGENT_GATE_ENABLED=0 git commit -m "..."
+#   Default (unset) = enabled. Useful for rollout, debugging, or
+#   intentional WIP commits the agent wants to land mid-refactor.
+#
+# OPT-OUT
+#   `LEFTHOOK=0 git commit ...` disables lefthook entirely.
+
+pre-commit:
+  parallel: true
+  skip:
+    - run: test -z "$SUPERSET_AGENT_ID"
+    - run: test "${SUPERSET_AGENT_GATE_ENABLED:-1}" = "0"
+  commands:
+    lint:
+      run: bun run lint
+    typecheck:
+      run: bun run typecheck
+
+pre-push:
+  parallel: true
+  skip:
+    - run: test -z "$SUPERSET_AGENT_ID"
+    - run: test "${SUPERSET_AGENT_GATE_ENABLED:-1}" = "0"
+  commands:
+    test:
+      run: bun test
