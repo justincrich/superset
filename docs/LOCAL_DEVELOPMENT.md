@@ -1,6 +1,6 @@
 # Local Development
 
-How to run Superset locally from a fresh clone, with no Neon / OAuth / Stripe / Resend keys required. The dev path auto-creates a local admin user, runs Postgres in Docker, and signs you in before the desktop window opens.
+How to run Superset locally from a fresh clone with no Neon, OAuth, Stripe, Resend, or QStash keys. Local contributor state is isolated under `~/.superset-local-dev`, so this flow does not reuse production or canary desktop state from `~/.superset`.
 
 ## Prerequisites
 
@@ -9,60 +9,29 @@ How to run Superset locally from a fresh clone, with no Neon / OAuth / Stripe / 
 - [Caddy](https://caddyserver.com/docs/install) (for HTTPS proxy)
 - macOS
 
-## One-time setup
+## Quick Start
 
 ```bash
 git clone https://github.com/superset-sh/superset.git
 cd superset
 bun install
-```
-
-**1. Start Postgres + Electric**
-
-```bash
-docker compose -f docker-compose.dev.yml up -d
-```
-
-Brings up:
-- **Postgres 16** on host port `5433` with `wal_level=logical` (Electric replication requires it). Port 5433 avoids clobbering any host Postgres on the default 5432.
-- **Electric SQL** on host port `4649`, replicating from the Postgres above.
-
-These containers stay running between sessions; `docker compose down -v` to wipe them.
-
-**2. Create your `.env`**
-
-```bash
-cp .env.example .env
-```
-
-The example file is ready for the Docker defaults and includes `SUPERSET_PROFILE=local`, `SUPERSET_WORKSPACE_NAME=local-dev`, stable local ports, the local Postgres URL, and a development-only auth secret. The workspace name keeps desktop state in `~/.superset-local-dev` instead of the production / canary `~/.superset` directory. Integration keys (Stripe, Resend, GitHub App, etc.) can stay blank — features that need them will throw a clean "X not configured" error when you actually exercise them; nothing crashes at boot.
-
-**3. Apply the schema**
-
-```bash
-bun run db:migrate
-```
-
-This creates the `auth` and `public` schemas and runs all Drizzle migrations. ~42 tables.
-
-**4. Wire electric-proxy + Caddy (HTTPS proxy)**
-
-```bash
-cp apps/electric-proxy/.dev.vars.example apps/electric-proxy/.dev.vars
-cp Caddyfile.example Caddyfile
-caddy trust   # one-time, prompts for sudo
-```
-
-`.dev.vars` tells the Cloudflare Worker (electric-proxy) where to find your local Electric server (host port 4649 from docker-compose).
-Without `caddy trust`, Chromium will reject `https://localhost:*` with `ERR_CERT_AUTHORITY_INVALID`.
-
-## Run it
-
-```bash
+bun setup:local
 bun dev
 ```
 
-The copied `.env` sets `SUPERSET_PROFILE=local`, which opts you into the lenient local contributor profile so the app boots without every integration key — Stripe, OAuth, Resend, etc. become optional. Without that profile, the app defaults to strict validation (matching the internal-team workflow) and will fail boot if any of those keys are missing.
+`bun setup:local` is non-destructive. It copies `.env.example`, `apps/electric-proxy/.dev.vars.example`, and `Caddyfile.example` only when the target file is missing; starts Docker Postgres/Electric; runs `caddy trust`; and applies DB migrations.
+
+If you already have an internal `.env`, the script leaves it untouched and stops before running migrations. Do not overwrite an internal `.env` unless you intentionally want the local contributor profile.
+
+Useful setup flags:
+
+```bash
+bun setup:local --skip-docker
+bun setup:local --skip-migrate
+bun setup:local --skip-caddy-trust
+```
+
+The generated `.env` sets `SUPERSET_PROFILE=local` and `SUPERSET_WORKSPACE_NAME=local-dev`. Missing integration keys are allowed at boot; features that need them fail cleanly when exercised.
 
 That brings up:
 
