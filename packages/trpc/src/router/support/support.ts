@@ -22,11 +22,6 @@ function getResend(): Resend {
 	}
 	return resendClient;
 }
-const resend = new Proxy({} as Resend, {
-	get(_t, p) {
-		return Reflect.get(getResend(), p);
-	},
-});
 const SUPPORT_EMAIL = COMPANY.MAIL_TO.replace(/^mailto:/, "");
 const supportReportRateLimit =
 	env.KV_REST_API_URL && env.KV_REST_API_TOKEN
@@ -137,7 +132,7 @@ export const supportRouter = createTRPCRouter({
 			});
 
 			try {
-				await resend.emails.send({
+				await getResend().emails.send({
 					from: "Superset <noreply@superset.sh>",
 					to: SUPPORT_EMAIL,
 					replyTo: user.email,

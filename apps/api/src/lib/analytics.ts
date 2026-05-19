@@ -1,34 +1,43 @@
+import type { EventMessage } from "posthog-node";
 import { PostHog } from "posthog-node";
 import { env } from "@/env";
 
-let client: PostHog | null = null;
+type FeatureFlagValue = Parameters<PostHog["getFeatureFlagPayload"]>[2];
+type FeatureFlagOptions = Parameters<PostHog["getFeatureFlag"]>[2];
+type FeatureFlagPayloadOptions = Parameters<
+	PostHog["getFeatureFlagPayload"]
+>[3];
+type FeatureFlagResult = Awaited<ReturnType<PostHog["getFeatureFlag"]>>;
+type FeatureFlagPayload = Awaited<ReturnType<PostHog["getFeatureFlagPayload"]>>;
 
-// Disabled stub — accepts any args, returns the right shape for each method.
-const disabled = {
-	capture: (..._args: unknown[]) => {},
-	identify: (..._args: unknown[]) => {},
-	alias: (..._args: unknown[]) => {},
-	groupIdentify: (..._args: unknown[]) => {},
-	shutdown: (..._args: unknown[]) => Promise.resolve(),
-	flush: (..._args: unknown[]) => Promise.resolve(),
-	getFeatureFlag: (..._args: unknown[]) => Promise.resolve(undefined),
-	getFeatureFlagPayload: (..._args: unknown[]) => Promise.resolve(undefined),
-	isFeatureEnabled: (..._args: unknown[]) => Promise.resolve(undefined),
-} as unknown as PostHog;
+interface AnalyticsClient {
+	capture: (props: EventMessage) => void;
+	getFeatureFlag: (
+		key: string,
+		distinctId: string,
+		options?: FeatureFlagOptions,
+	) => Promise<FeatureFlagResult>;
+	getFeatureFlagPayload: (
+		key: string,
+		distinctId: string,
+		matchValue?: FeatureFlagValue,
+		options?: FeatureFlagPayloadOptions,
+	) => Promise<FeatureFlagPayload>;
+}
 
-// Lazy-init: if NEXT_PUBLIC_POSTHOG_KEY is missing, return a no-op surface
-// so analytics calls don't crash the API at module load.
-export const posthog = new Proxy({} as PostHog, {
-	get(_target, prop) {
-		if (!env.NEXT_PUBLIC_POSTHOG_KEY) return Reflect.get(disabled, prop);
-		if (!client) {
-			client = new PostHog(env.NEXT_PUBLIC_POSTHOG_KEY, {
-				host: env.NEXT_PUBLIC_POSTHOG_HOST,
-				flushAt: 1,
-				flushInterval: 0,
-			});
-		}
-		const value = Reflect.get(client, prop);
-		return typeof value === "function" ? value.bind(client) : value;
-	},
-});
+const disabled: AnalyticsClient = {
+	capture: () => {},
+	getFeatureFlag: async () => undefined,
+	getFeatureFlagPayload: async () => undefined,
+};
+
+function createAnalyticsClient(): AnalyticsClient {
+	if (!env.NEXT_PUBLIC_POSTHOG_KEY) return disabled;
+	return new PostHog(env.NEXT_PUBLIC_POSTHOG_KEY, {
+		host: env.NEXT_PUBLIC_POSTHOG_HOST,
+		flushAt: 1,
+		flushInterval: 0,
+	});
+}
+
+export const posthog = createAnalyticsClient();

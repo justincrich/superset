@@ -1,5 +1,13 @@
 import { isStrictProfile } from "@superset/shared/deployment-profile";
-import { Resend } from "resend";
+import {
+	type CreateBatchOptions,
+	type CreateBatchRequestOptions,
+	type CreateBatchResponse,
+	type CreateEmailOptions,
+	type CreateEmailRequestOptions,
+	type CreateEmailResponse,
+	Resend,
+} from "resend";
 
 import { env } from "../env";
 
@@ -16,44 +24,39 @@ function getResend(): Resend {
 	return client;
 }
 
-interface CapturedEmail {
-	to: unknown;
-	subject?: unknown;
+function formatRecipients(to: CreateEmailOptions["to"]): string {
+	return Array.isArray(to) ? to.join(",") : to;
 }
 
-function logConsoleSend(arg: unknown) {
-	if (Array.isArray(arg)) {
-		for (const e of arg as CapturedEmail[]) {
-			console.log(
-				`[email:console] to=${String(e.to)} subject=${String(e.subject ?? "(no subject)")}`,
-			);
-		}
-	} else if (arg && typeof arg === "object") {
-		const e = arg as CapturedEmail;
-		console.log(
-			`[email:console] to=${String(e.to)} subject=${String(e.subject ?? "(no subject)")}`,
-		);
+function logConsoleEmail(email: CreateEmailOptions) {
+	console.log(
+		`[email:console] to=${formatRecipients(email.to)} subject=${email.subject}`,
+	);
+}
+
+export async function sendEmail(
+	email: CreateEmailOptions,
+	options?: CreateEmailRequestOptions,
+): Promise<CreateEmailResponse> {
+	if (!env.RESEND_API_KEY && !isStrictProfile()) {
+		logConsoleEmail(email);
+		return { data: { id: "console-dev" }, error: null };
 	}
-	return Promise.resolve({ data: { id: "console-dev" }, error: null });
+	return getResend().emails.send(email, options);
 }
 
-// Lazy proxy over the full Resend surface. Throws only when actually used
-// without a key — except `emails.send` and `batch.send`, which fall back to
-// logging to stdout in lenient profiles so Better Auth's local signup flows work.
-export const resend = new Proxy({} as Resend, {
-	get(_t, prop) {
-		if (!env.RESEND_API_KEY) {
-			const allowConsoleFallback = !isStrictProfile();
-			if (allowConsoleFallback && prop === "emails") {
-				return { send: (arg: unknown) => logConsoleSend(arg) };
-			}
-			if (allowConsoleFallback && prop === "batch") {
-				return { send: (arg: unknown) => logConsoleSend(arg) };
-			}
-			throw new Error(
-				`Resend not configured — set RESEND_API_KEY (accessed property: ${String(prop)})`,
-			);
-		}
-		return Reflect.get(getResend(), prop);
-	},
-});
+export async function sendBatchEmails(
+	emails: CreateBatchOptions,
+	options?: CreateBatchRequestOptions,
+): Promise<CreateBatchResponse> {
+	if (!env.RESEND_API_KEY && !isStrictProfile()) {
+		for (const email of emails) logConsoleEmail(email);
+		return {
+			data: {
+				data: emails.map((_, index) => ({ id: `console-dev-${index}` })),
+			},
+			error: null,
+		};
+	}
+	return getResend().batch.send(emails, options);
+}
