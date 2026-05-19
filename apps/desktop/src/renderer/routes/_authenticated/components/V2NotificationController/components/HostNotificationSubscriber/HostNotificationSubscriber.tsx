@@ -11,6 +11,7 @@ import type { PaneViewerData } from "renderer/routes/_authenticated/_dashboard/v
 import { useV2AgentBindingStore } from "renderer/stores/v2-agent-bindings";
 import {
 	handleV2AgentLifecycleEvent,
+	handleV2AgentLifecycleStatusEvent,
 	handleV2TerminalLifecycleEvent,
 } from "../../lib/lifecycleEvents";
 
@@ -51,7 +52,14 @@ export function HostNotificationSubscriber({
 				useV2AgentBindingStore.getState().clearBinding(payload.terminalId);
 			}
 			const workspace = workspacesById.get(workspaceId);
-			if (!workspace) return;
+			if (!workspace) {
+				handleV2AgentLifecycleStatusEvent({
+					workspaceId,
+					payload,
+					paneLayout: null,
+				});
+				return;
+			}
 			handleV2AgentLifecycleEvent({
 				workspaceId,
 				workspaceName: workspace.workspaceName,
@@ -68,8 +76,6 @@ export function HostNotificationSubscriber({
 			if (payload.eventType === "exit") {
 				useV2AgentBindingStore.getState().clearBinding(payload.terminalId);
 			}
-			const workspace = workspacesById.get(workspaceId);
-			if (!workspace) return;
 			handleV2TerminalLifecycleEvent({
 				workspaceId,
 				payload,
