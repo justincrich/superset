@@ -64,6 +64,13 @@ const columnMapper = snakeCamelMapper();
 
 const electricUrl = `${env.NEXT_PUBLIC_ELECTRIC_URL}/v1/shape`;
 
+export const ELECTRIC_WRITE_SYNC_TIMEOUT_MS = 30_000;
+
+function electricTxidMatch(txid: unknown) {
+	if (typeof txid !== "number") return undefined;
+	return { txid, timeout: ELECTRIC_WRITE_SYNC_TIMEOUT_MS };
+}
+
 const persistence = createElectronSQLitePersistence({
 	invoke: (channel, request) => window.ipcRenderer.invoke(channel, request),
 });
@@ -231,12 +238,12 @@ function createOrgCollections(organizationId: string): OrgCollections {
 					...changes,
 					id: original.id,
 				});
-				return { txid: result.txid };
+				return electricTxidMatch(result.txid);
 			},
 			onDelete: async ({ transaction }) => {
 				const item = transaction.mutations[0].original;
 				const result = await apiClient.task.delete.mutate(item.id);
-				return { txid: result.txid };
+				return electricTxidMatch(result.txid);
 			},
 		}),
 	);
@@ -300,7 +307,7 @@ function createOrgCollections(organizationId: string): OrgCollections {
 					repoCloneUrl: changes.repoCloneUrl,
 					githubRepositoryId,
 				});
-				return { txid: result.txid };
+				return electricTxidMatch(result.txid);
 			},
 		}),
 	);
@@ -333,7 +340,7 @@ function createOrgCollections(organizationId: string): OrgCollections {
 					hostId: original.machineId,
 					name: changes.name,
 				});
-				return { txid: result.txid };
+				return electricTxidMatch(result.txid);
 			},
 		}),
 	);
@@ -377,7 +384,7 @@ function createOrgCollections(organizationId: string): OrgCollections {
 					userId: item.userId,
 					role: item.role,
 				});
-				return { txid: result.txid };
+				return electricTxidMatch(result.txid);
 			},
 			onUpdate: async ({ transaction }) => {
 				const { original, changes } = transaction.mutations[0];
@@ -389,7 +396,7 @@ function createOrgCollections(organizationId: string): OrgCollections {
 					userId: original.userId,
 					role: changes.role,
 				});
-				return { txid: result.txid };
+				return electricTxidMatch(result.txid);
 			},
 			onDelete: async ({ transaction }) => {
 				const item = transaction.mutations[0].original;
@@ -397,7 +404,7 @@ function createOrgCollections(organizationId: string): OrgCollections {
 					hostId: item.hostId,
 					userId: item.userId,
 				});
-				return { txid: result.txid };
+				return electricTxidMatch(result.txid);
 			},
 		}),
 	);
@@ -427,7 +434,7 @@ function createOrgCollections(organizationId: string): OrgCollections {
 					name,
 					taskId,
 				});
-				return { txid: result.txid };
+				return electricTxidMatch(result.txid);
 			},
 		}),
 	);
@@ -553,7 +560,7 @@ function createOrgCollections(organizationId: string): OrgCollections {
 					...changes,
 					id: original.id,
 				});
-				return { txid: result.txid };
+				return electricTxidMatch(result.txid);
 			},
 		}),
 	);
@@ -627,7 +634,7 @@ function createOrgCollections(organizationId: string): OrgCollections {
 				if (!result.deleted) {
 					throw new Error("Chat session was not deleted");
 				}
-				return { txid: result.txid };
+				return electricTxidMatch(result.txid);
 			},
 		}),
 	);
