@@ -112,6 +112,9 @@ describe("stripTerminalRuntimeEnv", () => {
 		SUPERSET_PORT: "51741",
 		SUPERSET_HOOK_VERSION: "2",
 		SUPERSET_WORKSPACE_NAME: "my-ws",
+		// Auth refresh tokens inherited from parent (CLI/desktop) env
+		OAUTH_REFRESH_TOKEN: "oauth-refresh-secret",
+		SUPERSET_REFRESH_TOKEN: "superset-refresh-secret",
 		// Keys that SHOULD survive
 		HOME: "/Users/test",
 		PATH: "/usr/bin:/usr/local/bin",
@@ -157,6 +160,12 @@ describe("stripTerminalRuntimeEnv", () => {
 		expect(result.npm_config_registry).toBeUndefined();
 		expect(result.npm_lifecycle_event).toBeUndefined();
 		expect(result.ELECTRON_ENABLE_LOGGING).toBeUndefined();
+	});
+
+	test("refresh tokens do not reach PTY env", () => {
+		const result = stripTerminalRuntimeEnv(secretsEnv);
+		expect(result.OAUTH_REFRESH_TOKEN).toBeUndefined();
+		expect(result.SUPERSET_REFRESH_TOKEN).toBeUndefined();
 	});
 
 	test("HOST_* prefix is stripped, DESKTOP_* exact keys only", () => {

@@ -96,15 +96,8 @@ function createHostServiceEnv(
 	relayUrl: string,
 	migrationsFolder: string,
 ): NodeJS.ProcessEnv {
-	const childEnv: NodeJS.ProcessEnv = { ...process.env };
-	for (const key of Object.keys(childEnv)) {
-		if (key.toUpperCase().includes("REFRESH_TOKEN")) {
-			delete childEnv[key];
-		}
-	}
-
 	return {
-		...childEnv,
+		...process.env,
 		ORGANIZATION_ID: options.organizationId,
 		AUTH_TOKEN: options.sessionToken,
 		...(options.authConfigPath

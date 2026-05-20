@@ -7,8 +7,6 @@ import type { ApiClient } from "../api-client";
 const originalFetch = globalThis.fetch;
 const originalSupersetHomeDir = process.env.SUPERSET_HOME_DIR;
 const originalHostBin = process.env.SUPERSET_HOST_BIN;
-const originalSupersetRefreshToken = process.env.SUPERSET_REFRESH_TOKEN;
-const originalOAuthRefreshToken = process.env.OAUTH_REFRESH_TOKEN;
 const tempHome = mkdtempSync(join(tmpdir(), "superset-cli-spawn-"));
 const hostBin = join(tempHome, "superset-host");
 
@@ -60,16 +58,6 @@ afterEach(() => {
 	spawnCalls.length = 0;
 	spawnMock.mockClear();
 	globalThis.fetch = originalFetch;
-	if (originalSupersetRefreshToken === undefined) {
-		delete process.env.SUPERSET_REFRESH_TOKEN;
-	} else {
-		process.env.SUPERSET_REFRESH_TOKEN = originalSupersetRefreshToken;
-	}
-	if (originalOAuthRefreshToken === undefined) {
-		delete process.env.OAUTH_REFRESH_TOKEN;
-	} else {
-		process.env.OAUTH_REFRESH_TOKEN = originalOAuthRefreshToken;
-	}
 });
 
 afterAll(() => {
@@ -88,8 +76,6 @@ afterAll(() => {
 
 describe("spawnHostService", () => {
 	test("passes SUPERSET_AUTH_CONFIG_PATH when provided", async () => {
-		process.env.SUPERSET_REFRESH_TOKEN = "superset-refresh-secret";
-		process.env.OAUTH_REFRESH_TOKEN = "oauth-refresh-secret";
 		globalThis.fetch = mock(
 			async () => new Response("ok", { status: 200 }),
 		) as unknown as typeof fetch;
@@ -108,7 +94,5 @@ describe("spawnHostService", () => {
 			SUPERSET_CONFIG_PATH,
 		);
 		expect(spawnCalls[0]?.options.env?.AUTH_TOKEN).toBe("session-token");
-		expect(spawnCalls[0]?.options.env?.SUPERSET_REFRESH_TOKEN).toBeUndefined();
-		expect(spawnCalls[0]?.options.env?.OAUTH_REFRESH_TOKEN).toBeUndefined();
 	});
 });
