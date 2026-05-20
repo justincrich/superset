@@ -148,3 +148,62 @@ No overlaps detected:
 
 ## Task chunks
 1 — All options fit within a single implementation task. Option 3's architectural changes, while larger, are cohesive enough to be implemented together.
+
+## Challenge
+
+**Challenger:** code-reviewer (fresh-eyes adversarial review, run by orchestrator after subagent challenger failed to commit)
+
+### 1. Reproduction evidence verified
+The reproduction trace at `.spec/improvements/SUPER-794/reproduction-trace.md` references real files and accurate line numbers:
+- `menu.ts:31` — `{ label: "Close Window", role: "close" }` CONFIRMED — Electron's `role: "close"` implicitly binds `CmdOrCtrl+W`
+- `browser-manager.ts:32` — `register(paneId, webContentsId)` pattern CONFIRMED — correct insertion point
+- Renderer hotkeys at `registry.ts` CONFIRMED — bypassed when webview has focus
+- Root cause is valid and precisely located.
+
+### 2. Smaller option proposed (Option 4)
+
+**Option 4 (challenger-proposed): smaller-than-minimum**
+
+The investigator's minimum option includes 3 files and ~60 LOC. But the tRPC subscription + renderer subscription wiring (the 3rd file + most of the LOC) may not be necessary at all:
+
+**One-line:** Remove the implicit Cmd+W accelerator from the File menu only — let the existing renderer hotkeys handle Cmd+W for all non-webview panes, and accept that webview panes require the user to click outside first.
+
+**Files in scope:**
+- `apps/desktop/src/main/lib/menu.ts` (1 line: add explicit `accelerator: ""` or replace `role: "close"` with a click handler that has no accelerator)
+
+**LOC budget:** ~5 LOC
+
+**Acceptance criteria:**
+- AC-1: Cmd+W pressed while focus is in a terminal/other non-webview pane closes the pane (existing renderer hotkeys)
+- AC-2: Cmd+W pressed while focus is in a browser pane does NOT close the whole window (the menu accelerator no longer captures it)
+- AC-3: The File menu "Close Window" item remains visible and functional when clicked (just no Cmd+W accelerator)
+- AC-4: Cmd+Shift+Q still closes the window (Window menu unaffected)
+
+**Out of scope:**
+- Making Cmd+W close the browser pane itself (this is a partial fix — it stops the wrong behavior without adding the desired behavior for webviews)
+- Any changes to browser-manager.ts or tRPC routers
+
+**Risks:**
+- Partial fix — Cmd+W becomes a no-op when a webview has focus instead of closing the pane. Users must click outside the webview first, then press Cmd+W.
+- May feel inconsistent — Cmd+W closes panes everywhere EXCEPT browser panes.
+
+**Why this is worth considering:** It's a 1-file, 1-line fix that eliminates the destructive behavior (closing the whole window). The "close browser pane via Cmd+W" enhancement can follow as a separate ticket. The cost/benefit ratio is dramatically better than any 3-file option.
+
+### 3. Minimum option (Option 1) proves symptom fix
+
+YES — the minimum option causally fixes the symptom:
+1. Removing the implicit accelerator from `menu.ts:31` stops Cmd+W from closing the window
+2. Adding `before-input-event` in browser-manager intercepts Cmd+W at the webview level
+3. Emitting a tRPC event → renderer subscribing → calling `requestPaneClose`/`closePane` closes the pane
+
+The chain is correct. However, the investigator's Option 1 file list has an error: it lists `apps/desktop/src/main/lib/trpc/routers/browser.ts` — the actual file is `apps/desktop/src/lib/trpc/routers/browser/browser.ts`. This is a path correction, not a scope concern.
+
+### 4. Scope creep flags
+
+- **Option 2**, file `apps/desktop/src/renderer/hotkeys/registry.ts` — this file handles renderer-side hotkeys that already work correctly. Adding "central registry" documentation here is scope creep; the bug is in the main process, not the renderer hotkey system. The audit/d documentation AC (AC-5, AC-6) are "while-I'm-here" work.
+
+- **Option 3**, file `apps/desktop/src/main/lib/hotkey-router.ts` (NEW) — this is a new architectural layer. It's a valid long-term improvement but is clearly sprint-sized work, not bug-fix work. The investigator correctly flags this risk.
+
+### 5. Summary verdict
+
+The investigator's minimum (Option 1) is sound and will fix the bug. However, I propose Option 4 as an even smaller alternative that eliminates the destructive behavior in a single line, at the cost of not adding "close browser pane via Cmd+W" — that enhancement would be a follow-up ticket.
