@@ -28,8 +28,14 @@
 			{
 				"matcher": "",
 				"hooks": [
-					{ "type": "command", "command": "python3 ~/.claude/hooks/subagent-worktree-preservation.py" },
-					{ "type": "command", "command": "python3 ~/.claude/hooks/subagent-precommit-gate.py" }
+					{
+						"type": "command",
+						"command": "python3 ~/.claude/hooks/subagent-worktree-preservation.py"
+					},
+					{
+						"type": "command",
+						"command": "python3 ~/.claude/hooks/subagent-precommit-gate.py"
+					}
 				]
 			}
 		],
@@ -37,7 +43,10 @@
 			{
 				"matcher": "Task",
 				"hooks": [
-					{ "type": "command", "command": "python3 ~/.claude/hooks/subagent-evidence-verification.py" }
+					{
+						"type": "command",
+						"command": "python3 ~/.claude/hooks/subagent-evidence-verification.py"
+					}
 				]
 			}
 		]
