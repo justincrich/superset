@@ -10,7 +10,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { env } from "./env";
 
 export type SupersetConfig = {
@@ -46,64 +46,27 @@ export function readConfig(): SupersetConfig {
 	return JSON.parse(readFileSync(SUPERSET_CONFIG_PATH, "utf-8"));
 }
 
-type ConfigWriterFs = {
-	chmodSync(path: string, mode: number): void;
-	mkdirSync(path: string, options: { recursive: true; mode: number }): unknown;
-	renameSync(oldPath: string, newPath: string): void;
-	statSync(path: string): { mode: number };
-	unlinkSync(path: string): void;
-	writeFileSync(path: string, data: string, options: { mode: number }): void;
-};
-
-const defaultConfigWriterFs: ConfigWriterFs = {
-	chmodSync,
-	mkdirSync,
-	renameSync,
-	statSync,
-	unlinkSync,
-	writeFileSync,
-};
-
-export function writeConfigFile(
-	configPath: string,
-	config: SupersetConfig,
-	fs: ConfigWriterFs = defaultConfigWriterFs,
-): void {
-	const configDir = dirname(configPath);
-	if (!existsSync(configDir)) {
-		fs.mkdirSync(configDir, { recursive: true, mode: 0o700 });
-	}
-	try {
-		const stat = fs.statSync(configDir);
-		if ((stat.mode & 0o077) !== 0) fs.chmodSync(configDir, 0o700);
-	} catch {}
-
+export function writeConfig(config: SupersetConfig): void {
+	ensureDir();
 	const tempPath = join(
-		configDir,
+		SUPERSET_HOME_DIR,
 		`.${randomUUID()}.${process.pid}.config.tmp`,
 	);
-	fs.writeFileSync(tempPath, JSON.stringify(config, null, 2), {
-		mode: 0o600,
-	});
+	writeFileSync(tempPath, JSON.stringify(config, null, 2), { mode: 0o600 });
 	try {
-		fs.chmodSync(tempPath, 0o600);
+		chmodSync(tempPath, 0o600);
 	} catch {}
 	try {
-		fs.renameSync(tempPath, configPath);
+		renameSync(tempPath, SUPERSET_CONFIG_PATH);
 	} catch (error) {
 		try {
-			fs.unlinkSync(tempPath);
+			unlinkSync(tempPath);
 		} catch {}
 		throw error;
 	}
 	try {
-		fs.chmodSync(configPath, 0o600);
+		chmodSync(SUPERSET_CONFIG_PATH, 0o600);
 	} catch {}
-}
-
-export function writeConfig(config: SupersetConfig): void {
-	ensureDir();
-	writeConfigFile(SUPERSET_CONFIG_PATH, config);
 }
 
 export function getApiUrl(): string {
