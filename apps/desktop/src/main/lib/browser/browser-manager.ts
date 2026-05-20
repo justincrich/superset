@@ -286,6 +286,19 @@ class BrowserManager extends EventEmitter {
 				event.preventDefault();
 				this.emit(`close-pane:${paneId}`);
 			}
+
+			// Intercept Cmd+R / Ctrl+R to reload the browser pane (not the host window)
+			// Cmd+Shift+R / Ctrl+Shift+R passes through (force reload of host renderer)
+			const isReloadKey =
+				(input.key === "r" || input.key === "R") &&
+				(input.meta || input.control) &&
+				!input.shift &&
+				!input.alt;
+
+			if (isReloadKey) {
+				event.preventDefault();
+				this.emit(`reload-pane:${paneId}`);
+			}
 		};
 
 		wc.on("before-input-event", handler);

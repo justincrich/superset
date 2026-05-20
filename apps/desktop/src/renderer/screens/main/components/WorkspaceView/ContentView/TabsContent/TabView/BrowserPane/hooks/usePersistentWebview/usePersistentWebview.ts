@@ -165,6 +165,17 @@ export function usePersistentWebview({
 		},
 	);
 
+	// Subscribe to reload-pane events from Cmd+R in webview
+	electronTrpc.browser.onReloadPane.useSubscription(
+		{ paneId },
+		{
+			onData: () => {
+				const webview = webviewRegistry.get(paneId);
+				if (webview) webview.reload();
+			},
+		},
+	);
+
 	// Sync store from webview state (handles agent-triggered navigation while hidden)
 	const syncStoreFromWebview = useCallback(
 		(webview: Electron.WebviewTag) => {

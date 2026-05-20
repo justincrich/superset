@@ -94,10 +94,19 @@ export function usePersistentWebview({
 				},
 			},
 		);
+		const reloadPaneSub = electronTrpcClient.browser.onReloadPane.subscribe(
+			{ paneId },
+			{
+				onData: () => {
+					browserRuntimeRegistry.reload(paneId);
+				},
+			},
+		);
 		return () => {
 			newWindowSub.unsubscribe();
 			contextMenuSub.unsubscribe();
 			closePaneSub.unsubscribe();
+			reloadPaneSub.unsubscribe();
 		};
 	}, [paneId]);
 
