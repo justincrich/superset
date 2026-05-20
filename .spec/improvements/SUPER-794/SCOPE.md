@@ -4,7 +4,7 @@ ticket_url: https://linear.app/superset-sh/issue/SUPER-794/cmdw-in-a-browser-pan
 tracker: linear
 branch: improvement/SUPER-794-cmdw-browser-pane-closes-window
 chosen_option: minimum
-loc_budget: 60
+loc_budget: 80
 task_chunks: 1
 investigator_specialist: electron-reviewer
 challenger_specialist: code-reviewer
@@ -43,14 +43,24 @@ The Electron `<webview>` tag runs guest web contents in a separate renderer proc
 - AC-2: Cmd+Shift+W still closes the entire tab (CLOSE_TAB behavior preserved)
 - AC-3: Cmd+W pressed while focus is in terminal/other panes still closes the pane (no regression)
 - AC-4: The File menu "Close Window" item remains visible but no longer captures Cmd+W
+- AC-5: Browser pane close uses the same `useHotkey("CLOSE_PANE" | "CLOSE_TERMINAL", handler)` primitive that terminal/other panes use — webview interception routes into the existing hotkey flow rather than creating a parallel close mechanism
 
 ### Files in scope
 - `apps/desktop/src/main/lib/menu.ts` — remove implicit `CmdOrCtrl+W` accelerator from the File menu close item (line 31: replace `role: "close"` with explicit click handler or set `accelerator` to empty)
 - `apps/desktop/src/main/lib/browser/browser-manager.ts` — add `before-input-event` listener on registered webContents to intercept Cmd/Ctrl+W and emit a per-pane close event
 - `apps/desktop/src/lib/trpc/routers/browser/browser.ts` — add `onClosePane` tRPC subscription following the existing `onNewWindow` / `onContextMenuAction` pattern
+- `apps/desktop/src/renderer/screens/main/components/WorkspaceView/ContentView/TabsContent/TabView/BrowserPane/hooks/usePersistentWebview/usePersistentWebview.ts` (v1 variant) — subscribe to `onClosePane` and trigger the same close path as `useHotkey("CLOSE_TERMINAL")` (calls `requestPaneClose`)
+- `apps/desktop/src/renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/usePaneRegistry/components/BrowserPane/hooks/usePersistentWebview/usePersistentWebview.ts` (v2 variant) — subscribe to `onClosePane` and trigger the same close path as `useHotkey("CLOSE_PANE")` (calls `closePane`)
 
-### Colocation principle
-The webview hotkey interception is a main-process concern (webcontents `before-input-event`), but the **event emission pattern** should mirror existing tRPC subscriptions so renderer-side hotkey logic stays grouped. The renderer-side subscription in `usePersistentWebview` (v1 and v2 variants) subscribes to the new close event and calls the same `requestPaneClose`/`closePane` paths that the existing renderer hotkeys already use. This keeps the hotkey *handling* colocated even though webview *interception* must live in the main process.
+### Colocation principle (binding constraint)
+Webview panes and non-webview panes must use the **same hotkey primitives**. The difference is only in *how the keystroke is captured*:
+- **Non-webview panes:** DOM keyboard event → `react-hotkeys-hook` → `useHotkey("CLOSE_PANE", handler)` → close pane
+- **Webview panes:** Main-process `before-input-event` → tRPC event → `usePersistentWebview` subscription → calls the **same close function** that the `useHotkey` handler would call (`requestPaneClose` / `closePane`)
+
+The interception source differs (DOM vs main-process IPC), but the close action is identical. This ensures:
+1. Future hotkey changes (remapping, disabling) apply to both pane types uniformly
+2. Webview-specific close logic doesn't drift from the standard close logic
+3. The pattern is reusable for any future hotkeys that webviews need to support
 
 ### Out of scope (deliberately deferred)
 - Removing the "Close Window" menu item (it stays, just without the accelerator)
