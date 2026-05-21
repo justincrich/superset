@@ -156,11 +156,13 @@ export function usePersistentWebview({
 				const pane = state.panes[paneId];
 				if (!pane) return;
 				// Import dynamically to avoid circular dependency
-				import("renderer/stores/editor-state/editorCoordinator").then(
-					({ requestPaneClose }) => {
+				import("renderer/stores/editor-state/editorCoordinator")
+					.then(({ requestPaneClose }) => {
 						requestPaneClose(paneId);
-					},
-				);
+					})
+					.catch((err) => {
+						console.error("[BrowserPane] Failed to close pane:", err);
+					});
 			},
 		},
 	);

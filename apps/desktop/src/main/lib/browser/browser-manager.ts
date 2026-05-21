@@ -277,6 +277,7 @@ class BrowserManager extends EventEmitter {
 			// AC-1: Intercept Cmd+W (macOS) / Ctrl+W (Windows/Linux) to close pane
 			// AC-2: Do NOT intercept Cmd+Shift+W / Ctrl+Shift+W (that's for closing the entire tab)
 			const isCloseKey =
+				input.type === "keyDown" &&
 				(input.key === "w" || input.key === "W") &&
 				(input.meta || input.control) &&
 				!input.shift &&
