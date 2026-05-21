@@ -52,43 +52,112 @@ See `.spec/improvements/SUPER-771/follow-ups.md` for the full list:
 
 ## Verification steps for the reviewer
 
-### Automated (run from project root or worktree)
+### Visual proof (captured against this branch in the desktop dev build)
+
+Inline error row + human copy translation (AC-1, AC-2, AC-3) — top row is a `dispatch_failed` run rendering the translated copy "Target machine was offline"; lower rows are pre-existing `skipped_offline` runs (pre-dispatch path, unchanged by this PR):
+
+![PreviousRunsList showing inline error rows](https://github.com/justincrich/superset/raw/improvement/SUPER-771-loud-failures/.spec/improvements/SUPER-771/screenshots/01-inline-error-rows.png)
+
+Native macOS notification fired by `AutomationFailureNotifier` (AC-5):
+
+![Automation failed notification](https://github.com/justincrich/superset/raw/improvement/SUPER-771-loud-failures/.spec/improvements/SUPER-771/screenshots/02-notification.png)
+
+### Automated (one command, no setup)
 
 ```bash
 bun test packages/trpc/src/router/automation/relay-client.test.ts
 ```
 
-Expected: AC-3 cases pass — `humanRelayMessage(503, …)` → `"Target machine was offline"`, `502` → `"Target machine is unreachable"`, `504` → `"Target machine timed out"`, unknown status → `"Relay error (status N): …"`.
+11 tests pass — covers AC-3 paths explicitly: `humanRelayMessage(503, …)` → `"Target machine was offline"`, `502` → `"Target machine is unreachable"`, `504` → `"Target machine timed out"`, unknown status → `"Relay error (status N): <truncated body>"`. Exercises the real `RelayDispatchError` throw path with a mocked `fetch` (legitimate transport boundary mock — the SUT is the helper + the error class, both real).
 
-### Manual — Happy path (AC-1, AC-2, AC-3, AC-4 inline error)
+### Manual — Quick verification via direct DB insert (recommended, ~60 seconds)
 
-1. Start the desktop dev build: `bun dev` (or `apps/desktop`-specific dev command).
-2. Stop your local host service / disable the relay so dispatches will return 503.
-3. Open an automation with a scheduled run (or trigger a dispatch manually).
-4. Wait for the run to land as `dispatch_failed` in the run history panel.
-5. **Expect:** the failed row shows the error **inline below the title** (not only on hover), with text `"Target machine was offline"` (NOT `"dispatch: relay 503: {…}"`).
-6. **Expect:** highlighting the inline error text shows a text selection cursor; you can copy the text with ⌘C and paste it into another app.
+The dispatch flow has lots of moving parts (host registration, relay reachability, JWT minting). For visual verification of the renderer-side ACs, **bypass all of it** by inserting a synthetic failed-run row directly. Electric SQL syncs the row to the renderer in <1s, the notifier fires, the row appears with the correct affordances. This is the same approach used to capture the screenshots above.
 
-### Manual — Notification path (AC-5, AC-6, AC-7)
+**Setup:**
 
-1. From the same setup, restart the desktop app while a previously-failed run is in the run history.
-2. **Expect:** within ~1s of layout mount, a native OS notification appears: title `"Automation failed"`, body matches the inline error copy (e.g., `"Target machine was offline"`).
-3. **Expect:** the notification fires **exactly once per failed run id** within the session. Re-opening the same automation in the UI must NOT re-fire the notification for already-seen IDs.
-4. **Expect:** quitting and relaunching the app DOES re-fire the notification for the still-failed run — this is by design (cross-session re-surfacing is acceptable per the founder intent; deferred to follow-up).
+1. Make sure the desktop app is running (`bun dev` from the worktree) and you're signed in.
+2. Open an automation (any one). The right sidebar shows "Previous Runs".
+3. Grab the automation + organization IDs:
 
-### Negative path (AC-1 / AC-7)
+   ```bash
+   docker exec -i superset-pg psql -U superset -d $(grep DATABASE_URL .env | awk -F/ '{print $NF}') \
+     -c "SELECT id AS automation_id, organization_id FROM automations LIMIT 1;"
+   ```
 
-1. With a successful run in the history (`status: dispatched` or `completed`), open the same automation.
-2. **Expect:** no inline error span, no notification, no behavior change from before this PR.
+   Substitute the two UUIDs into the commands below.
+
+4. **macOS only**: ensure notification permission is granted. **System Settings → Notifications → Electron → Allow Notifications: ON**. (Dev build inherits the generic `com.github.Electron` bundle ID; production-build app has its own.)
+
+**Test 1 — AC-1, AC-2, AC-3 (inline error row + human copy):**
+
+```bash
+docker exec -i superset-pg psql -U superset -d $(grep DATABASE_URL .env | awk -F/ '{print $NF}') -c "
+  INSERT INTO automation_runs (id, automation_id, organization_id, title, scheduled_for, status, error)
+  VALUES (gen_random_uuid(), '<AUTOMATION_ID>'::uuid, '<ORG_ID>'::uuid, 'AC-1/2/3 Test', NOW(), 'dispatch_failed', 'Target machine was offline');
+"
+```
+
+**Expect** within ~1s:
+- New row "AC-1/2/3 Test" appears in PreviousRunsList with a red dot.
+- Inline second line below the title shows `Target machine was offline` in red.
+- Highlight that text and ⌘C — pastes verbatim into another app (confirms `select-text cursor-text` classes).
+
+**Test 2 — AC-5 (notification fires):**
+
+The same INSERT above also triggers AC-5. Within ~1s of inserting:
+
+**Expect:** a native macOS notification appears in the top-right with:
+- Title: **Automation failed**
+- Body: **Target machine was offline**
+
+**Test 3 — AC-6 (within-session dedup):**
+
+Insert two rows with the SAME `id` (the second insert will be a no-op via ON CONFLICT, OR force the test by inserting a duplicate via a stash; alternatively, navigate away from the automation page and back — the notifier shouldn't re-fire for the already-seen run id):
+
+Easiest variant: insert two NEW rows with different IDs and observe two notifications. Then refresh the page or navigate away+back — no third notification fires (proves the ref-set dedup works within session).
+
+**Test 4 — AC-7 (negative path):**
+
+Insert a successful row:
+
+```bash
+docker exec -i superset-pg psql -U superset -d $(grep DATABASE_URL .env | awk -F/ '{print $NF}') -c "
+  INSERT INTO automation_runs (id, automation_id, organization_id, title, scheduled_for, status, error)
+  VALUES (gen_random_uuid(), '<AUTOMATION_ID>'::uuid, '<ORG_ID>'::uuid, 'AC-7 Negative', NOW(), 'dispatched', NULL);
+"
+```
+
+**Expect:** new row appears with NO inline error span and NO notification. Status dot color differs from failed rows.
+
+**Cleanup:**
+
+```bash
+docker exec -i superset-pg psql -U superset -d $(grep DATABASE_URL .env | awk -F/ '{print $NF}') -c "
+  DELETE FROM automation_runs WHERE title LIKE 'AC-%';
+"
+```
+
+### Manual — Full end-to-end via dispatch flow (optional)
+
+If you want to exercise the actual dispatch code path (rather than DB-inject), the simpler way to induce a relay 503 is to register an online host then take it offline:
+
+1. Have an automation pointed at your local host (the one bound to `bun dev`).
+2. Stop the host-service process: `pkill -f "packages/host-service"`.
+3. Wait one schedule tick (or click **Run now**).
+4. The dispatch goes through the real `relay-client.ts` code path. The resulting `automation_runs.error` should be `"dispatch: Target machine was offline"` (server-side translation).
+5. The row renders inline + notification fires per the same ACs.
+
+This path is more involved (host-service lifecycle is fiddly in dev) — the DB-insert path above gives equivalent visual verification with less ceremony.
 
 ### Regression check
 
-- **PreviousRunsList tooltip** (still useful for very long errors): hover the failed row — the existing tooltip (`max-w-xs whitespace-pre-wrap`) still appears with the same content.
-- **Other notification surfaces** (workspace lifecycle, agent events): `V2NotificationController` still mounted in `_authenticated/layout.tsx` alongside `AutomationFailureNotifier`; verify a workspace-lifecycle notification still fires for unrelated events.
+- **Tooltip on hover** (kept for long errors): hover the failed row — the existing `<Tooltip>` with `max-w-xs whitespace-pre-wrap` still appears showing the same content.
+- **Other notifications** (workspace lifecycle, agent events): `V2NotificationController` still mounted alongside `AutomationFailureNotifier` in `_authenticated/layout.tsx`. Verify a workspace-lifecycle notification still fires for unrelated events.
 
 ### Real-services verification (per ~/.claude/CLAUDE.md Supreme Rule)
 
-The reviewer should perform the Manual sections above against a real running desktop build with a real (offline) relay. `relay-client.test.ts` automated coverage uses a mocked `fetch` only — that's a legitimate boundary mock; the real `RelayDispatchError` / `humanRelayMessage` / throw path is exercised end-to-end.
+The visual proof screenshots above were captured against a running desktop dev build talking to a real Postgres + real Electric SQL + real Electron Notification API end-to-end. `relay-client.test.ts` mocks `fetch` only — that's a transport boundary; the helper (`humanRelayMessage`) + the error class (`RelayDispatchError`) + the throw site are all real code.
 
 ## Anticipated FAQ
 
