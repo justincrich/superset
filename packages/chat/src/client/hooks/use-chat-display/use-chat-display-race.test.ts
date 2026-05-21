@@ -77,7 +77,7 @@ function asCurrentMessage(
  *         dedup filter has nothing to remove. A1 remains in history AND
  *         appears in currentMessage → the message renders TWICE.
  */
-describe("dual-poll race — flicker reproduction (FAILING)", () => {
+describe("dual-poll race — flicker reproduction", () => {
 	it("suppresses in-flight assistant message from history when optimistic user message was appended after it", () => {
 		// History from listMessages (tick B): contains committed U1 + in-flight A1
 		const historicalMessagesFromListMessages: ListMessagesOutput = [
