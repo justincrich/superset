@@ -1,6 +1,6 @@
 ---
 title: Mobile Chat (v0)
-version: 1.1.0
+version: 1.2.0
 scope_posture: full
 pr_sequencing: true
 ---
@@ -21,7 +21,7 @@ Full convention: [`~/Projects/brain/docs/PR-SEQUENCING.md`](~/Projects/brain/doc
 
 | Field | Value |
 |-------|-------|
-| Version | 1.1.0 |
+| Version | 1.2.0 |
 | Scope Posture | Full feature (default) |
 | PR Sequencing | Enabled |
 | Created | 2026-05-21 |
@@ -61,6 +61,7 @@ Full convention: [`~/Projects/brain/docs/PR-SEQUENCING.md`](~/Projects/brain/doc
 
 | Version | Date | Changes | Trigger |
 |---------|------|---------|---------|
+| 1.2.0 | 2026-05-21 | Annotate every Out-of-Scope item in `01-scope.md` with a one-sentence "Why" grounded in the originating conversation. Distinguish `[DEFERRED: separate PRD]` (could ship later) from `[NOT SUPPORTED]` (architectural/product boundary). Add two previously-implicit exclusions: tRPC subscriptions for chat (superseded by streaming sub-decision) and attachment payload UI in messages (pair-with-send rule). | Scope review |
 | 1.1.0 | 2026-05-21 | Refine PAUSE UCs to use a container per interaction shape (inline card + sticky footer for tool approval; bottom sheet for ask_user; full-screen modal as pushed expo-router route for plan approval). Add UC-PAUSE-04 floating pending-action indicator. Add Design Rationale section to `07-uc-pause.md` with citations to Apple HIG, NN/G, Continue.dev, Cline, Material Design 3. | Product / UX review (research-validated 2026-05-21) |
 | 1.0.0 | 2026-05-21 | Initial PRD generated from research + design audit | New initiative |
 

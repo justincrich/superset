@@ -1,7 +1,7 @@
 ---
 stability: FEATURE_SPEC
 last_validated: 2026-05-21
-prd_version: 1.0.0
+prd_version: 1.2.0
 scope_posture: full
 ---
 
@@ -38,19 +38,52 @@ scope_posture: full
 
 ## Out of Scope
 
-- **Attachments** (file picker, image picker, drag-drop) — `[DEFERRED: separate PRD]`. Desktop's `ChatInputDropZone`, `FileDropOverlay`, `useDocumentDrag`, and the Plus menu file-attach flows are explicitly excluded from v0.
-- **File mentions** (`@src/foo.ts` autocomplete from the host's workspace file tree) — `[DEFERRED: separate PRD]`. The Tiptap node infrastructure is included via `tentap-editor`, but the file-search autocomplete + `FileMentionNode` rendering on the host's behalf is v1.
-- **User mentions** (`@username` for team contexts) — `[DEFERRED: separate PRD]`. Depends on teams shipping mobile-side first.
+Each item below is tagged `[DEFERRED: separate PRD]` (could ship later as its own initiative) or `[NOT SUPPORTED]` (architectural/product decision; will not ship in any subsequent PRD without changing this assumption). Every item carries a one-sentence **Why** grounded in the conversation that produced this PRD.
+
+- **Attachments — file picker, image picker, drag-drop, paste-image** — `[DEFERRED: separate PRD]`. Desktop's `ChatInputDropZone`, `FileDropOverlay`, `useDocumentDrag`, and the Plus-menu attach flows are excluded.
+  **Why:** The user's scope statement was explicit — "allow sending messages for remote/cloud work" — text only. Attachments require `expo-document-picker` + `expo-image-picker` + the upload-to-`chat_attachments` flow. Adding them would push v0 over a single shippable initiative; better to validate the text-message platform end-to-end first.
+
+- **File mentions** (`@src/foo.ts` autocomplete from the host's workspace file tree) — `[DEFERRED: separate PRD]`. The Tiptap node infrastructure is included via `tentap-editor` so v1 can layer this on without re-platforming.
+  **Why:** Two reasons. (1) The host runs on a remote/cloud machine — mobile users don't carry a working mental map of that host's FS, so file-mentions are inherently less useful on mobile than desktop. (2) Implementing them requires the host file-search autocomplete UI + `FileMentionNode` port — meaningful work beyond v0's "list / read / send" scope. Better to ship the Tiptap shell first and confirm WebView perf before extending it.
+
+- **User mentions** (`@username` for team contexts) — `[DEFERRED: separate PRD]`.
+  **Why:** Mentions depend on team-membership infrastructure (`members` table + a mobile-side directory) that may not even exist yet on mobile. Mobile chat v0 shouldn't block on cross-cutting team features whose timing it can't control.
+
 - **Linked issues / linked tasks** (Linear ticket attachment in chat input, `LinkedIssuePill`, `IssueLinkCommand`) — `[DEFERRED: separate PRD]`.
-- **Plus menu and overflow actions** — `[DEFERRED: separate PRD]`. Most plus items are attachment-related.
-- **Restart-from-message** (branch a conversation from a prior message) — `[DEFERRED: separate PRD]`. Host-service procedure exists (`chat.restartFromMessage`); mobile defers the UI.
+  **Why:** Linear integration is a separate cross-cutting capability requiring Linear OAuth + ticket-search UI on mobile. It's a power-user convenience layered on top of chat, not a prerequisite for the "list / read / send" loop. Defer until the base v0 surface is validated.
+
+- **Plus menu and overflow actions** — `[DEFERRED: separate PRD]`.
+  **Why:** Desktop's Plus menu primarily exposes attachment-related actions (file attach, image upload, drag-drop alternatives). Since attachments are out of v0, shipping the Plus menu would produce a half-empty UI surface. Bring it back when the items inside it are also ready.
+
+- **Restart-from-message** (branch a conversation from a prior message) — `[DEFERRED: separate PRD]`. Host-service procedure `chat.restartFromMessage` already exists.
+  **Why:** Power-user feature outside the user's explicit "list / read / send" scope. Backend is ready; v0 deferral is purely a UI port that can drop into a future PRD without touching the host.
+
 - **Edit-last-user-message** (re-send a different message) — `[DEFERRED: separate PRD]`.
-- **MCP overview** (which MCP servers and tools are wired into this session) — `[DEFERRED: separate PRD]`. Read-only info; not blocking.
-- **Local chat code execution on the mobile device** — explicitly NOT supported. Mobile chat targets remote/cloud hosts only (scope statement). Sessions that need a local user-machine host do not work from mobile.
-- **Rich text formatting in composed messages** (bold, italic, lists, headings). Desktop's Tiptap doesn't expose these either in the prompt editor; v0 keeps text + slash + mention only.
-- **Multi-keystroke shortcuts** (Cmd+Enter, etc.) — replaced by on-screen Send button. Mobile has no Cmd/Ctrl modifier model.
-- **Pure-Electric message persistence** (mirroring host runtime memory into a `chat_messages` table for shape-based sync) — `[DEFERRED: separate PRD]`. v0 reads messages via relay-routed tRPC, not Electric. This decision can be revisited if the chat-v2 PRD's "host SQLite event log" lands.
-- **Cross-platform UI component library** (shared `packages/chat-ui` consumed by both web and RN) — explicitly rejected per cadra-app reference and design audit. Mobile and desktop maintain parallel implementations with name and Tailwind parity, no code reuse.
+  **Why:** Same power-user category as restart-from-message. Also introduces non-trivial UX questions (in-place edit vs re-send a new message; how to represent edits in the wire-format history) that don't pay off until base v0 ships and users actually ask for the feature.
+
+- **MCP overview** (which MCP servers and tools are wired into this session) — `[DEFERRED: separate PRD]`.
+  **Why:** Read-only diagnostic surface. Not in stated scope and not blocking any of the in-scope use cases. Adds a settings/picker screen with limited mobile-specific value; easy to graft on later.
+
+- **Local chat code execution on the mobile device** — `[NOT SUPPORTED]`.
+  **Why:** The user's scope statement was emphatic — "allow sending messages for remote/cloud work (**not local code on mobile device**)". The mobile device doesn't run a host-service; mobile chat REQUIRES a reachable remote or cloud host. This is a stated product boundary, not a deferral, and it will not be revisited in a follow-up PRD.
+
+- **Rich text formatting in composed messages** (bold, italic, lists, headings) — `[NOT SUPPORTED]`.
+  **Why:** Desktop's Tiptap prompt editor doesn't expose these either — desktop chat input is plain text + atomic slash-command and file-mention tokens, nothing more. The wire format passed to the agent doesn't carry rich text. Adding rich-text formatting on mobile would be a UX divergence from desktop with zero functional value for the agent loop.
+
+- **Multi-keystroke shortcuts** (Cmd+Enter to send, Cmd+K for command palette, etc.) — `[NOT SUPPORTED]`.
+  **Why:** Mobile OSes don't have a Cmd/Ctrl modifier key model. Mobile uses on-screen Send button plus the iOS/Android keyboard's "send" affordance. This is platform-structural, not deferred.
+
+- **Pure-Electric message persistence** (mirror host runtime memory into a new `chat_messages` table for shape-based sync) — `[DEFERRED: separate PRD]`.
+  **Why:** Architecture research (`plans/20260521-mobile-chat-research.md` on `local-setup-no-env`) confirmed messages currently live only in host runtime memory — no `chat_messages` table, no `messages` JSON column. Persisting them is a large cross-cutting schema + dual-write change. The chat-v2 PRD already drafts a "host SQLite event log" approach; mobile v0 doesn't need to block on that and can read via relay-routed tRPC instead.
+
+- **Cross-platform UI component library** (a shared `packages/chat-ui` consumed by both web/desktop and mobile) — `[NOT SUPPORTED]`.
+  **Why:** Validated against the `cadra-app/monorepo` reference (private repo, accessed via `gh` CLI 2026-05-21): web shadcn components and React Native primitives are fundamentally incompatible at the JSX layer — Radix vs `@rn-primitives`, `<div>` vs `<View>`. Cadra ships parallel implementations with name + Tailwind parity, zero shared code at the UI layer, after explicit consideration of the alternative. Shared design tokens via Tailwind class names is the correct boundary; shared JSX is not.
+
+- **Real-time tRPC subscriptions for chat** — `[NOT SUPPORTED]` in v0; superseded by streaming sub-decision.
+  **Why:** Repo-wide grep (research finding) confirmed zero tRPC subscriptions in the chat path today; the chat-v2 PRD draft proposes WebSocket subscriptions with offset-resume but is not merged. Mobile v0 reads via request/response tRPC (with cursor protocol for resume) and defers live-token streaming to a sub-decision in technical requirements §"Open technical sub-decisions" (SSE-through-relay vs cloud DurableStreams vs polling). Adopting tRPC subscriptions would require infrastructure changes outside this PRD's scope.
+
+- **Attachment payload UI in messages (file chips, image previews, link cards)** — `[DEFERRED: separate PRD]`.
+  **Why:** Consequence of the attachments deferral above. The host-service `chat_attachments` table is read-only to mobile, but rendering attachment payloads in user/assistant messages introduces media-handling, image-caching, and download flows that don't pay off until users can also upload attachments. Pair the render with the send.
 
 ## Scope size check
 
