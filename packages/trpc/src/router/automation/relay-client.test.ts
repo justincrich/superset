@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "bun:test";
 import { RelayDispatchError, relayMutation } from "./relay-client";
 
 describe("relay-client", () => {
@@ -113,6 +113,152 @@ describe("relay-client", () => {
 				if (err instanceof RelayDispatchError) {
 					expect(err.message).toContain("missing result.data");
 					expect(err.message.length).toBeLessThan(300);
+				}
+			}
+		});
+	});
+
+	describe("humanRelayMessage (AC-3 tests)", () => {
+		it("AC-3: relay 503 translates to 'Target machine was offline'", async () => {
+			global.fetch = vi.fn(() =>
+				Promise.resolve({
+					ok: false,
+					status: 503,
+					text: () => Promise.resolve('{"error":"Service unavailable"}'),
+				})
+			) as any;
+
+			const options = {
+				relayUrl: "http://relay.local",
+				hostId: "host-123",
+				jwt: "token",
+			};
+
+			try {
+				await relayMutation(options, "test.mutation", { input: "data" });
+				expect.fail("should have thrown");
+			} catch (err) {
+				expect(err instanceof RelayDispatchError).toBe(true);
+				if (err instanceof RelayDispatchError) {
+					expect(err.message).toBe("Target machine was offline");
+					expect(err.status).toBe(503);
+				}
+			}
+		});
+
+		it("AC-3: relay 502 translates to 'Target machine is unreachable'", async () => {
+			global.fetch = vi.fn(() =>
+				Promise.resolve({
+					ok: false,
+					status: 502,
+					text: () => Promise.resolve('{"error":"Bad gateway"}'),
+				})
+			) as any;
+
+			const options = {
+				relayUrl: "http://relay.local",
+				hostId: "host-123",
+				jwt: "token",
+			};
+
+			try {
+				await relayMutation(options, "test.mutation", { input: "data" });
+				expect.fail("should have thrown");
+			} catch (err) {
+				expect(err instanceof RelayDispatchError).toBe(true);
+				if (err instanceof RelayDispatchError) {
+					expect(err.message).toBe("Target machine is unreachable");
+					expect(err.status).toBe(502);
+				}
+			}
+		});
+
+		it("AC-3: relay 504 translates to 'Target machine timed out'", async () => {
+			global.fetch = vi.fn(() =>
+				Promise.resolve({
+					ok: false,
+					status: 504,
+					text: () => Promise.resolve('{"error":"Gateway timeout"}'),
+				})
+			) as any;
+
+			const options = {
+				relayUrl: "http://relay.local",
+				hostId: "host-123",
+				jwt: "token",
+			};
+
+			try {
+				await relayMutation(options, "test.mutation", { input: "data" });
+				expect.fail("should have thrown");
+			} catch (err) {
+				expect(err instanceof RelayDispatchError).toBe(true);
+				if (err instanceof RelayDispatchError) {
+					expect(err.message).toBe("Target machine timed out");
+					expect(err.status).toBe(504);
+				}
+			}
+		});
+
+		it("AC-3: unknown status falls back to 'Relay error (status N): ...'", async () => {
+			const responseBody = '{"error":"Some error"}';
+			global.fetch = vi.fn(() =>
+				Promise.resolve({
+					ok: false,
+					status: 418,
+					text: () => Promise.resolve(responseBody),
+				})
+			) as any;
+
+			const options = {
+				relayUrl: "http://relay.local",
+				hostId: "host-123",
+				jwt: "token",
+			};
+
+			try {
+				await relayMutation(options, "test.mutation", { input: "data" });
+				expect.fail("should have thrown");
+			} catch (err) {
+				expect(err instanceof RelayDispatchError).toBe(true);
+				if (err instanceof RelayDispatchError) {
+					expect(err.message).toContain("Relay error (status 418):");
+					expect(err.status).toBe(418);
+				}
+			}
+		});
+
+		it("AC-3: truncates long response body in fallback message", async () => {
+			const longBody = "error-details".repeat(50); // ~650 chars
+			global.fetch = vi.fn(() =>
+				Promise.resolve({
+					ok: false,
+					status: 500,
+					text: () => Promise.resolve(longBody),
+				})
+			) as any;
+
+			const options = {
+				relayUrl: "http://relay.local",
+				hostId: "host-123",
+				jwt: "token",
+			};
+
+			try {
+				await relayMutation(options, "test.mutation", { input: "data" });
+				expect.fail("should have thrown");
+			} catch (err) {
+				expect(err instanceof RelayDispatchError).toBe(true);
+				if (err instanceof RelayDispatchError) {
+					// Message should contain "Relay error (status 500):" and truncated body
+					expect(err.message).toContain("Relay error (status 500):");
+					// Should be truncated, not the full long body
+					expect(err.message.length).toBeLessThan(longBody.length);
+					// Should end with ellipsis if truncated
+					if (err.message.length < 300) {
+						// Truncation happened
+						expect(err.message).toMatch(/…$/);
+					}
 				}
 			}
 		});
