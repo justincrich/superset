@@ -1,7 +1,6 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { settings } from "@superset/local-db";
-import { isLocalProfile } from "@superset/shared/deployment-profile";
 import {
 	app,
 	BrowserWindow,
@@ -56,13 +55,6 @@ import { MainWindow } from "./windows/main";
 
 console.log("[main] Local database ready:", !!localDb);
 const IS_DEV = process.env.NODE_ENV === "development";
-
-// Local profile only: expose Chrome DevTools Protocol for headless testing
-// (e.g. import/host-service checks). Skip in internal / cloud profiles.
-if (IS_DEV && isLocalProfile()) {
-	app.commandLine.appendSwitch("remote-debugging-port", "9333");
-	app.commandLine.appendSwitch("remote-allow-origins", "*");
-}
 
 void applyShellEnvToProcess().catch((error) => {
 	console.error("[main] Failed to apply shell environment:", error);

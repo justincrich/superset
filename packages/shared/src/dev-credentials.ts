@@ -1,6 +1,5 @@
 /**
- * Seeded local-dev account used by:
- * - packages/db seed-dev to insert the user
+ * Local-dev account used by:
  * - apps/desktop LocalDevAuthForm + dev-auto-sign-in to authenticate against it
  * - apps/web DevSignInButton to authenticate against it
  *
