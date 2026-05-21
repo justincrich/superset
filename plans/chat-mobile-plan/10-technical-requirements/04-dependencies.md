@@ -10,6 +10,20 @@
 | `lucide-react-native` | matches mobile lucide version | Icon parity with desktop's `lucide-react` | https://lucide.dev/guide/packages/lucide-react-native |
 | `react-native-markdown-display` (or alternative) | latest stable | Markdown rendering in assistant messages | https://github.com/iamacup/react-native-markdown-display |
 | `expo-notifications` | matches Expo SDK 56 | Push token registration + foreground/background notification handling | https://docs.expo.dev/versions/latest/sdk/notifications/ |
+| `@storybook/react-native` | latest stable (v9) | Component testing — isolated UI state development via Storybook under custom root toggle | https://storybookjs.github.io/react-native/docs/intro/getting-started/ |
+| `@storybook/addon-ondevice-controls` | matches storybook version | Storybook controls addon for RN | https://storybookjs.github.io/react-native/docs/intro/getting-started/ |
+| `@storybook/addon-ondevice-actions` | matches storybook version | Storybook actions addon for RN | https://storybookjs.github.io/react-native/docs/intro/getting-started/ |
+
+## Dev-only dependencies (not in production bundle)
+
+These are gated behind `EXPO_PUBLIC_STORYBOOK=true` and stripped by dead-code elimination when the flag is unset. See `11-testing-strategy.md` for the custom root toggle pattern.
+
+## External tooling (not in package.json)
+
+| Tool | Purpose | Install |
+|---|---|---|
+| **Maestro** | YAML-based E2E testing — no-code mobile UI automation | `curl -Ls "https://get.maestro.mobile.dev" \| bash` |
+| **Bun test** | Unit testing for shared logic (already standard across monorepo) | Built into Bun runtime |
 
 ## Already in mobile package.json
 
