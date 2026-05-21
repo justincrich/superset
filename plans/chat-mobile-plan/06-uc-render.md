@@ -10,7 +10,7 @@ functional_group: RENDER
 | ID | Title | Description |
 |----|-------|-------------|
 | UC-RENDER-01 | Render user and assistant messages | System displays user and assistant message bubbles with text content, role-styled alignment, and timestamps. |
-| UC-RENDER-02 | Render streaming assistant text | System displays assistant text as it arrives, with atomic snapshot updates (no character-drip). |
+| UC-RENDER-02 | Render streaming assistant text | System displays assistant text as it arrives, with atomic snapshot updates via periodic polling (matching desktop's polling pattern). |
 | UC-RENDER-03 | Render markdown content | System renders markdown elements (code blocks, lists, links, tables, inline code) inside assistant messages. |
 | UC-RENDER-04 | Render tool call blocks (collapsed) | System renders agent tool calls as collapsed cards showing tool name and status; expansion deferred to a future mobile-chat PRD. |
 | UC-RENDER-05 | Render plan blocks and reasoning blocks | System renders agent plan blocks (read-only) and reasoning blocks (collapsed extended-thinking) inside the message list. |
@@ -34,7 +34,7 @@ User and assistant messages are rendered in a `@shopify/flash-list` (inverted) w
 
 ## UC-RENDER-02: Render streaming assistant text
 
-While a turn is streaming, the assistant message's text content updates as each new snapshot arrives. Mobile uses atomic per-snapshot text replacement (NOT desktop's character-drip via `setInterval`, which is incompatible with Hermes per the design audit). An optional Reanimated blinking-cursor effect indicates active streaming.
+While a turn is streaming, the assistant message's text content updates as each new snapshot arrives. Desktop achieves this via periodic polling (`refetchInterval` at ~4 FPS against `getDisplayState` + `listMessages` in `packages/chat/src/client/hooks/use-chat-display/use-chat-display.ts`). Mobile mirrors this polling pattern — atomic per-snapshot text replacement at a tunable interval (see TRD §"Open technical sub-decisions" for interval choice). An optional Reanimated blinking-cursor effect indicates active streaming.
 
 **Acceptance Criteria:**
 - ☐ User can see assistant message text update as each new snapshot arrives during a streaming turn

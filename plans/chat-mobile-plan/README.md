@@ -1,6 +1,6 @@
 ---
 title: Mobile Chat v2
-version: 1.3.1
+version: 1.4.0
 scope_posture: full
 pr_sequencing: true
 ---
@@ -63,6 +63,7 @@ Full convention: [`~/Projects/brain/docs/PR-SEQUENCING.md`](~/Projects/brain/doc
 
 | Version | Date | Changes | Trigger |
 |---------|------|---------|---------|
+| 1.4.0 | 2026-05-21 | Red-hat adversarial review against real codebase. Fixes: (1) streaming transport — desktop uses polling at ~4 FPS, not character-drip; (2) transport framing — mobile relay-HTTP is deliberate adaptation of desktop IPC, not a mirror; (3) custom slash command awareness — ACs for rendering host-discovered custom commands in popover; (4) host selection sub-decision — workspace→host resolution added as open technical sub-decision #6; (5) `previewSlashCommand` added to API table and UC-COMP-01 ACs; (6) `getDisplayState` added to API table; (7) optimistic update ACs added to UC-PAUSE-01/02/03; (8) line refs and version notes corrected. | Red-hat review (architectural consistency + desktop parity) |
 | 1.3.1 | 2026-05-21 | Strip references to an unmerged local-only PRD draft from `01-scope.md` rationale lines and from the README naming note — that draft isn't visible to reviewers, so it can't function as evidence. Rewrote affected Why sections to stand on the existing repo-state findings alone. |  Reviewer-visibility cleanup |
 | 1.3.0 | 2026-05-21 | Rename "v0" → "mobile-chat v2" throughout. "v2" is the platform's loaded generational term (`v2-workspace`, `v2-projects`, `v2-hosts`); the current terminal-via-web on mobile is implicit v1, this PRD is v2. Future-work references ("v1 PRD", "deferred to v1") become "a future mobile-chat PRD". `/api/electric/v1/shape` intentionally untouched. Added naming-clarification note at the top of this README. | Terminology alignment |
 | 1.2.0 | 2026-05-21 | Annotate every Out-of-Scope item in `01-scope.md` with a one-sentence "Why" grounded in the originating conversation. Distinguish `[DEFERRED: separate PRD]` (could ship later) from `[NOT SUPPORTED]` (architectural/product boundary). Add two previously-implicit exclusions: tRPC subscriptions for chat (superseded by streaming sub-decision) and attachment payload UI in messages (pair-with-send rule). | Scope review |
