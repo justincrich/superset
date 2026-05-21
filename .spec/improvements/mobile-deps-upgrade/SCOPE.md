@@ -1,6 +1,7 @@
 ---
 status: binding
-ticket_id: mobile-deps-upgrade
+ticket_id: SUPER-856
+ticket_url: https://linear.app/superset-sh/issue/SUPER-856/upgrade-expo-and-uniwind
 chosen_option: minimum
 loc_budget: 50
 task_chunks: 1
@@ -10,7 +11,7 @@ created_at: 2026-05-21
 bound_at: 2026-05-21
 ---
 
-# mobile-deps-upgrade: Expo SDK 56 + Uniwind 1.7 upgrade
+# SUPER-856: Upgrade Expo and Uniwind
 
 ## Defect
 
