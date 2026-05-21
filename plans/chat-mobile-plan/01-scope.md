@@ -35,6 +35,9 @@ scope_posture: full
 - **Authentication via JWT bearer** routed through the relay; mobile mints / refreshes per the chosen sub-decision (see TRD).
 - **Component tree at `apps/mobile/components/chat/`** mirroring desktop component names (ChatInterface, MessageList, MessagePartsRenderer, UserMessage, AssistantMessage, ThinkingMessage, PendingApprovalMessage, PendingQuestionMessage, PendingPlanApprovalMessage, ToolCallBlock, ChatInputFooter, ModelPicker, SlashCommandMenu).
 - **Tailwind/uniwind design parity** for the ~80% of desktop chat classes that compile under uniwind; mechanical translations applied per the design audit (`space-y-* → gap-*`, `transition-* → Reanimated`, `hover:* → active:*`, `dark:* → @variant dark` tokens).
+- **Testing infrastructure** (see `11-testing-strategy.md`): Storybook 9 under a custom root toggle (`EXPO_PUBLIC_STORYBOOK=true`) with build-time stripping for production; Maestro for YAML-based E2E flows against the running app; Bun test for shared logic unit tests.
+- **Storybook stories required for every chat UI component**, co-located as `ComponentName.stories.tsx`, covering all states (loading, empty, error, streaming, paused, etc.). Stories enable **isolated UI testing prior to service integration** — ensuring UI fidelity against design tokens and component contracts before any backend wiring begins. Atomic composition (one component + its stories at a time) ensures speed and accuracy during the build phase.
+- **Maestro E2E flows required for every user-facing UC**, co-located in `.maestro/` named by UC ID. Each service-wiring sprint's gate is defined by its Maestro flows passing.
 
 ## Out of Scope
 
