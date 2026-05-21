@@ -32,6 +32,7 @@ When the agent invokes a tool that requires approval, the session pauses and the
 - ☐ System calls `chat.respondToApproval` over the relay with the user's decision and the session and workspace ids on action
 - ☐ User can see the footer dismiss automatically once the host acknowledges the response
 - ☐ User can see the inline card transition from `PendingApprovalCard` to a resolved `ToolCallBlock` (collapsed) once the response is acknowledged
+- ☐ System applies the approval decision optimistically on tap — footer dismisses and card transitions immediately — and rolls back with an error toast if `chat.respondToApproval` fails
 - ☐ System ensures all action buttons in the footer are at least 44pt tall to meet WCAG mobile minimum hit targets
 - ☐ User can see a "1 of N" indicator in the footer when multiple approvals are pending, with the footer acting on the most recent unresolved request first
 - ☐ User can scroll up to read context above the pending approval without the footer disappearing from view
@@ -51,6 +52,7 @@ When the agent invokes the `ask_user` tool, a `@gorhom/bottom-sheet` opens conta
 - ☐ User can type a freeform multiline answer in a `BottomSheetTextInput` inside the sheet with the keyboard sized correctly above the sheet
 - ☐ User can tap a Send button (or use the keyboard send action) to submit the answer via `chat.respondToQuestion`
 - ☐ System dismisses the sheet automatically once the host acknowledges the response
+- ☐ System dismisses the sheet optimistically on submit and re-opens it with an error toast if `chat.respondToQuestion` fails
 - ☐ User can swipe-down to dismiss the sheet WITHOUT responding; the session remains paused and the pending-action indicator (UC-PAUSE-04) surfaces
 
 ---
@@ -70,6 +72,7 @@ When the agent submits a plan, the mobile app pushes a new screen via expo-route
 - ☐ User can expand an "Add feedback" section to type freeform feedback in a `TextInput` on the screen
 - ☐ System calls `chat.respondToPlan` over the relay with the user's action and feedback text
 - ☐ System dismisses the plan review screen automatically once the host acknowledges the response and returns the user to the chat view
+- ☐ System dismisses the plan review screen optimistically on action and re-presents it with an error toast if `chat.respondToPlan` fails
 - ☐ User can tap a close affordance (X) in the screen's header to dismiss WITHOUT responding; the session remains paused and the pending-action indicator (UC-PAUSE-04) surfaces
 
 ---

@@ -28,7 +28,7 @@ The mobile **UI** is a parallel React Native implementation of the desktop ChatI
 
 Build a mobile chat surface in `apps/mobile` with the following shape:
 
-1. **Transport: typed HTTP+tRPC client against `@superset/host-service`'s `AppRouter`**, URL pointed at the relay tunnel for the user's active host. Mirrors `apps/desktop/src/renderer/lib/host-service-client.ts` (the existing renderer→host-service HTTP pattern desktop already uses for v2 workspaces, project setup, etc.). Mobile differs only in URL resolution (relay-routed) and authentication (JWT bearer instead of session cookie).
+1. **Transport: typed HTTP+tRPC client against `@superset/host-service`'s `AppRouter`**, URL pointed at the relay tunnel for the user's active host. Desktop uses Electron IPC (`ipcLink` via `trpc-electron/renderer`) for chat-service communication (see `apps/desktop/src/renderer/components/Chat/utils/chat-service-client.ts`). Mobile cannot use IPC — it adapts the same `AppRouter` contract to HTTP over the relay instead, with JWT bearer auth. This is a deliberate mobile-specific adaptation of the shared host-service tRPC surface, not a mirror of desktop's transport layer.
 
 2. **Session listing via existing Electric shape.** `chat_sessions` is already published; mobile adds a `chatSessions` collection to `apps/mobile/lib/collections/collections.ts` alongside the tasks/projects/members collections it already manages. Realtime updates come for free.
 
@@ -38,7 +38,7 @@ Build a mobile chat surface in `apps/mobile` with the following shape:
 
 5. **Tiptap parity** via `@10play/tentap-editor` (WebView-hosted Tiptap) so slash commands and file mentions render with the same atomic-token UX as desktop. Wire format (`serializeEditorToText.ts`) is portable.
 
-6. **Live token streaming via the relay's HTTP path** (decision deferred between SSE-through-relay vs polling-with-offset; mobile-chat v2 may ship with periodic snapshot polling and add streaming in a follow-up sprint).
+6. **Live token streaming via the relay's HTTP path** — desktop polls at ~4 FPS via `refetchInterval` against `getDisplayState` + `listMessages` (no SSE, no DurableStreams in the chat path). Mobile mirrors this polling pattern over the relay, with a tunable interval (see TRD §"Open technical sub-decisions"). SSE-through-relay remains a possible follow-up optimization.
 
 7. **OS push notifications via Expo push** wired to host-service lifecycle events, so users learn about agent completions and pause-prompts even when the mobile app is backgrounded. This is a mobile-specific need that has no desktop analog.
 

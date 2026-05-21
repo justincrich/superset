@@ -11,7 +11,7 @@ prd_version: 1.3.0
 | Component | Role | Location |
 |---|---|---|
 | **Mobile Chat UI tree** | Parallel React Native implementation of desktop's `ChatInterface` component tree. Built with `@rn-primitives/*` + uniwind + Reanimated. | `apps/mobile/components/chat/` (NEW) |
-| **Host-service tRPC client** | Typed HTTP+tRPC client against `@superset/host-service`'s `AppRouter`. URL routed through `apps/relay` (per-host WS tunnel) instead of `127.0.0.1`. JWT bearer auth. | `apps/mobile/lib/host-service-client.ts` (NEW) — mirrors `apps/desktop/src/renderer/lib/host-service-client.ts` |
+| **Host-service tRPC client** | Typed HTTP+tRPC client against `@superset/host-service`'s `AppRouter`. Desktop uses Electron IPC (`ipcLink`) for chat communication; mobile adapts the same `AppRouter` contract to HTTP routed through `apps/relay` (per-host WS tunnel) with JWT bearer auth — a deliberate mobile-specific transport adaptation, not a mirror of desktop's IPC layer. | `apps/mobile/lib/host-service-client.ts` (NEW) |
 | **Electric collections (extended)** | Adds `chat_sessions` collection to existing collections graph for realtime session-list sync. Already-exposed Electric shape; mobile just consumes it. | `apps/mobile/lib/collections/collections.ts` (MODIFY) |
 | **Tiptap editor wrapper** | WebView-hosted Tiptap via `@10play/tentap-editor` configured with the same minimal extension set as desktop's `TiptapPromptEditor.tsx` plus the `SlashCommandNode` and `FileMentionNode` ports. | `apps/mobile/components/chat/ChatInputFooter/` (NEW) |
 | **Mid-turn pause UI** | Container shape chosen per interaction (see `07-uc-pause.md` Design Rationale for citations). Tool approval = inline card + sticky thumb-docked footer (Continue.dev pattern); ask_user = `@gorhom/bottom-sheet` with `BottomSheetTextInput` (keyboard handling); plan approval = full-screen modal as expo-router pushed route (Apple HIG "in-depth content"). Plus a floating pending-action indicator for off-screen pauses. | `apps/mobile/components/chat/PendingApprovalCard/`, `PendingApprovalFooter/` (sticky), `PendingQuestionSheet/`, `PendingActionIndicator/` (NEW components); `apps/mobile/app/(authenticated)/chat/[sessionId]/plan-review/[planId].tsx` (NEW pushed route) |
@@ -28,7 +28,7 @@ Mobile is a **read-mostly** client for chat. The only DB writes mobile triggers 
 
 | Entity | Source | Purpose for mobile |
 |---|---|---|
-| `chat_sessions` | `packages/db/src/schema/schema.ts:678-710` | Session metadata: `id, organization_id, created_by, workspace_id, v2_workspace_id, title, last_active_at, created_at, updated_at`. Read via Electric shape. Written via cloud `chat.createSession` / `updateSession` / `deleteSession` / `updateTitle`. |
+| `chat_sessions` | `packages/db/src/schema/schema.ts` (chatSessions table) | Session metadata: `id, organization_id, created_by, workspace_id, v2_workspace_id, title, last_active_at, created_at, updated_at`. Read via Electric shape. Written via cloud `chat.createSession` / `updateSession` / `deleteSession` / `updateTitle`. |
 | `v2_workspaces` | `packages/db/src/schema/schema.ts` | Workspace metadata to filter sessions and bind new sessions to. Read via Electric shape (already wired in mobile collections). |
 
 ### Tables explicitly NOT touched
@@ -62,7 +62,7 @@ Already implemented in `packages/host-service/src/trpc/router/chat/chat.ts`. Mob
 |---|---|---|
 | `chat.getSnapshot({ sessionId, workspaceId })` | query | UC-SESS-02, UC-PLATF-02 |
 | `chat.listMessages({ sessionId, workspaceId })` | query | UC-SESS-02 |
-| `chat.getDisplayState({ sessionId, workspaceId })` | query | UC-RENDER-* state derivation |
+| `chat.getDisplayState({ sessionId, workspaceId })` | query | UC-RENDER-* state derivation, polling loop (desktop polls at ~4 FPS) |
 | `chat.sendMessage({ sessionId, workspaceId, payload, metadata })` | mutation | UC-COMP-02 |
 | `chat.endSession({ sessionId, workspaceId })` | mutation | UC-SESS-04 |
 | `chat.stop({ sessionId, workspaceId })` | mutation | UC-COMP-03 |
@@ -70,7 +70,7 @@ Already implemented in `packages/host-service/src/trpc/router/chat/chat.ts`. Mob
 | `chat.respondToQuestion({ sessionId, workspaceId, payload: { questionId, answer } })` | mutation | UC-PAUSE-02 |
 | `chat.respondToPlan({ sessionId, workspaceId, payload: { planId, response } })` | mutation | UC-PAUSE-03 |
 | `chat.getSlashCommands({ workspaceId })` | query | UC-COMP-01 (slash popover) |
-| `chat.previewSlashCommand({ workspaceId, text })` | mutation | UC-COMP-01 |
+| `chat.previewSlashCommand({ workspaceId, text })` | mutation | UC-COMP-01 (slash command preview before resolve) |
 | `chat.resolveSlashCommand({ workspaceId, text })` | mutation | UC-COMP-01 |
 
 Auth: JWT bearer minted per the JWT-lifecycle sub-decision (deferred to sprint planning).
@@ -103,8 +103,8 @@ Already exposed at `apps/electric-proxy/src/where.ts:136-137`. Mobile consumes v
 │  ┌────────────────────▼──────────────┐  ┌──────────▼─────────┐       │
 │  │  apps/mobile/lib/host-service-    │  │  Electric          │       │
 │  │  client.ts (httpLink, JWT)        │  │  collections       │       │
-│  │  Typed: @superset/host-service    │  │  (existing +       │       │
-│  │  AppRouter                        │  │  chat_sessions)    │       │
+│  │  HTTP adaptation of host-service  │  │  (existing +       │       │
+│  │  AppRouter (desktop uses IPC)     │  │  chat_sessions)    │       │
 │  └────────────────────┬──────────────┘  └──────────┬─────────┘       │
 │                       │                            │                 │
 │  ┌────────────────────▼──────────────┐             │                 │
@@ -155,7 +155,7 @@ Already exposed at `apps/electric-proxy/src/where.ts:136-137`. Mobile consumes v
 | `@10play/tentap-editor` | latest stable | WebView-hosted Tiptap for input parity | https://10play.github.io/10tap-editor/ |
 | `lucide-react-native` | matches mobile lucide version | Icon parity with desktop's `lucide-react` | https://lucide.dev/guide/packages/lucide-react-native |
 | `react-native-markdown-display` (or alternative) | latest stable | Markdown rendering in assistant messages | https://github.com/iamacup/react-native-markdown-display |
-| `expo-notifications` | matches Expo SDK 55 | Push token registration + foreground/background notification handling | https://docs.expo.dev/versions/latest/sdk/notifications/ |
+| `expo-notifications` | matches Expo SDK 56 | Push token registration + foreground/background notification handling | https://docs.expo.dev/versions/latest/sdk/notifications/ |
 
 ## External Dependencies (already in mobile package.json)
 
@@ -176,29 +176,152 @@ These cover most of the supporting infrastructure — no new install needed:
 
 ### Component-tree mirror to `apps/mobile/components/chat/`
 
-| Mobile file (NEW) | Mirrors desktop file |
+Components follow AGENTS.md co-location rules (folder-per-component, barrel `index.ts`, subcomponents nest under parent's `components/`). See `11-component-organization-addendum.md` for full convention details.
+
+```
+components/chat/
+├── ChatInterface/
+│   ├── ChatInterface.tsx
+│   ├── components/
+│   │   ├── MessageList/
+│   │   │   ├── MessageList.tsx
+│   │   │   ├── components/
+│   │   │   │   ├── MessagePartsRenderer/
+│   │   │   │   │   ├── MessagePartsRenderer.tsx
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── UserMessage/
+│   │   │   │   │   ├── UserMessage.tsx
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── AssistantMessage/
+│   │   │   │   │   ├── AssistantMessage.tsx
+│   │   │   │   │   ├── components/
+│   │   │   │   │   │   ├── MessageMarkdown/
+│   │   │   │   │   │   │   ├── MessageMarkdown.tsx
+│   │   │   │   │   │   │   └── index.ts
+│   │   │   │   │   │   └── ReasoningBlock/
+│   │   │   │   │   │       ├── ReasoningBlock.tsx
+│   │   │   │   │   │       └── index.ts
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── ToolCallBlock/
+│   │   │   │   │   ├── ToolCallBlock.tsx  (collapsed-only in v2)
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── PlanBlock/
+│   │   │   │   │   ├── PlanBlock.tsx
+│   │   │   │   │   └── index.ts
+│   │   │   │   └── SubagentExecutionMessage/
+│   │   │   │       ├── SubagentExecutionMessage.tsx
+│   │   │   │       └── index.ts
+│   │   │   ├── hooks/
+│   │   │   │   └── useMessageSnapshot.ts
+│   │   │   └── index.ts
+│   │   ├── ChatInputFooter/
+│   │   │   ├── ChatInputFooter.tsx
+│   │   │   ├── components/
+│   │   │   │   ├── TiptapPromptEditor/
+│   │   │   │   │   ├── TiptapPromptEditor.tsx  (port via @10play/tentap-editor)
+│   │   │   │   │   ├── SlashCommandNode.tsx    (editor extension — single file)
+│   │   │   │   │   ├── FileMentionNode.tsx     (editor extension — single file)
+│   │   │   │   │   ├── hooks/
+│   │   │   │   │   │   └── useTiptapEditor.ts
+│   │   │   │   │   ├── utils/
+│   │   │   │   │   │   └── serializeEditorToText.ts  (portable as-is)
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── SlashCommandMenu/
+│   │   │   │   │   ├── SlashCommandMenu.tsx
+│   │   │   │   │   └── index.ts
+│   │   │   │   ├── ModelPicker/
+│   │   │   │   │   ├── ModelPicker.tsx
+│   │   │   │   │   └── index.ts
+│   │   │   │   └── PermissionModePicker/
+│   │   │   │       ├── PermissionModePicker.tsx
+│   │   │   │       └── index.ts
+│   │   │   ├── hooks/
+│   │   │   │   └── usePendingQuestion.ts
+│   │   │   └── index.ts
+│   │   ├── PendingApprovalCard/
+│   │   │   ├── PendingApprovalCard.tsx  (inline card, container parity with desktop)
+│   │   │   └── index.ts
+│   │   ├── PendingApprovalFooter/
+│   │   │   ├── PendingApprovalFooter.tsx  (NEW — sticky thumb-docked footer)
+│   │   │   └── index.ts
+│   │   ├── PendingQuestionSheet/
+│   │   │   ├── PendingQuestionSheet.tsx  (bottom sheet via @gorhom/bottom-sheet)
+│   │   │   └── index.ts
+│   │   └── PendingActionIndicator/
+│   │       ├── PendingActionIndicator.tsx  (NEW — floating "Tap to respond" pill)
+│   │       └── index.ts
+│   ├── hooks/
+│   │   └── useChatScroll.ts
+│   └── index.ts
+```
+
+#### Desktop mirror mapping
+
+| Mobile path | Desktop path |
 |---|---|
-| `chat/ChatInterface/ChatInterface.tsx` | `apps/desktop/src/renderer/components/Chat/ChatInterface/ChatInterface.tsx` |
-| `chat/MessageList/MessageList.tsx` | `.../ChatInterface/components/MessageList/MessageList.tsx` |
-| `chat/MessageList/MessagePartsRenderer.tsx` | `.../components/MessagePartsRenderer/MessagePartsRenderer.tsx` |
-| `chat/UserMessage/UserMessage.tsx` | `.../UserMessage/UserMessage.tsx` (shadcn message) |
-| `chat/AssistantMessage/AssistantMessage.tsx` | `.../AssistantMessage/AssistantMessage.tsx` |
-| `chat/ToolCallBlock/ToolCallBlock.tsx` (collapsed-only in mobile-chat v2) | `.../ToolCallBlock/ToolCallBlock.tsx` |
-| `chat/PlanBlock/PlanBlock.tsx` | `.../PlanBlock/PlanBlock.tsx` |
-| `chat/ReasoningBlock/ReasoningBlock.tsx` | `.../ReasoningBlock/ReasoningBlock.tsx` |
-| `chat/SubagentExecutionMessage/SubagentExecutionMessage.tsx` | `.../SubagentExecutionMessage/SubagentExecutionMessage.tsx` |
-| `chat/ChatInputFooter/ChatInputFooter.tsx` | `.../ChatInputFooter/ChatInputFooter.tsx` |
-| `chat/ChatInputFooter/TiptapPromptEditor.tsx` | `.../TiptapPromptEditor/TiptapPromptEditor.tsx` (port via `@10play/tentap-editor`) |
-| `chat/ChatInputFooter/SlashCommandNode.tsx` | `.../TiptapPromptEditor/SlashCommandNode.tsx` |
-| `chat/ChatInputFooter/serializeEditorToText.ts` | `.../TiptapPromptEditor/serializeEditorToText.ts` (portable as-is) |
-| `chat/SlashCommandMenu/SlashCommandMenu.tsx` | `.../SlashCommandMenu/SlashCommandMenu.tsx` |
-| `chat/ModelPicker/ModelPicker.tsx` | `.../ModelPicker/ModelPicker.tsx` |
-| `chat/PermissionModePicker/PermissionModePicker.tsx` | `.../PermissionModePicker/PermissionModePicker.tsx` |
-| `chat/PendingApprovalCard/PendingApprovalCard.tsx` | `.../components/PendingApprovalMessage/PendingApprovalMessage.tsx` (inline card, container parity with desktop) |
-| `chat/PendingApprovalFooter/PendingApprovalFooter.tsx` | NEW — sticky thumb-docked footer with Approve / Decline / Always-allow-category buttons (no desktop analog; desktop has buttons inside the card) |
-| `chat/PendingQuestionSheet/PendingQuestionSheet.tsx` | `.../components/PendingQuestionMessage/PendingQuestionMessage.tsx` (UX adapted: inline → bottom sheet for keyboard handling) |
-| `app/(authenticated)/chat/[sessionId]/plan-review/[planId].tsx` (pushed route) | `.../components/PendingPlanApprovalMessage/PendingPlanApprovalMessage.tsx` (UX adapted: inline → full-screen modal for long-form markdown) |
-| `chat/PendingActionIndicator/PendingActionIndicator.tsx` | NEW — floating "Tap to respond" pill; no desktop analog (desktop assumes pause cards are always visible in a fixed-width pane) |
+| `ChatInterface/ChatInterface.tsx` | `.../Chat/ChatInterface/ChatInterface.tsx` |
+| `MessageList/MessageList.tsx` | `.../ChatInterface/components/MessageList/MessageList.tsx` |
+| `MessagePartsRenderer/MessagePartsRenderer.tsx` | `.../components/MessagePartsRenderer/MessagePartsRenderer.tsx` |
+| `UserMessage/UserMessage.tsx` | `.../UserMessage/UserMessage.tsx` |
+| `AssistantMessage/AssistantMessage.tsx` | `.../AssistantMessage/AssistantMessage.tsx` |
+| `ToolCallBlock/ToolCallBlock.tsx` | `.../ToolCallBlock/ToolCallBlock.tsx` |
+| `PlanBlock/PlanBlock.tsx` | `.../PlanBlock/PlanBlock.tsx` |
+| `ReasoningBlock/ReasoningBlock.tsx` | `.../ReasoningBlock/ReasoningBlock.tsx` |
+| `SubagentExecutionMessage/SubagentExecutionMessage.tsx` | `.../SubagentExecutionMessage/SubagentExecutionMessage.tsx` |
+| `ChatInputFooter/ChatInputFooter.tsx` | `.../ChatInputFooter/ChatInputFooter.tsx` |
+| `TiptapPromptEditor/TiptapPromptEditor.tsx` | `.../TiptapPromptEditor/TiptapPromptEditor.tsx` |
+| `TiptapPromptEditor/SlashCommandNode.tsx` | `.../TiptapPromptEditor/SlashCommandNode.tsx` |
+| `TiptapPromptEditor/serializeEditorToText.ts` | `.../TiptapPromptEditor/serializeEditorToText.ts` |
+| `SlashCommandMenu/SlashCommandMenu.tsx` | `.../SlashCommandMenu/SlashCommandMenu.tsx` |
+| `ModelPicker/ModelPicker.tsx` | `.../ModelPicker/ModelPicker.tsx` |
+| `PermissionModePicker/PermissionModePicker.tsx` | `.../PermissionModePicker/PermissionModePicker.tsx` |
+| `PendingApprovalCard/PendingApprovalCard.tsx` | `.../PendingApprovalMessage/PendingApprovalMessage.tsx` |
+| `PendingApprovalFooter/PendingApprovalFooter.tsx` | NEW — no desktop analog |
+| `PendingQuestionSheet/PendingQuestionSheet.tsx` | `.../PendingQuestionMessage/PendingQuestionMessage.tsx` (UX adapted: inline → bottom sheet) |
+| `PendingActionIndicator/PendingActionIndicator.tsx` | NEW — no desktop analog |
+
+### Screen structure
+
+Routes live in `app/` (thin re-exports), screen logic lives in `screens/`. Navigation config (`_layout.tsx`) stays in `app/` per the hybrid approach documented in `plans/mobile-app-structure-comparison.md`.
+
+```
+app/(authenticated)/chat/
+├── _layout.tsx                          # Stack layout config — STAYS IN APP
+└── [sessionId]/
+    ├── index.tsx                        # export { default } from "@/screens/..."
+    └── plan-review/
+        └── [planId].tsx                 # export { default } from "@/screens/..."
+
+screens/(authenticated)/chat/[sessionId]/
+├── ChatScreen/
+│   ├── ChatScreen.tsx                   # Main chat screen
+│   ├── components/
+│   │   └── ChatHeader/
+│   │       ├── ChatHeader.tsx
+│   │       └── index.ts
+│   ├── hooks/
+│   │   ├── useSessionResume.ts          # Reconnect/cursor protocol (UC-PLATF-02)
+│   │   └── useChatNavigation.ts
+│   └── index.ts
+└── plan-review/
+    └── [planId]/
+        ├── PlanReviewScreen.tsx         # Full-screen plan approval (UC-PAUSE-03)
+        └── index.ts
+```
+
+### Lib structure
+
+```
+lib/
+├── host-service-client.ts               # HTTP+tRPC client against host-service via relay
+├── collections/
+│   ├── collections.ts                   # MODIFY — add chat_sessions Electric collection
+│   └── index.ts
+└── push-notifications/
+    ├── token.ts                         # Expo push token registration
+    ├── handlers.ts                      # Foreground/background notification handling
+    └── index.ts
+```
 
 ### Design tokens
 
@@ -235,3 +358,4 @@ These were flagged but not closed during research; `/kb-sprint-plan` should slot
 3. **Markdown library choice**: `react-native-markdown-display` (widely-used, opinionated styling) vs `@expensify/react-native-live-markdown` (faster but newer/less battle-tested) vs custom thin wrapper. Benchmarks needed.
 4. **Tiptap WebView perf on mid-range Android**: validate that `@10play/tentap-editor` keyboard handling + input latency are acceptable on Android 11+ devices with 4GB RAM. Define a perf budget before locking in.
 5. **Snapshot polling interval (if streaming deferred)**: 250ms? 500ms? 1s? Battery vs latency vs server load.
+6. **Host selection and workspace→host resolution**: mobile cannot initiate or resume a chat session without knowing which host to route through. Desktop resolves this via its multi-pane workspace view (each pane bound to a workspace+host). Mobile needs: (a) how to resolve `hostId` from `v2WorkspaceId` (cloud tRPC lookup? relay directory? cached mapping?), (b) whether mobile shows a host picker when multiple hosts are available for a workspace, (c) what happens when the host a session belongs to is offline but another host is online. This decision blocks UC-SESS and UC-COMP transport wiring.

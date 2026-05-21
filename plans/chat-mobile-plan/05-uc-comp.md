@@ -21,6 +21,8 @@ functional_group: COMP
 
 The chat input is a `@10play/tentap-editor` instance (WebView-hosted Tiptap) configured with the same minimal extension set desktop uses (Document, Paragraph, Text, HardBreak, History, Placeholder, Suggestion) plus the custom `SlashCommandNode` and `FileMentionNode`. The editor's serializer matches desktop's `serializeEditorToText.ts` wire format. User can type plain text, trigger `/` for slash commands (handled in UC-COMP-04 and PAUSE-adjacent flows), and (per scope deferral) `@` does not open file-mention autocomplete in mobile-chat v2 — Tiptap renders typed `@text` as a plain mention node placeholder, awaiting a future mobile-chat PRD's host file search.
 
+The slash command popover (`@rn-primitives/popover`) renders both built-in commands (`/new`, `/clear`, `/stop`, `/model`, `/review`, `/plan`, `/test`, `/refactor`, etc.) and custom commands discovered by the host from project-level (`.claude/commands/`, `.agents/commands/`) and user-level (`~/.claude/commands/`) directories. The host-service `getSlashCommands` procedure already returns both categories; mobile's SlashCommandMenu popover must render them all, including descriptions and argument hints when present. See `packages/chat/src/server/desktop/slash-commands/registry.ts` for the discovery protocol.
+
 **Acceptance Criteria:**
 - ☐ User can type multiline freeform text into the chat input on the chat view
 - ☐ User can see a placeholder string when the input is empty and the placeholder disappears when typing starts
@@ -28,6 +30,10 @@ The chat input is a `@10play/tentap-editor` instance (WebView-hosted Tiptap) con
 - ☐ User can see the Tiptap editor render a styled slash-command pill atomically when the slash menu inserts a command
 - ☐ System serializes the editor content to the same text wire format as desktop's `serializeEditorToText.ts` when the user submits a message
 - ☐ User can position the cursor and delete content with standard mobile keyboard gestures including delete-as-unit for slash-command pills
+- ☐ User can see both built-in and custom slash commands rendered in the `@rn-primitives/popover` slash command menu when typing `/`
+- ☐ User can see command descriptions and argument hints in the popover when the host provides them for custom commands
+- ☐ System calls `chat.previewSlashCommand` when a slash command is highlighted in the popover to show a preview of what the command will do before the user commits to it
+- ☐ User can see the preview result rendered inline or in the popover before tapping to resolve the command via `chat.resolveSlashCommand`
 
 ---
 
