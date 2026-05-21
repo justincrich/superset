@@ -22,9 +22,6 @@ const config: Configuration = {
 	...baseConfig,
 	appId: "com.superset.desktop.canary",
 	productName,
-	extraMetadata: {
-		productName,
-	},
 
 	publish: {
 		provider: "github",
