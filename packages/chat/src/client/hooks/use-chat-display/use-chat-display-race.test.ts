@@ -56,7 +56,7 @@ function asCurrentMessage(
 }
 
 /**
- * FAILING TEST — proves dual-poll race causes duplicate message rendering.
+ * Regression guard — proves dual-poll race causes duplicate message rendering.
  *
  * Scenario (matches the flicker UX exactly):
  *   1. User sends message U1.
