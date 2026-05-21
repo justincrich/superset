@@ -121,4 +121,41 @@ describe("dual-poll race — flicker reproduction", () => {
 		// making activeTurnMessages = [] and dedup a no-op.
 		expect(assistantIds).toEqual([]); // a_1 should be filtered out
 	});
+
+	// Multi-turn coverage: guards against findLastUserMessageIndex over-skipping
+	// into prior turns. The turn boundary must anchor on u_2 (the latest real
+	// user message), so previousTurns = [u_1, a_1] is preserved verbatim and
+	// only a_2 (the in-flight assistant in the active turn) is deduped.
+	it("preserves completed assistant messages from prior turns when optimistic user message tails a multi-turn history", () => {
+		const historicalPlusOptimistic: ListMessagesOutput = [
+			userMessage("u_1", "first prompt"),
+			assistantMessage("a_1", "first reply.", "end_turn"), // completed prior turn
+			userMessage("u_2", "second prompt"),
+			assistantMessage("a_2", "thinking..."), // in-flight, no stopReason
+			userMessage("optimistic-u_3", "third prompt"), // optimistic, must be skipped
+		];
+
+		const currentMessage = asCurrentMessage(
+			assistantMessage("a_2", "thinking..."),
+		);
+
+		const result = withoutActiveTurnAssistantHistory({
+			messages: historicalPlusOptimistic,
+			currentMessage,
+			isRunning: true,
+		});
+
+		// a_1 (completed, prior turn) MUST survive; a_2 (in-flight, active turn)
+		// MUST be filtered. If the turn boundary lands on optimistic-u_3, then
+		// activeTurnMessages = [] and a_2 leaks through alongside currentMessage,
+		// reproducing the duplicate-render bug at turn 2 instead of turn 1.
+		const assistantIds = result
+			.filter((m) => m.role === "assistant")
+			.map((m) => m.id);
+		expect(assistantIds).toEqual(["a_1"]);
+
+		// Prior-turn structure (u_1, a_1, u_2) must be preserved in order.
+		const ids = result.map((m) => m.id);
+		expect(ids.slice(0, 3)).toEqual(["u_1", "a_1", "u_2"]);
+	});
 });
