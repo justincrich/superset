@@ -111,9 +111,19 @@ Risks:
 
 (To be populated after human decision)
 
-## Challenger notes
+## Challenge
 
-(To be populated by challenger)
+**Evidence re-verified:** All 5 evidence citations confirmed by reading the actual source files. The gap is real — droid is in the desktop wrapper layer but absent from both preset registries.
+
+**Minimum resolves the problem:** Yes. Adding droid to `HOST_AGENT_PRESETS` and `BUILTIN_TERMINAL_AGENTS` is the exact causal path to making it appear in the terminal preset picker UI. The type union simplification is a clean follow-through. No smaller option possible — you cannot make droid discoverable without adding it to at least one registry, and both are consumed by different UI paths.
+
+**No smaller option proposed.** The minimum is already the smallest defensible change — 2 array entries + 1 type cleanup. Removing any one of the three files would leave the integration incomplete.
+
+**Scope creep flags:**
+- Option 2 (moderate): The SVG icon files (`droid.svg`, `droid-white.svg`) are new assets requiring design sourcing. Not strictly required for discoverability — the preset picker already has a fallback icon path. This is branding polish, not functional.
+- Option 3 (strategic): `includeInDefaultTerminalPresets: true` and `DEFAULT_PRESET_IDS` addition are product decisions, not engineering. Factory Droid is a commercial product with a specific auth flow (`FACTORY_API_KEY`). Seeding it as default means new users who've never heard of Factory see it in their picker. This should be a separate product decision, not bundled with the preset registration.
+
+**Security note:** No auth/secrets/token surface in this change. The preset registries are static configuration. The `--auto medium` flag is the correct autonomy level — not `--skip-permissions-unsafe`. The existing wrapper in `agent-wrappers-droid.ts` already handles `~/.factory/settings.json` correctly.
 
 ## Scope amendments
 
