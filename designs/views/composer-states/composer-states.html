@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>composer-states — UC-COMP-01 §A/B + UC-COMP-03 §A</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-local layout glue — ONLY .view-composer-states__* rules.
+       Never redefines .atom-* or .mol-* classes.
+       ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding: var(--space-8) var(--space-4);
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    /* Full-width pane — frames stacked vertically inside */
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-10);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- Per-state frame section ------------------------------ */
+    .state-section {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+      width:          100%;
+    }
+
+    .state-label {
+      align-self:     center;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-4);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-default);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-label);
+      letter-spacing: var(--tracking-uppercase);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .state-label--idle {
+      color:        var(--text-faint);
+      border-color: var(--border-subtle);
+    }
+
+    .state-label--typing {
+      color:        var(--accent-primary);
+      border-color: var(--accent-primary);
+      background:   var(--accent-primary-subtle);
+    }
+
+    .state-label--streaming {
+      color:        var(--state-live-fg);
+      border-color: var(--state-live-fg);
+      background:   var(--state-live-bg);
+    }
+
+    /* ---- View viewport layout --------------------------------- */
+    .view-composer-states__thread {
+      flex:           1;
+      overflow-y:     auto;
+      padding:        var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-5);
+      position:       relative;
+    }
+
+    .view-composer-states__assistant {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    .view-composer-states__body {
+      /* body container for assistant prose */
+    }
+
+    .view-composer-states__body p {
+      margin:      0 0 var(--space-3);
+      line-height: var(--line-height-normal);
+    }
+
+    .view-composer-states__body code {
+      background:    var(--surface-sunken);
+      padding:       var(--space-half) var(--space-1);
+      border-radius: var(--radius-subtle);
+      color:         var(--accent-primary);
+    }
+
+    .view-composer-states__composer {
+      border-top:        1px solid var(--border-subtle);
+      display:           flex;
+      flex-direction:    column;
+      gap:               var(--space-2);
+      padding-block-end: var(--safe-area-bottom);
+      background:        var(--surface-page);
+      flex-shrink:       0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">composer-states</h1>
+    <p class="crumb">UC-COMP-01 §A/B + UC-COMP-03 §A · idle / typing / streaming</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second.
+       Within each pane: three iPhone frames stacked vertically,
+       each labeled IDLE / TYPING / STREAMING.
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+
+      <!-- ── FRAME 1: IDLE ──────────────────────────────────── -->
+      <div class="state-section">
+        <span class="state-label state-label--idle">IDLE</span>
+
+        <div class="atom-device-bezel">
+          <div class="atom-device-bezel__viewport">
+
+            <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+            <div class="atom-device-bezel__status-bar" aria-hidden="true">
+              <span class="atom-device-bezel__time">9:41</span>
+              <div class="atom-device-bezel__indicators">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                  <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                  <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                  <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                  <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+                </svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                  <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                  <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                </svg>
+                <div class="atom-device-bezel__battery" aria-hidden="true">
+                  <div class="atom-device-bezel__battery-body">
+                    <div class="atom-device-bezel__battery-fill"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- App Header -->
+            <header class="mol-app-header" role="banner">
+              <div class="mol-app-header__back">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Back to sessions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="mol-app-header__title-wrap">
+                <h1 class="mol-app-header__title type-title">Refactor billing module</h1>
+                <p class="mol-app-header__subtitle type-meta">superset · main</p>
+              </div>
+              <div class="mol-app-header__actions">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Session actions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            <!-- Thread — brief stub, last assistant message -->
+            <main
+              class="view-composer-states__thread"
+              role="log"
+              aria-label="Chat thread"
+              aria-live="polite"
+            >
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden" aria-hidden="true"></div>
+
+              <!-- User message -->
+              <div class="mol-user-message-bubble" role="article" aria-label="Your message">
+                <button
+                  class="mol-user-message-bubble__bubble type-body"
+                  type="button"
+                  aria-label="Long press to copy message"
+                >
+                  <p class="mol-user-message-bubble__text">What does the current billing module look like?</p>
+                </button>
+                <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:38">
+                  <span class="type-meta">9:38</span>
+                </div>
+              </div>
+
+              <!-- Last assistant message — completed -->
+              <article class="view-composer-states__assistant" aria-label="Assistant message">
+                <div class="mol-assistant-message-head mol-assistant-message-head--completed">
+                  <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                  <span class="mol-assistant-message-head__label">Assistant</span>
+                  <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                  <span class="mol-assistant-message-head__time">9:39 AM</span>
+                </div>
+                <div class="view-composer-states__body type-body" aria-label="Assistant response">
+                  <p>The billing module currently uses REST endpoints in <code class="type-code">apps/web/src/billing/</code>. It's a good candidate for a tRPC migration.</p>
+                </div>
+              </article>
+
+              <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+            </main>
+
+            <!-- Composer — IDLE state -->
+            <footer class="view-composer-states__composer" aria-label="Message composer">
+
+              <!-- mol-composer-toolbar -->
+              <div class="mol-composer-toolbar" role="toolbar" aria-label="Composer options">
+                <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Model: Sonnet 4.6"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="2" y="7" width="20" height="14" rx="2"/>
+                      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                    </svg>
+                    Sonnet 4.6
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Thinking: low"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                    Thinking: low
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="permission">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Permission: default"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Permission: default
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+              </div>
+
+              <!-- mol-composer-row — idle variant: empty textarea, Send disabled -->
+              <div class="mol-composer-row mol-composer-row--idle">
+                <textarea
+                  class="mol-composer-row__input atom-textarea atom-textarea--composer"
+                  placeholder="Type a message…"
+                  aria-label="Message input"
+                  rows="1"
+                ></textarea>
+
+                <div class="mol-composer-row__action">
+                  <!-- Send button — disabled (no content) -->
+                  <button
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill is-disabled"
+                    type="button"
+                    aria-label="Send message"
+                    disabled
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M22 2 11 13"/>
+                      <path d="M22 2 15 22 11 13 2 9l20-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+            </footer>
+
+            <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+          </div>
+        </div>
+      </div><!-- /state-section idle -->
+
+
+      <!-- ── FRAME 2: TYPING ────────────────────────────────── -->
+      <div class="state-section">
+        <span class="state-label state-label--typing">TYPING</span>
+
+        <div class="atom-device-bezel">
+          <div class="atom-device-bezel__viewport">
+
+            <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+            <div class="atom-device-bezel__status-bar" aria-hidden="true">
+              <span class="atom-device-bezel__time">9:41</span>
+              <div class="atom-device-bezel__indicators">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                  <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                  <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                  <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                  <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+                </svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                  <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                  <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                </svg>
+                <div class="atom-device-bezel__battery" aria-hidden="true">
+                  <div class="atom-device-bezel__battery-body">
+                    <div class="atom-device-bezel__battery-fill"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- App Header -->
+            <header class="mol-app-header" role="banner">
+              <div class="mol-app-header__back">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Back to sessions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="mol-app-header__title-wrap">
+                <h1 class="mol-app-header__title type-title">Refactor billing module</h1>
+                <p class="mol-app-header__subtitle type-meta">superset · main</p>
+              </div>
+              <div class="mol-app-header__actions">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Session actions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            <!-- Thread — brief stub -->
+            <main
+              class="view-composer-states__thread"
+              role="log"
+              aria-label="Chat thread"
+              aria-live="polite"
+            >
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden" aria-hidden="true"></div>
+
+              <div class="mol-user-message-bubble" role="article" aria-label="Your message">
+                <button
+                  class="mol-user-message-bubble__bubble type-body"
+                  type="button"
+                  aria-label="Long press to copy message"
+                >
+                  <p class="mol-user-message-bubble__text">What does the current billing module look like?</p>
+                </button>
+                <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:38">
+                  <span class="type-meta">9:38</span>
+                </div>
+              </div>
+
+              <article class="view-composer-states__assistant" aria-label="Assistant message">
+                <div class="mol-assistant-message-head mol-assistant-message-head--completed">
+                  <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                  <span class="mol-assistant-message-head__label">Assistant</span>
+                  <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                  <span class="mol-assistant-message-head__time">9:39 AM</span>
+                </div>
+                <div class="view-composer-states__body type-body" aria-label="Assistant response">
+                  <p>The billing module currently uses REST endpoints in <code class="type-code">apps/web/src/billing/</code>. It's a good candidate for a tRPC migration.</p>
+                </div>
+              </article>
+
+              <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+            </main>
+
+            <!-- Composer — TYPING state -->
+            <footer class="view-composer-states__composer" aria-label="Message composer">
+
+              <div class="mol-composer-toolbar" role="toolbar" aria-label="Composer options">
+                <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Model: Sonnet 4.6"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="2" y="7" width="20" height="14" rx="2"/>
+                      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                    </svg>
+                    Sonnet 4.6
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Thinking: low"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                    Thinking: low
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="permission">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Permission: default"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Permission: default
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+              </div>
+
+              <!-- mol-composer-row — typing variant: populated textarea, Send active -->
+              <div class="mol-composer-row mol-composer-row--typing">
+                <textarea
+                  class="mol-composer-row__input atom-textarea atom-textarea--composer"
+                  aria-label="Message input"
+                  rows="2"
+                >Can you refactor the billing module to use tRPC?</textarea>
+
+                <div class="mol-composer-row__action">
+                  <!-- Send button — active (ember) -->
+                  <button
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill"
+                    type="button"
+                    aria-label="Send message"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M22 2 11 13"/>
+                      <path d="M22 2 15 22 11 13 2 9l20-7z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+            </footer>
+
+            <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+          </div>
+        </div>
+      </div><!-- /state-section typing -->
+
+
+      <!-- ── FRAME 3: STREAMING ─────────────────────────────── -->
+      <div class="state-section">
+        <span class="state-label state-label--streaming">STREAMING</span>
+
+        <div class="atom-device-bezel">
+          <div class="atom-device-bezel__viewport">
+
+            <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+            <div class="atom-device-bezel__status-bar" aria-hidden="true">
+              <span class="atom-device-bezel__time">9:41</span>
+              <div class="atom-device-bezel__indicators">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                  <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                  <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                  <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                  <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+                </svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                  <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                  <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                </svg>
+                <div class="atom-device-bezel__battery" aria-hidden="true">
+                  <div class="atom-device-bezel__battery-body">
+                    <div class="atom-device-bezel__battery-fill"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- App Header -->
+            <header class="mol-app-header" role="banner">
+              <div class="mol-app-header__back">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Back to sessions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="mol-app-header__title-wrap">
+                <h1 class="mol-app-header__title type-title">Refactor billing module</h1>
+                <p class="mol-app-header__subtitle type-meta">superset · main</p>
+              </div>
+              <div class="mol-app-header__actions">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Session actions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            <!-- Thread — assistant streaming -->
+            <main
+              class="view-composer-states__thread"
+              role="log"
+              aria-label="Chat thread"
+              aria-live="polite"
+            >
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden" aria-hidden="true"></div>
+
+              <!-- User message -->
+              <div class="mol-user-message-bubble" role="article" aria-label="Your message">
+                <button
+                  class="mol-user-message-bubble__bubble type-body"
+                  type="button"
+                  aria-label="Long press to copy message"
+                >
+                  <p class="mol-user-message-bubble__text">Can you refactor the billing module to use tRPC?</p>
+                </button>
+                <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:41">
+                  <span class="type-meta">9:41</span>
+                </div>
+              </div>
+
+              <!-- Assistant message — streaming -->
+              <article class="view-composer-states__assistant" aria-label="Assistant message, streaming">
+                <div class="mol-assistant-message-head mol-assistant-message-head--streaming">
+                  <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                  <span class="mol-assistant-message-head__label">Assistant</span>
+                  <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                  <span class="mol-assistant-message-head__time">9:41 AM</span>
+                  <div class="mol-assistant-message-head__status" aria-label="Streaming">
+                    <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+                    <span class="atom-section-label atom-section-label--inline" style="color: var(--state-live-fg);">STREAMING</span>
+                  </div>
+                </div>
+                <div class="view-composer-states__body type-body" aria-label="Assistant response">
+                  <p>Sure! I'll move the billing router to <code class="type-code">packages/trpc/src/routers/billing.ts</code> and wire it into the root router<span class="atom-streaming-cursor" aria-hidden="true"></span></p>
+                </div>
+              </article>
+
+              <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+            </main>
+
+            <!-- Composer — STREAMING state -->
+            <footer class="view-composer-states__composer" aria-label="Message composer">
+
+              <div class="mol-composer-toolbar" role="toolbar" aria-label="Composer options">
+                <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Model: Sonnet 4.6"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="2" y="7" width="20" height="14" rx="2"/>
+                      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                    </svg>
+                    Sonnet 4.6
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Thinking: low"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                    Thinking: low
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="permission">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Permission: default"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Permission: default
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+              </div>
+
+              <!-- mol-composer-row — streaming variant: input disabled, Stop replaces Send -->
+              <div class="mol-composer-row mol-composer-row--streaming">
+                <textarea
+                  class="mol-composer-row__input atom-textarea atom-textarea--composer is-disabled"
+                  placeholder="(input disabled while turn is streaming)"
+                  disabled
+                  aria-label="Message input — disabled while streaming"
+                  rows="1"
+                ></textarea>
+
+                <div class="mol-composer-row__action">
+                  <!-- Stop button — destructive pill icon-button -->
+                  <button
+                    class="atom-icon-button atom-icon-button--destructive atom-icon-button--md atom-icon-button--pill"
+                    type="button"
+                    aria-label="Stop streaming"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <rect x="5" y="5" width="14" height="14" rx="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+            </footer>
+
+            <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+          </div>
+        </div>
+      </div><!-- /state-section streaming -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+
+      <!-- ── FRAME 1: IDLE ──────────────────────────────────── -->
+      <div class="state-section">
+        <span class="state-label state-label--idle">IDLE</span>
+
+        <div class="atom-device-bezel">
+          <div class="atom-device-bezel__viewport">
+
+            <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+            <div class="atom-device-bezel__status-bar" aria-hidden="true">
+              <span class="atom-device-bezel__time">9:41</span>
+              <div class="atom-device-bezel__indicators">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                  <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                  <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                  <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                  <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+                </svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                  <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                  <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                </svg>
+                <div class="atom-device-bezel__battery" aria-hidden="true">
+                  <div class="atom-device-bezel__battery-body">
+                    <div class="atom-device-bezel__battery-fill"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <header class="mol-app-header" role="banner">
+              <div class="mol-app-header__back">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Back to sessions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="mol-app-header__title-wrap">
+                <h1 class="mol-app-header__title type-title">Refactor billing module</h1>
+                <p class="mol-app-header__subtitle type-meta">superset · main</p>
+              </div>
+              <div class="mol-app-header__actions">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Session actions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            <main
+              class="view-composer-states__thread"
+              role="log"
+              aria-label="Chat thread"
+              aria-live="polite"
+            >
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden" aria-hidden="true"></div>
+
+              <div class="mol-user-message-bubble" role="article" aria-label="Your message">
+                <button
+                  class="mol-user-message-bubble__bubble type-body"
+                  type="button"
+                  aria-label="Long press to copy message"
+                >
+                  <p class="mol-user-message-bubble__text">What does the current billing module look like?</p>
+                </button>
+                <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:38">
+                  <span class="type-meta">9:38</span>
+                </div>
+              </div>
+
+              <article class="view-composer-states__assistant" aria-label="Assistant message">
+                <div class="mol-assistant-message-head mol-assistant-message-head--completed">
+                  <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                  <span class="mol-assistant-message-head__label">Assistant</span>
+                  <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                  <span class="mol-assistant-message-head__time">9:39 AM</span>
+                </div>
+                <div class="view-composer-states__body type-body" aria-label="Assistant response">
+                  <p>The billing module currently uses REST endpoints in <code class="type-code">apps/web/src/billing/</code>. It's a good candidate for a tRPC migration.</p>
+                </div>
+              </article>
+
+              <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+            </main>
+
+            <!-- Composer — IDLE state -->
+            <footer class="view-composer-states__composer" aria-label="Message composer">
+
+              <div class="mol-composer-toolbar" role="toolbar" aria-label="Composer options">
+                <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Model: Sonnet 4.6"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="2" y="7" width="20" height="14" rx="2"/>
+                      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                    </svg>
+                    Sonnet 4.6
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Thinking: low"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                    Thinking: low
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="permission">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Permission: default"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Permission: default
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+              </div>
+
+              <div class="mol-composer-row mol-composer-row--idle">
+                <textarea
+                  class="mol-composer-row__input atom-textarea atom-textarea--composer"
+                  placeholder="Type a message…"
+                  aria-label="Message input"
+                  rows="1"
+                ></textarea>
+
+                <div class="mol-composer-row__action">
+                  <button
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill is-disabled"
+                    type="button"
+                    aria-label="Send message"
+                    disabled
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M22 2 11 13"/>
+                      <path d="M22 2 15 22 11 13 2 9l20-7z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+            </footer>
+
+            <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+          </div>
+        </div>
+      </div><!-- /state-section idle -->
+
+
+      <!-- ── FRAME 2: TYPING ────────────────────────────────── -->
+      <div class="state-section">
+        <span class="state-label state-label--typing">TYPING</span>
+
+        <div class="atom-device-bezel">
+          <div class="atom-device-bezel__viewport">
+
+            <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+            <div class="atom-device-bezel__status-bar" aria-hidden="true">
+              <span class="atom-device-bezel__time">9:41</span>
+              <div class="atom-device-bezel__indicators">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                  <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                  <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                  <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                  <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+                </svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                  <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                  <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                </svg>
+                <div class="atom-device-bezel__battery" aria-hidden="true">
+                  <div class="atom-device-bezel__battery-body">
+                    <div class="atom-device-bezel__battery-fill"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <header class="mol-app-header" role="banner">
+              <div class="mol-app-header__back">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Back to sessions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="mol-app-header__title-wrap">
+                <h1 class="mol-app-header__title type-title">Refactor billing module</h1>
+                <p class="mol-app-header__subtitle type-meta">superset · main</p>
+              </div>
+              <div class="mol-app-header__actions">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Session actions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            <main
+              class="view-composer-states__thread"
+              role="log"
+              aria-label="Chat thread"
+              aria-live="polite"
+            >
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden" aria-hidden="true"></div>
+
+              <div class="mol-user-message-bubble" role="article" aria-label="Your message">
+                <button
+                  class="mol-user-message-bubble__bubble type-body"
+                  type="button"
+                  aria-label="Long press to copy message"
+                >
+                  <p class="mol-user-message-bubble__text">What does the current billing module look like?</p>
+                </button>
+                <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:38">
+                  <span class="type-meta">9:38</span>
+                </div>
+              </div>
+
+              <article class="view-composer-states__assistant" aria-label="Assistant message">
+                <div class="mol-assistant-message-head mol-assistant-message-head--completed">
+                  <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                  <span class="mol-assistant-message-head__label">Assistant</span>
+                  <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                  <span class="mol-assistant-message-head__time">9:39 AM</span>
+                </div>
+                <div class="view-composer-states__body type-body" aria-label="Assistant response">
+                  <p>The billing module currently uses REST endpoints in <code class="type-code">apps/web/src/billing/</code>. It's a good candidate for a tRPC migration.</p>
+                </div>
+              </article>
+
+              <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+            </main>
+
+            <!-- Composer — TYPING state -->
+            <footer class="view-composer-states__composer" aria-label="Message composer">
+
+              <div class="mol-composer-toolbar" role="toolbar" aria-label="Composer options">
+                <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Model: Sonnet 4.6"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="2" y="7" width="20" height="14" rx="2"/>
+                      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                    </svg>
+                    Sonnet 4.6
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Thinking: low"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                    Thinking: low
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="permission">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Permission: default"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Permission: default
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+              </div>
+
+              <div class="mol-composer-row mol-composer-row--typing">
+                <textarea
+                  class="mol-composer-row__input atom-textarea atom-textarea--composer"
+                  aria-label="Message input"
+                  rows="2"
+                >Can you refactor the billing module to use tRPC?</textarea>
+
+                <div class="mol-composer-row__action">
+                  <button
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill"
+                    type="button"
+                    aria-label="Send message"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M22 2 11 13"/>
+                      <path d="M22 2 15 22 11 13 2 9l20-7z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+            </footer>
+
+            <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+          </div>
+        </div>
+      </div><!-- /state-section typing -->
+
+
+      <!-- ── FRAME 3: STREAMING ─────────────────────────────── -->
+      <div class="state-section">
+        <span class="state-label state-label--streaming">STREAMING</span>
+
+        <div class="atom-device-bezel">
+          <div class="atom-device-bezel__viewport">
+
+            <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+            <div class="atom-device-bezel__status-bar" aria-hidden="true">
+              <span class="atom-device-bezel__time">9:41</span>
+              <div class="atom-device-bezel__indicators">
+                <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                  <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                  <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                  <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                  <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+                </svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                  <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                  <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                </svg>
+                <div class="atom-device-bezel__battery" aria-hidden="true">
+                  <div class="atom-device-bezel__battery-body">
+                    <div class="atom-device-bezel__battery-fill"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <header class="mol-app-header" role="banner">
+              <div class="mol-app-header__back">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Back to sessions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="mol-app-header__title-wrap">
+                <h1 class="mol-app-header__title type-title">Refactor billing module</h1>
+                <p class="mol-app-header__subtitle type-meta">superset · main</p>
+              </div>
+              <div class="mol-app-header__actions">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Session actions"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            <main
+              class="view-composer-states__thread"
+              role="log"
+              aria-label="Chat thread"
+              aria-live="polite"
+            >
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden" aria-hidden="true"></div>
+
+              <div class="mol-user-message-bubble" role="article" aria-label="Your message">
+                <button
+                  class="mol-user-message-bubble__bubble type-body"
+                  type="button"
+                  aria-label="Long press to copy message"
+                >
+                  <p class="mol-user-message-bubble__text">Can you refactor the billing module to use tRPC?</p>
+                </button>
+                <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:41">
+                  <span class="type-meta">9:41</span>
+                </div>
+              </div>
+
+              <article class="view-composer-states__assistant" aria-label="Assistant message, streaming">
+                <div class="mol-assistant-message-head mol-assistant-message-head--streaming">
+                  <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                  <span class="mol-assistant-message-head__label">Assistant</span>
+                  <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                  <span class="mol-assistant-message-head__time">9:41 AM</span>
+                  <div class="mol-assistant-message-head__status" aria-label="Streaming">
+                    <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+                    <span class="atom-section-label atom-section-label--inline" style="color: var(--state-live-fg);">STREAMING</span>
+                  </div>
+                </div>
+                <div class="view-composer-states__body type-body" aria-label="Assistant response">
+                  <p>Sure! I'll move the billing router to <code class="type-code">packages/trpc/src/routers/billing.ts</code> and wire it into the root router<span class="atom-streaming-cursor" aria-hidden="true"></span></p>
+                </div>
+              </article>
+
+              <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+            </main>
+
+            <!-- Composer — STREAMING state -->
+            <footer class="view-composer-states__composer" aria-label="Message composer">
+
+              <div class="mol-composer-toolbar" role="toolbar" aria-label="Composer options">
+                <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Model: Sonnet 4.6"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="2" y="7" width="20" height="14" rx="2"/>
+                      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                    </svg>
+                    Sonnet 4.6
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Thinking: low"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                    Thinking: low
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__trigger" data-trigger="permission">
+                  <button
+                    class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                    type="button"
+                    aria-label="Permission: default"
+                    aria-haspopup="dialog"
+                  >
+                    <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Permission: default
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+              </div>
+
+              <div class="mol-composer-row mol-composer-row--streaming">
+                <textarea
+                  class="mol-composer-row__input atom-textarea atom-textarea--composer is-disabled"
+                  placeholder="(input disabled while turn is streaming)"
+                  disabled
+                  aria-label="Message input — disabled while streaming"
+                  rows="1"
+                ></textarea>
+
+                <div class="mol-composer-row__action">
+                  <button
+                    class="atom-icon-button atom-icon-button--destructive atom-icon-button--md atom-icon-button--pill"
+                    type="button"
+                    aria-label="Stop streaming"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <rect x="5" y="5" width="14" height="14" rx="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+            </footer>
+
+            <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+          </div>
+        </div>
+      </div><!-- /state-section streaming -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
