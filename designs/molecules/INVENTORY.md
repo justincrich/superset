@@ -41,7 +41,7 @@ Atomic-composition primitives — each molecule combines 2+ atoms with layout/gl
 | 17 | `pending-approval-card` | tool-status-rule (pending), icon-glyph, body, section-label, badge (1-of-N), divider | pending |
 | 18 | `approval-footer-buttons` | button ×3 (decline destructive, approve primary, always-allow ghost), badge (1-of-N), tool-status-rule (horizontal pending) | pending |
 | 19 | `suggested-answer-pill` | pill (accent, monospace optional), hit-target-wrapper | pending |
-| 20 | `pending-action-pill` | pill (warning), icon-glyph (alert), live-activity-dot (paused variant) | pending |
+| 20 | `pending-action-pill` | pill (warning --md), icon-glyph (×2 xs — leading status glyph + trailing direction arrow), section-label (--strong count/label) | completed |
 
 ## Platform-surface tier
 

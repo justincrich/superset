@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-pending-action-pill — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-pending-action-pill — molecule-local layout + glue only.
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Structural exceptions:
+         - 8px translateY in keyframes (sub-token motion offset; TOKEN_GAP
+           documented in README — aligns with --space-2 if base=4px)
+         - z-index: 15 (stacking integer — permitted structural value)
+       ================================================================ */
+
+    /* --- Base placement -------------------------------------------- */
+    .mol-pending-action-pill {
+      position:   absolute;
+      bottom:     calc(var(--composer-min-height) + var(--space-3));
+      right:      var(--space-4);
+      z-index:    15; /* above scroll-back-button (z:10), below modals */
+      display:    inline-flex;
+      align-items: center;
+      gap:         var(--space-2);
+      box-shadow:  var(--elevation-overlay);
+      /* Enter animation fires automatically on mount */
+      animation:  mol-pending-action-pill-enter var(--motion-medium) var(--motion-ease-out);
+    }
+
+    /* --- Icon and direction slots: warning-colored ----------------- */
+    .mol-pending-action-pill__icon,
+    .mol-pending-action-pill__direction {
+      color: var(--state-warning-fg);
+    }
+
+    /* --- Count label: warning-colored ------------------------------ */
+    .mol-pending-action-pill__count {
+      color: var(--state-warning-fg);
+    }
+
+    /* --- Exit animation state --------------------------------------- */
+    .mol-pending-action-pill.is-exiting {
+      animation: mol-pending-action-pill-exit var(--motion-medium) var(--motion-ease-out) forwards;
+    }
+
+    /* --- Enter keyframe -------------------------------------------- */
+    @keyframes mol-pending-action-pill-enter {
+      from {
+        opacity:   0;
+        transform: translateY(8px); /* structural motion offset — TOKEN_GAP */
+      }
+      to {
+        opacity:   1;
+        transform: translateY(0);
+      }
+    }
+
+    /* --- Exit keyframe --------------------------------------------- */
+    @keyframes mol-pending-action-pill-exit {
+      from {
+        opacity:   1;
+        transform: translateY(0);
+      }
+      to {
+        opacity:   0;
+        transform: translateY(8px); /* structural motion offset — TOKEN_GAP */
+      }
+    }
+
+    /* --- Reduced motion: suppress both animations ------------------ */
+    @media (prefers-reduced-motion: reduce) {
+      .mol-pending-action-pill,
+      .mol-pending-action-pill.is-exiting {
+        animation: none;
+      }
+    }
+
+
+    /* ================================================================
+       PREVIEW LAYOUT HELPERS (preview chrome only — not shipped CSS)
+       ================================================================ */
+
+    .section-block {
+      margin-bottom: var(--spacing-section);
+    }
+    .section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-heading);
+      letter-spacing: var(--tracking-tight);
+      color:          var(--text-heading);
+      margin:         0 0 var(--spacing-between);
+      text-transform: uppercase;
+    }
+    .sub-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-3);
+    }
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0;
+    }
+
+    /* Variant matrix */
+    .variant-row {
+      display:     flex;
+      align-items: flex-end;
+      gap:         var(--space-8);
+      flex-wrap:   wrap;
+      margin-bottom: var(--spacing-between);
+    }
+    .variant-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-3);
+    }
+    .variant-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+      white-space:    nowrap;
+    }
+
+    /* State row */
+    .state-row {
+      display:     flex;
+      align-items: flex-end;
+      gap:         var(--space-6);
+      flex-wrap:   wrap;
+      margin-bottom: var(--spacing-between);
+    }
+    .state-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-3);
+    }
+    .state-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+      white-space:    nowrap;
+    }
+
+    /* Static modifier — removes absolute positioning for matrix / state rows */
+    .mol-pending-action-pill--static {
+      position:  relative;
+      bottom:    unset;
+      right:     unset;
+      animation: mol-pending-action-pill-enter var(--motion-medium) var(--motion-ease-out);
+    }
+
+    /* Exiting static — for state row demo */
+    .mol-pending-action-pill--static.is-exiting {
+      animation: mol-pending-action-pill-exit var(--motion-medium) var(--motion-ease-out) forwards;
+    }
+
+    /* Composition device frame helpers */
+    .composition-wrap {
+      display:   flex;
+      flex-wrap: wrap;
+      gap:       var(--space-8);
+    }
+    .composition-note {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-align:     center;
+      margin:         var(--space-3) 0 0;
+    }
+
+    /* Mock chat thread */
+    .mock-chat-thread {
+      flex:           1;
+      overflow:       hidden;
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+      padding:        var(--space-4);
+      position:       relative;
+    }
+
+    .mock-message-row {
+      display:     flex;
+      align-items: flex-start;
+      gap:         var(--space-2);
+    }
+    .mock-message-row--user {
+      justify-content: flex-end;
+    }
+
+    .mock-bubble {
+      border-radius: var(--radius-lg);
+      padding:       var(--space-2) var(--space-3);
+      max-width:     72%;
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      line-height:   var(--line-height-body);
+      color:         var(--text-body);
+    }
+    .mock-bubble--user {
+      background:                 var(--accent-primary);
+      color:                      var(--accent-primary-fg);
+      border-bottom-right-radius: var(--radius-subtle);
+    }
+    .mock-bubble--assistant {
+      background:                var(--surface-raised);
+      border:                    1px solid var(--border-subtle);
+      border-bottom-left-radius: var(--radius-subtle);
+    }
+
+    /* Inline approval card mock */
+    .mock-approval-card {
+      background:    var(--state-warning-bg);
+      border:        1px solid var(--state-warning-fg);
+      border-radius: var(--radius-default);
+      padding:       var(--space-3);
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-2);
+      font-family:   var(--font-mono);
+      font-size:     var(--font-size-meta);
+      color:         var(--state-warning-fg);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .mock-scroll-indicator {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-align:     center;
+      text-transform: uppercase;
+      padding:        var(--space-2) 0;
+    }
+
+    /* Mock composer */
+    .mock-composer {
+      height:         var(--composer-min-height);
+      background:     var(--surface-soft);
+      border-top:     1px solid var(--border-subtle);
+      display:        flex;
+      align-items:    center;
+      padding-inline: var(--space-3);
+      gap:            var(--space-2);
+      flex-shrink:    0;
+      position:       relative;
+    }
+    .mock-composer__input {
+      flex:           1;
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-default);
+      border-radius:  var(--radius-pill);
+      height:         36px;
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      color:          var(--text-faint);
+      padding-inline: var(--space-3);
+      display:        flex;
+      align-items:    center;
+    }
+
+    /* Tab bar mock */
+    .mock-tab-bar {
+      height:          var(--tab-bar-height);
+      background:      var(--surface-sunken);
+      border-top:      1px solid var(--border-subtle);
+      display:         flex;
+      align-items:     center;
+      justify-content: space-around;
+      padding-inline:  var(--space-4);
+      flex-shrink:     0;
+    }
+    .mock-tab {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-1);
+      opacity:        0.4;
+    }
+    .mock-tab--active { opacity: 1; }
+    .mock-tab__label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+    }
+    .mock-tab--active .mock-tab__label {
+      color: var(--accent-primary);
+    }
+
+    /* Viewport content wrapper */
+    .mock-viewport-content {
+      flex:           1;
+      overflow:       hidden;
+      position:       relative;
+      display:        flex;
+      flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">pending-action-pill</h1>
+    <p class="crumb">molecule · pill (warning) + icon-glyph ×2 (leading + trailing) + section-label · floating pause affordance above composer</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ==================================================
+           1. VARIANT MATRIX
+           3 variants with realistic content
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">1 · variant matrix</p>
+        <p class="sub-label">approval · question · plan</p>
+        <div class="variant-row">
+
+          <!-- approval: radio glyph + "1 PENDING" + ↓ -->
+          <div class="variant-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <!-- radio / crosshair target (⌖) -->
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/>
+                <line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/>
+                <line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">
+                1 PENDING
+              </span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <!-- arrow-down (↓) -->
+                <line x1="6" y1="1" x2="6" y2="10"/>
+                <polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="variant-cell-label">approval<br>scroll ↓ to card</span>
+          </div>
+
+          <!-- question: alert-triangle + "QUESTION" + ↑ -->
+          <div class="variant-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--question mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="Question pending — tap to answer"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <!-- alert-triangle -->
+                <path d="M6 1L11 10H1L6 1z"/>
+                <line x1="6" y1="5" x2="6" y2="7"/>
+                <circle cx="6" cy="8.5" r="0.5" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">
+                QUESTION
+              </span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <!-- arrow-up (↑) -->
+                <line x1="6" y1="11" x2="6" y2="2"/>
+                <polyline points="3,5 6,2 9,5"/>
+              </svg>
+            </button>
+            <span class="variant-cell-label">question<br>re-open ↑ sheet</span>
+          </div>
+
+          <!-- plan: sparkles + "PLAN" + ↑ -->
+          <div class="variant-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--plan mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="Plan pending review — tap to view"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <!-- sparkles -->
+                <path d="M6 1L7 5L11 6L7 7L6 11L5 7L1 6L5 5L6 1z"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">
+                PLAN
+              </span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <!-- arrow-up (↑) -->
+                <line x1="6" y1="11" x2="6" y2="2"/>
+                <polyline points="3,5 6,2 9,5"/>
+              </svg>
+            </button>
+            <span class="variant-cell-label">plan<br>re-push ↑ modal</span>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           2. STATE ROW
+           default / is-entering / is-exiting / hover / focus
+           Using approval variant throughout
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">2 · state row</p>
+        <p class="sub-label">approval variant — all interactive + animation states</p>
+        <div class="state-row">
+
+          <!-- default -->
+          <div class="state-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">default</span>
+          </div>
+
+          <!-- is-entering (animation frozen at midpoint for static demo) -->
+          <div class="state-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+              style="opacity: 0.5; transform: translateY(4px); animation: none;"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-entering<br>(mid-fade)</span>
+          </div>
+
+          <!-- is-exiting (near-invisible, arrow still down) -->
+          <div class="state-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+              style="opacity: 0.15; transform: translateY(6px); animation: none;"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-exiting<br>(near-gone)</span>
+          </div>
+
+          <!-- is-hover -->
+          <div class="state-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md is-hover"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-hover</span>
+          </div>
+
+          <!-- is-focus -->
+          <div class="state-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md is-focus"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-focus</span>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           3. COMPOSITION — iPhone device bezel
+           Chat scrolled UP, pending-action-pill anchored
+           at bottom-right above suppressed composer
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">3 · composition — pending-action-pill in device frame</p>
+        <p class="sub-label">chat thread scrolled up · approval pill visible above composer</p>
+
+        <div class="composition-wrap">
+
+          <!-- Dark / approval variant -->
+          <div>
+            <div class="atom-device-bezel">
+              <!-- Dynamic Island -->
+              <div class="atom-device-bezel__dynamic-island"></div>
+
+              <!-- Viewport -->
+              <div class="atom-device-bezel__viewport">
+
+                <!-- Status bar -->
+                <div class="atom-device-bezel__status-bar">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0" y="8" width="3" height="4" rx="0.5"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5"/>
+                      <rect x="9" y="2" width="3" height="10" rx="0.5"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
+                      <path d="M8 10.8a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 3.6a11 11 0 0 0-15.6 0l1.4 1.4Z"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Viewport content -->
+                <div class="mock-viewport-content">
+
+                  <!-- Chat thread — scrolled UP, inline approval card is off-screen below -->
+                  <div class="mock-chat-thread">
+                    <div class="mock-scroll-indicator">— scrolled up · approval card below —</div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">I can run the migration script to add the new indexes. Want me to proceed?</div>
+                    </div>
+
+                    <div class="mock-message-row mock-message-row--user">
+                      <div class="mock-bubble mock-bubble--user">Yes — go ahead.</div>
+                    </div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">I'll need to run <code>drizzle-kit push</code> on the neon branch. Awaiting your approval below.</div>
+                    </div>
+
+                    <!-- pending-action-pill: approval variant, anchored at bottom-right -->
+                    <button
+                      class="mol-pending-action-pill mol-pending-action-pill--approval
+                             atom-pill atom-pill--warning atom-pill--md"
+                      aria-label="1 pending approval — tap to view"
+                      type="button"
+                    >
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="6" cy="6" r="4"/>
+                        <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                        <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                        <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+                      </svg>
+                      <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+                      </svg>
+                    </button>
+
+                  </div><!-- /mock-chat-thread -->
+
+                  <!-- Composer — suppressed while approval pending -->
+                  <div class="mock-composer">
+                    <div class="mock-composer__input">Waiting for approval…</div>
+                  </div>
+
+                </div><!-- /mock-viewport-content -->
+
+                <!-- Tab bar -->
+                <div class="mock-tab-bar">
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 11 12 14 22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span class="mock-tab__label">Tasks</span>
+                  </div>
+                  <div class="mock-tab mock-tab--active">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary)">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="mock-tab__label">Chat</span>
+                  </div>
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <span class="mock-tab__label">More</span>
+                  </div>
+                </div>
+
+              </div><!-- /viewport -->
+
+              <div class="atom-device-bezel__home-indicator"></div>
+
+            </div><!-- /device-bezel -->
+            <p class="composition-note">approval · dark · thread scrolled up · pill visible</p>
+          </div>
+
+          <!-- Dark / question variant -->
+          <div>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+              <div class="atom-device-bezel__viewport">
+
+                <div class="atom-device-bezel__status-bar">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0" y="8" width="3" height="4" rx="0.5"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5"/>
+                      <rect x="9" y="2" width="3" height="10" rx="0.5"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
+                      <path d="M8 10.8a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 3.6a11 11 0 0 0-15.6 0l1.4 1.4Z"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mock-viewport-content">
+
+                  <div class="mock-chat-thread">
+                    <div class="mock-scroll-indicator">— sheet dismissed · question still open —</div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">I'm ready to refactor the auth layer. Should I also update the test suite?</div>
+                    </div>
+
+                    <div class="mock-message-row mock-message-row--user">
+                      <div class="mock-bubble mock-bubble--user">Let me think…</div>
+                    </div>
+
+                    <!-- question variant pill -->
+                    <button
+                      class="mol-pending-action-pill mol-pending-action-pill--question
+                             atom-pill atom-pill--warning atom-pill--md"
+                      aria-label="Question pending — tap to answer"
+                      type="button"
+                    >
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 1L11 10H1L6 1z"/>
+                        <line x1="6" y1="5" x2="6" y2="7"/>
+                        <circle cx="6" cy="8.5" r="0.5" fill="currentColor" stroke="none"/>
+                      </svg>
+                      <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">QUESTION</span>
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="6" y1="11" x2="6" y2="2"/><polyline points="3,5 6,2 9,5"/>
+                      </svg>
+                    </button>
+
+                  </div>
+
+                  <div class="mock-composer">
+                    <div class="mock-composer__input">Answer required…</div>
+                  </div>
+
+                </div>
+
+                <div class="mock-tab-bar">
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 11 12 14 22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span class="mock-tab__label">Tasks</span>
+                  </div>
+                  <div class="mock-tab mock-tab--active">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary)">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="mock-tab__label">Chat</span>
+                  </div>
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <span class="mock-tab__label">More</span>
+                  </div>
+                </div>
+
+              </div>
+              <div class="atom-device-bezel__home-indicator"></div>
+            </div>
+            <p class="composition-note">question · dark · sheet dismissed · QUESTION ↑</p>
+          </div>
+
+        </div><!-- /composition-wrap dark -->
+
+      </div><!-- /composition dark -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ==================================================
+           1. VARIANT MATRIX
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">1 · variant matrix</p>
+        <p class="sub-label">approval · question · plan</p>
+        <div class="variant-row">
+
+          <!-- approval -->
+          <div class="variant-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="variant-cell-label">approval<br>scroll ↓ to card</span>
+          </div>
+
+          <!-- question -->
+          <div class="variant-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--question mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="Question pending — tap to answer"
+              type="button"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 1L11 10H1L6 1z"/>
+                <line x1="6" y1="5" x2="6" y2="7"/>
+                <circle cx="6" cy="8.5" r="0.5" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">QUESTION</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="11" x2="6" y2="2"/><polyline points="3,5 6,2 9,5"/>
+              </svg>
+            </button>
+            <span class="variant-cell-label">question<br>re-open ↑ sheet</span>
+          </div>
+
+          <!-- plan -->
+          <div class="variant-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--plan mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="Plan pending review — tap to view"
+              type="button"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 1L7 5L11 6L7 7L6 11L5 7L1 6L5 5L6 1z"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">PLAN</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="11" x2="6" y2="2"/><polyline points="3,5 6,2 9,5"/>
+              </svg>
+            </button>
+            <span class="variant-cell-label">plan<br>re-push ↑ modal</span>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           2. STATE ROW
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">2 · state row</p>
+        <p class="sub-label">approval variant — all interactive + animation states</p>
+        <div class="state-row">
+
+          <!-- default -->
+          <div class="state-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">default</span>
+          </div>
+
+          <!-- is-entering -->
+          <div class="state-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+              style="opacity: 0.5; transform: translateY(4px); animation: none;"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-entering<br>(mid-fade)</span>
+          </div>
+
+          <!-- is-exiting -->
+          <div class="state-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+              style="opacity: 0.15; transform: translateY(6px); animation: none;"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-exiting<br>(near-gone)</span>
+          </div>
+
+          <!-- is-hover -->
+          <div class="state-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md is-hover"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-hover</span>
+          </div>
+
+          <!-- is-focus -->
+          <div class="state-cell">
+            <button
+              class="mol-pending-action-pill mol-pending-action-pill--approval mol-pending-action-pill--static
+                     atom-pill atom-pill--warning atom-pill--md is-focus"
+              aria-label="1 pending approval — tap to view"
+              type="button"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-focus</span>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           3. COMPOSITION — light / approval + plan frames
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">3 · composition — pending-action-pill in device frame</p>
+        <p class="sub-label">chat thread scrolled up · pill visible above composer</p>
+
+        <div class="composition-wrap">
+
+          <!-- Light / approval -->
+          <div>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+              <div class="atom-device-bezel__viewport">
+
+                <div class="atom-device-bezel__status-bar">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0" y="8" width="3" height="4" rx="0.5"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5"/>
+                      <rect x="9" y="2" width="3" height="10" rx="0.5"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
+                      <path d="M8 10.8a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 3.6a11 11 0 0 0-15.6 0l1.4 1.4Z"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mock-viewport-content">
+
+                  <div class="mock-chat-thread">
+                    <div class="mock-scroll-indicator">— scrolled up · approval card below —</div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">I'll add a GitHub Actions workflow to auto-deploy on merge. Should I target the staging environment first?</div>
+                    </div>
+
+                    <div class="mock-message-row mock-message-row--user">
+                      <div class="mock-bubble mock-bubble--user">Yes, staging first.</div>
+                    </div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">Creating the workflow file — I need to run <code>gh secret set</code> to configure the deploy key. Approval required.</div>
+                    </div>
+
+                    <!-- pending-action-pill: approval variant, light -->
+                    <button
+                      class="mol-pending-action-pill mol-pending-action-pill--approval
+                             atom-pill atom-pill--warning atom-pill--md"
+                      aria-label="1 pending approval — tap to view"
+                      type="button"
+                    >
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="6" cy="6" r="4"/>
+                        <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                        <line x1="6" y1="1" x2="6" y2="2"/><line x1="6" y1="10" x2="6" y2="11"/>
+                        <line x1="1" y1="6" x2="2" y2="6"/><line x1="10" y1="6" x2="11" y2="6"/>
+                      </svg>
+                      <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">1 PENDING</span>
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="6" y1="1" x2="6" y2="10"/><polyline points="3,7 6,10 9,7"/>
+                      </svg>
+                    </button>
+
+                  </div>
+
+                  <div class="mock-composer">
+                    <div class="mock-composer__input">Waiting for approval…</div>
+                  </div>
+
+                </div>
+
+                <div class="mock-tab-bar">
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 11 12 14 22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span class="mock-tab__label">Tasks</span>
+                  </div>
+                  <div class="mock-tab mock-tab--active">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary)">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="mock-tab__label">Chat</span>
+                  </div>
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <span class="mock-tab__label">More</span>
+                  </div>
+                </div>
+
+              </div>
+              <div class="atom-device-bezel__home-indicator"></div>
+            </div>
+            <p class="composition-note">approval · light · thread scrolled up · pill visible</p>
+          </div>
+
+          <!-- Light / plan variant -->
+          <div>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+              <div class="atom-device-bezel__viewport">
+
+                <div class="atom-device-bezel__status-bar">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0" y="8" width="3" height="4" rx="0.5"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5"/>
+                      <rect x="9" y="2" width="3" height="10" rx="0.5"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
+                      <path d="M8 10.8a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 3.6a11 11 0 0 0-15.6 0l1.4 1.4Z"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mock-viewport-content">
+
+                  <div class="mock-chat-thread">
+                    <div class="mock-scroll-indicator">— modal dismissed · plan still pending —</div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">I've drafted a 6-step migration plan for the Neon schema changes. Please review before I proceed.</div>
+                    </div>
+
+                    <div class="mock-message-row mock-message-row--user">
+                      <div class="mock-bubble mock-bubble--user">Let me look at it…</div>
+                    </div>
+
+                    <!-- plan variant pill -->
+                    <button
+                      class="mol-pending-action-pill mol-pending-action-pill--plan
+                             atom-pill atom-pill--warning atom-pill--md"
+                      aria-label="Plan pending review — tap to view"
+                      type="button"
+                    >
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 1L7 5L11 6L7 7L6 11L5 7L1 6L5 5L6 1z"/>
+                      </svg>
+                      <span class="atom-section-label atom-section-label--strong mol-pending-action-pill__count">PLAN</span>
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs mol-pending-action-pill__direction" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="6" y1="11" x2="6" y2="2"/><polyline points="3,5 6,2 9,5"/>
+                      </svg>
+                    </button>
+
+                  </div>
+
+                  <div class="mock-composer">
+                    <div class="mock-composer__input">Plan review required…</div>
+                  </div>
+
+                </div>
+
+                <div class="mock-tab-bar">
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 11 12 14 22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span class="mock-tab__label">Tasks</span>
+                  </div>
+                  <div class="mock-tab mock-tab--active">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary)">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="mock-tab__label">Chat</span>
+                  </div>
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <span class="mock-tab__label">More</span>
+                  </div>
+                </div>
+
+              </div>
+              <div class="atom-device-bezel__home-indicator"></div>
+            </div>
+            <p class="composition-note">plan · light · modal dismissed · PLAN ↑</p>
+          </div>
+
+        </div><!-- /composition-wrap light -->
+
+      </div><!-- /composition light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
