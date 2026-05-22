@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-approval-footer — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-approval-footer — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. Zero raw font-size/weight/tracking.
+       Structural geometry comment-flagged where used.
+       ================================================================ */
+
+    /* ---- Base footer ----------------------------------------------- */
+    .mol-approval-footer {
+      position:   relative;
+      padding:    var(--space-3) var(--space-4) var(--safe-area-bottom);
+      background: var(--surface-page);
+      border-top: 1px solid var(--border-subtle);
+      display:    flex;
+      align-items: center;
+      gap:        var(--space-3);
+    }
+
+    /* ---- Top amber rule — full-bleed absolute ---------------------- */
+    .mol-approval-footer__rule {
+      position: absolute;
+      top:      0;
+      left:     0;
+      right:    0;
+    }
+
+    /* ---- Queue counter -------------------------------------------- */
+    .mol-approval-footer__counter {
+      flex-shrink: 0;
+    }
+
+    /* ---- Action row ----------------------------------------------- */
+    .mol-approval-footer__actions {
+      flex:    1;
+      display: flex;
+      gap:     var(--space-2);
+    }
+
+    /* Each button shares the full row width equally */
+    .mol-approval-footer__actions .atom-button {
+      flex:       1;
+      min-height: var(--touch-target-min); /* 44px WCAG AA + iOS HIG */
+    }
+
+    /* ---- Variant: single (default) — hide counter ----------------- */
+    .mol-approval-footer--single .mol-approval-footer__counter {
+      display: none;
+    }
+
+    /* ---- State: resolving — dim actions, block pointer events ----- */
+    .mol-approval-footer.is-resolving .mol-approval-footer__actions {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+
+    /* ---- State: disabled — full footer blocked -------------------- */
+    .mol-approval-footer.is-disabled .mol-approval-footer__actions {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+
+    /* ================================================================
+       PREVIEW-ONLY: Demo layout helpers
+       (not part of the molecule API — never ship these)
+       ================================================================ */
+
+    /* Slide-in animation for composition demo */
+    @keyframes demo-footer-slide-up {
+      from { transform: translateY(100%); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    /* Faux chat thread used in composition section */
+    .demo-chat-thread {
+      flex:           1;
+      overflow-y:     auto;
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      padding:        var(--space-3) var(--space-4);
+    }
+
+    .demo-msg-user {
+      align-self:     flex-end;
+      background:     var(--surface-soft);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-lg);
+      padding:        var(--space-2) var(--space-3);
+      font-size:      var(--font-size-body-sm);
+      color:          var(--text-body);
+      max-width:      80%; /* structural: typical user bubble constraint */
+      line-height:    var(--line-height-normal);
+    }
+
+    .demo-asst-head {
+      display:        flex;
+      align-items:    center;
+      gap:            var(--space-2);
+      padding-inline: var(--space-1);
+    }
+
+    .demo-asst-avatar {
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      width:           28px; /* structural: atom-avatar --sm */
+      height:          28px;
+      border-radius:   var(--radius-round);
+      background:      var(--accent-primary);
+      color:           var(--accent-primary-fg);
+      font-size:       var(--font-size-label);
+      font-weight:     var(--font-weight-label);
+      flex-shrink:     0;
+    }
+
+    .demo-asst-name {
+      font-size:      var(--font-size-label);
+      font-weight:    var(--font-weight-label);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* Faux pending tool-call card — mirrors mol-tool-call-card--pending */
+    .demo-pending-card {
+      display:       flex;
+      align-items:   stretch;
+      gap:           var(--space-3);
+      padding:       var(--space-3) var(--space-4);
+      background:    var(--surface-raised);
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      min-height:    var(--touch-target-min);
+    }
+
+    .demo-pending-card__content {
+      flex:           1;
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      justify-content: center;
+    }
+
+    .demo-pending-card__header {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+    }
+
+    .demo-pending-card__status {
+      margin-left: auto; /* push status pill to trailing edge */
+      display:     inline-flex;
+      align-items: center;
+      gap:         var(--space-1);
+      color:       var(--state-warning-fg);
+      font-size:   var(--font-size-meta);
+      font-family: var(--font-mono);
+      font-weight: var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .demo-pending-card__args {
+      margin:         0;
+      color:          var(--text-muted);
+      white-space:    nowrap;
+      overflow:       hidden;
+      text-overflow:  ellipsis;
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      line-height:    var(--line-height-snug);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* Viewport-docked footer for composition section */
+    .demo-viewport-wrap {
+      display:        flex;
+      flex-direction: column;
+      height:         100%;
+    }
+
+    /* Label row for variant frames */
+    .demo-frame-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+      margin:         0 0 var(--space-2);
+    }
+
+    /* Composition pane — side-by-side bezel frames */
+    .composition-wrap {
+      display: flex;
+      gap:     var(--space-8);
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================================================================
+       Header
+       ================================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">approval-footer</h1>
+    <p class="crumb">molecule · tool-approval sticky footer · UC-PAUSE-01 §A</p>
+  </header>
+
+  <!-- ================================================================
+       Pegboard — dark pane first, then light pane
+       ================================================================ -->
+  <div class="pegboard">
+
+    <!-- ==============================================================
+         DARK PANE
+         ============================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT MATRIX: single vs queued ------------------- -->
+      <div class="variant">
+        <h3>1 · variant matrix — single vs queued</h3>
+
+        <!-- single: no counter visible -->
+        <div class="state">
+          <span class="state-label">single (default) — no counter</span>
+          <footer
+            class="mol-approval-footer mol-approval-footer--single"
+            role="region"
+            aria-label="Approval actions for tool: bash"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+              aria-hidden="true"
+            ></span>
+            <!-- counter hidden by --single modifier -->
+            <span
+              class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+              aria-label="Approval 1 of 1"
+            >1 OF 1</span>
+            <div class="mol-approval-footer__actions">
+              <button
+                class="atom-button atom-button--destructive atom-button--md"
+                aria-label="Decline approval"
+              >Decline</button>
+              <button
+                class="atom-button atom-button--primary atom-button--md"
+                aria-label="Approve tool action"
+              >Approve</button>
+              <button
+                class="atom-button atom-button--ghost atom-button--md"
+                aria-label="Always allow bash category"
+              >Always</button>
+            </div>
+          </footer>
+        </div>
+
+        <!-- queued: counter visible with "1 OF 4" -->
+        <div class="state">
+          <span class="state-label">queued — "1 OF 4" counter visible</span>
+          <footer
+            class="mol-approval-footer mol-approval-footer--queued"
+            role="region"
+            aria-label="Approval actions for tool: bash"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+              aria-label="Approval 1 of 4"
+            >1 OF 4</span>
+            <div class="mol-approval-footer__actions">
+              <button
+                class="atom-button atom-button--destructive atom-button--md"
+                aria-label="Decline approval"
+              >Decline</button>
+              <button
+                class="atom-button atom-button--primary atom-button--md"
+                aria-label="Approve tool action"
+              >Approve</button>
+              <button
+                class="atom-button atom-button--ghost atom-button--md"
+                aria-label="Always allow bash category"
+              >Always</button>
+            </div>
+          </footer>
+        </div>
+      </div>
+
+      <!-- ---- 2. STATE ROW: default / is-resolving / is-disabled ---- -->
+      <div class="variant">
+        <h3>2 · state row</h3>
+
+        <!-- default -->
+        <div class="state">
+          <span class="state-label">default</span>
+          <footer
+            class="mol-approval-footer mol-approval-footer--queued"
+            role="region"
+            aria-label="Approval actions for tool: bash"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+              aria-label="Approval 1 of 4"
+            >1 OF 4</span>
+            <div class="mol-approval-footer__actions">
+              <button
+                class="atom-button atom-button--destructive atom-button--md"
+                aria-label="Decline approval"
+              >Decline</button>
+              <button
+                class="atom-button atom-button--primary atom-button--md"
+                aria-label="Approve tool action"
+              >Approve</button>
+              <button
+                class="atom-button atom-button--ghost atom-button--md"
+                aria-label="Always allow bash category"
+              >Always</button>
+            </div>
+          </footer>
+        </div>
+
+        <!-- is-resolving: Approve button shows spinner -->
+        <div class="state">
+          <span class="state-label">is-resolving — actions dimmed, Approve shows spinner</span>
+          <footer
+            class="mol-approval-footer mol-approval-footer--queued is-resolving"
+            role="region"
+            aria-label="Approval actions for tool: bash"
+            aria-busy="true"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+              aria-label="Approval 1 of 4"
+            >1 OF 4</span>
+            <div class="mol-approval-footer__actions">
+              <button
+                class="atom-button atom-button--destructive atom-button--md"
+                aria-label="Decline approval"
+              >Decline</button>
+              <button
+                class="atom-button atom-button--primary atom-button--md is-loading"
+                aria-label="Approve tool action"
+                aria-busy="true"
+              >Approve</button>
+              <button
+                class="atom-button atom-button--ghost atom-button--md"
+                aria-label="Always allow bash category"
+              >Always</button>
+            </div>
+          </footer>
+        </div>
+
+        <!-- is-disabled: full footer disabled -->
+        <div class="state">
+          <span class="state-label">is-disabled</span>
+          <footer
+            class="mol-approval-footer mol-approval-footer--queued is-disabled"
+            role="region"
+            aria-label="Approval actions for tool: bash"
+            aria-disabled="true"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+              aria-label="Approval 1 of 4"
+            >1 OF 4</span>
+            <div class="mol-approval-footer__actions">
+              <button
+                class="atom-button atom-button--destructive atom-button--md"
+                aria-label="Decline approval"
+                disabled
+                aria-disabled="true"
+              >Decline</button>
+              <button
+                class="atom-button atom-button--primary atom-button--md"
+                aria-label="Approve tool action"
+                disabled
+                aria-disabled="true"
+              >Approve</button>
+              <button
+                class="atom-button atom-button--ghost atom-button--md"
+                aria-label="Always allow bash category"
+                disabled
+                aria-disabled="true"
+              >Always</button>
+            </div>
+          </footer>
+        </div>
+      </div>
+
+      <!-- ---- 3. COMPOSITION — docked in iPhone viewport ------------ -->
+      <div class="variant">
+        <h3>3 · composition — docked at bottom of iPhone viewport</h3>
+
+        <div class="composition-wrap">
+
+          <!-- Single pending — queued variant -->
+          <div>
+            <p class="demo-frame-label">queued · default state</p>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+              <div class="atom-device-bezel__viewport">
+                <!-- Status bar -->
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <!-- Signal bars -->
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0"  y="6" width="3" height="6" rx="1"/>
+                      <rect x="4"  y="4" width="3" height="8" rx="1"/>
+                      <rect x="8"  y="2" width="3" height="10" rx="1"/>
+                      <rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/>
+                    </svg>
+                    <!-- Wi-Fi -->
+                    <svg width="16" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                      <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                      <circle cx="12" cy="20" r="1" fill="currentColor"/>
+                    </svg>
+                    <!-- Battery -->
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Viewport content: chat thread + approval footer docked at bottom -->
+                <div class="demo-viewport-wrap">
+                  <!-- Faux chat thread with pending tool-call card visible -->
+                  <div class="demo-chat-thread">
+                    <div class="demo-asst-head">
+                      <div class="demo-asst-avatar" aria-hidden="true">S</div>
+                      <span class="demo-asst-name">Superset</span>
+                    </div>
+                    <!-- Pending tool-call card above footer — mirrors mol-tool-call-card--pending -->
+                    <article
+                      class="demo-pending-card"
+                      aria-label="Bash tool call: find . -name '*.ts' - awaiting approval"
+                    >
+                      <span
+                        class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending"
+                        aria-hidden="true"
+                      ></span>
+                      <div class="demo-pending-card__content">
+                        <header class="demo-pending-card__header">
+                          <!-- terminal icon -->
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm" style="color: var(--state-warning-fg);" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4 17 10 11 4 5"></polyline>
+                            <line x1="12" y1="19" x2="20" y2="19"></line>
+                          </svg>
+                          <span class="atom-pill atom-pill--default atom-pill--sm atom-pill--monospace">Bash</span>
+                          <span class="demo-pending-card__status">AWAITING</span>
+                        </header>
+                        <p class="demo-pending-card__args">find . -name '*.ts' -type f</p>
+                      </div>
+                    </article>
+
+                    <!-- Second pending card to show queue context -->
+                    <article
+                      class="demo-pending-card"
+                      aria-label="Bash tool call: grep -r 'useEffect' src - awaiting approval"
+                    >
+                      <span
+                        class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending"
+                        aria-hidden="true"
+                      ></span>
+                      <div class="demo-pending-card__content">
+                        <header class="demo-pending-card__header">
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm" style="color: var(--state-warning-fg);" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4 17 10 11 4 5"></polyline>
+                            <line x1="12" y1="19" x2="20" y2="19"></line>
+                          </svg>
+                          <span class="atom-pill atom-pill--default atom-pill--sm atom-pill--monospace">Bash</span>
+                          <span class="demo-pending-card__status">QUEUED</span>
+                        </header>
+                        <p class="demo-pending-card__args">grep -r 'useEffect' src/</p>
+                      </div>
+                    </article>
+                  </div>
+
+                  <!-- Approval footer docked at bottom -->
+                  <footer
+                    class="mol-approval-footer mol-approval-footer--queued"
+                    role="region"
+                    aria-label="Approval actions for tool: bash"
+                    style="animation: demo-footer-slide-up var(--motion-medium) var(--motion-ease-out) both;"
+                  >
+                    <span
+                      class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+                      aria-hidden="true"
+                    ></span>
+                    <span
+                      class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+                      aria-label="Approval 1 of 4"
+                    >1 OF 4</span>
+                    <div class="mol-approval-footer__actions">
+                      <button
+                        class="atom-button atom-button--destructive atom-button--md"
+                        aria-label="Decline approval"
+                      >Decline</button>
+                      <button
+                        class="atom-button atom-button--primary atom-button--md"
+                        aria-label="Approve tool action"
+                      >Approve</button>
+                      <button
+                        class="atom-button atom-button--ghost atom-button--md"
+                        aria-label="Always allow bash category"
+                      >Always</button>
+                    </div>
+                  </footer>
+                </div>
+
+                <!-- Home indicator -->
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resolving state — iPhone viewport -->
+          <div>
+            <p class="demo-frame-label">single · is-resolving (Approve tapped)</p>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+              <div class="atom-device-bezel__viewport">
+                <!-- Status bar -->
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0"  y="6" width="3" height="6" rx="1"/>
+                      <rect x="4"  y="4" width="3" height="8" rx="1"/>
+                      <rect x="8"  y="2" width="3" height="10" rx="1"/>
+                      <rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                      <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                      <circle cx="12" cy="20" r="1" fill="currentColor"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="demo-viewport-wrap">
+                  <div class="demo-chat-thread">
+                    <div class="demo-asst-head">
+                      <div class="demo-asst-avatar" aria-hidden="true">S</div>
+                      <span class="demo-asst-name">Superset</span>
+                    </div>
+                    <article
+                      class="demo-pending-card"
+                      aria-label="Bash tool call: find . -name '*.ts' - awaiting approval"
+                    >
+                      <span
+                        class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending"
+                        aria-hidden="true"
+                      ></span>
+                      <div class="demo-pending-card__content">
+                        <header class="demo-pending-card__header">
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm" style="color: var(--state-warning-fg);" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4 17 10 11 4 5"></polyline>
+                            <line x1="12" y1="19" x2="20" y2="19"></line>
+                          </svg>
+                          <span class="atom-pill atom-pill--default atom-pill--sm atom-pill--monospace">Bash</span>
+                          <span class="demo-pending-card__status">AWAITING</span>
+                        </header>
+                        <p class="demo-pending-card__args">find . -name '*.ts' -type f</p>
+                      </div>
+                    </article>
+                  </div>
+
+                  <!-- is-resolving state -->
+                  <footer
+                    class="mol-approval-footer mol-approval-footer--single is-resolving"
+                    role="region"
+                    aria-label="Approval actions for tool: bash"
+                    aria-busy="true"
+                  >
+                    <span
+                      class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+                      aria-hidden="true"
+                    ></span>
+                    <span
+                      class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+                      aria-label="Approval 1 of 1"
+                    >1 OF 1</span>
+                    <div class="mol-approval-footer__actions">
+                      <button
+                        class="atom-button atom-button--destructive atom-button--md"
+                        aria-label="Decline approval"
+                      >Decline</button>
+                      <button
+                        class="atom-button atom-button--primary atom-button--md is-loading"
+                        aria-label="Approve tool action"
+                        aria-busy="true"
+                      >Approve</button>
+                      <button
+                        class="atom-button atom-button--ghost atom-button--md"
+                        aria-label="Always allow bash category"
+                      >Always</button>
+                    </div>
+                  </footer>
+                </div>
+
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /composition-wrap -->
+      </div><!-- /variant -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ==============================================================
+         LIGHT PANE
+         ============================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT MATRIX: single vs queued ------------------- -->
+      <div class="variant">
+        <h3>1 · variant matrix — single vs queued</h3>
+
+        <!-- single: no counter visible -->
+        <div class="state">
+          <span class="state-label">single (default) — no counter</span>
+          <footer
+            class="mol-approval-footer mol-approval-footer--single"
+            role="region"
+            aria-label="Approval actions for tool: bash"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+              aria-label="Approval 1 of 1"
+            >1 OF 1</span>
+            <div class="mol-approval-footer__actions">
+              <button
+                class="atom-button atom-button--destructive atom-button--md"
+                aria-label="Decline approval"
+              >Decline</button>
+              <button
+                class="atom-button atom-button--primary atom-button--md"
+                aria-label="Approve tool action"
+              >Approve</button>
+              <button
+                class="atom-button atom-button--ghost atom-button--md"
+                aria-label="Always allow bash category"
+              >Always</button>
+            </div>
+          </footer>
+        </div>
+
+        <!-- queued: counter visible with "1 OF 4" -->
+        <div class="state">
+          <span class="state-label">queued — "1 OF 4" counter visible</span>
+          <footer
+            class="mol-approval-footer mol-approval-footer--queued"
+            role="region"
+            aria-label="Approval actions for tool: bash"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+              aria-label="Approval 1 of 4"
+            >1 OF 4</span>
+            <div class="mol-approval-footer__actions">
+              <button
+                class="atom-button atom-button--destructive atom-button--md"
+                aria-label="Decline approval"
+              >Decline</button>
+              <button
+                class="atom-button atom-button--primary atom-button--md"
+                aria-label="Approve tool action"
+              >Approve</button>
+              <button
+                class="atom-button atom-button--ghost atom-button--md"
+                aria-label="Always allow bash category"
+              >Always</button>
+            </div>
+          </footer>
+        </div>
+      </div>
+
+      <!-- ---- 2. STATE ROW: default / is-resolving / is-disabled ---- -->
+      <div class="variant">
+        <h3>2 · state row</h3>
+
+        <!-- default -->
+        <div class="state">
+          <span class="state-label">default</span>
+          <footer
+            class="mol-approval-footer mol-approval-footer--queued"
+            role="region"
+            aria-label="Approval actions for tool: bash"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+              aria-label="Approval 1 of 4"
+            >1 OF 4</span>
+            <div class="mol-approval-footer__actions">
+              <button
+                class="atom-button atom-button--destructive atom-button--md"
+                aria-label="Decline approval"
+              >Decline</button>
+              <button
+                class="atom-button atom-button--primary atom-button--md"
+                aria-label="Approve tool action"
+              >Approve</button>
+              <button
+                class="atom-button atom-button--ghost atom-button--md"
+                aria-label="Always allow bash category"
+              >Always</button>
+            </div>
+          </footer>
+        </div>
+
+        <!-- is-resolving: Approve button shows spinner -->
+        <div class="state">
+          <span class="state-label">is-resolving — actions dimmed, Approve shows spinner</span>
+          <footer
+            class="mol-approval-footer mol-approval-footer--queued is-resolving"
+            role="region"
+            aria-label="Approval actions for tool: bash"
+            aria-busy="true"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+              aria-label="Approval 1 of 4"
+            >1 OF 4</span>
+            <div class="mol-approval-footer__actions">
+              <button
+                class="atom-button atom-button--destructive atom-button--md"
+                aria-label="Decline approval"
+              >Decline</button>
+              <button
+                class="atom-button atom-button--primary atom-button--md is-loading"
+                aria-label="Approve tool action"
+                aria-busy="true"
+              >Approve</button>
+              <button
+                class="atom-button atom-button--ghost atom-button--md"
+                aria-label="Always allow bash category"
+              >Always</button>
+            </div>
+          </footer>
+        </div>
+
+        <!-- is-disabled: full footer disabled -->
+        <div class="state">
+          <span class="state-label">is-disabled</span>
+          <footer
+            class="mol-approval-footer mol-approval-footer--queued is-disabled"
+            role="region"
+            aria-label="Approval actions for tool: bash"
+            aria-disabled="true"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+              aria-label="Approval 1 of 4"
+            >1 OF 4</span>
+            <div class="mol-approval-footer__actions">
+              <button
+                class="atom-button atom-button--destructive atom-button--md"
+                aria-label="Decline approval"
+                disabled
+                aria-disabled="true"
+              >Decline</button>
+              <button
+                class="atom-button atom-button--primary atom-button--md"
+                aria-label="Approve tool action"
+                disabled
+                aria-disabled="true"
+              >Approve</button>
+              <button
+                class="atom-button atom-button--ghost atom-button--md"
+                aria-label="Always allow bash category"
+                disabled
+                aria-disabled="true"
+              >Always</button>
+            </div>
+          </footer>
+        </div>
+      </div>
+
+      <!-- ---- 3. COMPOSITION — docked in iPhone viewport ------------ -->
+      <div class="variant">
+        <h3>3 · composition — docked at bottom of iPhone viewport</h3>
+
+        <div class="composition-wrap">
+
+          <!-- Queued default — light -->
+          <div>
+            <p class="demo-frame-label">queued · default state</p>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+              <div class="atom-device-bezel__viewport">
+                <!-- Status bar -->
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0"  y="6" width="3" height="6" rx="1"/>
+                      <rect x="4"  y="4" width="3" height="8" rx="1"/>
+                      <rect x="8"  y="2" width="3" height="10" rx="1"/>
+                      <rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                      <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                      <circle cx="12" cy="20" r="1" fill="currentColor"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="demo-viewport-wrap">
+                  <div class="demo-chat-thread">
+                    <div class="demo-asst-head">
+                      <div class="demo-asst-avatar" aria-hidden="true">S</div>
+                      <span class="demo-asst-name">Superset</span>
+                    </div>
+                    <article
+                      class="demo-pending-card"
+                      aria-label="Bash tool call: find . -name '*.ts' - awaiting approval"
+                    >
+                      <span
+                        class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending"
+                        aria-hidden="true"
+                      ></span>
+                      <div class="demo-pending-card__content">
+                        <header class="demo-pending-card__header">
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm" style="color: var(--state-warning-fg);" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4 17 10 11 4 5"></polyline>
+                            <line x1="12" y1="19" x2="20" y2="19"></line>
+                          </svg>
+                          <span class="atom-pill atom-pill--default atom-pill--sm atom-pill--monospace">Bash</span>
+                          <span class="demo-pending-card__status">AWAITING</span>
+                        </header>
+                        <p class="demo-pending-card__args">find . -name '*.ts' -type f</p>
+                      </div>
+                    </article>
+
+                    <article
+                      class="demo-pending-card"
+                      aria-label="Bash tool call: grep -r src - awaiting approval"
+                    >
+                      <span
+                        class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending"
+                        aria-hidden="true"
+                      ></span>
+                      <div class="demo-pending-card__content">
+                        <header class="demo-pending-card__header">
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm" style="color: var(--state-warning-fg);" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4 17 10 11 4 5"></polyline>
+                            <line x1="12" y1="19" x2="20" y2="19"></line>
+                          </svg>
+                          <span class="atom-pill atom-pill--default atom-pill--sm atom-pill--monospace">Bash</span>
+                          <span class="demo-pending-card__status">QUEUED</span>
+                        </header>
+                        <p class="demo-pending-card__args">grep -r 'useEffect' src/</p>
+                      </div>
+                    </article>
+                  </div>
+
+                  <footer
+                    class="mol-approval-footer mol-approval-footer--queued"
+                    role="region"
+                    aria-label="Approval actions for tool: bash"
+                    style="animation: demo-footer-slide-up var(--motion-medium) var(--motion-ease-out) both;"
+                  >
+                    <span
+                      class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+                      aria-hidden="true"
+                    ></span>
+                    <span
+                      class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+                      aria-label="Approval 1 of 4"
+                    >1 OF 4</span>
+                    <div class="mol-approval-footer__actions">
+                      <button
+                        class="atom-button atom-button--destructive atom-button--md"
+                        aria-label="Decline approval"
+                      >Decline</button>
+                      <button
+                        class="atom-button atom-button--primary atom-button--md"
+                        aria-label="Approve tool action"
+                      >Approve</button>
+                      <button
+                        class="atom-button atom-button--ghost atom-button--md"
+                        aria-label="Always allow bash category"
+                      >Always</button>
+                    </div>
+                  </footer>
+                </div>
+
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Single resolving — light -->
+          <div>
+            <p class="demo-frame-label">single · is-resolving (Approve tapped)</p>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+              <div class="atom-device-bezel__viewport">
+                <!-- Status bar -->
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0"  y="6" width="3" height="6" rx="1"/>
+                      <rect x="4"  y="4" width="3" height="8" rx="1"/>
+                      <rect x="8"  y="2" width="3" height="10" rx="1"/>
+                      <rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                      <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                      <circle cx="12" cy="20" r="1" fill="currentColor"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="demo-viewport-wrap">
+                  <div class="demo-chat-thread">
+                    <div class="demo-asst-head">
+                      <div class="demo-asst-avatar" aria-hidden="true">S</div>
+                      <span class="demo-asst-name">Superset</span>
+                    </div>
+                    <article
+                      class="demo-pending-card"
+                      aria-label="Bash tool call: find . -name '*.ts' - awaiting approval"
+                    >
+                      <span
+                        class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending"
+                        aria-hidden="true"
+                      ></span>
+                      <div class="demo-pending-card__content">
+                        <header class="demo-pending-card__header">
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm" style="color: var(--state-warning-fg);" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="4 17 10 11 4 5"></polyline>
+                            <line x1="12" y1="19" x2="20" y2="19"></line>
+                          </svg>
+                          <span class="atom-pill atom-pill--default atom-pill--sm atom-pill--monospace">Bash</span>
+                          <span class="demo-pending-card__status">AWAITING</span>
+                        </header>
+                        <p class="demo-pending-card__args">find . -name '*.ts' -type f</p>
+                      </div>
+                    </article>
+                  </div>
+
+                  <footer
+                    class="mol-approval-footer mol-approval-footer--single is-resolving"
+                    role="region"
+                    aria-label="Approval actions for tool: bash"
+                    aria-busy="true"
+                  >
+                    <span
+                      class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+                      aria-hidden="true"
+                    ></span>
+                    <span
+                      class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+                      aria-label="Approval 1 of 1"
+                    >1 OF 1</span>
+                    <div class="mol-approval-footer__actions">
+                      <button
+                        class="atom-button atom-button--destructive atom-button--md"
+                        aria-label="Decline approval"
+                      >Decline</button>
+                      <button
+                        class="atom-button atom-button--primary atom-button--md is-loading"
+                        aria-label="Approve tool action"
+                        aria-busy="true"
+                      >Approve</button>
+                      <button
+                        class="atom-button atom-button--ghost atom-button--md"
+                        aria-label="Always allow bash category"
+                      >Always</button>
+                    </div>
+                  </footer>
+                </div>
+
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /composition-wrap -->
+      </div><!-- /variant -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>

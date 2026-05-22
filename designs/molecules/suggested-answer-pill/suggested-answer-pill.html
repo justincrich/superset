@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol · suggested-answer-pill</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_atoms.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <style>
+    /* ================================================================
+       mol-suggested-answer-pill — molecule-local layout glue only.
+       Composition purity: ZERO .atom-* rules defined here.
+       ZERO hex literals. ZERO raw font-size/weight/line-height.
+       ZERO raw px in padding/margin/gap (except 1px structural border).
+       Structural exceptions documented inline.
+    ================================================================ */
+
+    /* ---- Base layout: pill IS the tap zone ------------------- */
+    .mol-suggested-answer-pill {
+      min-height:      var(--touch-target-min); /* 44pt WCAG 2.5.5 / iOS HIG */
+      white-space:     nowrap;
+      flex-shrink:     0;                        /* structural: must not shrink in scroll row */
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      cursor:          pointer;                  /* structural: interactive affordance */
+    }
+
+    /* ---- Tapped state: ghost feedback while TextInput populates */
+    .mol-suggested-answer-pill.is-tapped {
+      opacity:    0.6;                           /* structural: feedback fraction */
+      transform:  scale(0.98);                   /* structural: micro-press feedback */
+      transition: opacity   var(--motion-fast) var(--motion-ease-out),
+                  transform var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Ghost variant: transparent bg + default border ------- */
+    .mol-suggested-answer-pill--ghost {
+      background: transparent;
+      border:     1px solid var(--border-default); /* 1px structural */
+    }
+    .mol-suggested-answer-pill--ghost:hover,
+    .mol-suggested-answer-pill--ghost.is-hover {
+      background: var(--surface-soft);
+    }
+    .mol-suggested-answer-pill--ghost:active,
+    .mol-suggested-answer-pill--ghost.is-active {
+      background:  var(--surface-active);
+      transform:   translateY(1px);
+    }
+    .mol-suggested-answer-pill--ghost:focus-visible,
+    .mol-suggested-answer-pill--ghost.is-focus {
+      box-shadow: 0 0 0 2px var(--border-focus);
+      outline:    none;
+    }
+    .mol-suggested-answer-pill--ghost.is-disabled {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Reduced motion: suppress tapped animation, keep opacity */
+    @media (prefers-reduced-motion: reduce) {
+      .mol-suggested-answer-pill.is-tapped {
+        transition: none;
+      }
+    }
+
+    /* ================================================================
+       Preview layout helpers
+    ================================================================ */
+
+    .mol-section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      margin:         0 0 var(--space-4);
+      text-transform: uppercase;
+    }
+
+    .mol-section-sub {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      margin:         0 0 var(--space-3);
+      text-transform: uppercase;
+    }
+
+    /* Row for variant/state cells */
+    .pill-row {
+      display:     flex;
+      flex-wrap:   wrap;
+      align-items: center;
+      gap:         var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .section-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle); /* 1px structural */
+      margin:     var(--space-6) 0;
+    }
+
+    /* Preview-only: extra top margin between sub-sections in a state grid group */
+    .mol-section-sub--mt {
+      margin-top: var(--space-5);
+    }
+
+    /* ---- Faux ask_user bottom sheet for composition demo ------- */
+    .faux-sheet {
+      background:    var(--surface-overlay);
+      border:        1px solid var(--border-subtle); /* 1px structural */
+      border-radius: var(--radius-lg);
+      padding:       var(--space-5) var(--space-4) var(--space-4);
+      max-width:     380px;
+    }
+
+    .faux-sheet__handle {
+      width:         var(--sheet-handle-width);
+      height:        var(--sheet-handle-height);
+      background:    var(--text-faint);
+      border-radius: var(--radius-pill);
+      margin:        0 auto var(--space-4);
+    }
+
+    .faux-sheet__question {
+      margin:        0 0 var(--space-4);
+      color:         var(--text-body);
+    }
+
+    /* Horizontal scroll pill row inside the sheet */
+    .faux-sheet__pill-row {
+      display:    flex;
+      align-items: center;
+      gap:         var(--space-2);
+      overflow-x:  auto;
+      padding-bottom: var(--space-1);  /* structural: prevent clipped focus rings */
+      /* Scroll snapping not applied — pills are free-scrolling */
+
+      /* Hide scrollbar visually (cross-browser) */
+      scrollbar-width: none;
+    }
+    .faux-sheet__pill-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Fade edges to hint overflow */
+    .faux-sheet__pill-row-wrap {
+      position:  relative;
+      overflow:  hidden;
+    }
+    .faux-sheet__pill-row-wrap::after {
+      content:         '';
+      position:        absolute;
+      right:           0;
+      top:             0;
+      bottom:          0;
+      width:           var(--space-8);
+      background:      linear-gradient(to right, transparent 0%, var(--surface-overlay) 100%);
+      pointer-events:  none;
+    }
+
+    /* Faux text input below pills */
+    .faux-sheet__input {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-2);
+      margin-top:    var(--space-3);
+      padding:       var(--space-3) var(--space-3);
+      background:    var(--surface-soft);
+      border:        1px solid var(--border-default); /* 1px structural */
+      border-radius: var(--radius-default);
+    }
+
+    .faux-sheet__input-text {
+      flex:           1;
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-snug);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+  ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">suggested-answer-pill</h1>
+    <p class="crumb">mol · tappable pill in ask_user horizontal-scroll suggestion row</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ==========================================================
+         DARK PANE
+    ========================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ========================================================
+           1. VARIANT MATRIX — 3 variants × realistic answer labels
+      ======================================================== -->
+      <div class="variant">
+        <h3>1 · variant matrix — 3 variants with realistic answers</h3>
+
+        <!-- ---- default variant --------------------------------- -->
+        <p class="mol-section-sub">default — standard suggestion</p>
+        <div class="pill-row">
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: tRPC"
+          >
+            <span class="mol-suggested-answer-pill__text">tRPC</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: REST API"
+          >
+            <span class="mol-suggested-answer-pill__text">REST API</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Both"
+          >
+            <span class="mol-suggested-answer-pill__text">Both</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Yes"
+          >
+            <span class="mol-suggested-answer-pill__text">Yes</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: No"
+          >
+            <span class="mol-suggested-answer-pill__text">No</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Show me more"
+          >
+            <span class="mol-suggested-answer-pill__text">Show me more</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Use both approaches"
+          >
+            <span class="mol-suggested-answer-pill__text">Use both approaches</span>
+          </button>
+        </div>
+
+        <!-- ---- accent variant ---------------------------------- -->
+        <p class="mol-section-sub">accent — recommended / highlighted</p>
+        <div class="pill-row">
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: tRPC"
+          >
+            <span class="mol-suggested-answer-pill__text">tRPC</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: REST API"
+          >
+            <span class="mol-suggested-answer-pill__text">REST API</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Both"
+          >
+            <span class="mol-suggested-answer-pill__text">Both</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Yes"
+          >
+            <span class="mol-suggested-answer-pill__text">Yes</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: No"
+          >
+            <span class="mol-suggested-answer-pill__text">No</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Show me more"
+          >
+            <span class="mol-suggested-answer-pill__text">Show me more</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Use both approaches"
+          >
+            <span class="mol-suggested-answer-pill__text">Use both approaches</span>
+          </button>
+        </div>
+
+        <!-- ---- ghost variant ----------------------------------- -->
+        <p class="mol-section-sub">ghost — less-prominent option</p>
+        <div class="pill-row">
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: tRPC"
+          >
+            <span class="mol-suggested-answer-pill__text">tRPC</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: REST API"
+          >
+            <span class="mol-suggested-answer-pill__text">REST API</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Both"
+          >
+            <span class="mol-suggested-answer-pill__text">Both</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Yes"
+          >
+            <span class="mol-suggested-answer-pill__text">Yes</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: No"
+          >
+            <span class="mol-suggested-answer-pill__text">No</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Show me more"
+          >
+            <span class="mol-suggested-answer-pill__text">Show me more</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Use both approaches"
+          >
+            <span class="mol-suggested-answer-pill__text">Use both approaches</span>
+          </button>
+        </div>
+      </div><!-- /1. variant matrix -->
+
+      <hr class="section-divider">
+
+      <!-- ========================================================
+           2. STATE ROW — default variant across all 6 states
+      ======================================================== -->
+      <div class="variant">
+        <h3>2 · state row — default variant, all states</h3>
+
+        <div class="state-grid">
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md is-hover"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">active</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md is-active"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md is-focus"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">tapped</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md is-tapped"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md is-disabled"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+              disabled
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- accent variant state row -->
+        <p class="mol-section-sub mol-section-sub--mt">accent variant states</p>
+        <div class="state-grid">
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+              type="button"
+              aria-label="Use suggested answer: Both"
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md is-hover"
+              type="button"
+              aria-label="Use suggested answer: Both"
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">active</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md is-active"
+              type="button"
+              aria-label="Use suggested answer: Both"
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md is-focus"
+              type="button"
+              aria-label="Use suggested answer: Both"
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">tapped</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md is-tapped"
+              type="button"
+              aria-label="Use suggested answer: Both"
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md is-disabled"
+              type="button"
+              aria-label="Use suggested answer: Both"
+              disabled
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ghost variant state row -->
+        <p class="mol-section-sub mol-section-sub--mt">ghost variant states</p>
+        <div class="state-grid">
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+              type="button"
+              aria-label="Use suggested answer: No"
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md is-hover"
+              type="button"
+              aria-label="Use suggested answer: No"
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">active</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md is-active"
+              type="button"
+              aria-label="Use suggested answer: No"
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md is-focus"
+              type="button"
+              aria-label="Use suggested answer: No"
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">tapped</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md is-tapped"
+              type="button"
+              aria-label="Use suggested answer: No"
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md is-disabled"
+              type="button"
+              aria-label="Use suggested answer: No"
+              disabled
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+        </div>
+      </div><!-- /2. state row -->
+
+      <hr class="section-divider">
+
+      <!-- ========================================================
+           3. COMPOSITION — Faux ask_user bottom sheet with
+              horizontal-scroll pill row of 5–7 pills
+      ======================================================== -->
+      <div class="variant">
+        <h3>3 · composition — ask_user bottom sheet with overflow-scroll pill row</h3>
+
+        <div class="faux-sheet" role="dialog" aria-label="Agent question">
+          <!-- Sheet handle -->
+          <div class="faux-sheet__handle" aria-hidden="true"></div>
+
+          <!-- Question text -->
+          <p class="faux-sheet__question type-body">Which approach should I use?</p>
+
+          <!-- Horizontal-scroll pill row -->
+          <div class="faux-sheet__pill-row-wrap">
+            <ul
+              class="faux-sheet__pill-row"
+              role="list"
+              aria-label="Suggested answers"
+            >
+              <!-- Accent = recommended -->
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: tRPC"
+                >
+                  <span class="mol-suggested-answer-pill__text">tRPC</span>
+                </button>
+              </li>
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: REST API"
+                >
+                  <span class="mol-suggested-answer-pill__text">REST API</span>
+                </button>
+              </li>
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: Both"
+                >
+                  <span class="mol-suggested-answer-pill__text">Both</span>
+                </button>
+              </li>
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: Neither"
+                >
+                  <span class="mol-suggested-answer-pill__text">Neither</span>
+                </button>
+              </li>
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: Show me a comparison"
+                >
+                  <span class="mol-suggested-answer-pill__text">Show me a comparison</span>
+                </button>
+              </li>
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: Use both approaches"
+                >
+                  <span class="mol-suggested-answer-pill__text">Use both approaches</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Faux text input -->
+          <div class="faux-sheet__input" aria-label="Or type a custom answer">
+            <span class="faux-sheet__input-text">Or type an answer…</span>
+          </div>
+        </div>
+      </div><!-- /3. composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ==========================================================
+         LIGHT PANE
+    ========================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ========================================================
+           1. VARIANT MATRIX — 3 variants × realistic answer labels
+      ======================================================== -->
+      <div class="variant">
+        <h3>1 · variant matrix — 3 variants with realistic answers</h3>
+
+        <!-- ---- default ----------------------------------------- -->
+        <p class="mol-section-sub">default — standard suggestion</p>
+        <div class="pill-row">
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: tRPC"
+          >
+            <span class="mol-suggested-answer-pill__text">tRPC</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: REST API"
+          >
+            <span class="mol-suggested-answer-pill__text">REST API</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Both"
+          >
+            <span class="mol-suggested-answer-pill__text">Both</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Yes"
+          >
+            <span class="mol-suggested-answer-pill__text">Yes</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: No"
+          >
+            <span class="mol-suggested-answer-pill__text">No</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Show me more"
+          >
+            <span class="mol-suggested-answer-pill__text">Show me more</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Use both approaches"
+          >
+            <span class="mol-suggested-answer-pill__text">Use both approaches</span>
+          </button>
+        </div>
+
+        <!-- ---- accent ------------------------------------------ -->
+        <p class="mol-section-sub">accent — recommended / highlighted</p>
+        <div class="pill-row">
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: tRPC"
+          >
+            <span class="mol-suggested-answer-pill__text">tRPC</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: REST API"
+          >
+            <span class="mol-suggested-answer-pill__text">REST API</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Both"
+          >
+            <span class="mol-suggested-answer-pill__text">Both</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Yes"
+          >
+            <span class="mol-suggested-answer-pill__text">Yes</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: No"
+          >
+            <span class="mol-suggested-answer-pill__text">No</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Show me more"
+          >
+            <span class="mol-suggested-answer-pill__text">Show me more</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Use both approaches"
+          >
+            <span class="mol-suggested-answer-pill__text">Use both approaches</span>
+          </button>
+        </div>
+
+        <!-- ---- ghost ------------------------------------------- -->
+        <p class="mol-section-sub">ghost — less-prominent option</p>
+        <div class="pill-row">
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: tRPC"
+          >
+            <span class="mol-suggested-answer-pill__text">tRPC</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: REST API"
+          >
+            <span class="mol-suggested-answer-pill__text">REST API</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Both"
+          >
+            <span class="mol-suggested-answer-pill__text">Both</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Yes"
+          >
+            <span class="mol-suggested-answer-pill__text">Yes</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: No"
+          >
+            <span class="mol-suggested-answer-pill__text">No</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Show me more"
+          >
+            <span class="mol-suggested-answer-pill__text">Show me more</span>
+          </button>
+
+          <button
+            class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+            type="button"
+            aria-label="Use suggested answer: Use both approaches"
+          >
+            <span class="mol-suggested-answer-pill__text">Use both approaches</span>
+          </button>
+        </div>
+      </div><!-- /1. variant matrix light -->
+
+      <hr class="section-divider">
+
+      <!-- ========================================================
+           2. STATE ROW — all 3 variants × 6 states
+      ======================================================== -->
+      <div class="variant">
+        <h3>2 · state row — all 3 variants, all states</h3>
+
+        <p class="mol-section-sub">default variant states</p>
+        <div class="state-grid">
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md is-hover"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">active</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md is-active"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md is-focus"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">tapped</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md is-tapped"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md is-disabled"
+              type="button"
+              aria-label="Use suggested answer: tRPC"
+              disabled
+            >
+              <span class="mol-suggested-answer-pill__text">tRPC</span>
+            </button>
+          </div>
+        </div>
+
+        <p class="mol-section-sub mol-section-sub--mt">accent variant states</p>
+        <div class="state-grid">
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+              type="button"
+              aria-label="Use suggested answer: Both"
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md is-hover"
+              type="button"
+              aria-label="Use suggested answer: Both"
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">active</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md is-active"
+              type="button"
+              aria-label="Use suggested answer: Both"
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md is-focus"
+              type="button"
+              aria-label="Use suggested answer: Both"
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">tapped</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md is-tapped"
+              type="button"
+              aria-label="Use suggested answer: Both"
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md is-disabled"
+              type="button"
+              aria-label="Use suggested answer: Both"
+              disabled
+            >
+              <span class="mol-suggested-answer-pill__text">Both</span>
+            </button>
+          </div>
+        </div>
+
+        <p class="mol-section-sub mol-section-sub--mt">ghost variant states</p>
+        <div class="state-grid">
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+              type="button"
+              aria-label="Use suggested answer: No"
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md is-hover"
+              type="button"
+              aria-label="Use suggested answer: No"
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">active</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md is-active"
+              type="button"
+              aria-label="Use suggested answer: No"
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md is-focus"
+              type="button"
+              aria-label="Use suggested answer: No"
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">tapped</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md is-tapped"
+              type="button"
+              aria-label="Use suggested answer: No"
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button
+              class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md is-disabled"
+              type="button"
+              aria-label="Use suggested answer: No"
+              disabled
+            >
+              <span class="mol-suggested-answer-pill__text">No</span>
+            </button>
+          </div>
+        </div>
+      </div><!-- /2. state row light -->
+
+      <hr class="section-divider">
+
+      <!-- ========================================================
+           3. COMPOSITION — Faux ask_user bottom sheet
+      ======================================================== -->
+      <div class="variant">
+        <h3>3 · composition — ask_user bottom sheet with overflow-scroll pill row</h3>
+
+        <div class="faux-sheet" role="dialog" aria-label="Agent question">
+          <div class="faux-sheet__handle" aria-hidden="true"></div>
+
+          <p class="faux-sheet__question type-body">Which approach should I use?</p>
+
+          <div class="faux-sheet__pill-row-wrap">
+            <ul
+              class="faux-sheet__pill-row"
+              role="list"
+              aria-label="Suggested answers"
+            >
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: tRPC"
+                >
+                  <span class="mol-suggested-answer-pill__text">tRPC</span>
+                </button>
+              </li>
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: REST API"
+                >
+                  <span class="mol-suggested-answer-pill__text">REST API</span>
+                </button>
+              </li>
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: Both"
+                >
+                  <span class="mol-suggested-answer-pill__text">Both</span>
+                </button>
+              </li>
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: Neither"
+                >
+                  <span class="mol-suggested-answer-pill__text">Neither</span>
+                </button>
+              </li>
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: Show me a comparison"
+                >
+                  <span class="mol-suggested-answer-pill__text">Show me a comparison</span>
+                </button>
+              </li>
+              <li role="listitem">
+                <button
+                  class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+                  type="button"
+                  aria-label="Use suggested answer: Use both approaches"
+                >
+                  <span class="mol-suggested-answer-pill__text">Use both approaches</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <div class="faux-sheet__input" aria-label="Or type a custom answer">
+            <span class="faux-sheet__input-text">Or type an answer…</span>
+          </div>
+        </div>
+      </div><!-- /3. composition light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>

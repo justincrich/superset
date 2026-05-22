@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-pending-approval-card — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-pending-approval-card — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. Zero raw color values.
+       Structural geometry comment-flagged where used.
+       ================================================================ */
+
+    /* ---- Base card ------------------------------------------------- */
+    .mol-pending-approval-card {
+      display:        flex;
+      align-items:    stretch;       /* let left-rule fill full card height */
+      gap:            var(--space-3);
+      padding:        var(--space-3) var(--space-4);
+      background:     var(--surface-raised);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      position:       relative;
+      overflow:       hidden;
+      min-height:     var(--touch-target-min); /* WCAG 2.5.8 / iOS HIG 44px */
+      transition:
+        opacity var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Left status rule — bleeds flush to card left edge --------- */
+    .mol-pending-approval-card__rule {
+      flex-shrink:         0;
+      margin-inline-start: calc(-1 * var(--space-4)); /* pull rule flush — structural */
+    }
+
+    /* ---- Content column -------------------------------------------- */
+    .mol-pending-approval-card__content {
+      flex:           1;
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      min-width:      0; /* enable text truncation */
+    }
+
+    /* ---- Header row: icon + title + optional badge ----------------- */
+    .mol-pending-approval-card__head {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+    }
+
+    /* ---- Leading icon — warning-colored by default (no --warning mod on atom) */
+    .mol-pending-approval-card__icon {
+      color:      var(--state-warning-fg);
+      flex-shrink: 0;
+    }
+
+    /* ---- Title — .type-body provides font/size/color --------------- */
+    .mol-pending-approval-card__title {
+      /* type-body provides all typographic values */
+    }
+
+    /* ---- Allowable badge — always-allowable variant only ----------- */
+    .mol-pending-approval-card__allowable-badge {
+      margin-left:  auto;       /* structural: push to trailing edge */
+      background:   var(--state-warning-bg);
+      color:        var(--state-warning-fg);
+      border:       1px solid var(--state-warning-fg);
+      /* atom-badge provides shape/font/sizing */
+    }
+
+    /* ---- Subtitle — type-meta provides mono/upper/muted; override color */
+    .mol-pending-approval-card__subtitle {
+      margin: 0;
+      /* type-meta provides uppercase mono muted; color matches expectation */
+    }
+
+    /* ---- Divider between subtitle and args ------------------------- */
+    .mol-pending-approval-card__divider {
+      /* atom-divider--hairline provides 1px border-subtle line */
+      width: 100%;
+      margin: 0;
+    }
+
+    /* ---- Args preview ---------------------------------------------- */
+    .mol-pending-approval-card__args {
+      margin:       0;
+      color:        var(--text-muted);
+      background:   var(--surface-sunken);
+      padding:      var(--space-2) var(--space-3);
+      border-radius: var(--radius-subtle);
+      overflow-x:   auto;
+      white-space:  pre;
+      /* type-code provides font-family/size/line-height */
+    }
+
+    /* ---- Detailed variant: scrollable args (up to 4 lines) --------- */
+    .mol-pending-approval-card--detailed .mol-pending-approval-card__args {
+      max-height: 120px; /* structural: ~4 lines at type-code line-height */
+      overflow-y: auto;
+    }
+
+    /* ================================================================
+       STATE MODIFIERS
+       ================================================================ */
+
+    /* -- is-resolving: optimistic-tap dimming while footer shows "Approving…" */
+    .mol-pending-approval-card.is-resolving {
+      opacity: 0.5; /* TOKEN_GAP: no --opacity-resolving token */
+      pointer-events: none;
+    }
+
+    /* -- is-approved: green rule; icon becomes success-colored */
+    .mol-pending-approval-card.is-approved .mol-pending-approval-card__icon {
+      color: var(--state-success-fg);
+    }
+
+    /* -- is-declined: red rule; icon becomes danger-colored */
+    .mol-pending-approval-card.is-declined .mol-pending-approval-card__icon {
+      color: var(--state-danger-fg);
+    }
+
+    /* ================================================================
+       PREVIEW-ONLY: Composition demo helpers
+       ================================================================ */
+
+    /* Faux chat thread container */
+    .demo-chat-thread {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      max-width:      380px; /* structural: approximate mobile chat column width */
+    }
+
+    /* Faux assistant message head */
+    .demo-asst-head {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+      padding-inline: var(--space-1);
+    }
+
+    .demo-asst-avatar {
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      width:           28px;       /* structural: atom-avatar --sm */
+      height:          28px;
+      border-radius:   var(--radius-round);
+      background:      var(--accent-primary);
+      color:           var(--accent-primary-fg);
+      font-size:       var(--font-size-label);
+      font-weight:     var(--font-weight-label);
+      flex-shrink:     0;
+    }
+
+    .demo-asst-name {
+      font-size:      var(--font-size-label);
+      font-weight:    var(--font-weight-label);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      font-family:    var(--font-mono);
+      text-transform: uppercase;
+    }
+
+    /* Faux assistant body text above the card */
+    .demo-asst-body {
+      padding-inline:  var(--space-1);
+      font-size:       var(--font-size-body-sm);
+      color:           var(--text-body);
+      line-height:     var(--line-height-normal);
+      font-family:     var(--font-body);
+      margin:          0;
+    }
+
+    /* Faux sticky footer stub at viewport bottom */
+    .demo-footer-stub {
+      position:       sticky;
+      bottom:         0;
+      background:     var(--surface-overlay);
+      border-top:     1px solid var(--border-subtle);
+      padding:        var(--space-3) var(--space-4);
+      display:        flex;
+      gap:            var(--space-2);
+      border-radius:  0 0 var(--radius-default) var(--radius-default);
+    }
+
+    .demo-footer-stub__label {
+      font-size:      var(--font-size-meta);
+      font-family:    var(--font-mono);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-faint);
+      align-self:     center;
+      font-weight:    var(--font-weight-meta);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================================================================
+       Header
+       ================================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">pending-approval-card</h1>
+    <p class="crumb">molecule · inline approval card · UC-PAUSE-01 §A</p>
+  </header>
+
+  <!-- ================================================================
+       Pegboard — dark pane first, then light pane
+       ================================================================ -->
+  <div class="pegboard">
+
+    <!-- ==============================================================
+         DARK PANE
+         ============================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- Section 1: Variant matrix ----------------------------- -->
+      <div class="variant">
+        <h3>variant matrix — 3 variants</h3>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-4); max-width: 400px;">
+
+          <!-- default -->
+          <div class="state">
+            <span class="state-label">default — bash · run_tests.sh</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--default"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool approval required: bash · run_tests.sh"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <!-- radio / ⌖ target icon — signals "action required" -->
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+              </div>
+            </article>
+          </div>
+
+          <!-- always-allowable -->
+          <div class="state">
+            <span class="state-label">always-allowable — bash · ls (allowable category)</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--always-allowable"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool approval required: bash · ls — allowable category"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                  <!-- ALLOWABLE badge — trailing in header row -->
+                  <span
+                    class="atom-badge atom-badge--sm mol-pending-approval-card__allowable-badge"
+                    title="This tool category can be set to always-allow"
+                  >ALLOWABLE</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · ls</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ ls -la /var/log</pre>
+              </div>
+            </article>
+          </div>
+
+          <!-- detailed -->
+          <div class="state">
+            <span class="state-label">detailed — multi-line args (5 lines + scroll)</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--detailed"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool approval required: write · apps/web/src/auth/session.ts"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <!-- file-edit icon for write operations -->
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">write · apps/web/src/auth/session.ts</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <!-- 5-line args block — scrollable at 120px max-height -->
+                <pre class="mol-pending-approval-card__args type-code" tabindex="0">import { type Session } from '@auth/core/types';
+
+export const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+export const SESSION_COOKIE  = '__session';
+
+export function isValidSession(s: Session | null): s is Session {
+  return s !== null &amp;&amp; typeof s.user?.id === 'string';
+}</pre>
+              </div>
+            </article>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+      <!-- ---- Section 2: State row ---------------------------------- -->
+      <div class="variant">
+        <h3>state row — default / is-resolving / is-approved / is-declined</h3>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-4); max-width: 400px;">
+
+          <!-- default (pending) -->
+          <div class="state">
+            <span class="state-label">default (pending)</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--default"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool approval required: bash · run_tests.sh"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+              </div>
+            </article>
+          </div>
+
+          <!-- is-resolving -->
+          <div class="state">
+            <span class="state-label">is-resolving (optimistic-tap; footer shows "Approving…")</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--default is-resolving"
+              role="status"
+              aria-live="polite"
+              aria-label="Approving: bash · run_tests.sh"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+              </div>
+            </article>
+          </div>
+
+          <!-- is-approved -->
+          <div class="state">
+            <span class="state-label">is-approved (rule transitions to --done green)</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--default is-approved"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool approved: bash · run_tests.sh"
+            >
+              <!-- Rule swaps to --done on approval -->
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--done mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <!-- check-circle icon for approved state -->
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approved</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+              </div>
+            </article>
+          </div>
+
+          <!-- is-declined -->
+          <div class="state">
+            <span class="state-label">is-declined (rule transitions to --error red)</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--default is-declined"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool declined: bash · run_tests.sh"
+            >
+              <!-- Rule swaps to --error on decline -->
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--error mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <!-- x-circle icon for declined state -->
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool declined</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+              </div>
+            </article>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+      <!-- ---- Section 3: Composition demo --------------------------- -->
+      <div class="variant">
+        <h3>composition — faux chat thread with approval-footer stub</h3>
+
+        <div class="demo-chat-thread">
+
+          <!-- Faux assistant message head -->
+          <div class="demo-asst-head">
+            <div class="demo-asst-avatar" aria-hidden="true">C</div>
+            <span class="demo-asst-name">Claude</span>
+          </div>
+
+          <!-- Faux assistant body text -->
+          <p class="demo-asst-body">I'll run the billing tests to verify nothing regressed before proceeding.</p>
+
+          <!-- The pending-approval-card inline in the message stream -->
+          <article
+            class="mol-pending-approval-card mol-pending-approval-card--default"
+            role="status"
+            aria-live="polite"
+            aria-label="Tool approval required: bash · run_tests.sh"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+              aria-hidden="true"
+            ></span>
+            <div class="mol-pending-approval-card__content">
+              <header class="mol-pending-approval-card__head">
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+              </header>
+              <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+              <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+              <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+            </div>
+          </article>
+
+          <!-- Faux sticky approval-footer stub (approval-footer molecule) -->
+          <div class="demo-footer-stub" aria-label="Approval footer (approval-footer molecule — stub)">
+            <button class="atom-button atom-button--sm atom-button--primary" type="button">Approve</button>
+            <button class="atom-button atom-button--sm atom-button--secondary" type="button">Always Allow</button>
+            <button class="atom-button atom-button--sm atom-button--ghost" type="button">Decline</button>
+            <span class="demo-footer-stub__label" style="margin-left: auto;">↑ approval-footer</span>
+          </div>
+
+        </div>
+      </div><!-- /composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ==============================================================
+         LIGHT PANE
+         ============================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- Section 1: Variant matrix ----------------------------- -->
+      <div class="variant">
+        <h3>variant matrix — 3 variants</h3>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-4); max-width: 400px;">
+
+          <!-- default -->
+          <div class="state">
+            <span class="state-label">default — bash · run_tests.sh</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--default"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool approval required: bash · run_tests.sh"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+              </div>
+            </article>
+          </div>
+
+          <!-- always-allowable -->
+          <div class="state">
+            <span class="state-label">always-allowable — bash · ls (allowable category)</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--always-allowable"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool approval required: bash · ls — allowable category"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                  <span
+                    class="atom-badge atom-badge--sm mol-pending-approval-card__allowable-badge"
+                    title="This tool category can be set to always-allow"
+                  >ALLOWABLE</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · ls</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ ls -la /var/log</pre>
+              </div>
+            </article>
+          </div>
+
+          <!-- detailed -->
+          <div class="state">
+            <span class="state-label">detailed — multi-line args (5 lines + scroll)</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--detailed"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool approval required: write · apps/web/src/auth/session.ts"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">write · apps/web/src/auth/session.ts</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code" tabindex="0">import { type Session } from '@auth/core/types';
+
+export const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+export const SESSION_COOKIE  = '__session';
+
+export function isValidSession(s: Session | null): s is Session {
+  return s !== null &amp;&amp; typeof s.user?.id === 'string';
+}</pre>
+              </div>
+            </article>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+      <!-- ---- Section 2: State row ---------------------------------- -->
+      <div class="variant">
+        <h3>state row — default / is-resolving / is-approved / is-declined</h3>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-4); max-width: 400px;">
+
+          <!-- default (pending) -->
+          <div class="state">
+            <span class="state-label">default (pending)</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--default"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool approval required: bash · run_tests.sh"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+              </div>
+            </article>
+          </div>
+
+          <!-- is-resolving -->
+          <div class="state">
+            <span class="state-label">is-resolving (optimistic-tap; footer shows "Approving…")</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--default is-resolving"
+              role="status"
+              aria-live="polite"
+              aria-label="Approving: bash · run_tests.sh"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+              </div>
+            </article>
+          </div>
+
+          <!-- is-approved -->
+          <div class="state">
+            <span class="state-label">is-approved (rule transitions to --done green)</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--default is-approved"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool approved: bash · run_tests.sh"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--done mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool approved</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+              </div>
+            </article>
+          </div>
+
+          <!-- is-declined -->
+          <div class="state">
+            <span class="state-label">is-declined (rule transitions to --error red)</span>
+            <article
+              class="mol-pending-approval-card mol-pending-approval-card--default is-declined"
+              role="status"
+              aria-live="polite"
+              aria-label="Tool declined: bash · run_tests.sh"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--error mol-pending-approval-card__rule"
+                aria-hidden="true"
+              ></span>
+              <div class="mol-pending-approval-card__content">
+                <header class="mol-pending-approval-card__head">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                  <span class="mol-pending-approval-card__title type-body">Tool declined</span>
+                </header>
+                <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+                <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+                <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+              </div>
+            </article>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+      <!-- ---- Section 3: Composition demo --------------------------- -->
+      <div class="variant">
+        <h3>composition — faux chat thread with approval-footer stub</h3>
+
+        <div class="demo-chat-thread">
+
+          <!-- Faux assistant message head -->
+          <div class="demo-asst-head">
+            <div class="demo-asst-avatar" aria-hidden="true">C</div>
+            <span class="demo-asst-name">Claude</span>
+          </div>
+
+          <!-- Faux assistant body text -->
+          <p class="demo-asst-body">I'll run the billing tests to verify nothing regressed before proceeding.</p>
+
+          <!-- The pending-approval-card inline in the message stream -->
+          <article
+            class="mol-pending-approval-card mol-pending-approval-card--default"
+            role="status"
+            aria-live="polite"
+            aria-label="Tool approval required: bash · run_tests.sh"
+          >
+            <span
+              class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+              aria-hidden="true"
+            ></span>
+            <div class="mol-pending-approval-card__content">
+              <header class="mol-pending-approval-card__head">
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+              </header>
+              <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+              <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true" />
+              <pre class="mol-pending-approval-card__args type-code">$ bun test --filter billing</pre>
+            </div>
+          </article>
+
+          <!-- Faux sticky approval-footer stub (approval-footer molecule) -->
+          <div class="demo-footer-stub" aria-label="Approval footer (approval-footer molecule — stub)">
+            <button class="atom-button atom-button--sm atom-button--primary" type="button">Approve</button>
+            <button class="atom-button atom-button--sm atom-button--secondary" type="button">Always Allow</button>
+            <button class="atom-button atom-button--sm atom-button--ghost" type="button">Decline</button>
+            <span class="demo-footer-stub__label" style="margin-left: auto;">↑ approval-footer</span>
+          </div>
+
+        </div>
+      </div><!-- /composition -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ================================================================
+       Token recipe table
+       ================================================================ -->
+  <div style="padding: var(--spacing-section) var(--spacing-between); border-top: 1px solid var(--border-subtle);">
+    <h2 style="font-family: var(--font-mono); font-size: var(--font-size-body-sm); font-weight: var(--font-weight-heading); letter-spacing: var(--tracking-tight); color: var(--text-heading); margin: 0 0 var(--spacing-between);">Token recipe</h2>
+
+    <h3 style="font-family: var(--font-mono); font-size: var(--font-size-meta); font-weight: var(--font-weight-meta); letter-spacing: var(--tracking-uppercase); text-transform: uppercase; color: var(--text-muted); margin: 0 0 var(--space-3);">Atoms used</h3>
+    <table class="recipe" style="margin-bottom: var(--space-6);">
+      <thead>
+        <tr>
+          <th>Atom</th>
+          <th>Class(es) applied</th>
+          <th>Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>atom-tool-status-rule</td>
+          <td><code>--vertical --pending</code> / <code>--done</code> / <code>--error</code></td>
+          <td>3px colored left accent; glow on pending</td>
+        </tr>
+        <tr>
+          <td>atom-icon-glyph</td>
+          <td><code>--sm</code> + warning/success/danger color via molecule state modifier</td>
+          <td>Leading ⌖ / check / ✕ icon</td>
+        </tr>
+        <tr>
+          <td>atom-divider</td>
+          <td><code>--hairline</code> (as <code>&lt;hr&gt;</code>)</td>
+          <td>Hairline separator between subtitle and args preview</td>
+        </tr>
+        <tr>
+          <td>atom-badge</td>
+          <td><code>--sm</code> + molecule local warning color</td>
+          <td>"ALLOWABLE" category hint (always-allowable variant only)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-family: var(--font-mono); font-size: var(--font-size-meta); font-weight: var(--font-weight-meta); letter-spacing: var(--tracking-uppercase); text-transform: uppercase; color: var(--text-muted); margin: 0 0 var(--space-3);">Token map</h3>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Dark resolved</th>
+          <th>Light resolved</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Card background</td>
+          <td>--surface-raised</td>
+          <td>elevated dark</td>
+          <td>elevated light</td>
+          <td>Lifted card base</td>
+        </tr>
+        <tr>
+          <td>Card border</td>
+          <td>--border-subtle</td>
+          <td>subtle dark</td>
+          <td>subtle light</td>
+          <td>1px hairline frame</td>
+        </tr>
+        <tr>
+          <td>Card radius</td>
+          <td>--radius-default</td>
+          <td>~8px</td>
+          <td>~8px</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Pending rule color + glow</td>
+          <td>--state-warning-fg</td>
+          <td>#d4a84b</td>
+          <td>amber</td>
+          <td>Via atom; 0 0 4px glow included</td>
+        </tr>
+        <tr>
+          <td>Approved rule color</td>
+          <td>--state-success-fg</td>
+          <td>#50a878</td>
+          <td>green</td>
+          <td>Via atom-tool-status-rule--done</td>
+        </tr>
+        <tr>
+          <td>Declined rule color</td>
+          <td>--state-danger-fg</td>
+          <td>#cc4444</td>
+          <td>red</td>
+          <td>Via atom-tool-status-rule--error</td>
+        </tr>
+        <tr>
+          <td>Icon color (pending)</td>
+          <td>--state-warning-fg</td>
+          <td>#d4a84b</td>
+          <td>amber</td>
+          <td>Set by molecule (no --warning mod on atom-icon-glyph)</td>
+        </tr>
+        <tr>
+          <td>Icon color (approved)</td>
+          <td>--state-success-fg</td>
+          <td>#50a878</td>
+          <td>green</td>
+          <td>Set by .is-approved modifier</td>
+        </tr>
+        <tr>
+          <td>Icon color (declined)</td>
+          <td>--state-danger-fg</td>
+          <td>#cc4444</td>
+          <td>red</td>
+          <td>Set by .is-declined modifier</td>
+        </tr>
+        <tr>
+          <td>Title color</td>
+          <td>--text-body</td>
+          <td>body text dark</td>
+          <td>body text light</td>
+          <td>Via .type-body</td>
+        </tr>
+        <tr>
+          <td>Subtitle color</td>
+          <td>--text-muted</td>
+          <td>muted dark</td>
+          <td>muted light</td>
+          <td>Via .type-meta</td>
+        </tr>
+        <tr>
+          <td>Args background</td>
+          <td>--surface-sunken</td>
+          <td>sunken dark</td>
+          <td>sunken light</td>
+          <td>Inset code block</td>
+        </tr>
+        <tr>
+          <td>Args text</td>
+          <td>--text-muted</td>
+          <td>muted dark</td>
+          <td>muted light</td>
+          <td>Via local override on pre</td>
+        </tr>
+        <tr>
+          <td>Args font</td>
+          <td>--font-mono (via .type-code)</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Monospaced arg preview</td>
+        </tr>
+        <tr>
+          <td>Args radius</td>
+          <td>--radius-subtle</td>
+          <td>~4px</td>
+          <td>~4px</td>
+          <td>Code block corners</td>
+        </tr>
+        <tr>
+          <td>Detailed args max-height</td>
+          <td>120px</td>
+          <td>—</td>
+          <td>—</td>
+          <td>TOKEN_GAP: structural ~4-line cap</td>
+        </tr>
+        <tr>
+          <td>is-resolving opacity</td>
+          <td>0.5</td>
+          <td>—</td>
+          <td>—</td>
+          <td>TOKEN_GAP: no --opacity-resolving token</td>
+        </tr>
+        <tr>
+          <td>Padding inline</td>
+          <td>--space-4</td>
+          <td>16px</td>
+          <td>16px</td>
+          <td>Horizontal card padding</td>
+        </tr>
+        <tr>
+          <td>Padding block</td>
+          <td>--space-3</td>
+          <td>12px</td>
+          <td>12px</td>
+          <td>Vertical card padding</td>
+        </tr>
+        <tr>
+          <td>Gap (rule → content)</td>
+          <td>--space-3</td>
+          <td>12px</td>
+          <td>12px</td>
+          <td>Horizontal gap after rule strip</td>
+        </tr>
+        <tr>
+          <td>Header gap</td>
+          <td>--space-2</td>
+          <td>8px</td>
+          <td>8px</td>
+          <td>Between icon / title / badge</td>
+        </tr>
+        <tr>
+          <td>Content stack gap</td>
+          <td>--space-2</td>
+          <td>8px</td>
+          <td>8px</td>
+          <td>Between head / subtitle / divider / args</td>
+        </tr>
+        <tr>
+          <td>Args padding</td>
+          <td>--space-2 --space-3</td>
+          <td>8px 12px</td>
+          <td>8px 12px</td>
+          <td>Inside code block</td>
+        </tr>
+        <tr>
+          <td>Rule pull</td>
+          <td>calc(-1 * var(--space-4))</td>
+          <td>-16px</td>
+          <td>-16px</td>
+          <td>Bleeds rule flush to card left edge</td>
+        </tr>
+        <tr>
+          <td>Min height</td>
+          <td>--touch-target-min</td>
+          <td>44px</td>
+          <td>44px</td>
+          <td>WCAG 2.5.8 / iOS HIG touch target</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-family: var(--font-mono); font-size: var(--font-size-meta); font-weight: var(--font-weight-meta); letter-spacing: var(--tracking-uppercase); text-transform: uppercase; color: var(--text-muted); margin: var(--space-6) 0 var(--space-3);">TOKEN_GAPs</h3>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Gap</th>
+          <th>Location</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>opacity: 0.5</code> for <code>is-resolving</code></td>
+          <td><code>.mol-pending-approval-card.is-resolving</code></td>
+          <td>No <code>--opacity-resolving</code> token exists. Structural exception.</td>
+        </tr>
+        <tr>
+          <td><code>max-height: 120px</code> for detailed args</td>
+          <td><code>.mol-pending-approval-card--detailed .mol-pending-approval-card__args</code></td>
+          <td>No token for scroll-area height cap. Structural: ~4 lines at type-code line-height.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
