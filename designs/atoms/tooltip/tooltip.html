@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · tooltip</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-tooltip — token-governed contextual hint bubble
+       Composition purity: only .atom-tooltip rules here.
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Zero raw px in padding/margin/gap except permitted
+       structural geometry (arrow: 6px, gap: 8px, z-index: 100).
+       ============================================================ */
+
+    /* ---- Base ------------------------------------------------- */
+    .atom-tooltip {
+      position:      absolute;
+      z-index:       100;
+      display:       inline-flex;
+      flex-direction: column;
+      align-items:   center;
+      pointer-events: none;
+
+      /* Typography */
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      line-height:    var(--line-height-tight);
+      white-space:    nowrap;
+
+      /* Motion — initial state is is-visible for preview;
+         entering/exiting classes override */
+      opacity:   1;
+      transform: scale(1);
+      transition:
+        opacity   var(--motion-fast) var(--motion-ease-out),
+        transform var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Tooltip body ---------------------------------------- */
+    .atom-tooltip__body {
+      display:          inline-flex;
+      align-items:      center;
+      gap:              var(--space-2);
+      padding:          var(--space-2) var(--space-3);
+      border-radius:    var(--radius-default);
+      box-shadow:       var(--elevation-overlay);
+    }
+
+    /* ---- Arrow base ------------------------------------------ */
+    .atom-tooltip__arrow {
+      display:   block;
+      flex-shrink: 0;
+      /* 6px wide × 6px tall diamond half via clip-path */
+      width:     12px;
+      height:    6px;
+    }
+
+    /* ============================================================
+       VARIANT: inverse (default)
+       bg: --surface-inverse  |  text: --text-on-inverse
+       ============================================================ */
+    .atom-tooltip--inverse .atom-tooltip__body {
+      background-color: var(--surface-inverse);
+      color:            var(--text-on-inverse);
+      border:           none;
+    }
+
+    .atom-tooltip--inverse .atom-tooltip__arrow {
+      background-color: var(--surface-inverse);
+    }
+
+    /* ============================================================
+       VARIANT: default
+       bg: --surface-overlay  |  text: --text-body  |  border
+       ============================================================ */
+    .atom-tooltip--default .atom-tooltip__body {
+      background-color: var(--surface-overlay);
+      color:            var(--text-body);
+      border:           1px solid var(--border-default);
+    }
+
+    .atom-tooltip--default .atom-tooltip__arrow {
+      background-color: var(--surface-overlay);
+      outline:          1px solid var(--border-default);
+      outline-offset:   -1px;
+    }
+
+    /* ============================================================
+       VARIANT: shortcut — same surface as default, body contains kbd
+       ============================================================ */
+    .atom-tooltip--shortcut .atom-tooltip__body {
+      background-color: var(--surface-overlay);
+      color:            var(--text-body);
+      border:           1px solid var(--border-default);
+    }
+
+    .atom-tooltip--shortcut .atom-tooltip__arrow {
+      background-color: var(--surface-overlay);
+      outline:          1px solid var(--border-default);
+      outline-offset:   -1px;
+    }
+
+    /* ---- Inline kbd glyph inside shortcut body --------------- */
+    .atom-tooltip__kbd {
+      display:          inline-flex;
+      align-items:      center;
+      justify-content:  center;
+      padding:          0 var(--space-1);
+      border-radius:    var(--radius-subtle);
+      background-color: var(--surface-soft);
+      border:           1px solid var(--border-default);
+      color:            var(--text-muted);
+      font-family:      var(--font-mono);
+      font-size:        var(--font-size-meta);
+      font-weight:      var(--font-weight-meta);
+      letter-spacing:   var(--tracking-mono);
+      line-height:      var(--line-height-tight);
+    }
+
+    /* ============================================================
+       POSITIONS — arrow placement + transform-origin
+       Arrow is a 6px diamond rotated via clip-path.
+       8px gap is enforced by the bottom/top offset accounting
+       for arrow height (6px) + 2px clearance.
+       ============================================================ */
+
+    /* ---- TOP (default) — tooltip above trigger, arrow below -- */
+    .atom-tooltip--top {
+      bottom:           calc(100% + 8px);
+      left:             50%;
+      transform:        translateX(-50%) scale(1);
+      transform-origin: bottom center;
+      flex-direction:   column;
+    }
+    .atom-tooltip--top.is-entering,
+    .atom-tooltip--top.is-exiting {
+      transform: translateX(-50%) scale(0.95);
+    }
+    .atom-tooltip--top .atom-tooltip__arrow {
+      /* Arrow pointing down: triangle with peak at bottom center */
+      clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+      order: 2;
+    }
+
+    /* ---- BOTTOM — tooltip below trigger, arrow above --------- */
+    .atom-tooltip--bottom {
+      top:              calc(100% + 8px);
+      left:             50%;
+      transform:        translateX(-50%) scale(1);
+      transform-origin: top center;
+      flex-direction:   column;
+      align-items:      center;
+    }
+    .atom-tooltip--bottom.is-entering,
+    .atom-tooltip--bottom.is-exiting {
+      transform: translateX(-50%) scale(0.95);
+    }
+    .atom-tooltip--bottom .atom-tooltip__body { order: 2; }
+    .atom-tooltip--bottom .atom-tooltip__arrow {
+      /* Arrow pointing up: triangle with peak at top center */
+      clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+      order: 1;
+    }
+
+    /* ---- LEFT — tooltip left of trigger, arrow points right -- */
+    .atom-tooltip--left {
+      right:            calc(100% + 8px);
+      top:              50%;
+      transform:        translateY(-50%) scale(1);
+      transform-origin: right center;
+      flex-direction:   row;
+      align-items:      center;
+    }
+    .atom-tooltip--left.is-entering,
+    .atom-tooltip--left.is-exiting {
+      transform: translateY(-50%) scale(0.95);
+    }
+    .atom-tooltip--left .atom-tooltip__arrow {
+      /* Arrow pointing right: rotated 90deg equivalent via clip-path */
+      clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
+      width:  6px;
+      height: 12px;
+      order:  2;
+    }
+
+    /* ---- RIGHT — tooltip right of trigger, arrow points left - */
+    .atom-tooltip--right {
+      left:             calc(100% + 8px);
+      top:              50%;
+      transform:        translateY(-50%) scale(1);
+      transform-origin: left center;
+      flex-direction:   row;
+      align-items:      center;
+    }
+    .atom-tooltip--right.is-entering,
+    .atom-tooltip--right.is-exiting {
+      transform: translateY(-50%) scale(0.95);
+    }
+    .atom-tooltip--right .atom-tooltip__body { order: 2; }
+    .atom-tooltip--right .atom-tooltip__arrow {
+      /* Arrow pointing left */
+      clip-path: polygon(100% 0%, 0% 50%, 100% 100%);
+      width:  6px;
+      height: 12px;
+      order:  1;
+    }
+
+    /* ============================================================
+       STATES
+       ============================================================ */
+    .atom-tooltip.is-entering {
+      opacity: 0;
+      /* transform handled per-position above */
+    }
+    .atom-tooltip.is-visible {
+      opacity: 1;
+      /* transform handled per-position above (scale(1) baseline) */
+    }
+    .atom-tooltip.is-exiting {
+      opacity: 0;
+      /* same end state as entering — reverse transition */
+    }
+
+    /* ============================================================
+       PREVIEW LAYOUT HELPERS
+       (not part of the atom; scaffolding only)
+       ============================================================ */
+
+    /* Trigger wrapper — positions tooltip relative to mock button */
+    .tooltip-trigger {
+      position: relative;
+      display:  inline-flex;
+    }
+
+    /* Mock icon-button used as trigger in preview */
+    .mock-icon-btn {
+      display:          inline-flex;
+      align-items:      center;
+      justify-content:  center;
+      width:            var(--touch-target-min);
+      height:           var(--touch-target-min);
+      border-radius:    var(--radius-default);
+      background-color: var(--surface-soft);
+      border:           1px solid var(--border-default);
+      color:            var(--text-muted);
+      font-size:        var(--font-size-body-sm);
+      font-family:      var(--font-mono);
+      cursor:           pointer;
+      flex-shrink:      0;
+    }
+
+    /* Variant row — horizontal flex strip */
+    .tooltip-variant-row {
+      display:     flex;
+      flex-wrap:   wrap;
+      align-items: flex-end;
+      gap:         var(--space-8);
+      padding-top: var(--space-8); /* room for top-positioned tooltip */
+      padding-bottom: var(--space-4);
+    }
+
+    /* Position matrix — 3×3 grid with center cell holding trigger */
+    .tooltip-position-grid {
+      display:               grid;
+      grid-template-columns: 1fr auto 1fr;
+      grid-template-rows:    auto auto auto;
+      gap:                   var(--space-4);
+      align-items:           center;
+      justify-items:         center;
+      width:                 fit-content;
+    }
+
+    /* State strip — horizontal */
+    .tooltip-state-strip {
+      display:     flex;
+      align-items: flex-end;
+      gap:         var(--space-8);
+      padding-top: var(--space-8);
+      padding-bottom: var(--space-4);
+    }
+
+    /* State cell */
+    .tooltip-state-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-3);
+    }
+
+    /* Composition area */
+    .tooltip-composition-area {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-6);
+    }
+
+    /* Composer toolbar mock */
+    .mock-composer-toolbar {
+      display:          inline-flex;
+      align-items:      center;
+      gap:              var(--space-2);
+      padding:          var(--space-2) var(--space-3);
+      background-color: var(--surface-raised);
+      border-radius:    var(--radius-default);
+      border:           1px solid var(--border-subtle);
+    }
+
+    /* Session row mock */
+    .mock-session-row {
+      display:          flex;
+      align-items:      center;
+      gap:              var(--space-3);
+      padding:          var(--space-3) var(--space-4);
+      background-color: var(--surface-raised);
+      border-radius:    var(--radius-default);
+      border:           1px solid var(--border-subtle);
+      width:            280px;
+    }
+
+    .mock-session-row-text {
+      flex:           1;
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      color:          var(--text-body);
+      overflow:       hidden;
+      text-overflow:  ellipsis;
+      white-space:    nowrap;
+    }
+
+    .mock-session-row-meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+    }
+
+    .composition-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin-bottom:  var(--space-2);
+    }
+
+    .recipe-footer {
+      padding:    var(--spacing-section) var(--spacing-between);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .recipe-footer h2 {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-heading);
+      letter-spacing: var(--tracking-tight);
+      color:          var(--text-heading);
+      margin:         0 0 var(--spacing-between);
+    }
+
+    /* Position label badges in the grid */
+    .pos-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">tooltip</h1>
+    <p class="crumb">atom · contextual hint bubble</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ============================================================
+         DARK PANE
+         ============================================================ -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ========================================================
+           1. VARIANT MATRIX — 3 variants, top-position default
+           ======================================================== -->
+      <div class="variant">
+        <h3>variant matrix</h3>
+        <div class="state">
+          <span class="state-label">inverse · default · shortcut — all pointing top</span>
+          <div class="tooltip-variant-row">
+
+            <!-- inverse -->
+            <div class="state">
+              <span class="state-label">inverse</span>
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Send message" aria-describedby="tt-dark-inverse">↑</button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-dark-inverse">
+                  <span class="atom-tooltip__body">Send message</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- default -->
+            <div class="state">
+              <span class="state-label">default</span>
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Open command palette" aria-describedby="tt-dark-default">⌘</button>
+                <span class="atom-tooltip atom-tooltip--default atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-dark-default">
+                  <span class="atom-tooltip__body">Open command palette</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- shortcut -->
+            <div class="state">
+              <span class="state-label">shortcut</span>
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Send message" aria-describedby="tt-dark-shortcut">⌘⏎</button>
+                <span class="atom-tooltip atom-tooltip--shortcut atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-dark-shortcut">
+                  <span class="atom-tooltip__body">
+                    Send message
+                    <span class="atom-tooltip__kbd">⌘</span>
+                    <span class="atom-tooltip__kbd">⏎</span>
+                  </span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /variant matrix dark -->
+
+      <!-- ========================================================
+           2. POSITION MATRIX — inverse variant in all 4 directions
+           ======================================================== -->
+      <div class="variant">
+        <h3>position matrix</h3>
+        <div class="state">
+          <span class="state-label">top · bottom · left · right — inverse variant</span>
+
+          <div class="tooltip-position-grid" style="margin-top: var(--space-6); margin-bottom: var(--space-6);">
+
+            <!-- Row 1: empty | top tooltip trigger | empty -->
+            <div></div>
+            <div class="tooltip-trigger" style="margin-bottom: var(--space-8);">
+              <button class="mock-icon-btn" aria-label="Top tooltip" aria-describedby="tt-dark-pos-top">↑</button>
+              <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                    role="tooltip" id="tt-dark-pos-top">
+                <span class="atom-tooltip__body">Top tooltip</span>
+                <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+              </span>
+            </div>
+            <div></div>
+
+            <!-- Row 2: left trigger | center label | right trigger -->
+            <div class="tooltip-trigger" style="margin-right: var(--space-8);">
+              <button class="mock-icon-btn" aria-label="Left tooltip" aria-describedby="tt-dark-pos-left">←</button>
+              <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--left is-visible"
+                    role="tooltip" id="tt-dark-pos-left">
+                <span class="atom-tooltip__body">Left tooltip</span>
+                <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+              </span>
+            </div>
+
+            <div class="mock-icon-btn" style="background-color: var(--surface-active); border-color: var(--border-strong);">⊙</div>
+
+            <div class="tooltip-trigger" style="margin-left: var(--space-8);">
+              <button class="mock-icon-btn" aria-label="Right tooltip" aria-describedby="tt-dark-pos-right">→</button>
+              <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--right is-visible"
+                    role="tooltip" id="tt-dark-pos-right">
+                <span class="atom-tooltip__body">Right tooltip</span>
+                <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+              </span>
+            </div>
+
+            <!-- Row 3: empty | bottom tooltip trigger | empty -->
+            <div></div>
+            <div class="tooltip-trigger" style="margin-top: var(--space-8);">
+              <button class="mock-icon-btn" aria-label="Bottom tooltip" aria-describedby="tt-dark-pos-bottom">↓</button>
+              <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--bottom is-visible"
+                    role="tooltip" id="tt-dark-pos-bottom">
+                <span class="atom-tooltip__body">Bottom tooltip</span>
+                <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+              </span>
+            </div>
+            <div></div>
+
+          </div>
+        </div>
+      </div><!-- /position matrix dark -->
+
+      <!-- ========================================================
+           3. STATE ROW — is-entering (mid-snapshot), is-visible, is-exiting
+           ======================================================== -->
+      <div class="variant">
+        <h3>states</h3>
+        <div class="state">
+          <span class="state-label">is-entering (mid) · is-visible · is-exiting (mid)</span>
+          <div class="tooltip-state-strip">
+
+            <!-- is-entering: opacity 0, scale 0.95 mid-snapshot -->
+            <div class="tooltip-state-cell">
+              <span class="state-label">is-entering</span>
+              <div class="tooltip-trigger" style="margin-top: var(--space-6);">
+                <button class="mock-icon-btn" aria-label="Entering state">▲</button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-entering"
+                      role="tooltip"
+                      style="opacity: 0.35; transform: translateX(-50%) scale(0.95);">
+                  <span class="atom-tooltip__body">Send message</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- is-visible: full opacity, scale 1 -->
+            <div class="tooltip-state-cell">
+              <span class="state-label">is-visible</span>
+              <div class="tooltip-trigger" style="margin-top: var(--space-6);">
+                <button class="mock-icon-btn" aria-label="Visible state">▲</button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                      role="tooltip">
+                  <span class="atom-tooltip__body">Send message</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- is-exiting: opacity fading out, scale 0.95 mid-snapshot -->
+            <div class="tooltip-state-cell">
+              <span class="state-label">is-exiting</span>
+              <div class="tooltip-trigger" style="margin-top: var(--space-6);">
+                <button class="mock-icon-btn" aria-label="Exiting state">▲</button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-exiting"
+                      role="tooltip"
+                      style="opacity: 0.15; transform: translateX(-50%) scale(0.95);">
+                  <span class="atom-tooltip__body">Send message</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /states dark -->
+
+      <!-- ========================================================
+           4. COMPOSITION EXAMPLES
+           ======================================================== -->
+      <div class="variant">
+        <h3>composition examples</h3>
+        <div class="tooltip-composition-area">
+
+          <!-- 4a. Composer toolbar icon-buttons with tooltips -->
+          <div class="state">
+            <span class="state-label">composer toolbar — icon-buttons with tooltips</span>
+            <div class="mock-composer-toolbar" style="margin-top: var(--space-6);">
+
+              <!-- Paperclip -->
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Attach file" aria-describedby="tt-dark-attach">
+                  📎
+                </button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-dark-attach">
+                  <span class="atom-tooltip__body">Attach file</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+
+              <!-- Sparkles + model name -->
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Select model" aria-describedby="tt-dark-model">
+                  ✦
+                </button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-dark-model">
+                  <span class="atom-tooltip__body">claude-sonnet-4</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+
+              <!-- Brain + thinking level -->
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Set thinking level" aria-describedby="tt-dark-think">
+                  ◈
+                </button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-dark-think">
+                  <span class="atom-tooltip__body">Extended thinking: on</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+
+            </div>
+          </div><!-- /composer toolbar -->
+
+          <!-- 4b. Session row long-press tooltip -->
+          <div class="state" style="margin-top: var(--space-4);">
+            <span class="state-label">session row — long-press hint</span>
+            <div style="position: relative; display: inline-flex; margin-top: var(--space-6);">
+              <div class="mock-session-row">
+                <span class="mock-session-row-text">How to deploy a Next.js app to…</span>
+                <span class="mock-session-row-meta">2h</span>
+              </div>
+              <!-- Tooltip shown after long-press hold -->
+              <span class="atom-tooltip atom-tooltip--inverse is-visible"
+                    role="tooltip"
+                    style="
+                      bottom: calc(100% + 8px);
+                      left: 50%;
+                      transform: translateX(-50%) scale(1);
+                      transform-origin: bottom center;
+                      flex-direction: column;
+                    ">
+                <span class="atom-tooltip__body">Long press to delete</span>
+                <span class="atom-tooltip__arrow"
+                      aria-hidden="true"
+                      style="
+                        clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+                        background-color: var(--surface-inverse);
+                        width: 12px;
+                        height: 6px;
+                      "></span>
+              </span>
+            </div>
+          </div><!-- /session row -->
+
+          <!-- 4c. Keyboard-shortcut tooltip with embedded kbd -->
+          <div class="state" style="margin-top: var(--space-4);">
+            <span class="state-label">shortcut tooltip — embedded kbd — "Open palette ⌘ K"</span>
+            <div class="tooltip-trigger" style="margin-top: var(--space-6);">
+              <button class="mock-icon-btn" aria-label="Open command palette" aria-describedby="tt-dark-shortcut-kbd">
+                ⌘
+              </button>
+              <span class="atom-tooltip atom-tooltip--shortcut atom-tooltip--top is-visible"
+                    role="tooltip" id="tt-dark-shortcut-kbd">
+                <span class="atom-tooltip__body">
+                  Open palette
+                  <kbd class="atom-tooltip__kbd">⌘</kbd>
+                  <kbd class="atom-tooltip__kbd">K</kbd>
+                </span>
+                <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+              </span>
+            </div>
+          </div><!-- /shortcut kbd -->
+
+        </div>
+      </div><!-- /composition dark -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ============================================================
+         LIGHT PANE
+         ============================================================ -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ========================================================
+           1. VARIANT MATRIX
+           ======================================================== -->
+      <div class="variant">
+        <h3>variant matrix</h3>
+        <div class="state">
+          <span class="state-label">inverse · default · shortcut — all pointing top</span>
+          <div class="tooltip-variant-row">
+
+            <!-- inverse -->
+            <div class="state">
+              <span class="state-label">inverse</span>
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Send message" aria-describedby="tt-light-inverse">↑</button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-light-inverse">
+                  <span class="atom-tooltip__body">Send message</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- default -->
+            <div class="state">
+              <span class="state-label">default</span>
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Open command palette" aria-describedby="tt-light-default">⌘</button>
+                <span class="atom-tooltip atom-tooltip--default atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-light-default">
+                  <span class="atom-tooltip__body">Open command palette</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- shortcut -->
+            <div class="state">
+              <span class="state-label">shortcut</span>
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Send message" aria-describedby="tt-light-shortcut">⌘⏎</button>
+                <span class="atom-tooltip atom-tooltip--shortcut atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-light-shortcut">
+                  <span class="atom-tooltip__body">
+                    Send message
+                    <span class="atom-tooltip__kbd">⌘</span>
+                    <span class="atom-tooltip__kbd">⏎</span>
+                  </span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /variant matrix light -->
+
+      <!-- ========================================================
+           2. POSITION MATRIX
+           ======================================================== -->
+      <div class="variant">
+        <h3>position matrix</h3>
+        <div class="state">
+          <span class="state-label">top · bottom · left · right — inverse variant</span>
+
+          <div class="tooltip-position-grid" style="margin-top: var(--space-6); margin-bottom: var(--space-6);">
+
+            <div></div>
+            <div class="tooltip-trigger" style="margin-bottom: var(--space-8);">
+              <button class="mock-icon-btn" aria-label="Top tooltip" aria-describedby="tt-light-pos-top">↑</button>
+              <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                    role="tooltip" id="tt-light-pos-top">
+                <span class="atom-tooltip__body">Top tooltip</span>
+                <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+              </span>
+            </div>
+            <div></div>
+
+            <div class="tooltip-trigger" style="margin-right: var(--space-8);">
+              <button class="mock-icon-btn" aria-label="Left tooltip" aria-describedby="tt-light-pos-left">←</button>
+              <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--left is-visible"
+                    role="tooltip" id="tt-light-pos-left">
+                <span class="atom-tooltip__body">Left tooltip</span>
+                <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+              </span>
+            </div>
+
+            <div class="mock-icon-btn" style="background-color: var(--surface-active); border-color: var(--border-strong);">⊙</div>
+
+            <div class="tooltip-trigger" style="margin-left: var(--space-8);">
+              <button class="mock-icon-btn" aria-label="Right tooltip" aria-describedby="tt-light-pos-right">→</button>
+              <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--right is-visible"
+                    role="tooltip" id="tt-light-pos-right">
+                <span class="atom-tooltip__body">Right tooltip</span>
+                <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+              </span>
+            </div>
+
+            <div></div>
+            <div class="tooltip-trigger" style="margin-top: var(--space-8);">
+              <button class="mock-icon-btn" aria-label="Bottom tooltip" aria-describedby="tt-light-pos-bottom">↓</button>
+              <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--bottom is-visible"
+                    role="tooltip" id="tt-light-pos-bottom">
+                <span class="atom-tooltip__body">Bottom tooltip</span>
+                <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+              </span>
+            </div>
+            <div></div>
+
+          </div>
+        </div>
+      </div><!-- /position matrix light -->
+
+      <!-- ========================================================
+           3. STATE ROW
+           ======================================================== -->
+      <div class="variant">
+        <h3>states</h3>
+        <div class="state">
+          <span class="state-label">is-entering (mid) · is-visible · is-exiting (mid)</span>
+          <div class="tooltip-state-strip">
+
+            <div class="tooltip-state-cell">
+              <span class="state-label">is-entering</span>
+              <div class="tooltip-trigger" style="margin-top: var(--space-6);">
+                <button class="mock-icon-btn" aria-label="Entering state">▲</button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-entering"
+                      role="tooltip"
+                      style="opacity: 0.35; transform: translateX(-50%) scale(0.95);">
+                  <span class="atom-tooltip__body">Send message</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+            <div class="tooltip-state-cell">
+              <span class="state-label">is-visible</span>
+              <div class="tooltip-trigger" style="margin-top: var(--space-6);">
+                <button class="mock-icon-btn" aria-label="Visible state">▲</button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                      role="tooltip">
+                  <span class="atom-tooltip__body">Send message</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+            <div class="tooltip-state-cell">
+              <span class="state-label">is-exiting</span>
+              <div class="tooltip-trigger" style="margin-top: var(--space-6);">
+                <button class="mock-icon-btn" aria-label="Exiting state">▲</button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-exiting"
+                      role="tooltip"
+                      style="opacity: 0.15; transform: translateX(-50%) scale(0.95);">
+                  <span class="atom-tooltip__body">Send message</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /states light -->
+
+      <!-- ========================================================
+           4. COMPOSITION EXAMPLES
+           ======================================================== -->
+      <div class="variant">
+        <h3>composition examples</h3>
+        <div class="tooltip-composition-area">
+
+          <!-- 4a. Composer toolbar -->
+          <div class="state">
+            <span class="state-label">composer toolbar — icon-buttons with tooltips</span>
+            <div class="mock-composer-toolbar" style="margin-top: var(--space-6);">
+
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Attach file" aria-describedby="tt-light-attach">
+                  📎
+                </button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-light-attach">
+                  <span class="atom-tooltip__body">Attach file</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Select model" aria-describedby="tt-light-model">
+                  ✦
+                </button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-light-model">
+                  <span class="atom-tooltip__body">claude-sonnet-4</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+
+              <div class="tooltip-trigger">
+                <button class="mock-icon-btn" aria-label="Set thinking level" aria-describedby="tt-light-think">
+                  ◈
+                </button>
+                <span class="atom-tooltip atom-tooltip--inverse atom-tooltip--top is-visible"
+                      role="tooltip" id="tt-light-think">
+                  <span class="atom-tooltip__body">Extended thinking: on</span>
+                  <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+                </span>
+              </div>
+
+            </div>
+          </div><!-- /composer toolbar light -->
+
+          <!-- 4b. Session row -->
+          <div class="state" style="margin-top: var(--space-4);">
+            <span class="state-label">session row — long-press hint</span>
+            <div style="position: relative; display: inline-flex; margin-top: var(--space-6);">
+              <div class="mock-session-row">
+                <span class="mock-session-row-text">How to deploy a Next.js app to…</span>
+                <span class="mock-session-row-meta">2h</span>
+              </div>
+              <span class="atom-tooltip atom-tooltip--inverse is-visible"
+                    role="tooltip"
+                    style="
+                      bottom: calc(100% + 8px);
+                      left: 50%;
+                      transform: translateX(-50%) scale(1);
+                      transform-origin: bottom center;
+                      flex-direction: column;
+                    ">
+                <span class="atom-tooltip__body">Long press to delete</span>
+                <span class="atom-tooltip__arrow"
+                      aria-hidden="true"
+                      style="
+                        clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+                        background-color: var(--surface-inverse);
+                        width: 12px;
+                        height: 6px;
+                      "></span>
+              </span>
+            </div>
+          </div><!-- /session row light -->
+
+          <!-- 4c. Shortcut tooltip with kbd -->
+          <div class="state" style="margin-top: var(--space-4);">
+            <span class="state-label">shortcut tooltip — embedded kbd — "Open palette ⌘ K"</span>
+            <div class="tooltip-trigger" style="margin-top: var(--space-6);">
+              <button class="mock-icon-btn" aria-label="Open command palette" aria-describedby="tt-light-shortcut-kbd">
+                ⌘
+              </button>
+              <span class="atom-tooltip atom-tooltip--shortcut atom-tooltip--top is-visible"
+                    role="tooltip" id="tt-light-shortcut-kbd">
+                <span class="atom-tooltip__body">
+                  Open palette
+                  <kbd class="atom-tooltip__kbd">⌘</kbd>
+                  <kbd class="atom-tooltip__kbd">K</kbd>
+                </span>
+                <span class="atom-tooltip__arrow" aria-hidden="true"></span>
+              </span>
+            </div>
+          </div><!-- /shortcut kbd light -->
+
+        </div>
+      </div><!-- /composition light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe table
+       ============================================================ -->
+  <footer class="recipe-footer">
+    <h2>token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>property</th>
+          <th>variant / element</th>
+          <th>token / value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>background-color</td><td>inverse · body + arrow</td><td>var(--surface-inverse)</td></tr>
+        <tr><td>background-color</td><td>default · body + arrow</td><td>var(--surface-overlay)</td></tr>
+        <tr><td>background-color</td><td>shortcut · body + arrow</td><td>var(--surface-overlay)</td></tr>
+        <tr><td>color</td><td>inverse</td><td>var(--text-on-inverse)</td></tr>
+        <tr><td>color</td><td>default, shortcut</td><td>var(--text-body)</td></tr>
+        <tr><td>border</td><td>inverse</td><td>none</td></tr>
+        <tr><td>border</td><td>default, shortcut</td><td>1px solid var(--border-default)</td></tr>
+        <tr><td>box-shadow</td><td>all · body</td><td>var(--elevation-overlay)</td></tr>
+        <tr><td>border-radius</td><td>all · body</td><td>var(--radius-default)</td></tr>
+        <tr><td>padding</td><td>all · body</td><td>var(--space-2) var(--space-3)</td></tr>
+        <tr><td>font-family</td><td>all</td><td>var(--font-mono)</td></tr>
+        <tr><td>font-size</td><td>all</td><td>var(--font-size-meta)</td></tr>
+        <tr><td>font-weight</td><td>all</td><td>var(--font-weight-meta)</td></tr>
+        <tr><td>letter-spacing</td><td>all</td><td>var(--tracking-mono)</td></tr>
+        <tr><td>line-height</td><td>all</td><td>var(--line-height-tight)</td></tr>
+        <tr><td>transition</td><td>all</td><td>opacity var(--motion-fast) var(--motion-ease-out), transform var(--motion-fast) var(--motion-ease-out)</td></tr>
+        <tr><td>transform-origin</td><td>--top</td><td>bottom center</td></tr>
+        <tr><td>transform-origin</td><td>--bottom</td><td>top center</td></tr>
+        <tr><td>transform-origin</td><td>--left</td><td>right center</td></tr>
+        <tr><td>transform-origin</td><td>--right</td><td>left center</td></tr>
+        <tr><td>is-entering / is-exiting · opacity</td><td>all</td><td>0 → 1 (entering) / 1 → 0 (exiting)</td></tr>
+        <tr><td>is-entering / is-exiting · scale</td><td>all</td><td>0.95 → 1 (entering) / 1 → 0.95 (exiting)</td></tr>
+        <tr><td>arrow size</td><td>structural</td><td>6px — geometry literal (permitted)</td></tr>
+        <tr><td>position gap</td><td>structural</td><td>8px — geometry literal (permitted)</td></tr>
+        <tr><td>z-index</td><td>structural</td><td>100 — layout literal (no token)</td></tr>
+        <tr><td>kbd glyph · background</td><td>shortcut · .atom-tooltip__kbd</td><td>var(--surface-soft)</td></tr>
+        <tr><td>kbd glyph · border</td><td>shortcut · .atom-tooltip__kbd</td><td>1px solid var(--border-default)</td></tr>
+        <tr><td>kbd glyph · color</td><td>shortcut · .atom-tooltip__kbd</td><td>var(--text-muted)</td></tr>
+        <tr><td>kbd glyph · gap</td><td>shortcut · .atom-tooltip__body</td><td>var(--space-2)</td></tr>
+      </tbody>
+    </table>
+  </footer>
+
+</body>
+</html>
