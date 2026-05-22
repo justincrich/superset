@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Views — Phase 5 Gallery</title>
+  <link rel="stylesheet" href="../typography/fonts.css">
+  <link rel="stylesheet" href="../tokens/tokens.css">
+  <link rel="stylesheet" href="../typography/type-modules.css">
+  <link rel="stylesheet" href="../atoms/_preview.css">
+  <link rel="stylesheet" href="../molecules/_atoms.css">
+  <link rel="stylesheet" href="../organisms/_molecules.css">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--surface-page);
+      color: var(--text-body);
+      font-family: var(--font-body);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ──────────────────────────────────────────── */
+    .gallery-header {
+      background: var(--surface-sunken);
+      padding: var(--space-8) var(--space-6);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .gallery-header h1 {
+      margin: 0 0 var(--space-3);
+    }
+
+    .gallery-header p {
+      margin: 0;
+      color: var(--text-muted);
+      max-width: 72ch;
+    }
+
+    .gallery-header p code {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-body-sm);
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: calc(var(--radius-default) / 2);
+      padding: 0.1em 0.4em;
+      color: var(--accent-primary);
+    }
+
+    .gallery-header__meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+    }
+
+    .gallery-header__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      font-weight: var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color: var(--text-faint);
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      padding: var(--space-1) var(--space-3);
+    }
+
+    .gallery-header__badge--accent {
+      color: var(--accent-primary);
+      border-color: var(--accent-primary);
+      background: var(--surface-raised);
+    }
+
+    /* ── Theme toggle ────────────────────────────────────── */
+    .theme-toggle {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-faint);
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      padding: var(--space-1) var(--space-3);
+      cursor: pointer;
+      transition: all var(--motion-fast) var(--motion-ease-out);
+    }
+
+    .theme-toggle:hover {
+      color: var(--text-body);
+      border-color: var(--border-strong);
+    }
+
+    /* ── Sections ────────────────────────────────────────── */
+    .gallery-section {
+      padding: var(--space-6);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .gallery-section + .gallery-section {
+      padding-top: 0;
+    }
+
+    .gallery-section h2 {
+      margin: 0 0 var(--space-4);
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .gallery-section__tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      font-weight: var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: var(--space-2);
+    }
+
+    /* ── Grid ────────────────────────────────────────────── */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-4);
+    }
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .gallery-card {
+      display: block;
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      padding: var(--space-4);
+      text-decoration: none;
+      color: inherit;
+      transition: all var(--motion-fast) var(--motion-ease-out);
+      position: relative;
+    }
+
+    .gallery-card:hover {
+      background: var(--surface-active);
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+
+    .gallery-card--missing {
+      border-style: dashed;
+      opacity: 0.5;
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .gallery-card--missing::after {
+      content: "NOT BUILT";
+      position: absolute;
+      top: var(--space-2);
+      right: var(--space-2);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      font-weight: var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      color: var(--status-warning);
+      background: var(--surface-page);
+      border: 1px solid var(--status-warning);
+      border-radius: var(--radius-pill);
+      padding: 0.1em 0.5em;
+    }
+
+    .gallery-card__name {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-body);
+      font-weight: var(--font-weight-meta);
+      color: var(--accent-primary);
+      margin-bottom: var(--space-1);
+    }
+
+    .gallery-card__uc {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-faint);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      margin-bottom: var(--space-2);
+    }
+
+    .gallery-card__desc {
+      font-size: var(--font-size-body-sm);
+      color: var(--text-muted);
+      line-height: var(--line-height-normal);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Page header ──────────────────────────────────────── -->
+  <header class="gallery-header">
+    <h1 class="type-h1">Chat Views</h1>
+    <p class="type-body">
+      25 mobile chat-view mockups built from the PRD wireframes at
+      <code>plans/chat-mobile-plan/</code>.
+      Each view renders inside an iPhone 16 Pro Max frame, both dark + light theme panes stacked.
+      Click a view to open its full mockup.
+    </p>
+    <div class="gallery-header__meta">
+      <span class="gallery-header__badge gallery-header__badge--accent">Phase 5</span>
+      <span class="gallery-header__badge">25 views</span>
+      <span class="gallery-header__badge">5 categories</span>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle color theme">
+        Toggle theme
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Section 1: Chat-tree (UC-RENDER) ─────────────────── -->
+  <section class="gallery-section">
+    <div class="gallery-section__tag">Category 1</div>
+    <h2 class="type-h2">Chat-tree — UC-RENDER</h2>
+    <div class="gallery-grid">
+
+      <a class="gallery-card" href="chat-view-thread/chat-view-thread.html">
+        <span class="gallery-card__name">chat-view-thread</span>
+        <span class="gallery-card__uc">UC-RENDER-01 §A</span>
+        <span class="gallery-card__desc">Canonical hero: user message + assistant streaming response with live cursor</span>
+      </a>
+
+      <a class="gallery-card" href="chat-view-markdown/chat-view-markdown.html">
+        <span class="gallery-card__name">chat-view-markdown</span>
+        <span class="gallery-card__uc">UC-RENDER-03 §A</span>
+        <span class="gallery-card__desc">Code block + inline code rendering; syntax-highlighted assistant reply</span>
+      </a>
+
+      <a class="gallery-card" href="chat-view-tool-calls/chat-view-tool-calls.html">
+        <span class="gallery-card__name">chat-view-tool-calls</span>
+        <span class="gallery-card__uc">UC-RENDER-04 §A</span>
+        <span class="gallery-card__desc">Tool call cards in all 3 status states: running, done, error</span>
+      </a>
+
+      <a class="gallery-card" href="chat-view-reasoning-plan/chat-view-reasoning-plan.html">
+        <span class="gallery-card__name">chat-view-reasoning-plan</span>
+        <span class="gallery-card__uc">UC-RENDER-05 §A</span>
+        <span class="gallery-card__desc">PlanBlock + ReasoningBlock collapsed and expanded in a single thread</span>
+      </a>
+
+      <a class="gallery-card" href="chat-view-subagent/chat-view-subagent.html">
+        <span class="gallery-card__name">chat-view-subagent</span>
+        <span class="gallery-card__uc">UC-RENDER-06 §A</span>
+        <span class="gallery-card__desc">Nested subagent execution with inner tool-call cards inside collapsed block</span>
+      </a>
+
+      <a class="gallery-card" href="chat-view-scroll-back/chat-view-scroll-back.html">
+        <span class="gallery-card__name">chat-view-scroll-back</span>
+        <span class="gallery-card__uc">UC-RENDER-07 §A</span>
+        <span class="gallery-card__desc">Scroll-back FAB floating above composer when user has scrolled up in history</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Section 2: Composer (UC-COMP) ────────────────────── -->
+  <section class="gallery-section">
+    <div class="gallery-section__tag">Category 2</div>
+    <h2 class="type-h2">Composer — UC-COMP</h2>
+    <div class="gallery-grid">
+
+      <a class="gallery-card" href="composer-states/composer-states.html">
+        <span class="gallery-card__name">composer-states</span>
+        <span class="gallery-card__uc">UC-COMP-01 §A/B · UC-COMP-03 §A</span>
+        <span class="gallery-card__desc">Idle, Typing, and Streaming-stop states stacked in one view</span>
+      </a>
+
+      <a class="gallery-card" href="composer-slash-menu/composer-slash-menu.html">
+        <span class="gallery-card__name">composer-slash-menu</span>
+        <span class="gallery-card__uc">UC-COMP-01 §C</span>
+        <span class="gallery-card__desc">Slash command popover appearing above the composer input field</span>
+      </a>
+
+      <a class="gallery-card" href="composer-model-picker/composer-model-picker.html">
+        <span class="gallery-card__name">composer-model-picker</span>
+        <span class="gallery-card__uc">UC-COMP-04 §A</span>
+        <span class="gallery-card__desc">Model picker popover with Anthropic and OpenAI section dividers</span>
+      </a>
+
+      <a class="gallery-card" href="composer-thinking-picker/composer-thinking-picker.html">
+        <span class="gallery-card__name">composer-thinking-picker</span>
+        <span class="gallery-card__uc">UC-COMP-05 §A</span>
+        <span class="gallery-card__desc">Thinking-level selector popover with token-budget hints per level</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Section 3: Pause (UC-PAUSE) ──────────────────────── -->
+  <section class="gallery-section">
+    <div class="gallery-section__tag">Category 3</div>
+    <h2 class="type-h2">Pause — UC-PAUSE</h2>
+    <div class="gallery-grid">
+
+      <a class="gallery-card" href="pause-approval-inline-footer/pause-approval-inline-footer.html">
+        <span class="gallery-card__name">pause-approval-inline-footer</span>
+        <span class="gallery-card__uc">UC-PAUSE-01 §A</span>
+        <span class="gallery-card__desc">Inline pending-approval card in chat + sticky Approve / Decline / Always footer</span>
+      </a>
+
+      <a class="gallery-card" href="pause-ask-user-sheet/pause-ask-user-sheet.html">
+        <span class="gallery-card__name">pause-ask-user-sheet</span>
+        <span class="gallery-card__uc">UC-PAUSE-02 §A</span>
+        <span class="gallery-card__desc">Ask_user bottom sheet with question, suggested-answer pills, and text input</span>
+      </a>
+
+      <a class="gallery-card" href="pause-plan-review-modal/pause-plan-review-modal.html">
+        <span class="gallery-card__name">pause-plan-review-modal</span>
+        <span class="gallery-card__uc">UC-PAUSE-03 §A</span>
+        <span class="gallery-card__desc">Plan review modal: scrollable markdown plan + feedback block + docked Approve / Reject</span>
+      </a>
+
+      <a class="gallery-card" href="pause-pending-action-pill/pause-pending-action-pill.html">
+        <span class="gallery-card__name">pause-pending-action-pill</span>
+        <span class="gallery-card__uc">UC-PAUSE-04 §A</span>
+        <span class="gallery-card__desc">Floating pending-action pill above composer when pause card is off-screen</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Section 4: Error / Dialog / Platform (UC-SESS, UC-PLATF) -->
+  <section class="gallery-section">
+    <div class="gallery-section__tag">Category 4</div>
+    <h2 class="type-h2">Error / Dialog / Platform — UC-SESS · UC-PLATF</h2>
+    <div class="gallery-grid">
+
+      <a class="gallery-card" href="chat-view-loading/chat-view-loading.html">
+        <span class="gallery-card__name">chat-view-loading</span>
+        <span class="gallery-card__uc">UC-SESS-02 §A</span>
+        <span class="gallery-card__desc">Loading history skeleton shown while session messages are being fetched</span>
+      </a>
+
+      <a class="gallery-card" href="chat-view-error-retry/chat-view-error-retry.html">
+        <span class="gallery-card__name">chat-view-error-retry</span>
+        <span class="gallery-card__uc">UC-SESS-02 §B</span>
+        <span class="gallery-card__desc">Error state in chat with inline retry action for failed message delivery</span>
+      </a>
+
+      <a class="gallery-card" href="session-overflow-menu/session-overflow-menu.html">
+        <span class="gallery-card__name">session-overflow-menu</span>
+        <span class="gallery-card__uc">UC-SESS-04 §A</span>
+        <span class="gallery-card__desc">Action sheet with session-level options: rename, share, archive, delete</span>
+      </a>
+
+      <a class="gallery-card" href="delete-session-dialog/delete-session-dialog.html">
+        <span class="gallery-card__name">delete-session-dialog</span>
+        <span class="gallery-card__uc">UC-SESS-05 §A</span>
+        <span class="gallery-card__desc">Destructive delete-session confirmation dialog with cancel and confirm actions</span>
+      </a>
+
+      <a class="gallery-card" href="chat-view-host-offline-and-dispatch/chat-view-host-offline-and-dispatch.html">
+        <span class="gallery-card__name">chat-view-host-offline-and-dispatch</span>
+        <span class="gallery-card__uc">UC-PLATF-03 §A/B</span>
+        <span class="gallery-card__desc">Host-offline banner and dispatch-failed banner shown in the chat thread</span>
+      </a>
+
+      <a class="gallery-card" href="push-pre-prompt-screen/push-pre-prompt-screen.html">
+        <span class="gallery-card__name">push-pre-prompt-screen</span>
+        <span class="gallery-card__uc">UC-PLATF-01 §A</span>
+        <span class="gallery-card__desc">Push notification permission pre-prompt screen before OS dialog is shown</span>
+      </a>
+
+      <a class="gallery-card" href="settings-permission-denied-banner/settings-permission-denied-banner.html">
+        <span class="gallery-card__name">settings-permission-denied-banner</span>
+        <span class="gallery-card__uc">UC-PLATF-01 §B</span>
+        <span class="gallery-card__desc">Settings-page banner shown when push permission was denied; links to OS settings</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Section 5: Nav (UC-NAV) ───────────────────────────── -->
+  <section class="gallery-section">
+    <div class="gallery-section__tag">Category 5</div>
+    <h2 class="type-h2">Nav — UC-NAV</h2>
+    <div class="gallery-grid">
+
+      <a class="gallery-card" href="sessions-list-loaded/sessions-list-loaded.html">
+        <span class="gallery-card__name">sessions-list-loaded</span>
+        <span class="gallery-card__uc">UC-NAV §A</span>
+        <span class="gallery-card__desc">Canonical sessions list: search bar, workspace sections, session rows with meta</span>
+      </a>
+
+      <a class="gallery-card" href="project-picker-sheet/project-picker-sheet.html">
+        <span class="gallery-card__name">project-picker-sheet</span>
+        <span class="gallery-card__uc">UC-NAV §B</span>
+        <span class="gallery-card__desc">Bottom sheet for picking a project when starting or moving a chat session</span>
+      </a>
+
+      <a class="gallery-card" href="filter-sheet/filter-sheet.html">
+        <span class="gallery-card__name">filter-sheet</span>
+        <span class="gallery-card__uc">UC-NAV-08 §C</span>
+        <span class="gallery-card__desc">Filter sheet for narrowing sessions by workspace, model, date, and status</span>
+      </a>
+
+      <a class="gallery-card" href="new-chat-workspace-picker/new-chat-workspace-picker.html">
+        <span class="gallery-card__name">new-chat-workspace-picker</span>
+        <span class="gallery-card__uc">UC-NAV §D</span>
+        <span class="gallery-card__desc">Workspace picker shown when creating a new chat: selects destination workspace</span>
+      </a>
+
+      <a class="gallery-card gallery-card--missing" aria-disabled="true">
+        <span class="gallery-card__name">sessions-list-empty-states</span>
+        <span class="gallery-card__uc">UC-NAV-06.1–06.5</span>
+        <span class="gallery-card__desc">All 5 empty-state variants for the sessions list (not yet built)</span>
+      </a>
+
+    </div>
+  </section>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      html.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+    }
+  </script>
+
+</body>
+</html>
