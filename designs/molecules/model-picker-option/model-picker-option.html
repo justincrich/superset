@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-model-picker-option — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-model-picker-option — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       No TOKEN_GAPs. All values resolve to design tokens.
+       ================================================================ */
+
+    /* ---- Base row ------------------------------------------------ */
+    .mol-model-picker-option {
+      display:        flex;
+      align-items:    center;
+      gap:            var(--space-3);
+      padding:        var(--space-3) var(--space-4);
+      min-height:     var(--touch-target-min);
+      cursor:         pointer;
+      border-radius:  var(--radius-default);
+      background:     transparent;
+      width:          100%;
+      box-sizing:     border-box;
+      transition:     background-color var(--motion-fast) var(--motion-ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ---- Label slot: model name --------------------------------- */
+    .mol-model-picker-option__label {
+      flex:       1;
+      min-width:  0;
+      color:      var(--text-body);
+    }
+
+    /* ---- Badge slot: "NEW" trailing tag ------------------------- */
+    .mol-model-picker-option__new {
+      flex-shrink: 0;
+    }
+
+    /* ---- State: hover ------------------------------------------ */
+    .mol-model-picker-option:hover,
+    .mol-model-picker-option.is-hover {
+      background: var(--surface-soft);
+    }
+
+    /* ---- State: active (pressed) ------------------------------- */
+    .mol-model-picker-option:active,
+    .mol-model-picker-option.is-active {
+      background: var(--surface-active);
+      transform:  scale(0.995);
+    }
+
+    /* ---- State: focus ------------------------------------------ */
+    .mol-model-picker-option:focus-within,
+    .mol-model-picker-option.is-focus {
+      outline:    none;
+      box-shadow: inset 0 0 0 2px var(--border-focus);
+    }
+
+    /* ---- State: selected (default variant) --------------------- */
+    .mol-model-picker-option.is-selected {
+      background: var(--surface-active);
+    }
+
+    /* Selected + hover: lighten */
+    .mol-model-picker-option.is-selected:hover,
+    .mol-model-picker-option.is-selected.is-hover {
+      background: var(--surface-soft);
+    }
+
+    /* ---- Variant: featured (ember-tinted when selected) --------- */
+    .mol-model-picker-option--featured.is-selected {
+      background: color-mix(in oklch, var(--accent-primary-subtle) 60%, var(--surface-active) 40%);
+    }
+
+    .mol-model-picker-option--featured.is-selected:hover,
+    .mol-model-picker-option--featured.is-selected.is-hover {
+      background: color-mix(in oklch, var(--accent-primary-subtle) 40%, var(--surface-soft) 60%);
+    }
+
+    /* ---- State: disabled --------------------------------------- */
+    .mol-model-picker-option.is-disabled {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Section divider (vendor group label) ------------------ */
+    .mol-model-picker-option-divider {
+      padding:    var(--space-2) var(--space-4);
+      box-sizing: border-box;
+    }
+
+    /* ================================================================
+       Preview scaffolding — faux model-picker popover + layout helpers
+       ================================================================ */
+
+    .mol-model-picker-popover {
+      width:         280px;
+      background:    var(--surface-overlay);
+      border-radius: var(--radius-default);
+      box-shadow:    var(--elevation-overlay);
+      overflow:      hidden;
+      padding:       var(--space-2) 0;
+    }
+
+    .mol-model-picker-popover__list {
+      display:        flex;
+      flex-direction: column;
+    }
+
+    /* Preview section title (not part of molecule spec) */
+    .preview-section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-4);
+    }
+
+    /* Side-by-side cell layout for variant matrix */
+    .mol-variant-grid {
+      display:        flex;
+      gap:            var(--space-6);
+      flex-wrap:      wrap;
+    }
+    .mol-variant-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+      min-width:      240px;
+    }
+    .mol-variant-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom:  var(--space-2);
+    }
+
+    /* State row grid */
+    .mol-state-grid {
+      display:   flex;
+      flex-wrap: wrap;
+      gap:       var(--space-4);
+    }
+    .mol-state-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      min-width:      200px;
+    }
+    .mol-state-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* Section spacing */
+    .section-block {
+      margin-bottom: var(--space-8);
+    }
+    .section-block:last-child {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">model-picker-option</h1>
+    <p class="crumb">molecule · model picker row · radio + label + optional badge</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT MATRIX --------------------------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>variant matrix — standard vs featured · unselected / selected</h3>
+          <div class="mol-variant-grid">
+
+            <!-- Standard / default variant -->
+            <div class="mol-variant-cell">
+              <div class="mol-variant-cell-label">default · unselected</div>
+              <label class="mol-model-picker-option mol-model-picker-option--default"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md">
+                  <input type="radio" name="dark-matrix-default" value="opus-47"
+                         class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Opus 4.7</span>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-model-picker-option__new" aria-hidden="true">NEW</span>
+              </label>
+
+              <div class="mol-variant-cell-label">default · selected</div>
+              <label class="mol-model-picker-option mol-model-picker-option--default is-selected"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md is-checked">
+                  <input type="radio" name="dark-matrix-default-sel" value="opus-47" checked
+                         class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Opus 4.7</span>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-model-picker-option__new" aria-hidden="true">NEW</span>
+              </label>
+            </div>
+
+            <!-- Featured variant -->
+            <div class="mol-variant-cell">
+              <div class="mol-variant-cell-label">featured · unselected</div>
+              <label class="mol-model-picker-option mol-model-picker-option--featured"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md atom-radio--accent">
+                  <input type="radio" name="dark-matrix-featured" value="sonnet-46"
+                         class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Sonnet 4.6</span>
+              </label>
+
+              <div class="mol-variant-cell-label">featured · selected</div>
+              <label class="mol-model-picker-option mol-model-picker-option--featured is-selected"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md atom-radio--accent is-checked">
+                  <input type="radio" name="dark-matrix-featured-sel" value="sonnet-46" checked
+                         class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Sonnet 4.6</span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /variant matrix -->
+
+      <!-- ---- 2. STATE ROW -------------------------------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>state row — default variant · all states</h3>
+          <div class="mol-state-grid">
+
+            <!-- default -->
+            <div class="mol-state-cell">
+              <span class="mol-state-cell-label">default</span>
+              <label class="mol-model-picker-option mol-model-picker-option--default"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md">
+                  <input type="radio" name="dark-state-default" value="haiku"
+                         class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Haiku 4.5</span>
+              </label>
+            </div>
+
+            <!-- hover -->
+            <div class="mol-state-cell">
+              <span class="mol-state-cell-label">is-hover</span>
+              <label class="mol-model-picker-option mol-model-picker-option--default is-hover"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md">
+                  <input type="radio" name="dark-state-hover" value="sonnet"
+                         class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Sonnet 4.6</span>
+              </label>
+            </div>
+
+            <!-- selected -->
+            <div class="mol-state-cell">
+              <span class="mol-state-cell-label">is-selected</span>
+              <label class="mol-model-picker-option mol-model-picker-option--default is-selected"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md is-checked">
+                  <input type="radio" name="dark-state-sel" value="opus" checked
+                         class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Opus 4.7</span>
+              </label>
+            </div>
+
+            <!-- focus -->
+            <div class="mol-state-cell">
+              <span class="mol-state-cell-label">is-focus</span>
+              <label class="mol-model-picker-option mol-model-picker-option--default is-focus"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md is-focus">
+                  <input type="radio" name="dark-state-focus" value="haiku"
+                         class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Haiku 4.5</span>
+              </label>
+            </div>
+
+            <!-- disabled -->
+            <div class="mol-state-cell">
+              <span class="mol-state-cell-label">is-disabled</span>
+              <label class="mol-model-picker-option mol-model-picker-option--default is-disabled"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md is-disabled">
+                  <input type="radio" name="dark-state-dis" value="gpt55" disabled
+                         class="atom-radio__input" aria-label="GPT-5.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">GPT-5.5</span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /state row -->
+
+      <!-- ---- 3. COMPOSITION — faux model-picker popover -------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>composition — full model-picker popover</h3>
+          <div class="mol-model-picker-popover">
+            <fieldset style="border: none; margin: 0; padding: 0;" role="radiogroup"
+                      aria-label="Select a model">
+              <div class="mol-model-picker-popover__list">
+
+                <!-- Claude Opus 4.7 — featured, selected, with NEW badge -->
+                <label class="mol-model-picker-option mol-model-picker-option--featured is-selected"
+                       aria-label="Claude Opus 4.7, new model, currently selected">
+                  <span class="atom-radio atom-radio--md atom-radio--accent is-checked">
+                    <input type="radio" name="dark-comp-model" value="opus-47" checked
+                           class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">Claude Opus 4.7</span>
+                  <span class="atom-badge atom-badge--accent atom-badge--sm mol-model-picker-option__new" aria-hidden="true">NEW</span>
+                </label>
+
+                <!-- Claude Opus 4.6 -->
+                <label class="mol-model-picker-option mol-model-picker-option--default">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="dark-comp-model" value="opus-46"
+                           class="atom-radio__input" aria-label="Claude Opus 4.6" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">Claude Opus 4.6</span>
+                </label>
+
+                <!-- Claude Sonnet 4.6 -->
+                <label class="mol-model-picker-option mol-model-picker-option--default">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="dark-comp-model" value="sonnet-46"
+                           class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">Claude Sonnet 4.6</span>
+                </label>
+
+                <!-- Claude Haiku 4.5 -->
+                <label class="mol-model-picker-option mol-model-picker-option--default">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="dark-comp-model" value="haiku-45"
+                           class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">Claude Haiku 4.5</span>
+                </label>
+
+                <!-- Section divider: OpenAI -->
+                <div class="mol-model-picker-option-divider">
+                  <span class="atom-section-label atom-section-label--with-rule">OpenAI</span>
+                </div>
+
+                <!-- GPT-5.5 -->
+                <label class="mol-model-picker-option mol-model-picker-option--default">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="dark-comp-model" value="gpt-55"
+                           class="atom-radio__input" aria-label="GPT-5.5" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">GPT-5.5</span>
+                </label>
+
+                <!-- GPT-5.4 -->
+                <label class="mol-model-picker-option mol-model-picker-option--default">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="dark-comp-model" value="gpt-54"
+                           class="atom-radio__input" aria-label="GPT-5.4" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">GPT-5.4</span>
+                </label>
+
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div><!-- /composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT MATRIX --------------------------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>variant matrix — standard vs featured · unselected / selected</h3>
+          <div class="mol-variant-grid">
+
+            <!-- Standard / default variant -->
+            <div class="mol-variant-cell">
+              <div class="mol-variant-cell-label">default · unselected</div>
+              <label class="mol-model-picker-option mol-model-picker-option--default"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md">
+                  <input type="radio" name="light-matrix-default" value="opus-47"
+                         class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Opus 4.7</span>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-model-picker-option__new" aria-hidden="true">NEW</span>
+              </label>
+
+              <div class="mol-variant-cell-label">default · selected</div>
+              <label class="mol-model-picker-option mol-model-picker-option--default is-selected"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md is-checked">
+                  <input type="radio" name="light-matrix-default-sel" value="opus-47" checked
+                         class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Opus 4.7</span>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-model-picker-option__new" aria-hidden="true">NEW</span>
+              </label>
+            </div>
+
+            <!-- Featured variant -->
+            <div class="mol-variant-cell">
+              <div class="mol-variant-cell-label">featured · unselected</div>
+              <label class="mol-model-picker-option mol-model-picker-option--featured"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md atom-radio--accent">
+                  <input type="radio" name="light-matrix-featured" value="sonnet-46"
+                         class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Sonnet 4.6</span>
+              </label>
+
+              <div class="mol-variant-cell-label">featured · selected</div>
+              <label class="mol-model-picker-option mol-model-picker-option--featured is-selected"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md atom-radio--accent is-checked">
+                  <input type="radio" name="light-matrix-featured-sel" value="sonnet-46" checked
+                         class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Sonnet 4.6</span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /variant matrix -->
+
+      <!-- ---- 2. STATE ROW -------------------------------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>state row — default variant · all states</h3>
+          <div class="mol-state-grid">
+
+            <!-- default -->
+            <div class="mol-state-cell">
+              <span class="mol-state-cell-label">default</span>
+              <label class="mol-model-picker-option mol-model-picker-option--default"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md">
+                  <input type="radio" name="light-state-default" value="haiku"
+                         class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Haiku 4.5</span>
+              </label>
+            </div>
+
+            <!-- hover -->
+            <div class="mol-state-cell">
+              <span class="mol-state-cell-label">is-hover</span>
+              <label class="mol-model-picker-option mol-model-picker-option--default is-hover"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md">
+                  <input type="radio" name="light-state-hover" value="sonnet"
+                         class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Sonnet 4.6</span>
+              </label>
+            </div>
+
+            <!-- selected -->
+            <div class="mol-state-cell">
+              <span class="mol-state-cell-label">is-selected</span>
+              <label class="mol-model-picker-option mol-model-picker-option--default is-selected"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md is-checked">
+                  <input type="radio" name="light-state-sel" value="opus" checked
+                         class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Opus 4.7</span>
+              </label>
+            </div>
+
+            <!-- focus -->
+            <div class="mol-state-cell">
+              <span class="mol-state-cell-label">is-focus</span>
+              <label class="mol-model-picker-option mol-model-picker-option--default is-focus"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md is-focus">
+                  <input type="radio" name="light-state-focus" value="haiku"
+                         class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">Claude Haiku 4.5</span>
+              </label>
+            </div>
+
+            <!-- disabled -->
+            <div class="mol-state-cell">
+              <span class="mol-state-cell-label">is-disabled</span>
+              <label class="mol-model-picker-option mol-model-picker-option--default is-disabled"
+                     style="background: var(--surface-overlay); border-radius: var(--radius-default);">
+                <span class="atom-radio atom-radio--md is-disabled">
+                  <input type="radio" name="light-state-dis" value="gpt55" disabled
+                         class="atom-radio__input" aria-label="GPT-5.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </span>
+                <span class="mol-model-picker-option__label type-body">GPT-5.5</span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /state row -->
+
+      <!-- ---- 3. COMPOSITION — faux model-picker popover -------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>composition — full model-picker popover</h3>
+          <div class="mol-model-picker-popover">
+            <fieldset style="border: none; margin: 0; padding: 0;" role="radiogroup"
+                      aria-label="Select a model">
+              <div class="mol-model-picker-popover__list">
+
+                <!-- Claude Opus 4.7 — featured, selected, with NEW badge -->
+                <label class="mol-model-picker-option mol-model-picker-option--featured is-selected"
+                       aria-label="Claude Opus 4.7, new model, currently selected">
+                  <span class="atom-radio atom-radio--md atom-radio--accent is-checked">
+                    <input type="radio" name="light-comp-model" value="opus-47" checked
+                           class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">Claude Opus 4.7</span>
+                  <span class="atom-badge atom-badge--accent atom-badge--sm mol-model-picker-option__new" aria-hidden="true">NEW</span>
+                </label>
+
+                <!-- Claude Opus 4.6 -->
+                <label class="mol-model-picker-option mol-model-picker-option--default">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="light-comp-model" value="opus-46"
+                           class="atom-radio__input" aria-label="Claude Opus 4.6" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">Claude Opus 4.6</span>
+                </label>
+
+                <!-- Claude Sonnet 4.6 -->
+                <label class="mol-model-picker-option mol-model-picker-option--default">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="light-comp-model" value="sonnet-46"
+                           class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">Claude Sonnet 4.6</span>
+                </label>
+
+                <!-- Claude Haiku 4.5 -->
+                <label class="mol-model-picker-option mol-model-picker-option--default">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="light-comp-model" value="haiku-45"
+                           class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">Claude Haiku 4.5</span>
+                </label>
+
+                <!-- Section divider: OpenAI -->
+                <div class="mol-model-picker-option-divider">
+                  <span class="atom-section-label atom-section-label--with-rule">OpenAI</span>
+                </div>
+
+                <!-- GPT-5.5 -->
+                <label class="mol-model-picker-option mol-model-picker-option--default">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="light-comp-model" value="gpt-55"
+                           class="atom-radio__input" aria-label="GPT-5.5" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">GPT-5.5</span>
+                </label>
+
+                <!-- GPT-5.4 -->
+                <label class="mol-model-picker-option mol-model-picker-option--default">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="light-comp-model" value="gpt-54"
+                           class="atom-radio__input" aria-label="GPT-5.4" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-model-picker-option__label type-body">GPT-5.4</span>
+                </label>
+
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div><!-- /composition -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe table
+       ============================================================ -->
+  <div class="recipe-footer">
+    <h2>Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Dark resolved</th>
+          <th>Light resolved</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Row gap</td>
+          <td>--space-3</td>
+          <td>12px</td>
+          <td>12px</td>
+          <td>Between radio / label / badge</td>
+        </tr>
+        <tr>
+          <td>Row padding-inline</td>
+          <td>--space-4</td>
+          <td>16px</td>
+          <td>16px</td>
+          <td>Horizontal inset</td>
+        </tr>
+        <tr>
+          <td>Row padding-block</td>
+          <td>--space-3</td>
+          <td>12px</td>
+          <td>12px</td>
+          <td>Vertical inset</td>
+        </tr>
+        <tr>
+          <td>Min-height</td>
+          <td>--touch-target-min</td>
+          <td>44px</td>
+          <td>44px</td>
+          <td>iOS HIG / WCAG AA touch target</td>
+        </tr>
+        <tr>
+          <td>Border-radius</td>
+          <td>--radius-default</td>
+          <td>≈8px</td>
+          <td>≈8px</td>
+          <td>Row corner rounding</td>
+        </tr>
+        <tr>
+          <td>Background (default)</td>
+          <td>transparent</td>
+          <td>—</td>
+          <td>—</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Background (hover)</td>
+          <td>--surface-soft</td>
+          <td>var(--_neutral-2)</td>
+          <td>var(--_neutral-2)</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Background (selected, default)</td>
+          <td>--surface-active</td>
+          <td>var(--_neutral-3)</td>
+          <td>var(--_neutral-3)</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Background (selected, featured)</td>
+          <td>color-mix(--accent-primary-subtle 60%, --surface-active 40%)</td>
+          <td>ember-tinted</td>
+          <td>ember-tinted</td>
+          <td>Communicates featured/recommended status</td>
+        </tr>
+        <tr>
+          <td>Focus ring</td>
+          <td>--border-focus</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Inset 2px box-shadow</td>
+        </tr>
+        <tr>
+          <td>Label color</td>
+          <td>--text-body</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Via .type-body class</td>
+        </tr>
+        <tr>
+          <td>Badge color (NEW)</td>
+          <td>--accent-primary / --accent-primary-fg</td>
+          <td>ember bg, dark fg</td>
+          <td>ember bg, dark fg</td>
+          <td>atom-badge--accent token pair</td>
+        </tr>
+        <tr>
+          <td>Section divider rule</td>
+          <td>--border-subtle</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Via atom-section-label--with-rule::after</td>
+        </tr>
+        <tr>
+          <td>Section divider color</td>
+          <td>--text-muted</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Via atom-section-label default</td>
+        </tr>
+        <tr>
+          <td>Section divider padding-block</td>
+          <td>--space-2</td>
+          <td>8px</td>
+          <td>8px</td>
+          <td>On .mol-model-picker-option-divider</td>
+        </tr>
+        <tr>
+          <td>Section divider padding-inline</td>
+          <td>--space-4</td>
+          <td>16px</td>
+          <td>16px</td>
+          <td>Aligns with row inset</td>
+        </tr>
+        <tr>
+          <td>Popover background</td>
+          <td>--surface-overlay</td>
+          <td>var(--_neutral-2)</td>
+          <td>var(--_neutral-2)</td>
+          <td>Composition example only</td>
+        </tr>
+        <tr>
+          <td>Popover shadow</td>
+          <td>--elevation-overlay</td>
+          <td>0 12px 32px …</td>
+          <td>0 12px 32px …</td>
+          <td>Composition example only</td>
+        </tr>
+        <tr>
+          <td>Popover corner radius</td>
+          <td>--radius-default</td>
+          <td>≈8px</td>
+          <td>≈8px</td>
+          <td>Composition example only</td>
+        </tr>
+        <tr>
+          <td>Transition</td>
+          <td>--motion-fast / --motion-ease-out</td>
+          <td>120ms cubic-bezier(0.16,1,0.3,1)</td>
+          <td>same</td>
+          <td>background-color transition on row</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top: var(--space-6);">TOKEN_GAPs</h2>
+    <p style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-muted);">
+      None. All values resolve to existing design tokens.
+    </p>
+  </div>
+
+</body>
+</html>
