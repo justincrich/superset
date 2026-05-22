@@ -1216,7 +1216,7 @@
     /* Set indeterminate property on all checkboxes inside .is-indeterminate labels.
        This communicates indeterminate state to assistive technology.
        The is-indeterminate class alone only drives visual styles. */
-    document.querySelectorAll('.atom-checkbox.is-indeterminate .atom-checkbox__input').forEach(function(input) {
+    document.querySelectorAll('.atom-checkbox.is-indeterminate .atom-checkbox__input').forEach((input) => {
       input.indeterminate = true;
     });
   </script>

@@ -1,148 +1,162 @@
 /* _preview.css — Shared preview-frame layout for every atom/molecule/organism HTML page.
    Does NOT define component styles — only the harness chrome around them. */
 
-* { box-sizing: border-box; }
+* {
+	box-sizing: border-box;
+}
 
 body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-body);
-  color: var(--text-body);
-  background: var(--surface-page);
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+	margin: 0;
+	padding: 0;
+	font-family: var(--font-body);
+	color: var(--text-body);
+	background: var(--surface-page);
+	min-height: 100vh;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 /* Header plate ------------------------------------------------------------- */
 .preview-plate {
-  padding: var(--spacing-section) var(--spacing-between);
-  background: var(--surface-soft);
-  border-bottom: 1px solid var(--border-subtle);
+	padding: var(--spacing-section) var(--spacing-between);
+	background: var(--surface-soft);
+	border-bottom: 1px solid var(--border-subtle);
 }
 .preview-plate h1 {
-  margin: 0 0 var(--spacing-internal);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-page-title);
-  font-weight: var(--font-weight-heading);
-  letter-spacing: var(--tracking-tight);
-  color: var(--text-heading);
+	margin: 0 0 var(--spacing-internal);
+	font-family: var(--font-mono);
+	font-size: var(--font-size-page-title);
+	font-weight: var(--font-weight-heading);
+	letter-spacing: var(--tracking-tight);
+	color: var(--text-heading);
 }
 .preview-plate .crumb {
-  font-family: var(--font-mono);
-  font-size: var(--font-size-meta);
-  color: var(--text-muted);
-  letter-spacing: var(--tracking-mono);
-  text-transform: uppercase;
+	font-family: var(--font-mono);
+	font-size: var(--font-size-meta);
+	color: var(--text-muted);
+	letter-spacing: var(--tracking-mono);
+	text-transform: uppercase;
 }
 
 /* Pegboard — stacked theme panes (light pane, then dark pane, full width) -- */
 .pegboard {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-section);
-  padding: var(--spacing-section) var(--spacing-between);
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-section);
+	padding: var(--spacing-section) var(--spacing-between);
 }
 
 .pane {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-default);
-  padding: var(--spacing-section);
-  background: var(--surface-page);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-default);
+	padding: var(--spacing-section);
+	background: var(--surface-page);
 }
-.pane[data-theme="light"] { color-scheme: light; }
-.pane[data-theme="dark"]  { color-scheme: dark; }
+.pane[data-theme="light"] {
+	color-scheme: light;
+}
+.pane[data-theme="dark"] {
+	color-scheme: dark;
+}
 
 .pane > .pane-label {
-  display: inline-block;
-  margin: 0 0 var(--spacing-between);
-  padding: var(--spacing-micro) var(--spacing-internal);
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-subtle);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-meta);
-  letter-spacing: var(--tracking-mono);
-  color: var(--text-muted);
-  text-transform: uppercase;
+	display: inline-block;
+	margin: 0 0 var(--spacing-between);
+	padding: var(--spacing-micro) var(--spacing-internal);
+	background: var(--surface-sunken);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-subtle);
+	font-family: var(--font-mono);
+	font-size: var(--font-size-meta);
+	letter-spacing: var(--tracking-mono);
+	color: var(--text-muted);
+	text-transform: uppercase;
 }
 
 /* Variant section grid ----------------------------------------------------- */
 .variant {
-  margin-bottom: var(--spacing-section);
+	margin-bottom: var(--spacing-section);
 }
 .variant > h3 {
-  margin: 0 0 var(--spacing-between);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-meta);
-  font-weight: var(--font-weight-meta);
-  letter-spacing: var(--tracking-mono);
-  color: var(--text-muted);
-  text-transform: uppercase;
+	margin: 0 0 var(--spacing-between);
+	font-family: var(--font-mono);
+	font-size: var(--font-size-meta);
+	font-weight: var(--font-weight-meta);
+	letter-spacing: var(--tracking-mono);
+	color: var(--text-muted);
+	text-transform: uppercase;
 }
 .state-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--spacing-between);
-  align-items: start;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: var(--spacing-between);
+	align-items: start;
 }
 .state {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-micro);
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-micro);
 }
 .state-label {
-  font-family: var(--font-mono);
-  font-size: var(--font-size-meta);
-  color: var(--text-faint);
-  letter-spacing: var(--tracking-mono);
-  text-transform: uppercase;
+	font-family: var(--font-mono);
+	font-size: var(--font-size-meta);
+	color: var(--text-faint);
+	letter-spacing: var(--tracking-mono);
+	text-transform: uppercase;
 }
 
 /* Recipe table ------------------------------------------------------------- */
 .recipe {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: var(--font-mono);
-  font-size: var(--font-size-meta);
-  color: var(--text-body);
+	width: 100%;
+	border-collapse: collapse;
+	font-family: var(--font-mono);
+	font-size: var(--font-size-meta);
+	color: var(--text-body);
 }
 .recipe th,
 .recipe td {
-  padding: var(--spacing-internal) var(--spacing-between);
-  border-bottom: 1px solid var(--border-subtle);
-  text-align: left;
-  vertical-align: top;
+	padding: var(--spacing-internal) var(--spacing-between);
+	border-bottom: 1px solid var(--border-subtle);
+	text-align: left;
+	vertical-align: top;
 }
 .recipe th {
-  font-weight: var(--font-weight-meta);
-  color: var(--text-muted);
-  letter-spacing: var(--tracking-mono);
-  text-transform: uppercase;
+	font-weight: var(--font-weight-meta);
+	color: var(--text-muted);
+	letter-spacing: var(--tracking-mono);
+	text-transform: uppercase;
 }
 
 /* Mobile device frame helper (for atoms/molecules that need it) ------------ */
 .device-frame {
-  width: var(--device-width);
-  height: var(--device-height);
-  padding: var(--device-bezel);
-  border-radius: var(--device-radius);
-  background: var(--device-bg);
-  box-shadow: var(--elevation-modal);
+	width: var(--device-width);
+	height: var(--device-height);
+	padding: var(--device-bezel);
+	border-radius: var(--device-radius);
+	background: var(--device-bg);
+	box-shadow: var(--elevation-modal);
 }
 .device-viewport {
-  width: 100%;
-  height: 100%;
-  border-radius: var(--viewport-radius);
-  background: var(--surface-page);
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  flex-direction: column;
+	width: 100%;
+	height: 100%;
+	border-radius: var(--viewport-radius);
+	background: var(--surface-page);
+	overflow: hidden;
+	position: relative;
+	display: flex;
+	flex-direction: column;
 }
 
 /* Forced-state classes (so previews render every state deterministically) -- */
-.is-hover    { /* sticky :hover surrogate */ }
-.is-active   { /* sticky :active surrogate */ }
-.is-focus    { /* sticky :focus surrogate */ }
-.is-disabled { pointer-events: none; }
+.is-hover {
+	/* sticky :hover surrogate */
+}
+.is-active {
+	/* sticky :active surrogate */
+}
+.is-focus {
+	/* sticky :focus surrogate */
+}
+.is-disabled {
+	pointer-events: none;
+}

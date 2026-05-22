@@ -5,81 +5,81 @@
 
 /* Page title — workspace name, primary heading */
 .type-h1 {
-  font-family:    var(--font-body);
-  font-size:      var(--font-size-page-title);
-  font-weight:    var(--font-weight-heading);
-  line-height:    var(--line-height-tight);
-  letter-spacing: var(--tracking-tight);
-  color:          var(--text-heading);
+	font-family: var(--font-body);
+	font-size: var(--font-size-page-title);
+	font-weight: var(--font-weight-heading);
+	line-height: var(--line-height-tight);
+	letter-spacing: var(--tracking-tight);
+	color: var(--text-heading);
 }
 
 /* Section title — "Chat", "Files", pane headers */
 .type-h2 {
-  font-family:    var(--font-body);
-  font-size:      var(--font-size-section-title);
-  font-weight:    var(--font-weight-heading);
-  line-height:    var(--line-height-snug);
-  letter-spacing: var(--tracking-snug);
-  color:          var(--text-heading);
+	font-family: var(--font-body);
+	font-size: var(--font-size-section-title);
+	font-weight: var(--font-weight-heading);
+	line-height: var(--line-height-snug);
+	letter-spacing: var(--tracking-snug);
+	color: var(--text-heading);
 }
 
 /* Component title — conversation thread title, modal title */
 .type-title {
-  font-family:    var(--font-body);
-  font-size:      var(--font-size-title);
-  font-weight:    var(--font-weight-title);
-  line-height:    var(--line-height-snug);
-  letter-spacing: var(--tracking-snug);
-  color:          var(--text-heading);
+	font-family: var(--font-body);
+	font-size: var(--font-size-title);
+	font-weight: var(--font-weight-title);
+	line-height: var(--line-height-snug);
+	letter-spacing: var(--tracking-snug);
+	color: var(--text-heading);
 }
 
 /* Body copy — message text, descriptions */
 .type-body {
-  font-family:    var(--font-body);
-  font-size:      var(--font-size-body);
-  font-weight:    var(--font-weight-body);
-  line-height:    var(--line-height-normal);
-  letter-spacing: var(--tracking-normal);
-  color:          var(--text-body);
+	font-family: var(--font-body);
+	font-size: var(--font-size-body);
+	font-weight: var(--font-weight-body);
+	line-height: var(--line-height-normal);
+	letter-spacing: var(--tracking-normal);
+	color: var(--text-body);
 }
 
 /* Small body — secondary descriptions, file paths */
 .type-body-sm {
-  font-family:    var(--font-body);
-  font-size:      var(--font-size-body-sm);
-  font-weight:    var(--font-weight-body);
-  line-height:    var(--line-height-normal);
-  letter-spacing: var(--tracking-normal);
-  color:          var(--text-body);
+	font-family: var(--font-body);
+	font-size: var(--font-size-body-sm);
+	font-weight: var(--font-weight-body);
+	line-height: var(--line-height-normal);
+	letter-spacing: var(--tracking-normal);
+	color: var(--text-body);
 }
 
 /* Meta — timestamps, status tags, breadcrumbs (monospaced, uppercase) */
 .type-meta {
-  font-family:    var(--font-mono);
-  font-size:      var(--font-size-meta);
-  font-weight:    var(--font-weight-meta);
-  line-height:    var(--line-height-snug);
-  letter-spacing: var(--tracking-mono);
-  text-transform: uppercase;
-  color:          var(--text-muted);
+	font-family: var(--font-mono);
+	font-size: var(--font-size-meta);
+	font-weight: var(--font-weight-meta);
+	line-height: var(--line-height-snug);
+	letter-spacing: var(--tracking-mono);
+	text-transform: uppercase;
+	color: var(--text-muted);
 }
 
 /* Label — tab labels, field labels, button labels (monospaced) */
 .type-label {
-  font-family:    var(--font-mono);
-  font-size:      var(--font-size-label);
-  font-weight:    var(--font-weight-label);
-  line-height:    var(--line-height-snug);
-  letter-spacing: var(--tracking-mono);
-  color:          var(--text-muted);
+	font-family: var(--font-mono);
+	font-size: var(--font-size-label);
+	font-weight: var(--font-weight-label);
+	line-height: var(--line-height-snug);
+	letter-spacing: var(--tracking-mono);
+	color: var(--text-muted);
 }
 
 /* Code — inline code, terminal output, tool call names */
 .type-code {
-  font-family:    var(--font-mono);
-  font-size:      var(--font-size-code);
-  font-weight:    var(--font-weight-code);
-  line-height:    var(--line-height-normal);
-  letter-spacing: var(--tracking-normal);
-  color:          var(--text-body);
+	font-family: var(--font-mono);
+	font-size: var(--font-size-code);
+	font-weight: var(--font-weight-code);
+	line-height: var(--line-height-normal);
+	letter-spacing: var(--tracking-normal);
+	color: var(--text-body);
 }

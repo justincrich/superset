@@ -1,376 +1,682 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://superset/schemas/design-system/v2/theme.schema.json",
-  "title": "Superset Design System — Semantic Theme File",
-  "description": "JSON mirror of the semantic token layer. Identical key trees for light and dark themes; only values differ. Validated against both theme.dark.json and theme.light.json.",
-  "type": "object",
-  "required": [
-    "theme",
-    "surface",
-    "text",
-    "border",
-    "accent",
-    "state",
-    "spacing",
-    "radius",
-    "elevation",
-    "motion",
-    "type",
-    "device",
-    "safe-area",
-    "touch",
-    "sheet",
-    "tab-bar",
-    "composer",
-    "domain"
-  ],
-  "properties": {
-    "$schema": { "type": "string" },
-    "theme": {
-      "type": "string",
-      "enum": ["dark", "light"]
-    },
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://superset/schemas/design-system/v2/theme.schema.json",
+	"title": "Superset Design System — Semantic Theme File",
+	"description": "JSON mirror of the semantic token layer. Identical key trees for light and dark themes; only values differ. Validated against both theme.dark.json and theme.light.json.",
+	"type": "object",
+	"required": [
+		"theme",
+		"surface",
+		"text",
+		"border",
+		"accent",
+		"state",
+		"spacing",
+		"radius",
+		"elevation",
+		"motion",
+		"type",
+		"device",
+		"safe-area",
+		"touch",
+		"sheet",
+		"tab-bar",
+		"composer",
+		"domain"
+	],
+	"properties": {
+		"$schema": { "type": "string" },
+		"theme": {
+			"type": "string",
+			"enum": ["dark", "light"]
+		},
 
-    "surface": {
-      "type": "object",
-      "required": ["page", "soft", "sunken", "raised", "overlay", "sidebar", "active", "inverse"],
-      "additionalProperties": false,
-      "properties": {
-        "page":    { "type": "string", "description": "Base page background" },
-        "soft":    { "type": "string", "description": "Subtle layered surface (panel within page)" },
-        "sunken":  { "type": "string", "description": "Recessed region (sidebar, inset card)" },
-        "raised":  { "type": "string", "description": "Elevated card above page" },
-        "overlay": { "type": "string", "description": "Modal / popover background" },
-        "sidebar": { "type": "string", "description": "Sidebar navigation surface" },
-        "active":  { "type": "string", "description": "Active / selected row background" },
-        "inverse": { "type": "string", "description": "Inverted surface (dark panel on light app)" }
-      }
-    },
+		"surface": {
+			"type": "object",
+			"required": [
+				"page",
+				"soft",
+				"sunken",
+				"raised",
+				"overlay",
+				"sidebar",
+				"active",
+				"inverse"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"page": { "type": "string", "description": "Base page background" },
+				"soft": {
+					"type": "string",
+					"description": "Subtle layered surface (panel within page)"
+				},
+				"sunken": {
+					"type": "string",
+					"description": "Recessed region (sidebar, inset card)"
+				},
+				"raised": {
+					"type": "string",
+					"description": "Elevated card above page"
+				},
+				"overlay": {
+					"type": "string",
+					"description": "Modal / popover background"
+				},
+				"sidebar": {
+					"type": "string",
+					"description": "Sidebar navigation surface"
+				},
+				"active": {
+					"type": "string",
+					"description": "Active / selected row background"
+				},
+				"inverse": {
+					"type": "string",
+					"description": "Inverted surface (dark panel on light app)"
+				}
+			}
+		},
 
-    "text": {
-      "type": "object",
-      "required": ["heading", "body", "muted", "faint", "inverse", "link", "link-hover", "disabled", "on-inverse"],
-      "additionalProperties": false,
-      "properties": {
-        "heading":    { "type": "string", "description": "Primary heading foreground" },
-        "body":       { "type": "string", "description": "Body copy foreground" },
-        "muted":      { "type": "string", "description": "Secondary / subdued text" },
-        "faint":      { "type": "string", "description": "Tertiary / caption text" },
-        "inverse":    { "type": "string", "description": "Text on accent or inverted surface" },
-        "link":       { "type": "string", "description": "Default hyperlink color" },
-        "link-hover": { "type": "string", "description": "Hovered hyperlink color" },
-        "disabled":   { "type": "string", "description": "Disabled control text" },
-        "on-inverse": { "type": "string", "description": "Text on primary/accent surface" }
-      }
-    },
+		"text": {
+			"type": "object",
+			"required": [
+				"heading",
+				"body",
+				"muted",
+				"faint",
+				"inverse",
+				"link",
+				"link-hover",
+				"disabled",
+				"on-inverse"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"heading": {
+					"type": "string",
+					"description": "Primary heading foreground"
+				},
+				"body": { "type": "string", "description": "Body copy foreground" },
+				"muted": {
+					"type": "string",
+					"description": "Secondary / subdued text"
+				},
+				"faint": { "type": "string", "description": "Tertiary / caption text" },
+				"inverse": {
+					"type": "string",
+					"description": "Text on accent or inverted surface"
+				},
+				"link": { "type": "string", "description": "Default hyperlink color" },
+				"link-hover": {
+					"type": "string",
+					"description": "Hovered hyperlink color"
+				},
+				"disabled": {
+					"type": "string",
+					"description": "Disabled control text"
+				},
+				"on-inverse": {
+					"type": "string",
+					"description": "Text on primary/accent surface"
+				}
+			}
+		},
 
-    "border": {
-      "type": "object",
-      "required": ["default", "subtle", "strong", "focus", "disabled"],
-      "additionalProperties": false,
-      "properties": {
-        "default":  { "type": "string", "description": "Default component border" },
-        "subtle":   { "type": "string", "description": "Hairline divider" },
-        "strong":   { "type": "string", "description": "Emphasized border" },
-        "focus":    { "type": "string", "description": "Focus ring color" },
-        "disabled": { "type": "string", "description": "Disabled component border" }
-      }
-    },
+		"border": {
+			"type": "object",
+			"required": ["default", "subtle", "strong", "focus", "disabled"],
+			"additionalProperties": false,
+			"properties": {
+				"default": {
+					"type": "string",
+					"description": "Default component border"
+				},
+				"subtle": { "type": "string", "description": "Hairline divider" },
+				"strong": { "type": "string", "description": "Emphasized border" },
+				"focus": { "type": "string", "description": "Focus ring color" },
+				"disabled": {
+					"type": "string",
+					"description": "Disabled component border"
+				}
+			}
+		},
 
-    "accent": {
-      "type": "object",
-      "required": [
-        "primary",
-        "primary-hover",
-        "primary-pressed",
-        "primary-subtle",
-        "primary-fg",
-        "highlight-match",
-        "highlight-active"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "primary":           { "type": "string", "description": "Primary ember brand color" },
-        "primary-hover":     { "type": "string", "description": "Primary hovered state" },
-        "primary-pressed":   { "type": "string", "description": "Primary active/pressed state" },
-        "primary-subtle":    { "type": "string", "description": "Tinted accent background (badge, selected row)" },
-        "primary-fg":        { "type": "string", "description": "Foreground text on primary accent background" },
-        "highlight-match":   { "type": "string", "description": "Search match highlight background" },
-        "highlight-active":  { "type": "string", "description": "Active search match highlight background" }
-      }
-    },
+		"accent": {
+			"type": "object",
+			"required": [
+				"primary",
+				"primary-hover",
+				"primary-pressed",
+				"primary-subtle",
+				"primary-fg",
+				"highlight-match",
+				"highlight-active"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"primary": {
+					"type": "string",
+					"description": "Primary ember brand color"
+				},
+				"primary-hover": {
+					"type": "string",
+					"description": "Primary hovered state"
+				},
+				"primary-pressed": {
+					"type": "string",
+					"description": "Primary active/pressed state"
+				},
+				"primary-subtle": {
+					"type": "string",
+					"description": "Tinted accent background (badge, selected row)"
+				},
+				"primary-fg": {
+					"type": "string",
+					"description": "Foreground text on primary accent background"
+				},
+				"highlight-match": {
+					"type": "string",
+					"description": "Search match highlight background"
+				},
+				"highlight-active": {
+					"type": "string",
+					"description": "Active search match highlight background"
+				}
+			}
+		},
 
-    "state": {
-      "type": "object",
-      "required": ["live", "warning", "danger", "success", "neutral"],
-      "additionalProperties": false,
-      "properties": {
-        "live": {
-          "type": "object",
-          "required": ["fg", "bg", "dot"],
-          "additionalProperties": false,
-          "properties": {
-            "fg":  { "type": "string", "description": "Streaming / running foreground" },
-            "bg":  { "type": "string", "description": "Streaming / running background" },
-            "dot": { "type": "string", "description": "Streaming / running indicator dot" }
-          }
-        },
-        "warning": {
-          "type": "object",
-          "required": ["fg", "bg", "dot"],
-          "additionalProperties": false,
-          "properties": {
-            "fg":  { "type": "string", "description": "Pause-pending warning foreground" },
-            "bg":  { "type": "string", "description": "Pause-pending warning background" },
-            "dot": { "type": "string", "description": "Warning indicator dot" }
-          }
-        },
-        "danger": {
-          "type": "object",
-          "required": ["fg", "bg", "dot"],
-          "additionalProperties": false,
-          "properties": {
-            "fg":  { "type": "string", "description": "Error / destructive foreground" },
-            "bg":  { "type": "string", "description": "Error / destructive background" },
-            "dot": { "type": "string", "description": "Danger indicator dot" }
-          }
-        },
-        "success": {
-          "type": "object",
-          "required": ["fg", "bg", "dot"],
-          "additionalProperties": false,
-          "properties": {
-            "fg":  { "type": "string", "description": "Success foreground" },
-            "bg":  { "type": "string", "description": "Success background" },
-            "dot": { "type": "string", "description": "Success indicator dot" }
-          }
-        },
-        "neutral": {
-          "type": "object",
-          "required": ["dot"],
-          "additionalProperties": false,
-          "properties": {
-            "dot": { "type": "string", "description": "Paused / archived neutral indicator dot" }
-          }
-        }
-      }
-    },
+		"state": {
+			"type": "object",
+			"required": ["live", "warning", "danger", "success", "neutral"],
+			"additionalProperties": false,
+			"properties": {
+				"live": {
+					"type": "object",
+					"required": ["fg", "bg", "dot"],
+					"additionalProperties": false,
+					"properties": {
+						"fg": {
+							"type": "string",
+							"description": "Streaming / running foreground"
+						},
+						"bg": {
+							"type": "string",
+							"description": "Streaming / running background"
+						},
+						"dot": {
+							"type": "string",
+							"description": "Streaming / running indicator dot"
+						}
+					}
+				},
+				"warning": {
+					"type": "object",
+					"required": ["fg", "bg", "dot"],
+					"additionalProperties": false,
+					"properties": {
+						"fg": {
+							"type": "string",
+							"description": "Pause-pending warning foreground"
+						},
+						"bg": {
+							"type": "string",
+							"description": "Pause-pending warning background"
+						},
+						"dot": { "type": "string", "description": "Warning indicator dot" }
+					}
+				},
+				"danger": {
+					"type": "object",
+					"required": ["fg", "bg", "dot"],
+					"additionalProperties": false,
+					"properties": {
+						"fg": {
+							"type": "string",
+							"description": "Error / destructive foreground"
+						},
+						"bg": {
+							"type": "string",
+							"description": "Error / destructive background"
+						},
+						"dot": { "type": "string", "description": "Danger indicator dot" }
+					}
+				},
+				"success": {
+					"type": "object",
+					"required": ["fg", "bg", "dot"],
+					"additionalProperties": false,
+					"properties": {
+						"fg": { "type": "string", "description": "Success foreground" },
+						"bg": { "type": "string", "description": "Success background" },
+						"dot": { "type": "string", "description": "Success indicator dot" }
+					}
+				},
+				"neutral": {
+					"type": "object",
+					"required": ["dot"],
+					"additionalProperties": false,
+					"properties": {
+						"dot": {
+							"type": "string",
+							"description": "Paused / archived neutral indicator dot"
+						}
+					}
+				}
+			}
+		},
 
-    "spacing": {
-      "type": "object",
-      "required": ["1", "2", "3", "4", "5", "6", "8", "10", "12", "16", "micro", "internal", "between", "section"],
-      "additionalProperties": false,
-      "properties": {
-        "1":        { "type": "string", "description": "4px — tightest gap" },
-        "2":        { "type": "string", "description": "8px" },
-        "3":        { "type": "string", "description": "12px" },
-        "4":        { "type": "string", "description": "16px" },
-        "5":        { "type": "string", "description": "20px" },
-        "6":        { "type": "string", "description": "24px" },
-        "8":        { "type": "string", "description": "32px" },
-        "10":       { "type": "string", "description": "40px" },
-        "12":       { "type": "string", "description": "48px" },
-        "16":       { "type": "string", "description": "64px" },
-        "micro":    { "type": "string", "description": "Icon gaps, tag padding" },
-        "internal": { "type": "string", "description": "Inside-component padding" },
-        "between":  { "type": "string", "description": "Between components" },
-        "section":  { "type": "string", "description": "Between page sections" }
-      }
-    },
+		"spacing": {
+			"type": "object",
+			"required": [
+				"1",
+				"2",
+				"3",
+				"4",
+				"5",
+				"6",
+				"8",
+				"10",
+				"12",
+				"16",
+				"micro",
+				"internal",
+				"between",
+				"section"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"1": { "type": "string", "description": "4px — tightest gap" },
+				"2": { "type": "string", "description": "8px" },
+				"3": { "type": "string", "description": "12px" },
+				"4": { "type": "string", "description": "16px" },
+				"5": { "type": "string", "description": "20px" },
+				"6": { "type": "string", "description": "24px" },
+				"8": { "type": "string", "description": "32px" },
+				"10": { "type": "string", "description": "40px" },
+				"12": { "type": "string", "description": "48px" },
+				"16": { "type": "string", "description": "64px" },
+				"micro": { "type": "string", "description": "Icon gaps, tag padding" },
+				"internal": {
+					"type": "string",
+					"description": "Inside-component padding"
+				},
+				"between": { "type": "string", "description": "Between components" },
+				"section": { "type": "string", "description": "Between page sections" }
+			}
+		},
 
-    "radius": {
-      "type": "object",
-      "required": ["base", "subtle", "default", "lg", "xl", "pill", "round"],
-      "additionalProperties": false,
-      "properties": {
-        "base":    { "type": "string", "description": "Base radius unit (0.625rem = 10px)" },
-        "subtle":  { "type": "string", "description": "Minimal corner softening (~6px)" },
-        "default": { "type": "string", "description": "Standard component radius (~8px)" },
-        "lg":      { "type": "string", "description": "Large radius (10px)" },
-        "xl":      { "type": "string", "description": "Extra-large radius (~14px)" },
-        "pill":    { "type": "string", "description": "Fully rounded (tags, toggles)" },
-        "round":   { "type": "string", "description": "Circle (avatars)" }
-      }
-    },
+		"radius": {
+			"type": "object",
+			"required": ["base", "subtle", "default", "lg", "xl", "pill", "round"],
+			"additionalProperties": false,
+			"properties": {
+				"base": {
+					"type": "string",
+					"description": "Base radius unit (0.625rem = 10px)"
+				},
+				"subtle": {
+					"type": "string",
+					"description": "Minimal corner softening (~6px)"
+				},
+				"default": {
+					"type": "string",
+					"description": "Standard component radius (~8px)"
+				},
+				"lg": { "type": "string", "description": "Large radius (10px)" },
+				"xl": { "type": "string", "description": "Extra-large radius (~14px)" },
+				"pill": {
+					"type": "string",
+					"description": "Fully rounded (tags, toggles)"
+				},
+				"round": { "type": "string", "description": "Circle (avatars)" }
+			}
+		},
 
-    "elevation": {
-      "type": "object",
-      "required": ["flat", "raised", "overlay", "modal", "sheet"],
-      "additionalProperties": false,
-      "properties": {
-        "flat":    { "type": "string", "description": "No shadow" },
-        "raised":  { "type": "string", "description": "Card / hover-up shadow" },
-        "overlay": { "type": "string", "description": "Popover / dropdown shadow" },
-        "modal":   { "type": "string", "description": "Dialog / full modal shadow" },
-        "sheet":   { "type": "string", "description": "Bottom sheet upward shadow" }
-      }
-    },
+		"elevation": {
+			"type": "object",
+			"required": ["flat", "raised", "overlay", "modal", "sheet"],
+			"additionalProperties": false,
+			"properties": {
+				"flat": { "type": "string", "description": "No shadow" },
+				"raised": { "type": "string", "description": "Card / hover-up shadow" },
+				"overlay": {
+					"type": "string",
+					"description": "Popover / dropdown shadow"
+				},
+				"modal": {
+					"type": "string",
+					"description": "Dialog / full modal shadow"
+				},
+				"sheet": {
+					"type": "string",
+					"description": "Bottom sheet upward shadow"
+				}
+			}
+		},
 
-    "motion": {
-      "type": "object",
-      "required": ["fast", "medium", "slow", "ease-out", "ease-in-out"],
-      "additionalProperties": false,
-      "properties": {
-        "fast":        { "type": "string", "description": "Micro-interaction duration" },
-        "medium":      { "type": "string", "description": "Standard transition duration" },
-        "slow":        { "type": "string", "description": "Large motion (modal entry) duration" },
-        "ease-out":    { "type": "string", "description": "Deceleration cubic-bezier curve" },
-        "ease-in-out": { "type": "string", "description": "Symmetric cubic-bezier curve" }
-      }
-    },
+		"motion": {
+			"type": "object",
+			"required": ["fast", "medium", "slow", "ease-out", "ease-in-out"],
+			"additionalProperties": false,
+			"properties": {
+				"fast": {
+					"type": "string",
+					"description": "Micro-interaction duration"
+				},
+				"medium": {
+					"type": "string",
+					"description": "Standard transition duration"
+				},
+				"slow": {
+					"type": "string",
+					"description": "Large motion (modal entry) duration"
+				},
+				"ease-out": {
+					"type": "string",
+					"description": "Deceleration cubic-bezier curve"
+				},
+				"ease-in-out": {
+					"type": "string",
+					"description": "Symmetric cubic-bezier curve"
+				}
+			}
+		},
 
-    "type": {
-      "type": "object",
-      "required": [
-        "font-body",
-        "font-mono",
-        "size-page-title",
-        "size-section-title",
-        "size-title",
-        "size-body",
-        "size-body-sm",
-        "size-meta",
-        "size-label",
-        "size-code",
-        "weight-heading",
-        "weight-title",
-        "weight-body",
-        "weight-meta",
-        "weight-label",
-        "weight-code",
-        "line-height-tight",
-        "line-height-snug",
-        "line-height-normal",
-        "line-height-loose",
-        "tracking-tight",
-        "tracking-snug",
-        "tracking-normal",
-        "tracking-mono",
-        "tracking-uppercase"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "font-body":           { "type": "string", "description": "Body font stack" },
-        "font-mono":           { "type": "string", "description": "Monospace font stack" },
-        "size-page-title":     { "type": "string", "description": "Page title font size" },
-        "size-section-title":  { "type": "string", "description": "Section heading font size" },
-        "size-title":          { "type": "string", "description": "Component title font size" },
-        "size-body":           { "type": "string", "description": "Body copy font size" },
-        "size-body-sm":        { "type": "string", "description": "Small body font size" },
-        "size-meta":           { "type": "string", "description": "Metadata / label font size" },
-        "size-label":          { "type": "string", "description": "Tab / field label font size" },
-        "size-code":           { "type": "string", "description": "Code / terminal font size" },
-        "weight-heading":      { "type": "string", "description": "Heading font weight" },
-        "weight-title":        { "type": "string", "description": "Title font weight" },
-        "weight-body":         { "type": "string", "description": "Body font weight" },
-        "weight-meta":         { "type": "string", "description": "Meta / label font weight" },
-        "weight-label":        { "type": "string", "description": "Label font weight" },
-        "weight-code":         { "type": "string", "description": "Code font weight" },
-        "line-height-tight":   { "type": "string", "description": "Tight leading (headings)" },
-        "line-height-snug":    { "type": "string", "description": "Snug leading (titles)" },
-        "line-height-normal":  { "type": "string", "description": "Normal leading (body)" },
-        "line-height-loose":   { "type": "string", "description": "Loose leading (relaxed)" },
-        "tracking-tight":      { "type": "string", "description": "Tight letter spacing" },
-        "tracking-snug":       { "type": "string", "description": "Slightly tight letter spacing" },
-        "tracking-normal":     { "type": "string", "description": "Normal letter spacing" },
-        "tracking-mono":       { "type": "string", "description": "Monospace tracking (code/labels)" },
-        "tracking-uppercase":  { "type": "string", "description": "Uppercase tracking (meta/tags)" }
-      }
-    },
+		"type": {
+			"type": "object",
+			"required": [
+				"font-body",
+				"font-mono",
+				"size-page-title",
+				"size-section-title",
+				"size-title",
+				"size-body",
+				"size-body-sm",
+				"size-meta",
+				"size-label",
+				"size-code",
+				"weight-heading",
+				"weight-title",
+				"weight-body",
+				"weight-meta",
+				"weight-label",
+				"weight-code",
+				"line-height-tight",
+				"line-height-snug",
+				"line-height-normal",
+				"line-height-loose",
+				"tracking-tight",
+				"tracking-snug",
+				"tracking-normal",
+				"tracking-mono",
+				"tracking-uppercase"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"font-body": { "type": "string", "description": "Body font stack" },
+				"font-mono": {
+					"type": "string",
+					"description": "Monospace font stack"
+				},
+				"size-page-title": {
+					"type": "string",
+					"description": "Page title font size"
+				},
+				"size-section-title": {
+					"type": "string",
+					"description": "Section heading font size"
+				},
+				"size-title": {
+					"type": "string",
+					"description": "Component title font size"
+				},
+				"size-body": { "type": "string", "description": "Body copy font size" },
+				"size-body-sm": {
+					"type": "string",
+					"description": "Small body font size"
+				},
+				"size-meta": {
+					"type": "string",
+					"description": "Metadata / label font size"
+				},
+				"size-label": {
+					"type": "string",
+					"description": "Tab / field label font size"
+				},
+				"size-code": {
+					"type": "string",
+					"description": "Code / terminal font size"
+				},
+				"weight-heading": {
+					"type": "string",
+					"description": "Heading font weight"
+				},
+				"weight-title": {
+					"type": "string",
+					"description": "Title font weight"
+				},
+				"weight-body": { "type": "string", "description": "Body font weight" },
+				"weight-meta": {
+					"type": "string",
+					"description": "Meta / label font weight"
+				},
+				"weight-label": {
+					"type": "string",
+					"description": "Label font weight"
+				},
+				"weight-code": { "type": "string", "description": "Code font weight" },
+				"line-height-tight": {
+					"type": "string",
+					"description": "Tight leading (headings)"
+				},
+				"line-height-snug": {
+					"type": "string",
+					"description": "Snug leading (titles)"
+				},
+				"line-height-normal": {
+					"type": "string",
+					"description": "Normal leading (body)"
+				},
+				"line-height-loose": {
+					"type": "string",
+					"description": "Loose leading (relaxed)"
+				},
+				"tracking-tight": {
+					"type": "string",
+					"description": "Tight letter spacing"
+				},
+				"tracking-snug": {
+					"type": "string",
+					"description": "Slightly tight letter spacing"
+				},
+				"tracking-normal": {
+					"type": "string",
+					"description": "Normal letter spacing"
+				},
+				"tracking-mono": {
+					"type": "string",
+					"description": "Monospace tracking (code/labels)"
+				},
+				"tracking-uppercase": {
+					"type": "string",
+					"description": "Uppercase tracking (meta/tags)"
+				}
+			}
+		},
 
-    "device": {
-      "type": "object",
-      "required": [
-        "width",
-        "height",
-        "bezel",
-        "radius",
-        "bg",
-        "viewport-width",
-        "viewport-height",
-        "viewport-radius",
-        "dynamic-island-width",
-        "dynamic-island-height",
-        "dynamic-island-top"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "width":                 { "type": "string", "description": "Outer device width (444px)" },
-        "height":                { "type": "string", "description": "Outer device height (962px)" },
-        "bezel":                 { "type": "string", "description": "Bezel thickness (7.5px)" },
-        "radius":                { "type": "string", "description": "Outer device corner radius (60px)" },
-        "bg":                    { "type": "string", "description": "Device shell background gradient" },
-        "viewport-width":        { "type": "string", "description": "Viewport width (430px)" },
-        "viewport-height":       { "type": "string", "description": "Viewport height (932px)" },
-        "viewport-radius":       { "type": "string", "description": "Viewport inner radius (54px)" },
-        "dynamic-island-width":  { "type": "string", "description": "Dynamic Island width (126px)" },
-        "dynamic-island-height": { "type": "string", "description": "Dynamic Island height (37px)" },
-        "dynamic-island-top":    { "type": "string", "description": "Dynamic Island top offset (11px)" }
-      }
-    },
+		"device": {
+			"type": "object",
+			"required": [
+				"width",
+				"height",
+				"bezel",
+				"radius",
+				"bg",
+				"viewport-width",
+				"viewport-height",
+				"viewport-radius",
+				"dynamic-island-width",
+				"dynamic-island-height",
+				"dynamic-island-top"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"width": {
+					"type": "string",
+					"description": "Outer device width (444px)"
+				},
+				"height": {
+					"type": "string",
+					"description": "Outer device height (962px)"
+				},
+				"bezel": { "type": "string", "description": "Bezel thickness (7.5px)" },
+				"radius": {
+					"type": "string",
+					"description": "Outer device corner radius (60px)"
+				},
+				"bg": {
+					"type": "string",
+					"description": "Device shell background gradient"
+				},
+				"viewport-width": {
+					"type": "string",
+					"description": "Viewport width (430px)"
+				},
+				"viewport-height": {
+					"type": "string",
+					"description": "Viewport height (932px)"
+				},
+				"viewport-radius": {
+					"type": "string",
+					"description": "Viewport inner radius (54px)"
+				},
+				"dynamic-island-width": {
+					"type": "string",
+					"description": "Dynamic Island width (126px)"
+				},
+				"dynamic-island-height": {
+					"type": "string",
+					"description": "Dynamic Island height (37px)"
+				},
+				"dynamic-island-top": {
+					"type": "string",
+					"description": "Dynamic Island top offset (11px)"
+				}
+			}
+		},
 
-    "safe-area": {
-      "type": "object",
-      "required": ["top", "bottom"],
-      "additionalProperties": false,
-      "properties": {
-        "top":    { "type": "string", "description": "Safe area inset top (status bar height 54px)" },
-        "bottom": { "type": "string", "description": "Safe area inset bottom (home indicator + buffer 24px)" }
-      }
-    },
+		"safe-area": {
+			"type": "object",
+			"required": ["top", "bottom"],
+			"additionalProperties": false,
+			"properties": {
+				"top": {
+					"type": "string",
+					"description": "Safe area inset top (status bar height 54px)"
+				},
+				"bottom": {
+					"type": "string",
+					"description": "Safe area inset bottom (home indicator + buffer 24px)"
+				}
+			}
+		},
 
-    "touch": {
-      "type": "object",
-      "required": ["target-min"],
-      "additionalProperties": false,
-      "properties": {
-        "target-min": { "type": "string", "description": "Minimum touch target size (44px — WCAG AA + iOS HIG)" }
-      }
-    },
+		"touch": {
+			"type": "object",
+			"required": ["target-min"],
+			"additionalProperties": false,
+			"properties": {
+				"target-min": {
+					"type": "string",
+					"description": "Minimum touch target size (44px — WCAG AA + iOS HIG)"
+				}
+			}
+		},
 
-    "sheet": {
-      "type": "object",
-      "required": ["snap-half", "snap-full", "handle-width", "handle-height"],
-      "additionalProperties": false,
-      "properties": {
-        "snap-half":     { "type": "string", "description": "Bottom sheet half-height snap point" },
-        "snap-full":     { "type": "string", "description": "Bottom sheet full-height snap point" },
-        "handle-width":  { "type": "string", "description": "Sheet drag handle width" },
-        "handle-height": { "type": "string", "description": "Sheet drag handle height" }
-      }
-    },
+		"sheet": {
+			"type": "object",
+			"required": ["snap-half", "snap-full", "handle-width", "handle-height"],
+			"additionalProperties": false,
+			"properties": {
+				"snap-half": {
+					"type": "string",
+					"description": "Bottom sheet half-height snap point"
+				},
+				"snap-full": {
+					"type": "string",
+					"description": "Bottom sheet full-height snap point"
+				},
+				"handle-width": {
+					"type": "string",
+					"description": "Sheet drag handle width"
+				},
+				"handle-height": {
+					"type": "string",
+					"description": "Sheet drag handle height"
+				}
+			}
+		},
 
-    "tab-bar": {
-      "type": "object",
-      "required": ["height", "blur"],
-      "additionalProperties": false,
-      "properties": {
-        "height": { "type": "string", "description": "Tab bar total height including safe area" },
-        "blur":   { "type": "string", "description": "Tab bar backdrop blur radius" }
-      }
-    },
+		"tab-bar": {
+			"type": "object",
+			"required": ["height", "blur"],
+			"additionalProperties": false,
+			"properties": {
+				"height": {
+					"type": "string",
+					"description": "Tab bar total height including safe area"
+				},
+				"blur": {
+					"type": "string",
+					"description": "Tab bar backdrop blur radius"
+				}
+			}
+		},
 
-    "composer": {
-      "type": "object",
-      "required": ["min-height", "max-height"],
-      "additionalProperties": false,
-      "properties": {
-        "min-height": { "type": "string", "description": "Input composer minimum height (single line)" },
-        "max-height": { "type": "string", "description": "Input composer maximum height before scroll" }
-      }
-    },
+		"composer": {
+			"type": "object",
+			"required": ["min-height", "max-height"],
+			"additionalProperties": false,
+			"properties": {
+				"min-height": {
+					"type": "string",
+					"description": "Input composer minimum height (single line)"
+				},
+				"max-height": {
+					"type": "string",
+					"description": "Input composer maximum height before scroll"
+				}
+			}
+		},
 
-    "domain": {
-      "type": "object",
-      "required": ["sidebar-accent", "streaming-cursor", "tool-rule-width", "approval-footer-h"],
-      "additionalProperties": false,
-      "properties": {
-        "sidebar-accent":    { "type": "string", "description": "Sidebar primary accent (ember dark / neutral light)" },
-        "streaming-cursor":  { "type": "string", "description": "Blinking cursor color during streaming" },
-        "tool-rule-width":   { "type": "string", "description": "Tool call left-border rule thickness" },
-        "approval-footer-h": { "type": "string", "description": "Approval action footer height" }
-      }
-    }
-  },
-  "additionalProperties": false
+		"domain": {
+			"type": "object",
+			"required": [
+				"sidebar-accent",
+				"streaming-cursor",
+				"tool-rule-width",
+				"approval-footer-h"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"sidebar-accent": {
+					"type": "string",
+					"description": "Sidebar primary accent (ember dark / neutral light)"
+				},
+				"streaming-cursor": {
+					"type": "string",
+					"description": "Blinking cursor color during streaming"
+				},
+				"tool-rule-width": {
+					"type": "string",
+					"description": "Tool call left-border rule thickness"
+				},
+				"approval-footer-h": {
+					"type": "string",
+					"description": "Approval action footer height"
+				}
+			}
+		}
+	},
+	"additionalProperties": false
 }
