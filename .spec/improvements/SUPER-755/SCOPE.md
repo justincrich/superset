@@ -89,7 +89,7 @@ The three pills rendering side-by-side in `PromptInputTools` are replaced by a s
 - [ ] **AC-3**: ShieldIcon variant reflects active permission mode (Auto / Semi-auto / Manual) — match the icon set used inside `PermissionModePicker`. Always at `text-foreground` (no dimming — permission mode is never "off"; one of three modes is always active). Manual mode MAY use a safety-signal accent (e.g., `text-amber-500`) at implementer's discretion based on visual review.
 - [ ] **AC-4**: BrainIcon is ALWAYS rendered in the trigger. State communicated via **semantic color, NOT opacity** (which would read as disabled — see scope amendment §1): `text-muted-foreground` when `thinkingLevel === 'off'`, `text-foreground` otherwise. Same size, same icon weight — only color changes. No layout shift.
 - [ ] **AC-5**: Trigger has `aria-label` describing the consolidated control (dynamic — e.g., "Chat settings: model Claude 3.5 Sonnet, permission Auto, thinking Off") and standard keyboard activation. `cursor-pointer` always; NEVER `cursor-not-allowed` — the trigger is always interactive regardless of thinking state.
-- [ ] **AC-5b**: Trigger has a `Tooltip` (existing `packages/ui` primitive) that surfaces the full current configuration on hover (e.g., "Model: Claude 3.5 Sonnet · Permission: Auto · Thinking: Off"). This reinforces that the inline icons are status indicators, not disabled affordances. Tooltip uses the existing `Tooltip`/`TooltipProvider` primitives — do NOT introduce a custom tooltip implementation.
+- [ ] **AC-20**: Trigger has a `Tooltip` (existing `packages/ui` primitive) that surfaces the full current configuration on hover (e.g., "Model: Claude 3.5 Sonnet · Permission: Auto · Thinking: Off"). This reinforces that the inline icons are status indicators, not disabled affordances. Tooltip uses the existing `Tooltip`/`TooltipProvider` primitives — do NOT introduce a custom tooltip implementation. (Renumbered from AC-5b to satisfy AC-\d+ contract for kb-improvement-tasks-plan; semantic intent unchanged.)
 
 #### Menu structure
 
@@ -204,7 +204,7 @@ Rejected: ticket explicitly says "collapse these into a single consolidated menu
 
 **Decision**: Replace opacity-based state with semantic-color-based state. `text-muted-foreground` (off) → `text-foreground` (on). Same size, same icon. Pair with a hover Tooltip on the trigger surfacing the full current configuration so the icons are unambiguously status indicators, not affordances. Permission ShieldIcon stays at `text-foreground` always (permission mode is never "off") with optional Manual-mode accent color.
 
-**Affected ACs**: AC-3 (revised), AC-4 (revised), AC-5 (cursor clarification appended), AC-5b (new — Tooltip).
+**Affected ACs**: AC-3 (revised), AC-4 (revised), AC-5 (cursor clarification appended), AC-20 (new — Tooltip; originally numbered AC-5b, renumbered for tooling contract).
 
 **Authority**: User (Justin Rich) raised this concern in the kb-improvement-plan decision phase; applied via `frontend-design:frontend-design` skill consultation.
 
