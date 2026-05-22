@@ -175,6 +175,8 @@
   --radius-round:   50%;
 
   /* Spacing scale (Tailwind 4px base) ---------------------- */
+  --space-hair: 1px;  /* hairline rule offset, sub-pixel-feel */
+  --space-half: 2px;  /* sub-scale: tight typographic leading, badge inset */
   --space-1:  4px;
   --space-2:  8px;
   --space-3:  12px;
