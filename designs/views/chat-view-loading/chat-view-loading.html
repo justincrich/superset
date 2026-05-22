@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>chat-view-loading — UC-SESS-02 §A</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-local layout glue — ONLY .view-chat-view-loading__* rules.
+       Never redefines .atom-* or .mol-* classes.
+       ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding: var(--space-8) var(--space-4);
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    /* Full-width pane — device centered inside */
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- Two-up state layout within each pane ----------------- */
+    /* Each pane contains two device bezels side by side          */
+    .pane__states {
+      display:        flex;
+      flex-direction: row;
+      gap:            var(--space-8);
+      align-items:    flex-start;
+      flex-wrap:      wrap;
+      justify-content: center;
+    }
+
+    .pane__state-col {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-3);
+    }
+
+    .pane__state-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    /* ---- View viewport layout --------------------------------- */
+    /* The viewport inside atom-device-bezel is a flex column.    */
+
+    .view-chat-view-loading__loading-area {
+      flex:            1;
+      display:         flex;
+      flex-direction:  column;
+      align-items:     center;
+      justify-content: center;
+      gap:             var(--space-3);
+      padding:         var(--space-4);
+      position:        relative;
+    }
+
+    .view-chat-view-loading__spinner-wrap {
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      /* Size the clickable area around the spinner */
+      width:           var(--touch-target-min);
+      height:          var(--touch-target-min);
+    }
+
+    .view-chat-view-loading__label {
+      color: var(--text-faint);
+    }
+
+    /* ---- Skeleton bubbles (State B) --------------------------- */
+    .view-chat-view-loading__skeleton-area {
+      flex:           1;
+      overflow:       hidden;
+      padding:        var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-5);
+      position:       relative;
+    }
+
+    /* Each skeleton row = an inert bubble placeholder */
+    .view-chat-view-loading__skel-row {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    /* User bubble rows — right-aligned */
+    .view-chat-view-loading__skel-row--user {
+      align-items: flex-end;
+    }
+
+    /* Assistant bubble rows — left-aligned */
+    .view-chat-view-loading__skel-row--assistant {
+      align-items: flex-start;
+    }
+
+    /* The placeholder bubble shape */
+    .view-chat-view-loading__skel-bubble {
+      height:        var(--space-8);
+      border-radius: var(--radius-default);
+      background:    var(--surface-soft);
+      position:      relative;
+      overflow:      hidden;
+    }
+
+    /* Width variants — alternating so it looks like real content */
+    .view-chat-view-loading__skel-bubble--w-full { width: 100%; }
+    .view-chat-view-loading__skel-bubble--w-lg   { width: 80%; }
+    .view-chat-view-loading__skel-bubble--w-md   { width: 65%; }
+    .view-chat-view-loading__skel-bubble--w-sm   { width: 50%; }
+    .view-chat-view-loading__skel-bubble--w-xs   { width: 38%; }
+
+    /* Taller multi-line variant for assistant prose blocks */
+    .view-chat-view-loading__skel-bubble--tall {
+      height: calc(var(--space-8) * 2 + var(--space-2));
+    }
+
+    /* Shimmer sweep animation — view-local definition as specified */
+    @keyframes view-chat-view-loading-shimmer {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(200%); }
+    }
+
+    .view-chat-view-loading__skel-bubble::after {
+      content:    '';
+      position:   absolute;
+      inset:      0;
+      background: linear-gradient(
+        90deg,
+        transparent                                    0%,
+        color-mix(in oklch, var(--surface-page) 60%, transparent) 40%,
+        color-mix(in oklch, var(--surface-page) 80%, transparent) 50%,
+        color-mix(in oklch, var(--surface-page) 60%, transparent) 60%,
+        transparent                                    100%
+      );
+      /* Stagger per-bubble via custom property set inline */
+      animation:  view-chat-view-loading-shimmer 1.6s ease-in-out infinite;
+      animation-delay: var(--skel-delay, 0s);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .view-chat-view-loading__skel-bubble::after {
+        animation: none;
+      }
+    }
+
+    /* ---- Skeleton loading label (shown above skeletons) ------- */
+    .view-chat-view-loading__skel-header {
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      gap:             var(--space-2);
+      padding-bottom:  var(--space-2);
+    }
+
+    /* ---- Composer region -------------------------------------- */
+    .view-chat-view-loading__composer {
+      border-top:        1px solid var(--border-subtle);
+      display:           flex;
+      flex-direction:    column;
+      gap:               var(--space-2);
+      padding-block-end: var(--safe-area-bottom);
+      background:        var(--surface-page);
+      flex-shrink:       0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">chat-view-loading</h1>
+    <p class="crumb">UC-SESS-02 §A · chat view loading message history</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <div class="pane__states">
+
+        <!-- State A: pure spinner (early loading) -->
+        <div class="pane__state-col">
+          <span class="pane__state-label">State A — spinner</span>
+
+          <div class="atom-device-bezel">
+            <div class="atom-device-bezel__viewport">
+
+              <!-- Dynamic Island -->
+              <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+              <!-- Status bar -->
+              <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                    <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                    <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                    <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                    <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                    <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                    <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                    <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery" aria-hidden="true">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- /status-bar -->
+
+              <!-- App Header -->
+              <header class="mol-app-header" role="banner">
+                <div class="mol-app-header__back">
+                  <button
+                    class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                    type="button"
+                    aria-label="Back to sessions"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="mol-app-header__title-wrap">
+                  <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+                  <p class="mol-app-header__subtitle type-meta">superset · main</p>
+                </div>
+
+                <div class="mol-app-header__actions">
+                  <button
+                    class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                    type="button"
+                    aria-label="Session actions"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                      <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                    </svg>
+                  </button>
+                </div>
+              </header><!-- /mol-app-header -->
+
+              <!-- Loading area — State A: pure spinner, no skeleton -->
+              <main
+                class="view-chat-view-loading__loading-area"
+                role="status"
+                aria-label="Loading message history"
+                aria-live="polite"
+              >
+                <div class="view-chat-view-loading__spinner-wrap" aria-hidden="true">
+                  <span class="atom-spinner--ascii atom-spinner--lg atom-spinner--accent"></span>
+                </div>
+                <p class="view-chat-view-loading__label type-meta">Loading history…</p>
+              </main><!-- /loading-area -->
+
+              <!-- Composer footer — disabled during load -->
+              <footer class="view-chat-view-loading__composer" aria-label="Message composer" aria-disabled="true">
+
+                <!-- mol-composer-toolbar — visually disabled -->
+                <div
+                  class="mol-composer-toolbar is-disabled"
+                  role="toolbar"
+                  aria-label="Composer options"
+                  aria-disabled="true"
+                >
+                  <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                    <button
+                      class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon is-disabled"
+                      type="button"
+                      aria-label="Model: Sonnet 4.6"
+                      aria-haspopup="dialog"
+                      disabled
+                    >
+                      <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <rect x="2" y="7" width="20" height="14" rx="2"/>
+                        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                      </svg>
+                      Sonnet 4.6
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                    <button
+                      class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon is-disabled"
+                      type="button"
+                      aria-label="Thinking: low"
+                      aria-haspopup="dialog"
+                      disabled
+                    >
+                      <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                      </svg>
+                      Thinking: low
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+                </div><!-- /mol-composer-toolbar -->
+
+                <!-- mol-composer-row — idle + DISABLED (can't send while loading) -->
+                <div class="mol-composer-row mol-composer-row--idle is-disabled">
+                  <textarea
+                    class="mol-composer-row__input atom-textarea atom-textarea--composer is-disabled"
+                    placeholder="Type a message…"
+                    disabled
+                    aria-label="Message input — disabled while loading history"
+                    rows="1"
+                  ></textarea>
+
+                  <div class="mol-composer-row__action">
+                    <button
+                      class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill is-disabled"
+                      type="button"
+                      aria-label="Send message — disabled while loading history"
+                      disabled
+                    >
+                      <!-- Send (arrow-up) icon -->
+                      <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <line x1="12" y1="19" x2="12" y2="5"/>
+                        <polyline points="5 12 12 5 19 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div><!-- /mol-composer-row -->
+
+              </footer><!-- /composer -->
+
+              <!-- Home indicator -->
+              <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+            </div><!-- /atom-device-bezel__viewport -->
+          </div><!-- /atom-device-bezel -->
+        </div><!-- /state-col A -->
+
+
+        <!-- State B: skeleton bubbles (mid-loading, after a beat) -->
+        <div class="pane__state-col">
+          <span class="pane__state-label">State B — skeleton</span>
+
+          <div class="atom-device-bezel">
+            <div class="atom-device-bezel__viewport">
+
+              <!-- Dynamic Island -->
+              <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+              <!-- Status bar -->
+              <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                    <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                    <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                    <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                    <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                    <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                    <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                    <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery" aria-hidden="true">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- /status-bar -->
+
+              <!-- App Header -->
+              <header class="mol-app-header" role="banner">
+                <div class="mol-app-header__back">
+                  <button
+                    class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                    type="button"
+                    aria-label="Back to sessions"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="mol-app-header__title-wrap">
+                  <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+                  <p class="mol-app-header__subtitle type-meta">superset · main</p>
+                </div>
+
+                <div class="mol-app-header__actions">
+                  <button
+                    class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                    type="button"
+                    aria-label="Session actions"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                      <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                    </svg>
+                  </button>
+                </div>
+              </header><!-- /mol-app-header -->
+
+              <!-- Loading area — State B: spinner + skeleton bubbles -->
+              <main
+                class="view-chat-view-loading__skeleton-area"
+                role="status"
+                aria-label="Loading message history"
+                aria-live="polite"
+              >
+
+                <!-- Small spinner + label at top of skeleton area -->
+                <div class="view-chat-view-loading__skel-header">
+                  <span class="atom-spinner--ascii atom-spinner--sm atom-spinner--accent" aria-hidden="true"></span>
+                  <span class="type-meta" style="color: var(--text-faint);">Loading history…</span>
+                </div>
+
+                <!-- Skeleton bubble 1: user message (right-aligned, short) -->
+                <div class="view-chat-view-loading__skel-row view-chat-view-loading__skel-row--user" aria-hidden="true">
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-md"
+                    style="--skel-delay: 0s;"
+                  ></div>
+                </div>
+
+                <!-- Skeleton bubble 2: assistant message (left-aligned, multi-line) -->
+                <div class="view-chat-view-loading__skel-row view-chat-view-loading__skel-row--assistant" aria-hidden="true">
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-full"
+                    style="--skel-delay: 0.1s;"
+                  ></div>
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-lg"
+                    style="--skel-delay: 0.2s;"
+                  ></div>
+                </div>
+
+                <!-- Skeleton bubble 3: user message (right-aligned, medium) -->
+                <div class="view-chat-view-loading__skel-row view-chat-view-loading__skel-row--user" aria-hidden="true">
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-sm"
+                    style="--skel-delay: 0.15s;"
+                  ></div>
+                </div>
+
+                <!-- Skeleton bubble 4: assistant message (left-aligned, tall multi-line) -->
+                <div class="view-chat-view-loading__skel-row view-chat-view-loading__skel-row--assistant" aria-hidden="true">
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-full view-chat-view-loading__skel-bubble--tall"
+                    style="--skel-delay: 0.25s;"
+                  ></div>
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-md"
+                    style="--skel-delay: 0.35s;"
+                  ></div>
+                </div>
+
+                <!-- Skeleton bubble 5: user message (right-aligned, xs) -->
+                <div class="view-chat-view-loading__skel-row view-chat-view-loading__skel-row--user" aria-hidden="true">
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-xs"
+                    style="--skel-delay: 0.3s;"
+                  ></div>
+                </div>
+
+              </main><!-- /skeleton-area -->
+
+              <!-- Composer footer — disabled during load -->
+              <footer class="view-chat-view-loading__composer" aria-label="Message composer" aria-disabled="true">
+
+                <!-- mol-composer-toolbar — visually disabled -->
+                <div
+                  class="mol-composer-toolbar is-disabled"
+                  role="toolbar"
+                  aria-label="Composer options"
+                  aria-disabled="true"
+                >
+                  <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                    <button
+                      class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon is-disabled"
+                      type="button"
+                      aria-label="Model: Sonnet 4.6"
+                      disabled
+                    >
+                      <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <rect x="2" y="7" width="20" height="14" rx="2"/>
+                        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                      </svg>
+                      Sonnet 4.6
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                    <button
+                      class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon is-disabled"
+                      type="button"
+                      aria-label="Thinking: low"
+                      disabled
+                    >
+                      <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                      </svg>
+                      Thinking: low
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+                </div><!-- /mol-composer-toolbar -->
+
+                <!-- mol-composer-row — idle + DISABLED -->
+                <div class="mol-composer-row mol-composer-row--idle is-disabled">
+                  <textarea
+                    class="mol-composer-row__input atom-textarea atom-textarea--composer is-disabled"
+                    placeholder="Type a message…"
+                    disabled
+                    aria-label="Message input — disabled while loading history"
+                    rows="1"
+                  ></textarea>
+
+                  <div class="mol-composer-row__action">
+                    <button
+                      class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill is-disabled"
+                      type="button"
+                      aria-label="Send message — disabled while loading history"
+                      disabled
+                    >
+                      <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <line x1="12" y1="19" x2="12" y2="5"/>
+                        <polyline points="5 12 12 5 19 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div><!-- /mol-composer-row -->
+
+              </footer><!-- /composer -->
+
+              <!-- Home indicator -->
+              <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+            </div><!-- /atom-device-bezel__viewport -->
+          </div><!-- /atom-device-bezel -->
+        </div><!-- /state-col B -->
+
+      </div><!-- /pane__states -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <div class="pane__states">
+
+        <!-- State A: pure spinner (early loading) -->
+        <div class="pane__state-col">
+          <span class="pane__state-label">State A — spinner</span>
+
+          <div class="atom-device-bezel">
+            <div class="atom-device-bezel__viewport">
+
+              <!-- Dynamic Island -->
+              <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+              <!-- Status bar -->
+              <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                    <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                    <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                    <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                    <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                    <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                    <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                    <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery" aria-hidden="true">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- /status-bar -->
+
+              <!-- App Header -->
+              <header class="mol-app-header" role="banner">
+                <div class="mol-app-header__back">
+                  <button
+                    class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                    type="button"
+                    aria-label="Back to sessions"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="mol-app-header__title-wrap">
+                  <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+                  <p class="mol-app-header__subtitle type-meta">superset · main</p>
+                </div>
+
+                <div class="mol-app-header__actions">
+                  <button
+                    class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                    type="button"
+                    aria-label="Session actions"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                      <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                    </svg>
+                  </button>
+                </div>
+              </header><!-- /mol-app-header -->
+
+              <!-- Loading area — State A: pure spinner, no skeleton -->
+              <main
+                class="view-chat-view-loading__loading-area"
+                role="status"
+                aria-label="Loading message history"
+                aria-live="polite"
+              >
+                <div class="view-chat-view-loading__spinner-wrap" aria-hidden="true">
+                  <span class="atom-spinner--ascii atom-spinner--lg atom-spinner--accent"></span>
+                </div>
+                <p class="view-chat-view-loading__label type-meta">Loading history…</p>
+              </main><!-- /loading-area -->
+
+              <!-- Composer footer — disabled during load -->
+              <footer class="view-chat-view-loading__composer" aria-label="Message composer" aria-disabled="true">
+
+                <div
+                  class="mol-composer-toolbar is-disabled"
+                  role="toolbar"
+                  aria-label="Composer options"
+                  aria-disabled="true"
+                >
+                  <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                    <button
+                      class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon is-disabled"
+                      type="button"
+                      aria-label="Model: Sonnet 4.6"
+                      disabled
+                    >
+                      <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <rect x="2" y="7" width="20" height="14" rx="2"/>
+                        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                      </svg>
+                      Sonnet 4.6
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                    <button
+                      class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon is-disabled"
+                      type="button"
+                      aria-label="Thinking: low"
+                      disabled
+                    >
+                      <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                      </svg>
+                      Thinking: low
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+                </div><!-- /mol-composer-toolbar -->
+
+                <div class="mol-composer-row mol-composer-row--idle is-disabled">
+                  <textarea
+                    class="mol-composer-row__input atom-textarea atom-textarea--composer is-disabled"
+                    placeholder="Type a message…"
+                    disabled
+                    aria-label="Message input — disabled while loading history"
+                    rows="1"
+                  ></textarea>
+
+                  <div class="mol-composer-row__action">
+                    <button
+                      class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill is-disabled"
+                      type="button"
+                      aria-label="Send message — disabled while loading history"
+                      disabled
+                    >
+                      <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <line x1="12" y1="19" x2="12" y2="5"/>
+                        <polyline points="5 12 12 5 19 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div><!-- /mol-composer-row -->
+
+              </footer><!-- /composer -->
+
+              <!-- Home indicator -->
+              <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+            </div><!-- /atom-device-bezel__viewport -->
+          </div><!-- /atom-device-bezel -->
+        </div><!-- /state-col A -->
+
+
+        <!-- State B: skeleton bubbles (mid-loading, after a beat) -->
+        <div class="pane__state-col">
+          <span class="pane__state-label">State B — skeleton</span>
+
+          <div class="atom-device-bezel">
+            <div class="atom-device-bezel__viewport">
+
+              <!-- Dynamic Island -->
+              <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+              <!-- Status bar -->
+              <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                    <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                    <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                    <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                    <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                    <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                    <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                    <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery" aria-hidden="true">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- /status-bar -->
+
+              <!-- App Header -->
+              <header class="mol-app-header" role="banner">
+                <div class="mol-app-header__back">
+                  <button
+                    class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                    type="button"
+                    aria-label="Back to sessions"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="mol-app-header__title-wrap">
+                  <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+                  <p class="mol-app-header__subtitle type-meta">superset · main</p>
+                </div>
+
+                <div class="mol-app-header__actions">
+                  <button
+                    class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                    type="button"
+                    aria-label="Session actions"
+                  >
+                    <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                      <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                    </svg>
+                  </button>
+                </div>
+              </header><!-- /mol-app-header -->
+
+              <!-- Loading area — State B: spinner + skeleton bubbles -->
+              <main
+                class="view-chat-view-loading__skeleton-area"
+                role="status"
+                aria-label="Loading message history"
+                aria-live="polite"
+              >
+
+                <!-- Small spinner + label at top -->
+                <div class="view-chat-view-loading__skel-header">
+                  <span class="atom-spinner--ascii atom-spinner--sm atom-spinner--accent" aria-hidden="true"></span>
+                  <span class="type-meta" style="color: var(--text-faint);">Loading history…</span>
+                </div>
+
+                <!-- Skeleton bubble 1: user (right, md) -->
+                <div class="view-chat-view-loading__skel-row view-chat-view-loading__skel-row--user" aria-hidden="true">
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-md"
+                    style="--skel-delay: 0s;"
+                  ></div>
+                </div>
+
+                <!-- Skeleton bubble 2: assistant (left, full + lg) -->
+                <div class="view-chat-view-loading__skel-row view-chat-view-loading__skel-row--assistant" aria-hidden="true">
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-full"
+                    style="--skel-delay: 0.1s;"
+                  ></div>
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-lg"
+                    style="--skel-delay: 0.2s;"
+                  ></div>
+                </div>
+
+                <!-- Skeleton bubble 3: user (right, sm) -->
+                <div class="view-chat-view-loading__skel-row view-chat-view-loading__skel-row--user" aria-hidden="true">
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-sm"
+                    style="--skel-delay: 0.15s;"
+                  ></div>
+                </div>
+
+                <!-- Skeleton bubble 4: assistant (left, tall + md) -->
+                <div class="view-chat-view-loading__skel-row view-chat-view-loading__skel-row--assistant" aria-hidden="true">
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-full view-chat-view-loading__skel-bubble--tall"
+                    style="--skel-delay: 0.25s;"
+                  ></div>
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-md"
+                    style="--skel-delay: 0.35s;"
+                  ></div>
+                </div>
+
+                <!-- Skeleton bubble 5: user (right, xs) -->
+                <div class="view-chat-view-loading__skel-row view-chat-view-loading__skel-row--user" aria-hidden="true">
+                  <div
+                    class="view-chat-view-loading__skel-bubble view-chat-view-loading__skel-bubble--w-xs"
+                    style="--skel-delay: 0.3s;"
+                  ></div>
+                </div>
+
+              </main><!-- /skeleton-area -->
+
+              <!-- Composer footer — disabled during load -->
+              <footer class="view-chat-view-loading__composer" aria-label="Message composer" aria-disabled="true">
+
+                <div
+                  class="mol-composer-toolbar is-disabled"
+                  role="toolbar"
+                  aria-label="Composer options"
+                  aria-disabled="true"
+                >
+                  <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                    <button
+                      class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon is-disabled"
+                      type="button"
+                      aria-label="Model: Sonnet 4.6"
+                      disabled
+                    >
+                      <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <rect x="2" y="7" width="20" height="14" rx="2"/>
+                        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                      </svg>
+                      Sonnet 4.6
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                    <button
+                      class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon is-disabled"
+                      type="button"
+                      aria-label="Thinking: low"
+                      disabled
+                    >
+                      <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                      </svg>
+                      Thinking: low
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+                </div><!-- /mol-composer-toolbar -->
+
+                <div class="mol-composer-row mol-composer-row--idle is-disabled">
+                  <textarea
+                    class="mol-composer-row__input atom-textarea atom-textarea--composer is-disabled"
+                    placeholder="Type a message…"
+                    disabled
+                    aria-label="Message input — disabled while loading history"
+                    rows="1"
+                  ></textarea>
+
+                  <div class="mol-composer-row__action">
+                    <button
+                      class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill is-disabled"
+                      type="button"
+                      aria-label="Send message — disabled while loading history"
+                      disabled
+                    >
+                      <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <line x1="12" y1="19" x2="12" y2="5"/>
+                        <polyline points="5 12 12 5 19 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div><!-- /mol-composer-row -->
+
+              </footer><!-- /composer -->
+
+              <!-- Home indicator -->
+              <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+            </div><!-- /atom-device-bezel__viewport -->
+          </div><!-- /atom-device-bezel -->
+        </div><!-- /state-col B -->
+
+      </div><!-- /pane__states -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
