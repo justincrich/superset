@@ -58,6 +58,7 @@ export function ChatComposerControls({
 					setThinkingLevel={setThinkingLevel}
 				/>
 				<ModelPicker
+					triggerless
 					models={availableModels}
 					selectedModel={selectedModel}
 					onSelectModel={setSelectedModel}

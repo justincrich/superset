@@ -14,12 +14,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import {
 	BrainIcon,
 	CheckIcon,
-	ChevronRightIcon,
 	ShieldCheckIcon,
 	ShieldIcon,
 	ShieldOffIcon,
 } from "lucide-react";
 import type React from "react";
+import { useState } from "react";
 import { PILL_BUTTON_CLASS } from "renderer/components/Chat/ChatInterface/styles";
 import type {
 	ModelOption,
@@ -97,6 +97,8 @@ export function ComposerSettingsMenu({
 	thinkingLevel,
 	setThinkingLevel,
 }: ComposerSettingsMenuProps) {
+	const [menuOpen, setMenuOpen] = useState(false);
+
 	const activePermission =
 		PERMISSION_MODES.find((m) => m.value === permissionMode) ??
 		PERMISSION_MODES[0];
@@ -118,7 +120,7 @@ export function ComposerSettingsMenu({
 	const ariaLabel = `Chat settings: model ${selectedModel?.name ?? "Model"}, permission ${activePermission.label}, thinking ${activeThinking.label}`;
 
 	return (
-		<DropdownMenu>
+		<DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<DropdownMenuTrigger asChild>
@@ -146,8 +148,10 @@ export function ComposerSettingsMenu({
 			<DropdownMenuContent align="start" className="w-64">
 				<DropdownMenuLabel>Model</DropdownMenuLabel>
 				<DropdownMenuItem
-					onSelect={() => {
-						setModelSelectorOpen(true);
+					onSelect={(event) => {
+						event.preventDefault();
+						setMenuOpen(false);
+						queueMicrotask(() => setModelSelectorOpen(true));
 					}}
 					className="flex items-center gap-2"
 				>
@@ -159,7 +163,6 @@ export function ComposerSettingsMenu({
 					<span className="truncate flex-1">
 						{selectedModel?.name ?? "Model"}
 					</span>
-					<ChevronRightIcon className="size-4 shrink-0" />
 				</DropdownMenuItem>
 
 				<DropdownMenuSeparator />
