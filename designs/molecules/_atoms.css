@@ -1,0 +1,2744 @@
+/* ================================================================
+   _atoms.css — Molecule-layer atom bundle
+   Auto-aggregated from designs/atoms/*/
+   DO NOT edit atom rules here — edit the source atom HTML files.
+
+   Load order for molecule HTML files:
+     <link rel="stylesheet" href="../../tokens/tokens.css">
+     <link rel="stylesheet" href="../../typography/type-modules.css">
+     <link rel="stylesheet" href="../_atoms.css">
+
+   25 atoms in alphabetical order:
+     avatar · backdrop · badge · button · device-bezel
+     divider · fab-base · hit-target-wrapper · home-indicator
+     icon-button · icon-glyph · kbd · live-activity-dot · pill
+     progress-dots · scroll-fade · section-label · spinner
+     status-dot · streaming-cursor · text-input · textarea
+     toast-base · tool-status-rule · tooltip
+   ================================================================ */
+
+
+/* ================================================================
+   atom-avatar
+   Source: designs/atoms/avatar/avatar.html
+   ================================================================ */
+
+.atom-avatar {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  border-radius:   var(--radius-round);
+  font-family:     var(--font-body);
+  font-weight:     var(--font-weight-meta);
+  flex-shrink:     0;
+  position:        relative;
+  /* Default size: sm */
+  width:           28px;
+  height:          28px;
+  font-size:       var(--font-size-label);
+  line-height:     1;
+  user-select:     none;
+}
+
+.atom-avatar--initial {
+  background: var(--surface-soft);
+  color:      var(--text-body);
+}
+
+.atom-avatar--accent {
+  background: var(--accent-primary);
+  color:      var(--accent-primary-fg);
+}
+
+.atom-avatar--icon {
+  background: var(--surface-soft);
+  color:      var(--text-muted);
+}
+
+.atom-avatar--xs {
+  width:     20px;
+  height:    20px;
+  font-size: var(--font-size-meta);
+}
+
+.atom-avatar--sm {
+  width:     28px;
+  height:    28px;
+  font-size: var(--font-size-label);
+}
+
+.atom-avatar--md {
+  width:     36px;
+  height:    36px;
+  font-size: var(--font-size-body);
+}
+
+.atom-avatar--lg {
+  width:     48px;
+  height:    48px;
+  font-size: var(--font-size-section-title);
+}
+
+.atom-avatar--ring {
+  box-shadow:
+    0 0 0 2px var(--surface-page),
+    0 0 0 4px var(--accent-primary);
+}
+
+.atom-avatar--live-indicator::after {
+  content:       '';
+  position:      absolute;
+  right:         -2px;
+  bottom:        -2px;
+  width:         8px;
+  height:        8px;
+  background:    var(--state-live-fg);
+  border-radius: var(--radius-round);
+  box-shadow:    0 0 0 2px var(--surface-page);
+}
+
+.atom-avatar.is-disabled {
+  opacity: 0.5;
+}
+
+
+/* ================================================================
+   atom-backdrop
+   Source: designs/atoms/backdrop/backdrop.html
+   ================================================================ */
+
+@keyframes atom-backdrop-fade-in {
+  to { opacity: 1; }
+}
+@keyframes atom-backdrop-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.atom-backdrop {
+  position:   fixed;
+  inset:      0;
+  z-index:    100;
+  background: rgba(0, 0, 0, 0.55); /* hardware-black, scrim default */
+  transition: opacity var(--motion-medium) var(--motion-ease-out);
+}
+
+.atom-backdrop--scrim       { background: rgba(0, 0, 0, 0.55); }
+.atom-backdrop--scrim-light { background: rgba(0, 0, 0, 0.30); }
+
+.atom-backdrop--blur {
+  background:              rgba(0, 0, 0, 0.40);
+  backdrop-filter:         blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.atom-backdrop--blur-strong {
+  background:              rgba(0, 0, 0, 0.50);
+  backdrop-filter:         blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.atom-backdrop.is-entering {
+  opacity:   0;
+  animation: atom-backdrop-fade-in var(--motion-medium) var(--motion-ease-out) forwards;
+}
+.atom-backdrop.is-exiting {
+  animation: atom-backdrop-fade-out var(--motion-medium) var(--motion-ease-out) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atom-backdrop.is-entering,
+  .atom-backdrop.is-exiting {
+    animation:  none;
+    transition: none;
+    opacity:    1;
+  }
+}
+
+
+/* ================================================================
+   atom-badge
+   Source: designs/atoms/badge/badge.html
+   ================================================================ */
+
+.atom-badge {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+  white-space:     nowrap;
+  border-radius:   var(--radius-pill);
+  padding:         var(--space-1) var(--space-2);
+  font-family:     var(--font-mono);
+  font-size:       var(--font-size-meta);
+  font-weight:     var(--font-weight-meta);
+  letter-spacing:  var(--tracking-mono);
+  line-height:     var(--line-height-snug);
+  text-transform:  uppercase;
+}
+
+.atom-badge--sm,
+.atom-badge:not(.atom-badge--md):not(.atom-badge--lg):not(.atom-badge--dot) {
+  height:    16px;
+  min-width: 16px;
+}
+
+.atom-badge--md {
+  height:    18px;
+  min-width: 18px;
+}
+
+.atom-badge--lg {
+  height:         20px;
+  min-width:      20px;
+  font-size:      var(--font-size-label);
+  font-weight:    var(--font-weight-label);
+}
+
+.atom-badge--dot {
+  width:         8px;
+  height:        8px;
+  min-width:     8px;
+  border-radius: var(--radius-round);
+  padding:       0;
+  font-size:     0;
+  line-height:   0;
+}
+
+.atom-badge--accent,
+.atom-badge:not(.atom-badge--neutral):not(.atom-badge--live):not(.atom-badge--danger) {
+  background-color: var(--accent-primary);
+  color:            var(--accent-primary-fg);
+}
+
+.atom-badge--neutral {
+  background-color: var(--surface-soft);
+  color:            var(--text-body);
+}
+
+.atom-badge--live {
+  background-color: var(--state-live-fg);
+  color:            var(--accent-primary-fg);
+}
+
+.atom-badge--danger {
+  background-color: var(--state-danger-fg);
+  color:            var(--accent-primary-fg);
+}
+
+.atom-badge.is-disabled {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+
+/* ================================================================
+   atom-button
+   Source: designs/atoms/button/button.html
+   ================================================================ */
+
+.atom-button {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             var(--space-2);
+  white-space:     nowrap;
+  flex-shrink:     0;
+
+  border:        none;
+  border-radius: var(--radius-default);
+  outline:       none;
+  cursor:        pointer;
+
+  font-family:    var(--font-body);
+  font-size:      var(--font-size-label);
+  font-weight:    var(--font-weight-label);
+  letter-spacing: var(--tracking-mono);
+  line-height:    var(--line-height-snug);
+  text-decoration: none;
+
+  transition:
+    background-color var(--motion-fast) var(--motion-ease-out),
+    color            var(--motion-fast) var(--motion-ease-out),
+    box-shadow       var(--motion-fast) var(--motion-ease-out),
+    opacity          var(--motion-fast) var(--motion-ease-out),
+    transform        var(--motion-fast) var(--motion-ease-out),
+    border-color     var(--motion-fast) var(--motion-ease-out);
+}
+
+.atom-button--sm {
+  height:         36px;
+  padding-inline: var(--space-3);
+}
+
+.atom-button--md {
+  height:         var(--touch-target-min);
+  padding-inline: var(--space-4);
+}
+
+.atom-button:not(.atom-button--sm):not(.atom-button--lg) {
+  height:         var(--touch-target-min);
+  padding-inline: var(--space-4);
+}
+
+.atom-button--lg {
+  height:         56px;
+  padding-inline: var(--space-6);
+  border-radius:  var(--radius-lg);
+}
+
+.atom-button--primary {
+  background-color: var(--accent-primary);
+  color:            var(--accent-primary-fg);
+}
+.atom-button--primary:hover,
+.atom-button--primary.is-hover {
+  background-color: var(--accent-primary-hover);
+}
+.atom-button--primary:active,
+.atom-button--primary.is-active {
+  background-color: var(--accent-primary-pressed);
+  transform: scale(0.98);
+}
+.atom-button--primary:focus-visible,
+.atom-button--primary.is-focus {
+  background-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+.atom-button--primary:disabled,
+.atom-button--primary.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-button--neutral {
+  background-color: var(--surface-inverse);
+  color:            var(--text-on-inverse);
+}
+.atom-button--neutral:hover,
+.atom-button--neutral.is-hover {
+  background-color: color-mix(in oklch, var(--surface-inverse) 85%, transparent 15%);
+}
+.atom-button--neutral:active,
+.atom-button--neutral.is-active {
+  background-color: color-mix(in oklch, var(--surface-inverse) 70%, transparent 30%);
+  transform: scale(0.98);
+}
+.atom-button--neutral:focus-visible,
+.atom-button--neutral.is-focus {
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+.atom-button--neutral:disabled,
+.atom-button--neutral.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-button--secondary {
+  background-color: var(--surface-soft);
+  color:            var(--text-body);
+}
+.atom-button--secondary:hover,
+.atom-button--secondary.is-hover {
+  background-color: var(--surface-active);
+}
+.atom-button--secondary:active,
+.atom-button--secondary.is-active {
+  background-color: var(--surface-active);
+  transform: scale(0.98);
+}
+.atom-button--secondary:focus-visible,
+.atom-button--secondary.is-focus {
+  background-color: var(--surface-soft);
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+.atom-button--secondary:disabled,
+.atom-button--secondary.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-button--ghost {
+  background-color: transparent;
+  color:            var(--text-body);
+}
+.atom-button--ghost:hover,
+.atom-button--ghost.is-hover {
+  background-color: var(--surface-soft);
+}
+.atom-button--ghost:active,
+.atom-button--ghost.is-active {
+  background-color: var(--surface-active);
+  transform: scale(0.98);
+}
+.atom-button--ghost:focus-visible,
+.atom-button--ghost.is-focus {
+  background-color: transparent;
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+.atom-button--ghost:disabled,
+.atom-button--ghost.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-button--outline {
+  background-color: transparent;
+  color:            var(--text-body);
+  border:           1px solid var(--border-default);
+}
+.atom-button--outline:hover,
+.atom-button--outline.is-hover {
+  background-color: var(--surface-soft);
+}
+.atom-button--outline:active,
+.atom-button--outline.is-active {
+  background-color: var(--surface-active);
+  transform: scale(0.98);
+}
+.atom-button--outline:focus-visible,
+.atom-button--outline.is-focus {
+  background-color: transparent;
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+.atom-button--outline:disabled,
+.atom-button--outline.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-button--destructive {
+  background-color: var(--state-danger-fg);
+  color:            var(--accent-primary-fg);
+}
+.atom-button--destructive:hover,
+.atom-button--destructive.is-hover {
+  background-color: color-mix(in oklch, var(--state-danger-fg) 85%, black 15%);
+}
+.atom-button--destructive:active,
+.atom-button--destructive.is-active {
+  background-color: color-mix(in oklch, var(--state-danger-fg) 70%, black 30%);
+  transform: scale(0.98);
+}
+.atom-button--destructive:focus-visible,
+.atom-button--destructive.is-focus {
+  background-color: var(--state-danger-fg);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--state-danger-fg) 50%, transparent 50%);
+}
+.atom-button--destructive:disabled,
+.atom-button--destructive.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-button--link {
+  background-color: transparent;
+  color:            var(--text-link);
+  text-underline-offset: var(--space-1);
+}
+.atom-button--link:hover,
+.atom-button--link.is-hover {
+  text-decoration: underline;
+}
+.atom-button--link:active,
+.atom-button--link.is-active {
+  text-decoration: underline;
+  opacity: 0.75;
+}
+.atom-button--link:focus-visible,
+.atom-button--link.is-focus {
+  box-shadow:    0 0 0 3px var(--border-focus);
+  border-radius: var(--radius-subtle);
+}
+.atom-button--link:disabled,
+.atom-button--link.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-button.is-loading {
+  pointer-events: none;
+  position: relative;
+  color: transparent;
+}
+.atom-button.is-loading::after {
+  content:       '';
+  position:      absolute;
+  width:         var(--space-4);
+  height:        var(--space-4);
+  border-radius: var(--radius-round);
+  border:        2px solid currentColor;
+  border-top-color: transparent;
+  animation:     atom-button-spin var(--motion-slow) linear infinite;
+  color: inherit;
+}
+.atom-button--primary.is-loading::after     { border-color: var(--accent-primary-fg);  border-top-color: transparent; }
+.atom-button--neutral.is-loading::after     { border-color: var(--text-on-inverse);    border-top-color: transparent; }
+.atom-button--secondary.is-loading::after   { border-color: var(--text-body);          border-top-color: transparent; }
+.atom-button--ghost.is-loading::after       { border-color: var(--text-body);          border-top-color: transparent; }
+.atom-button--outline.is-loading::after     { border-color: var(--text-body);          border-top-color: transparent; }
+.atom-button--destructive.is-loading::after { border-color: var(--accent-primary-fg);  border-top-color: transparent; }
+.atom-button--link.is-loading::after        { border-color: var(--text-link);          border-top-color: transparent; }
+
+@keyframes atom-button-spin {
+  to { transform: rotate(360deg); }
+}
+
+
+/* ================================================================
+   atom-device-bezel
+   Source: designs/atoms/device-bezel/device-bezel.html
+   ================================================================ */
+
+.atom-device-bezel {
+  width:         var(--device-width);
+  height:        var(--device-height);
+  border-radius: var(--device-radius);
+  background:    var(--device-bg);
+  padding:       var(--device-bezel);
+  position:      relative;
+  box-shadow:    var(--elevation-modal);
+  flex-shrink:   0;
+}
+
+.atom-device-bezel__viewport {
+  width:          var(--viewport-width);
+  height:         var(--viewport-height);
+  border-radius:  var(--viewport-radius);
+  background:     var(--surface-page);
+  overflow:       hidden;
+  position:       relative;
+  display:        flex;
+  flex-direction: column;
+}
+
+.atom-device-bezel__dynamic-island {
+  position:      absolute;
+  top:           var(--dynamic-island-top);
+  left:          50%;
+  transform:     translateX(-50%);
+  width:         var(--dynamic-island-width);
+  height:        var(--dynamic-island-height);
+  background:    #000; /* hardware OLED-off black — documented exception */
+  border-radius: var(--radius-pill);
+  z-index:       30;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+}
+
+.atom-device-bezel__status-bar {
+  height:          var(--status-bar-height);
+  padding:         18px 32px 0; /* Apple HIG iPhone 16 Pro Max spec — hardware exception */
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  font-family:     var(--font-mono);
+  font-weight:     var(--font-weight-meta);
+  font-size:       var(--font-size-label);
+  color:           var(--text-body);
+  flex-shrink:     0;
+  position:        relative;
+  z-index:         20;
+}
+
+.atom-device-bezel__time {
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-label);
+  font-weight:    var(--font-weight-meta);
+  letter-spacing: var(--tracking-mono);
+  color:          var(--text-body);
+}
+
+.atom-device-bezel__indicators {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-1);
+}
+
+.atom-device-bezel__indicators svg {
+  display: block;
+  color:   var(--text-body);
+}
+
+.atom-device-bezel__battery {
+  display:     inline-flex;
+  align-items: center;
+  gap:         2px; /* structural: nub gutter */
+}
+
+.atom-device-bezel__battery-body {
+  position:      relative;
+  width:         22px; /* structural: iOS battery capsule width */
+  height:        11px; /* structural: iOS battery capsule height */
+  border:        1px solid var(--text-body);
+  border-radius: var(--radius-subtle);
+  padding:       1px;  /* structural: fill inset */
+}
+
+.atom-device-bezel__battery-body::after {
+  content:       '';
+  position:      absolute;
+  right:         -3px;   /* structural: nub offset */
+  top:           3px;    /* structural: nub vertical center */
+  width:         1.5px;  /* structural: nub width */
+  height:        5px;    /* structural: nub height */
+  background:    var(--text-body);
+  border-radius: 0 var(--radius-subtle) var(--radius-subtle) 0;
+}
+
+.atom-device-bezel__battery-fill {
+  height:        100%;
+  width:         75%;    /* represents ~75% charge in the mockup */
+  background:    var(--text-body);
+  border-radius: 1.5px;  /* structural: matches capsule inner corner */
+}
+
+.atom-device-bezel__content {
+  flex:     1;
+  overflow: hidden;
+  position: relative;
+}
+
+.atom-device-bezel__home-indicator {
+  position:      absolute;
+  bottom:        8px; /* Apple HIG bottom clearance — hardware exception */
+  left:          50%;
+  transform:     translateX(-50%);
+  width:         var(--home-indicator-width);
+  height:        var(--home-indicator-height);
+  background:    var(--text-body);
+  border-radius: var(--radius-pill);
+  z-index:       30;
+}
+
+.atom-device-bezel--minimal .atom-device-bezel__dynamic-island,
+.atom-device-bezel--minimal .atom-device-bezel__status-bar,
+.atom-device-bezel--minimal .atom-device-bezel__home-indicator {
+  display: none;
+}
+
+.atom-device-bezel--with-island-content .atom-device-bezel__dynamic-island {
+  gap: var(--space-2);
+}
+
+
+/* ================================================================
+   atom-divider
+   Source: designs/atoms/divider/divider.html
+   ================================================================ */
+
+.atom-divider {
+  box-sizing:  border-box;
+  flex-shrink: 0;
+}
+
+.atom-divider--horizontal,
+hr.atom-divider {
+  display:    block;
+  width:      100%;
+  height:     0;
+  border:     none;
+  border-top: 1px solid var(--border-subtle);
+  margin:     0;
+  padding:    0;
+}
+
+span.atom-divider--vertical {
+  display:     inline-block;
+  width:       1px;
+  height:      100%;
+  align-self:  stretch;
+  border:      none;
+  border-left: 1px solid var(--border-subtle);
+  margin:      0;
+  padding:     0;
+}
+
+.atom-divider--hairline.atom-divider--horizontal,
+hr.atom-divider--hairline {
+  border-top-color: var(--border-subtle);
+}
+span.atom-divider--hairline.atom-divider--vertical {
+  border-left-color: var(--border-subtle);
+}
+
+.atom-divider--default.atom-divider--horizontal,
+hr.atom-divider--default {
+  border-top-color: var(--border-default);
+}
+span.atom-divider--default.atom-divider--vertical {
+  border-left-color: var(--border-default);
+}
+
+.atom-divider--strong.atom-divider--horizontal,
+hr.atom-divider--strong {
+  border-top-color: var(--border-strong);
+}
+span.atom-divider--strong.atom-divider--vertical {
+  border-left-color: var(--border-strong);
+}
+
+.atom-divider--accent.atom-divider--horizontal,
+hr.atom-divider--accent {
+  border-top-width:  2px;
+  border-top-color:  var(--accent-primary);
+}
+span.atom-divider--accent.atom-divider--vertical {
+  width:             2px;
+  border-left-width: 2px;
+  border-left-color: var(--accent-primary);
+}
+
+.atom-divider--gutter-sm.atom-divider--horizontal,
+hr.atom-divider--gutter-sm {
+  margin-block: var(--space-2);
+}
+span.atom-divider--gutter-sm.atom-divider--vertical {
+  margin-inline: var(--space-2);
+}
+
+.atom-divider--gutter-md.atom-divider--horizontal,
+hr.atom-divider--gutter-md {
+  margin-block: var(--space-4);
+}
+span.atom-divider--gutter-md.atom-divider--vertical {
+  margin-inline: var(--space-4);
+}
+
+
+/* ================================================================
+   atom-fab-base
+   Source: designs/atoms/fab-base/fab-base.html
+   ================================================================ */
+
+@keyframes atom-fab-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes atom-fab-live-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+.atom-fab-base {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+  position:        relative;
+
+  border:        none;
+  border-radius: var(--radius-round);
+  outline:       none;
+  cursor:        pointer;
+
+  box-shadow: var(--elevation-modal);
+
+  transition:
+    background-color var(--motion-medium) var(--motion-ease-out),
+    color            var(--motion-medium) var(--motion-ease-out),
+    box-shadow       var(--motion-medium) var(--motion-ease-out),
+    opacity          var(--motion-medium) var(--motion-ease-out),
+    transform        var(--motion-medium) var(--motion-ease-out),
+    border-color     var(--motion-medium) var(--motion-ease-out);
+}
+
+.atom-fab-base__icon {
+  flex-shrink:    0;
+  pointer-events: none;
+}
+
+.atom-fab-base__label {
+  font-family:    var(--font-body);
+  font-size:      var(--font-size-body-sm);
+  font-weight:    var(--font-weight-label);
+  letter-spacing: var(--tracking-snug);
+  line-height:    var(--line-height-tight);
+  white-space:    nowrap;
+}
+
+.atom-fab-base--md,
+.atom-fab-base:not(.atom-fab-base--lg) {
+  width:  56px;
+  height: 56px;
+}
+.atom-fab-base--md .atom-fab-base__icon,
+.atom-fab-base:not(.atom-fab-base--lg) .atom-fab-base__icon {
+  width:  24px;
+  height: 24px;
+}
+
+.atom-fab-base--lg {
+  width:  64px;
+  height: 64px;
+}
+.atom-fab-base--lg .atom-fab-base__icon {
+  width:  28px;
+  height: 28px;
+}
+
+.atom-fab-base--with-label {
+  border-radius:  var(--radius-pill);
+  width:          auto;
+  height:         56px;
+  padding-inline: var(--space-5);
+  gap:            var(--space-2);
+}
+.atom-fab-base--with-label.atom-fab-base--lg {
+  height:         64px;
+  padding-inline: var(--space-6);
+  gap:            var(--space-3);
+}
+
+.atom-fab-base--accent {
+  background-color: var(--accent-primary);
+  color:            var(--accent-primary-fg);
+}
+.atom-fab-base--accent:hover,
+.atom-fab-base--accent.is-hover {
+  background-color: var(--accent-primary-hover);
+  transform:        scale(1.05);
+  box-shadow:       var(--elevation-modal);
+}
+.atom-fab-base--accent:active,
+.atom-fab-base--accent.is-active {
+  background-color: var(--accent-primary-pressed);
+  transform:        scale(0.97);
+}
+.atom-fab-base--accent:focus-visible,
+.atom-fab-base--accent.is-focus {
+  background-color: var(--accent-primary);
+  box-shadow:
+    var(--elevation-modal),
+    0 0 0 2px var(--surface-page),
+    0 0 0 4px var(--border-focus);
+}
+.atom-fab-base--accent:disabled,
+.atom-fab-base--accent.is-disabled {
+  opacity:        0.4;
+  pointer-events: none;
+}
+
+.atom-fab-base--neutral {
+  background-color: var(--surface-inverse);
+  color:            var(--text-on-inverse);
+}
+.atom-fab-base--neutral:hover,
+.atom-fab-base--neutral.is-hover {
+  background-color: color-mix(in oklch, var(--surface-inverse) 85%, transparent 15%);
+  transform:        scale(1.05);
+  box-shadow:       var(--elevation-modal);
+}
+.atom-fab-base--neutral:active,
+.atom-fab-base--neutral.is-active {
+  background-color: color-mix(in oklch, var(--surface-inverse) 70%, transparent 30%);
+  transform:        scale(0.97);
+}
+.atom-fab-base--neutral:focus-visible,
+.atom-fab-base--neutral.is-focus {
+  box-shadow:
+    var(--elevation-modal),
+    0 0 0 2px var(--surface-page),
+    0 0 0 4px var(--border-focus);
+}
+.atom-fab-base--neutral:disabled,
+.atom-fab-base--neutral.is-disabled {
+  opacity:        0.4;
+  pointer-events: none;
+}
+
+.atom-fab-base--overlay {
+  background-color: var(--surface-overlay);
+  color:            var(--text-body);
+  border:           1px solid var(--border-default);
+}
+.atom-fab-base--overlay:hover,
+.atom-fab-base--overlay.is-hover {
+  background-color: var(--surface-active);
+  transform:        scale(1.05);
+  box-shadow:       var(--elevation-modal);
+}
+.atom-fab-base--overlay:active,
+.atom-fab-base--overlay.is-active {
+  background-color: var(--surface-active);
+  transform:        scale(0.97);
+}
+.atom-fab-base--overlay:focus-visible,
+.atom-fab-base--overlay.is-focus {
+  box-shadow:
+    var(--elevation-modal),
+    0 0 0 2px var(--surface-page),
+    0 0 0 4px var(--border-focus);
+}
+.atom-fab-base--overlay:disabled,
+.atom-fab-base--overlay.is-disabled {
+  opacity:        0.4;
+  pointer-events: none;
+}
+
+.atom-fab-base.is-loading {
+  pointer-events: none;
+}
+.atom-fab-base.is-loading .atom-fab-base__icon,
+.atom-fab-base.is-loading .atom-fab-base__label {
+  opacity: 0;
+}
+.atom-fab-base.is-loading::after {
+  content:       '';
+  position:      absolute;
+  width:         24px;
+  height:        24px;
+  border-radius: var(--radius-round);
+  border-style:  solid;
+  border-width:  2px; /* structural geometry — spinner convention */
+  border-top-color: transparent;
+  animation:     atom-fab-spin var(--motion-slow) linear infinite;
+}
+.atom-fab-base--accent.is-loading::after  { border-color: var(--accent-primary-fg);  border-top-color: transparent; }
+.atom-fab-base--neutral.is-loading::after { border-color: var(--text-on-inverse);    border-top-color: transparent; }
+.atom-fab-base--overlay.is-loading::after { border-color: var(--text-body);          border-top-color: transparent; }
+
+.atom-fab-base__live-ring-wrap {
+  position:        relative;
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+}
+
+.atom-fab-base__live-ring {
+  position:       absolute;
+  inset:          0;
+  border-radius:  var(--radius-round);
+  border:         2px solid var(--state-live-fg); /* 2px structural — ring stroke */
+  pointer-events: none;
+  animation:      atom-fab-live-pulse var(--motion-cadence-pulse-medium) var(--motion-ease-out) infinite;
+}
+
+.atom-fab-base--with-label ~ .atom-fab-base__live-ring,
+.atom-fab-base__live-ring-wrap:has(.atom-fab-base--with-label) .atom-fab-base__live-ring {
+  border-radius: var(--radius-pill);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atom-fab-base {
+    transition: none;
+  }
+  .atom-fab-base.is-loading::after {
+    animation: none;
+  }
+  .atom-fab-base__live-ring {
+    animation: none;
+    opacity:   0.5;
+  }
+}
+
+
+/* ================================================================
+   atom-hit-target-wrapper
+   Source: designs/atoms/hit-target-wrapper/hit-target-wrapper.html
+   ================================================================ */
+
+.atom-hit-target-wrapper {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  min-width:       var(--touch-target-min);
+  min-height:      var(--touch-target-min);
+  background:      transparent;
+  border:          none;
+  padding:         0;
+  cursor:          pointer;
+}
+
+.atom-hit-target-wrapper--circle {
+  border-radius: var(--radius-round);
+}
+
+.atom-hit-target-wrapper:hover,
+.atom-hit-target-wrapper.is-hover {
+  background: color-mix(in oklch, var(--text-body) 8%, transparent);
+}
+
+.atom-hit-target-wrapper:focus-visible,
+.atom-hit-target-wrapper.is-focus {
+  outline:    none;
+  box-shadow: 0 0 0 2px var(--border-focus);
+}
+
+.atom-hit-target-wrapper--debug {
+  outline:        1px dashed var(--state-warning-fg);
+  outline-offset: -1px;
+}
+.atom-hit-target-wrapper--debug:focus-visible,
+.atom-hit-target-wrapper--debug.is-focus {
+  outline:    none;
+  box-shadow: 0 0 0 2px var(--border-focus);
+}
+
+
+/* ================================================================
+   atom-home-indicator
+   Source: designs/atoms/home-indicator/home-indicator.html
+   ================================================================ */
+
+.atom-home-indicator {
+  background:    var(--text-body);
+  border-radius: var(--radius-pill);
+  flex-shrink:   0;
+  transition:
+    transform  var(--motion-fast) var(--motion-ease-out),
+    background var(--motion-fast) var(--motion-ease-out),
+    opacity    var(--motion-fast) var(--motion-ease-out);
+}
+
+.atom-home-indicator--ios {
+  width:  var(--home-indicator-width);
+  height: var(--home-indicator-height);
+}
+
+.atom-home-indicator--sheet-handle {
+  width:  var(--sheet-handle-width);
+  height: var(--sheet-handle-height);
+  margin: var(--space-2) auto;
+}
+
+.atom-home-indicator--muted {
+  background: var(--text-faint);
+}
+
+.atom-home-indicator.is-active {
+  transform:  scale(1.05);
+  background: var(--text-body);
+}
+
+.atom-home-indicator.is-disabled {
+  opacity: 0.3;
+}
+
+
+/* ================================================================
+   atom-icon-button
+   Source: designs/atoms/icon-button/icon-button.html
+   ================================================================ */
+
+.atom-icon-button {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+
+  border:        none;
+  border-radius: var(--radius-default);
+  outline:       none;
+  cursor:        pointer;
+  padding:       0;
+
+  transition:
+    background-color var(--motion-fast) var(--motion-ease-out),
+    color            var(--motion-fast) var(--motion-ease-out),
+    box-shadow       var(--motion-fast) var(--motion-ease-out),
+    opacity          var(--motion-fast) var(--motion-ease-out),
+    transform        var(--motion-fast) var(--motion-ease-out);
+}
+
+.atom-icon-button--xs {
+  width:  28px;
+  height: 28px;
+}
+.atom-icon-button--xs .atom-icon-button__icon {
+  width:  14px;
+  height: 14px;
+}
+
+.atom-icon-button--sm {
+  width:  36px;
+  height: 36px;
+}
+.atom-icon-button--sm .atom-icon-button__icon {
+  width:  16px;
+  height: 16px;
+}
+
+.atom-icon-button--md,
+.atom-icon-button:not(.atom-icon-button--xs):not(.atom-icon-button--sm):not(.atom-icon-button--lg) {
+  width:  var(--touch-target-min);
+  height: var(--touch-target-min);
+}
+.atom-icon-button--md .atom-icon-button__icon,
+.atom-icon-button:not(.atom-icon-button--xs):not(.atom-icon-button--sm):not(.atom-icon-button--lg) .atom-icon-button__icon {
+  width:  20px;
+  height: 20px;
+}
+
+.atom-icon-button--lg {
+  width:  56px;
+  height: 56px;
+}
+.atom-icon-button--lg .atom-icon-button__icon {
+  width:  24px;
+  height: 24px;
+}
+
+.atom-icon-button--pill {
+  border-radius: var(--radius-pill);
+}
+
+.atom-icon-button__icon {
+  display:      block;
+  flex-shrink:  0;
+  stroke-width: 2;
+}
+
+.atom-icon-button--ghost {
+  background-color: transparent;
+  color:            var(--text-body);
+}
+.atom-icon-button--ghost:hover,
+.atom-icon-button--ghost.is-hover {
+  background-color: var(--surface-soft);
+}
+.atom-icon-button--ghost:active,
+.atom-icon-button--ghost.is-active {
+  background-color: var(--surface-active);
+  transform: scale(0.95);
+}
+.atom-icon-button--ghost:focus-visible,
+.atom-icon-button--ghost.is-focus {
+  background-color: transparent;
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+.atom-icon-button--ghost:disabled,
+.atom-icon-button--ghost.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-icon-button--soft {
+  background-color: var(--surface-soft);
+  color:            var(--text-body);
+}
+.atom-icon-button--soft:hover,
+.atom-icon-button--soft.is-hover {
+  background-color: var(--surface-active);
+}
+.atom-icon-button--soft:active,
+.atom-icon-button--soft.is-active {
+  background-color: var(--surface-active);
+  transform: scale(0.95);
+}
+.atom-icon-button--soft:focus-visible,
+.atom-icon-button--soft.is-focus {
+  background-color: var(--surface-soft);
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+.atom-icon-button--soft:disabled,
+.atom-icon-button--soft.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-icon-button--primary {
+  background-color: var(--accent-primary);
+  color:            var(--accent-primary-fg);
+}
+.atom-icon-button--primary:hover,
+.atom-icon-button--primary.is-hover {
+  background-color: var(--accent-primary-hover);
+}
+.atom-icon-button--primary:active,
+.atom-icon-button--primary.is-active {
+  background-color: var(--accent-primary-pressed);
+  transform: scale(0.95);
+}
+.atom-icon-button--primary:focus-visible,
+.atom-icon-button--primary.is-focus {
+  background-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+.atom-icon-button--primary:disabled,
+.atom-icon-button--primary.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-icon-button--neutral {
+  background-color: var(--surface-inverse);
+  color:            var(--text-on-inverse);
+}
+.atom-icon-button--neutral:hover,
+.atom-icon-button--neutral.is-hover {
+  background-color: color-mix(in oklch, var(--surface-inverse) 85%, transparent 15%);
+}
+.atom-icon-button--neutral:active,
+.atom-icon-button--neutral.is-active {
+  background-color: color-mix(in oklch, var(--surface-inverse) 70%, transparent 30%);
+  transform: scale(0.95);
+}
+.atom-icon-button--neutral:focus-visible,
+.atom-icon-button--neutral.is-focus {
+  box-shadow: 0 0 0 3px var(--border-focus);
+}
+.atom-icon-button--neutral:disabled,
+.atom-icon-button--neutral.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-icon-button--destructive {
+  background-color: var(--state-danger-fg);
+  color:            var(--accent-primary-fg);
+}
+.atom-icon-button--destructive:hover,
+.atom-icon-button--destructive.is-hover {
+  background-color: color-mix(in oklch, var(--state-danger-fg) 85%, black 15%);
+}
+.atom-icon-button--destructive:active,
+.atom-icon-button--destructive.is-active {
+  background-color: color-mix(in oklch, var(--state-danger-fg) 70%, black 30%);
+  transform: scale(0.95);
+}
+.atom-icon-button--destructive:focus-visible,
+.atom-icon-button--destructive.is-focus {
+  background-color: var(--state-danger-fg);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--state-danger-fg) 50%, transparent 50%);
+}
+.atom-icon-button--destructive:disabled,
+.atom-icon-button--destructive.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.atom-icon-button.is-loading {
+  pointer-events: none;
+  position:       relative;
+}
+.atom-icon-button.is-loading .atom-icon-button__icon {
+  opacity: 0;
+}
+.atom-icon-button.is-loading::after {
+  content:          '';
+  position:         absolute;
+  width:            var(--space-4);
+  height:           var(--space-4);
+  border-radius:    var(--radius-round);
+  border:           2px solid currentColor;
+  border-top-color: transparent;
+  animation:        atom-icon-button-spin var(--motion-slow) linear infinite;
+}
+.atom-icon-button--primary.is-loading::after     { border-color: var(--accent-primary-fg);  border-top-color: transparent; }
+.atom-icon-button--neutral.is-loading::after     { border-color: var(--text-on-inverse);     border-top-color: transparent; }
+.atom-icon-button--soft.is-loading::after        { border-color: var(--text-body);           border-top-color: transparent; }
+.atom-icon-button--ghost.is-loading::after       { border-color: var(--text-body);           border-top-color: transparent; }
+.atom-icon-button--destructive.is-loading::after { border-color: var(--accent-primary-fg);   border-top-color: transparent; }
+
+@keyframes atom-icon-button-spin {
+  to { transform: rotate(360deg); }
+}
+
+
+/* ================================================================
+   atom-icon-glyph
+   Source: designs/atoms/icon-glyph/icon-glyph.html
+   ================================================================ */
+
+.atom-icon-glyph {
+  display:     block;
+  flex-shrink: 0;
+}
+
+.atom-icon-glyph:not(.atom-icon-glyph--xs):not(.atom-icon-glyph--md):not(.atom-icon-glyph--lg):not(.atom-icon-glyph--xl),
+.atom-icon-glyph--sm {
+  width:        16px;
+  height:       16px;
+  stroke-width: 1.75;
+}
+
+.atom-icon-glyph--xs {
+  width:        12px;
+  height:       12px;
+  stroke-width: 1.5;
+}
+
+.atom-icon-glyph--md {
+  width:        20px;
+  height:       20px;
+  stroke-width: 2;
+}
+
+.atom-icon-glyph--lg {
+  width:        24px;
+  height:       24px;
+  stroke-width: 2;
+}
+
+.atom-icon-glyph--xl {
+  width:        32px;
+  height:       32px;
+  stroke-width: 2;
+}
+
+.atom-icon-glyph--muted  { color: var(--text-muted); }
+.atom-icon-glyph--faint  { color: var(--text-faint); }
+.atom-icon-glyph--accent { color: var(--accent-primary); }
+.atom-icon-glyph--live   { color: var(--state-live-fg); }
+.atom-icon-glyph--danger { color: var(--state-danger-fg); }
+
+@keyframes icon-spin {
+  to { transform: rotate(360deg); }
+}
+.atom-icon-glyph--spin {
+  animation:        icon-spin 800ms linear infinite;
+  transform-origin: center;
+}
+
+
+/* ================================================================
+   atom-kbd
+   Source: designs/atoms/kbd/kbd.html
+   ================================================================ */
+
+.atom-kbd {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+
+  font-family:    var(--font-mono);
+  font-weight:    var(--font-weight-meta);
+  letter-spacing: var(--tracking-mono);
+  line-height:    var(--line-height-tight);
+  white-space:    nowrap;
+
+  border-radius: var(--radius-subtle);
+  padding:       var(--space-1) var(--space-2);
+
+  transition:
+    transform         var(--motion-fast) var(--motion-ease-out),
+    background-color  var(--motion-fast) var(--motion-ease-out);
+}
+
+.atom-kbd--sm {
+  font-size: var(--font-size-meta);
+}
+
+.atom-kbd--md {
+  font-size: var(--font-size-label);
+}
+
+.atom-kbd--default {
+  background-color: var(--surface-soft);
+  border:           1px solid var(--border-default);
+  color:            var(--text-muted);
+}
+.atom-kbd--default.is-pressed,
+.atom-kbd--default:active {
+  background-color: color-mix(in oklch, var(--surface-soft) 80%, black 20%);
+  transform:        translateY(1px);
+}
+
+.atom-kbd--inline {
+  background-color: var(--surface-sunken);
+  border:           1px solid var(--border-subtle);
+  color:            var(--text-body);
+}
+.atom-kbd--inline.is-pressed,
+.atom-kbd--inline:active {
+  background-color: color-mix(in oklch, var(--surface-sunken) 80%, black 20%);
+  transform:        translateY(1px);
+}
+
+.atom-kbd--strong {
+  background-color: var(--surface-inverse);
+  border:           none;
+  color:            var(--text-on-inverse);
+}
+.atom-kbd--strong.is-pressed,
+.atom-kbd--strong:active {
+  background-color: color-mix(in oklch, var(--surface-inverse) 80%, black 20%);
+  transform:        translateY(1px);
+}
+
+.atom-kbd-sep {
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-meta);
+  font-weight:    var(--font-weight-meta);
+  color:          var(--text-faint);
+  padding:        0 var(--space-1);
+  line-height:    var(--line-height-tight);
+  user-select:    none;
+}
+
+
+/* ================================================================
+   atom-live-activity-dot
+   Source: designs/atoms/live-activity-dot/live-activity-dot.html
+   ================================================================ */
+
+@keyframes atom-live-activity-pulse {
+  0%, 100% { transform: scale(1);   opacity: 1;    }
+  50%      { transform: scale(1.2); opacity: 0.55; }
+}
+
+.atom-live-activity-dot {
+  display:        inline-flex;
+  align-items:    center;
+  gap:            var(--space-2);
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-meta);
+  font-weight:    var(--font-weight-meta);
+  letter-spacing: var(--tracking-uppercase);
+  text-transform: uppercase;
+  line-height:    1;
+  color:          var(--state-live-fg);
+}
+
+.atom-live-activity-dot__dot {
+  flex-shrink:   0;
+  width:         6px;
+  height:        6px;
+  border-radius: var(--radius-round);
+  background:    var(--state-live-fg);
+  box-shadow:    0 0 8px var(--state-live-fg);
+  animation:     atom-live-activity-pulse 1.4s ease-in-out infinite;
+}
+
+.atom-live-activity-dot--paused {
+  color: var(--state-warning-fg);
+}
+.atom-live-activity-dot--paused .atom-live-activity-dot__dot {
+  background: var(--state-warning-fg);
+  box-shadow: 0 0 6px var(--state-warning-fg);
+  animation:  none;
+}
+
+.atom-live-activity-dot--dormant {
+  color: var(--text-muted);
+}
+.atom-live-activity-dot--dormant .atom-live-activity-dot__dot {
+  background: var(--text-muted);
+  box-shadow: none;
+  animation:  none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atom-live-activity-dot__dot {
+    animation: none;
+    box-shadow: 0 0 8px var(--state-live-fg);
+  }
+}
+
+
+/* ================================================================
+   atom-pill
+   Source: designs/atoms/pill/pill.html
+   ================================================================ */
+
+.atom-pill {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  white-space:     nowrap;
+  flex-shrink:     0;
+  position:        relative;
+
+  border-radius: var(--radius-pill);
+  border:        none;
+  outline:       none;
+  cursor:        default;
+
+  font-family:    var(--font-body);
+  font-size:      var(--font-size-label);
+  font-weight:    var(--font-weight-label);
+  letter-spacing: var(--tracking-mono);
+  line-height:    var(--line-height-snug);
+
+  transition:
+    background-color var(--motion-fast) var(--motion-ease-out),
+    color            var(--motion-fast) var(--motion-ease-out),
+    box-shadow       var(--motion-fast) var(--motion-ease-out),
+    opacity          var(--motion-fast) var(--motion-ease-out),
+    transform        var(--motion-fast) var(--motion-ease-out),
+    border-color     var(--motion-fast) var(--motion-ease-out);
+}
+
+.atom-pill--sm {
+  height:         20px;
+  padding-inline: var(--space-2);
+  font-size:      var(--font-size-meta);
+  font-weight:    var(--font-weight-meta);
+  letter-spacing: var(--tracking-uppercase);
+  text-transform: uppercase;
+  gap:            var(--space-1);
+}
+
+.atom-pill,
+.atom-pill--md {
+  height:         28px;
+  padding-inline: var(--space-3);
+  gap:            var(--space-2);
+}
+
+.atom-pill--sm {
+  height:         20px;
+  padding-inline: var(--space-2);
+}
+
+.atom-pill--lg {
+  height:         36px;
+  padding-inline: var(--space-4);
+  gap:            var(--space-2);
+}
+
+.atom-pill--default {
+  background-color: var(--surface-soft);
+  color:            var(--text-body);
+  border:           0.5px solid var(--border-default);
+}
+.atom-pill--default:hover,
+.atom-pill--default.is-hover {
+  background-color: var(--surface-active);
+}
+
+.atom-pill--strong {
+  background-color: var(--surface-active);
+  color:            var(--text-body);
+  border:           0.5px solid var(--border-strong);
+}
+.atom-pill--strong:hover,
+.atom-pill--strong.is-hover {
+  background-color: color-mix(in oklch, var(--surface-active) 85%, var(--surface-soft) 15%);
+}
+
+.atom-pill--accent {
+  background-color: var(--accent-primary-subtle);
+  color:            var(--accent-primary);
+  border:           none;
+}
+.atom-pill--accent:hover,
+.atom-pill--accent.is-hover {
+  background-color: color-mix(in oklch, var(--accent-primary-subtle) 95%, var(--accent-primary) 5%);
+}
+
+.atom-pill--live {
+  background-color: var(--state-live-bg);
+  color:            var(--state-live-fg);
+  border:           none;
+}
+.atom-pill--live:hover,
+.atom-pill--live.is-hover {
+  background-color: color-mix(in oklch, var(--state-live-bg) 80%, var(--state-live-fg) 10%);
+}
+
+.atom-pill--warning {
+  background-color: var(--state-warning-bg);
+  color:            var(--state-warning-fg);
+  border:           none;
+}
+.atom-pill--warning:hover,
+.atom-pill--warning.is-hover {
+  background-color: color-mix(in oklch, var(--state-warning-bg) 80%, var(--state-warning-fg) 10%);
+}
+
+.atom-pill--danger {
+  background-color: var(--state-danger-bg);
+  color:            var(--state-danger-fg);
+  border:           none;
+}
+.atom-pill--danger:hover,
+.atom-pill--danger.is-hover {
+  background-color: color-mix(in oklch, var(--state-danger-bg) 80%, var(--state-danger-fg) 10%);
+}
+
+.atom-pill:active,
+.atom-pill.is-active {
+  transform: translateY(1px);
+}
+
+.atom-pill:focus-visible,
+.atom-pill.is-focus {
+  box-shadow: 0 0 0 2px var(--border-focus);
+  outline:    none;
+}
+
+.atom-pill.is-disabled {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+.atom-pill.is-selected {
+  background-color: var(--surface-active);
+  border-color:     var(--border-strong);
+  border-width:     0.5px;
+  border-style:     solid;
+}
+.atom-pill--accent.is-selected {
+  background-color: var(--accent-primary-subtle);
+  border:           0.5px solid var(--accent-primary);
+}
+
+.atom-pill--leading-icon {
+  padding-inline-start: var(--space-2);
+}
+.atom-pill__icon {
+  display:     inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  width:       14px;
+  height:      14px;
+  color:       currentColor;
+}
+.atom-pill--sm .atom-pill__icon {
+  width:  12px;
+  height: 12px;
+}
+
+.atom-pill--trailing-dismiss {
+  padding-inline-end: var(--space-1);
+}
+.atom-pill__dismiss {
+  appearance:    none;
+  background:    none;
+  border:        none;
+  outline:       none;
+  padding:       0;
+  margin:        0;
+  cursor:        pointer;
+
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  width:           var(--space-4);
+  height:          var(--space-4);
+  min-width:       var(--space-4);
+  margin-inline-end: calc(var(--space-1) * -1);
+
+  color:         currentColor;
+  opacity:       0.7;
+  transition:    opacity var(--motion-fast) var(--motion-ease-out);
+  border-radius: var(--radius-round);
+
+  position: relative;
+}
+.atom-pill__dismiss::before {
+  content:  '';
+  position: absolute;
+  inset:    calc((var(--touch-target-min) - var(--space-4)) / -2);
+}
+.atom-pill__dismiss:hover {
+  opacity: 1;
+}
+.atom-pill__dismiss:focus-visible {
+  box-shadow: 0 0 0 2px var(--border-focus);
+  outline:    none;
+}
+
+.atom-pill--monospace {
+  font-family: var(--font-mono);
+}
+
+.atom-pill--uppercase {
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-uppercase);
+}
+
+
+/* ================================================================
+   atom-progress-dots
+   Source: designs/atoms/progress-dots/progress-dots.html
+   ================================================================ */
+
+.atom-progress-dots {
+  display:     inline-flex;
+  align-items: center;
+  gap:         var(--space-1);
+}
+
+.atom-progress-dots__dot {
+  display:       inline-block;
+  flex-shrink:   0;
+  width:         6px;  /* structural geometry — default sm */
+  height:        6px;
+  border-radius: var(--radius-round);
+  background:    var(--text-muted);
+  animation:     atom-progress-dots-bounce var(--motion-cadence-pulse-medium)
+                 ease-in-out infinite;
+}
+
+.atom-progress-dots__dot:nth-child(1) { animation-delay: 0s;   }
+.atom-progress-dots__dot:nth-child(2) { animation-delay: 0.2s; }
+.atom-progress-dots__dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes atom-progress-dots-bounce {
+  0%,
+  60%,
+  100% { transform: scale(0.7); opacity: 0.45; }
+  30%  { transform: scale(1.1); opacity: 1;    }
+}
+
+.atom-progress-dots--xs {
+  gap: var(--space-1);
+}
+.atom-progress-dots--xs .atom-progress-dots__dot {
+  width:  4px; /* structural geometry */
+  height: 4px;
+}
+
+.atom-progress-dots--sm {
+  gap: var(--space-1);
+}
+.atom-progress-dots--sm .atom-progress-dots__dot {
+  width:  6px; /* structural geometry */
+  height: 6px;
+}
+
+.atom-progress-dots--md {
+  gap: var(--space-2);
+}
+.atom-progress-dots--md .atom-progress-dots__dot {
+  width:  8px; /* structural geometry */
+  height: 8px;
+}
+
+.atom-progress-dots--muted .atom-progress-dots__dot  { background: var(--text-muted);     }
+.atom-progress-dots--accent .atom-progress-dots__dot { background: var(--accent-primary); }
+.atom-progress-dots--live .atom-progress-dots__dot   { background: var(--state-live-fg);  }
+.atom-progress-dots--faint .atom-progress-dots__dot  { background: var(--text-faint);     }
+
+.atom-progress-dots.is-paused .atom-progress-dots__dot {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atom-progress-dots__dot {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+
+/* ================================================================
+   atom-scroll-fade
+   Source: designs/atoms/scroll-fade/scroll-fade.html
+   ================================================================ */
+
+.atom-scroll-fade {
+  position:       absolute;
+  left:           0;
+  right:          0;
+  height:         40px; /* --md default */
+  pointer-events: none;
+  z-index:        5;
+  transition:     opacity var(--motion-fast) var(--motion-ease-out);
+}
+
+.atom-scroll-fade--top {
+  top:        0;
+  background: linear-gradient(to bottom, var(--surface-page) 0%, transparent 100%);
+}
+
+.atom-scroll-fade--bottom {
+  bottom:     0;
+  background: linear-gradient(to top, var(--surface-page) 0%, transparent 100%);
+}
+
+.atom-scroll-fade--on-soft.atom-scroll-fade--top {
+  background: linear-gradient(to bottom, var(--surface-soft) 0%, transparent 100%);
+}
+.atom-scroll-fade--on-soft.atom-scroll-fade--bottom {
+  background: linear-gradient(to top, var(--surface-soft) 0%, transparent 100%);
+}
+
+.atom-scroll-fade--on-overlay.atom-scroll-fade--top {
+  background: linear-gradient(to bottom, var(--surface-overlay) 0%, transparent 100%);
+}
+.atom-scroll-fade--on-overlay.atom-scroll-fade--bottom {
+  background: linear-gradient(to top, var(--surface-overlay) 0%, transparent 100%);
+}
+
+.atom-scroll-fade--sm { height: 24px; }
+.atom-scroll-fade--md { height: 40px; }
+.atom-scroll-fade--lg { height: 64px; }
+
+.atom-scroll-fade.is-hidden { opacity: 0; }
+
+
+/* ================================================================
+   atom-section-label
+   Source: designs/atoms/section-label/section-label.html
+   ================================================================ */
+
+.atom-section-label {
+  display:        block;
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-meta);
+  font-weight:    var(--font-weight-meta);
+  letter-spacing: var(--tracking-uppercase);
+  text-transform: uppercase;
+  line-height:    var(--line-height-tight);
+  color:          var(--text-muted);
+}
+
+.atom-section-label--faint  { color: var(--text-faint); }
+.atom-section-label--strong { color: var(--text-body);  }
+
+.atom-section-label--sticky {
+  position:    sticky;
+  top:         0;
+  background:  var(--surface-page);
+  padding-block: var(--space-2);
+  z-index:     1;
+}
+
+.atom-section-label--inline {
+  display:        inline;
+  padding-inline: var(--space-2);
+}
+
+.atom-section-label--with-rule {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-3);
+}
+.atom-section-label--with-rule::after {
+  content:    '';
+  flex:       1;
+  height:     1px;
+  background: var(--border-subtle);
+}
+
+
+/* ================================================================
+   atom-spinner
+   Source: designs/atoms/spinner/spinner.html
+   ================================================================ */
+
+.atom-spinner--circular {
+  display:          inline-block;
+  flex-shrink:      0;
+  border-style:     solid;
+  border-width:     2px; /* structural geometry — SVG/stroke exception */
+  border-color:     currentColor;
+  border-top-color: transparent;
+  border-radius:    var(--radius-round);
+  animation:        atom-spinner-circular var(--motion-cadence-pulse-medium) linear infinite;
+  color:            var(--text-muted);
+  width:            16px;
+  height:           16px;
+}
+
+@keyframes atom-spinner-circular {
+  to { transform: rotate(360deg); }
+}
+
+.atom-spinner--ascii {
+  display:     inline-block;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size:   var(--font-size-label);
+  line-height: 1;
+  color:       var(--text-muted);
+}
+
+.atom-spinner--ascii::before {
+  content:   '⠋';
+  animation: atom-spinner-ascii var(--motion-cadence-pulse-slow) steps(10, end) infinite;
+}
+
+@keyframes atom-spinner-ascii {
+  0%   { content: '⠋'; }
+  10%  { content: '⠙'; }
+  20%  { content: '⠹'; }
+  30%  { content: '⠸'; }
+  40%  { content: '⠼'; }
+  50%  { content: '⠴'; }
+  60%  { content: '⠦'; }
+  70%  { content: '⠧'; }
+  80%  { content: '⠇'; }
+  90%  { content: '⠏'; }
+  100% { content: '⠋'; }
+}
+
+.atom-spinner--circular.atom-spinner--xs { width: 12px; height: 12px; }
+.atom-spinner--circular.atom-spinner--sm { width: 16px; height: 16px; }
+.atom-spinner--circular.atom-spinner--md { width: 20px; height: 20px; }
+.atom-spinner--circular.atom-spinner--lg { width: 24px; height: 24px; }
+.atom-spinner--circular.atom-spinner--xl { width: 32px; height: 32px; }
+
+.atom-spinner--ascii.atom-spinner--xs { font-size: var(--font-size-meta);    }
+.atom-spinner--ascii.atom-spinner--sm { font-size: var(--font-size-label);   }
+.atom-spinner--ascii.atom-spinner--md { font-size: var(--font-size-body-sm); }
+.atom-spinner--ascii.atom-spinner--lg { font-size: var(--font-size-body);    }
+.atom-spinner--ascii.atom-spinner--xl { font-size: var(--font-size-title);   }
+
+.atom-spinner--muted   { color: var(--text-muted);      }
+.atom-spinner--accent  { color: var(--accent-primary);  }
+.atom-spinner--live    { color: var(--state-live-fg);   }
+.atom-spinner--inverse { color: var(--text-on-inverse); }
+
+.atom-spinner--circular.is-paused,
+.atom-spinner--ascii.is-paused::before {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atom-spinner--circular {
+    animation: none;
+  }
+  .atom-spinner--ascii::before {
+    animation: none;
+    content: '⠿';
+  }
+}
+
+
+/* ================================================================
+   atom-status-dot
+   Source: designs/atoms/status-dot/status-dot.html
+   ================================================================ */
+
+.atom-status-dot {
+  display:       inline-block;
+  flex-shrink:   0;
+  border-radius: var(--radius-round);
+  width:         8px;
+  height:        8px;
+}
+
+.atom-status-dot--xs {
+  width:  6px;
+  height: 6px;
+}
+
+.atom-status-dot--sm {
+  width:  8px;
+  height: 8px;
+}
+
+.atom-status-dot--md {
+  width:  10px;
+  height: 10px;
+}
+
+@keyframes atom-status-dot-pulse {
+  0%, 100% { transform: scale(1);    opacity: 1;   }
+  50%      { transform: scale(1.15); opacity: 0.7; }
+}
+
+.atom-status-dot--live {
+  background: var(--state-live-dot);
+  animation:  atom-status-dot-pulse var(--motion-slow) ease-in-out infinite;
+  box-shadow: 0 0 6px var(--state-live-dot);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atom-status-dot--live {
+    animation: none;
+    box-shadow: 0 0 6px var(--state-live-dot);
+  }
+}
+
+.atom-status-dot--warning {
+  background: var(--state-warning-dot);
+  box-shadow: 0 0 0 2px var(--state-warning-bg);
+}
+
+.atom-status-dot--danger {
+  background: var(--state-danger-dot);
+}
+
+.atom-status-dot--success {
+  background: var(--state-success-dot);
+}
+
+.atom-status-dot--neutral {
+  background: var(--state-neutral-dot);
+}
+
+.atom-status-dot.is-disabled {
+  opacity:        0.4;
+  pointer-events: none;
+  animation:      none;
+}
+
+
+/* ================================================================
+   atom-streaming-cursor
+   Source: designs/atoms/streaming-cursor/streaming-cursor.html
+   ================================================================ */
+
+.atom-streaming-cursor {
+  display:        inline-block;
+  width:          2px;
+  height:         1em;           /* tracks surrounding line-height */
+  vertical-align: text-bottom;
+  margin-left:    2px;           /* structural offset from last char */
+  background:     var(--domain-streaming-cursor);
+  box-shadow:     0 0 6px var(--state-live-dot);
+  animation:      atom-streaming-cursor-blink 1s steps(2) infinite;
+}
+
+.atom-streaming-cursor--steady {
+  animation: none;
+}
+
+.atom-streaming-cursor--paused {
+  background:         var(--state-warning-dot);
+  box-shadow:         0 0 4px var(--state-warning-dot);
+  animation-duration: 0.6s;
+}
+
+.atom-streaming-cursor.is-paused {
+  background:         var(--state-warning-dot);
+  box-shadow:         0 0 4px var(--state-warning-dot);
+  animation-duration: 0.6s;
+}
+
+@keyframes atom-streaming-cursor-blink {
+  0%   { opacity: 1; }
+  50%  { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+
+/* ================================================================
+   atom-text-input
+   Source: designs/atoms/text-input/text-input.html
+   ================================================================ */
+
+.atom-text-input-wrap {
+  position:    relative;
+  display:     flex;
+  align-items: center;
+  width:       100%;
+}
+
+.atom-text-input {
+  display:   block;
+  width:     100%;
+  min-width: 0;
+
+  border:        1px solid transparent;
+  border-radius: var(--radius-default);
+  outline:       none;
+
+  font-family:    var(--font-body);
+  font-size:      var(--font-size-body);
+  font-weight:    var(--font-weight-body);
+  line-height:    var(--line-height-normal);
+  letter-spacing: var(--tracking-normal);
+  color:          var(--text-body);
+
+  transition:
+    background-color var(--motion-fast) var(--motion-ease-out),
+    border-color     var(--motion-fast) var(--motion-ease-out),
+    box-shadow       var(--motion-fast) var(--motion-ease-out),
+    opacity          var(--motion-fast) var(--motion-ease-out);
+
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.atom-text-input::placeholder {
+  color: var(--text-faint);
+}
+
+.atom-text-input--sm {
+  height:          36px;
+  padding-inline:  var(--space-3);
+  font-size:       var(--font-size-body-sm);
+}
+
+.atom-text-input--md {
+  height:         var(--touch-target-min);
+  padding-inline: var(--space-4);
+}
+
+.atom-text-input:not(.atom-text-input--sm):not(.atom-text-input--lg) {
+  height:         var(--touch-target-min);
+  padding-inline: var(--space-4);
+}
+
+.atom-text-input--lg {
+  height:         56px;
+  padding-inline: var(--space-5);
+}
+
+.atom-text-input--default {
+  background-color: var(--surface-soft);
+  border-color:     var(--border-default);
+}
+
+.atom-text-input--inset {
+  background-color: var(--surface-sunken);
+  border-color:     transparent;
+}
+
+.atom-text-input--bare {
+  background-color: transparent;
+  border-color:     transparent;
+}
+
+.atom-text-input:focus-visible,
+.atom-text-input.is-focus {
+  border-color: var(--border-focus);
+  box-shadow:   0 0 0 2px var(--border-focus);
+  outline:      none;
+}
+
+.atom-text-input--inset:focus-visible,
+.atom-text-input--inset.is-focus {
+  border-color: var(--border-focus);
+  box-shadow:   0 0 0 2px var(--border-focus);
+}
+
+.atom-text-input.is-error {
+  border-color: var(--state-danger-fg);
+  box-shadow:   0 0 0 2px color-mix(in oklch, var(--state-danger-fg) 30%, transparent);
+}
+
+.atom-text-input:disabled,
+.atom-text-input.is-disabled {
+  opacity:        0.5;
+  pointer-events: none;
+  cursor:         not-allowed;
+}
+
+.atom-text-input-wrap.is-loading {
+  position: relative;
+}
+.atom-text-input-wrap.is-loading .atom-text-input {
+  padding-inline-end: var(--space-8);
+}
+.atom-text-input-wrap.is-loading::after {
+  content:          '';
+  position:         absolute;
+  right:            var(--space-3);
+  width:            14px;
+  height:           14px;
+  border-radius:    var(--radius-round);
+  border:           2px solid var(--text-muted);
+  border-top-color: transparent;
+  animation:        atom-input-spin var(--motion-slow) linear infinite;
+  pointer-events:   none;
+  flex-shrink:      0;
+}
+
+@keyframes atom-input-spin {
+  to { transform: rotate(360deg); }
+}
+
+.atom-text-input-wrap.atom-text-input--with-leading-icon {
+  position: relative;
+}
+.atom-text-input-wrap.atom-text-input--with-leading-icon .atom-text-input-icon {
+  position:       absolute;
+  left:           var(--space-3);
+  display:        flex;
+  align-items:    center;
+  color:          var(--text-faint);
+  pointer-events: none;
+  flex-shrink:    0;
+}
+.atom-text-input-wrap.atom-text-input--with-leading-icon .atom-text-input--sm {
+  padding-inline-start: var(--space-8);
+}
+.atom-text-input-wrap.atom-text-input--with-leading-icon .atom-text-input--md,
+.atom-text-input-wrap.atom-text-input--with-leading-icon .atom-text-input:not(.atom-text-input--sm):not(.atom-text-input--lg) {
+  padding-inline-start: var(--space-8);
+}
+.atom-text-input-wrap.atom-text-input--with-leading-icon .atom-text-input--lg {
+  padding-inline-start: var(--space-8);
+}
+
+.atom-text-input-wrap.atom-text-input--with-trailing-clear {
+  position: relative;
+}
+.atom-text-input-clear {
+  position:        absolute;
+  right:           var(--space-3);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  background:      none;
+  border:          none;
+  padding:         var(--space-1);
+  cursor:          pointer;
+  color:           var(--text-muted);
+  border-radius:   var(--radius-subtle);
+  transition:
+    color      var(--motion-fast) var(--motion-ease-out),
+    background var(--motion-fast) var(--motion-ease-out);
+  line-height: 1;
+}
+.atom-text-input-clear:hover {
+  color:            var(--text-body);
+  background-color: var(--surface-active);
+}
+.atom-text-input-wrap.atom-text-input--with-trailing-clear .atom-text-input {
+  padding-inline-end: var(--space-8);
+}
+
+.atom-text-input-field {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-2);
+  width:          100%;
+}
+.atom-text-input-label {
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-label);
+  font-weight:    var(--font-weight-label);
+  letter-spacing: var(--tracking-uppercase);
+  color:          var(--text-muted);
+  text-transform: uppercase;
+}
+.atom-text-input-helper {
+  font-family:  var(--font-body);
+  font-size:    var(--font-size-meta);
+  font-weight:  var(--font-weight-body);
+  color:        var(--text-faint);
+  line-height:  var(--line-height-snug);
+}
+.atom-text-input-error-msg {
+  font-family:  var(--font-body);
+  font-size:    var(--font-size-meta);
+  font-weight:  var(--font-weight-body);
+  color:        var(--state-danger-fg);
+  line-height:  var(--line-height-snug);
+}
+
+
+/* ================================================================
+   atom-textarea
+   Source: designs/atoms/textarea/textarea.html
+   ================================================================ */
+
+.atom-textarea {
+  display:  block;
+  width:    100%;
+
+  min-height:   var(--composer-min-height);
+  max-height:   var(--composer-max-height);
+  overflow-y:   hidden;
+  resize:       none;
+
+  font-family:    var(--font-body);
+  font-size:      var(--font-size-body);
+  font-weight:    var(--font-weight-body);
+  line-height:    var(--line-height-normal);
+  letter-spacing: var(--tracking-normal);
+  color:          var(--text-body);
+
+  padding: var(--spacing-internal);
+
+  border-radius: var(--radius-default);
+  outline:       none;
+  box-shadow:    none;
+
+  transition:
+    border-color var(--motion-fast) var(--motion-ease-out),
+    box-shadow   var(--motion-fast) var(--motion-ease-out),
+    opacity      var(--motion-fast) var(--motion-ease-out);
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+.atom-textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.atom-textarea--default {
+  background-color: var(--surface-soft);
+  border:           1px solid var(--border-default);
+}
+
+.atom-textarea--composer {
+  background-color: var(--surface-sunken);
+  border:           1px solid var(--border-subtle);
+}
+
+.atom-textarea--inset {
+  background-color: var(--surface-page);
+  border:           1px solid var(--border-default);
+}
+
+.atom-textarea:focus,
+.atom-textarea.is-focus {
+  box-shadow: 0 0 0 2px var(--border-focus);
+}
+
+.atom-textarea.is-error {
+  border-color: var(--state-danger-fg);
+  box-shadow:   none;
+}
+.atom-textarea.is-error:focus,
+.atom-textarea.is-error.is-focus {
+  border-color: var(--state-danger-fg);
+  box-shadow:   0 0 0 2px color-mix(in oklch, var(--state-danger-fg) 40%, transparent 60%);
+}
+
+.atom-textarea:disabled,
+.atom-textarea.is-disabled {
+  opacity:        0.5;
+  pointer-events: none;
+  cursor:         not-allowed;
+}
+
+.atom-textarea.is-autogrow-cap {
+  overflow-y: auto;
+}
+
+
+/* ================================================================
+   atom-toast-base
+   Source: designs/atoms/toast-base/toast-base.html
+   ================================================================ */
+
+.atom-toast-base {
+  position:      relative;
+  display:       inline-flex;
+  align-items:   flex-start;
+  gap:           var(--space-2);
+  background:    var(--surface-overlay);
+  border:        1px solid var(--border-default);
+  border-radius: var(--radius-default);
+  box-shadow:    var(--elevation-overlay);
+  max-width:     400px;
+  width:         max-content;
+  overflow:      hidden;
+  z-index:       200;
+
+  opacity:   1;
+  transform: translateY(0);
+  transition:
+    opacity   var(--motion-medium) var(--motion-ease-out),
+    transform var(--motion-medium) var(--motion-ease-out);
+}
+
+.atom-toast-base__rule {
+  position:    absolute;
+  left:        0;
+  top:         0;
+  bottom:      0;
+  width:       var(--domain-tool-rule-width);
+  flex-shrink: 0;
+}
+
+.atom-toast-base__icon {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+  width:           16px;
+  height:          16px; /* structural geometry */
+  margin-left:     calc(var(--domain-tool-rule-width) + var(--space-3));
+  margin-top:      var(--space-3);
+}
+
+.atom-toast-base__icon svg {
+  width:  100%;
+  height: 100%;
+}
+
+.atom-toast-base__content {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-1);
+  padding:        var(--space-3) 0;
+  min-width:      0;
+}
+
+.atom-toast-base__title {
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-label);
+  font-weight:    var(--font-weight-label);
+  line-height:    var(--line-height-snug);
+  letter-spacing: var(--tracking-mono);
+  color:          var(--text-body);
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+}
+
+.atom-toast-base__body {
+  font-family:    var(--font-body);
+  font-size:      var(--font-size-body-sm);
+  font-weight:    var(--font-weight-body);
+  line-height:    var(--line-height-normal);
+  letter-spacing: var(--tracking-normal);
+  color:          var(--text-body);
+}
+
+.atom-toast-base__actions {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+  flex-shrink: 0;
+  padding:     var(--space-3) var(--space-3) var(--space-3) 0;
+  align-self:  flex-start;
+}
+
+.atom-toast-base__action {
+  display:        inline-flex;
+  align-items:    center;
+  min-height:     var(--touch-target-min);
+  padding:        0 var(--space-2);
+  background:     transparent;
+  border:         none;
+  cursor:         pointer;
+  font-family:    var(--font-body);
+  font-size:      var(--font-size-body-sm);
+  font-weight:    var(--font-weight-label);
+  line-height:    var(--line-height-normal);
+  letter-spacing: var(--tracking-normal);
+  color:          var(--accent-primary);
+  border-radius:  var(--radius-subtle);
+  transition:     opacity var(--motion-fast) var(--motion-ease-out);
+  white-space:    nowrap;
+}
+.atom-toast-base__action:hover {
+  opacity: 0.8;
+}
+.atom-toast-base__action:active {
+  opacity: 0.6;
+}
+
+.atom-toast-base__dismiss {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  min-width:       var(--touch-target-min);
+  min-height:      var(--touch-target-min);
+  background:      transparent;
+  border:          none;
+  cursor:          pointer;
+  color:           var(--text-muted);
+  border-radius:   var(--radius-subtle);
+  transition:      color var(--motion-fast) var(--motion-ease-out);
+  flex-shrink:     0;
+}
+.atom-toast-base__dismiss:hover {
+  color: var(--text-body);
+}
+.atom-toast-base__dismiss svg {
+  width:  14px; /* structural geometry */
+  height: 14px;
+}
+
+.atom-toast-base--inline {
+  align-items: center;
+  padding:     0;
+}
+
+.atom-toast-base--inline .atom-toast-base__icon {
+  margin-top: 0;
+  align-self: center;
+}
+
+.atom-toast-base--inline .atom-toast-base__content {
+  padding: var(--space-3) 0;
+  gap:     0;
+}
+
+.atom-toast-base--inline .atom-toast-base__actions {
+  align-self: center;
+  padding:    0 var(--space-3) 0 0;
+}
+
+.atom-toast-base--inline .atom-toast-base__dismiss {
+  display: none;
+}
+.atom-toast-base--inline.atom-toast-base--dismissible .atom-toast-base__dismiss {
+  display: flex;
+}
+
+.atom-toast-base--stacked {
+  flex-direction: column;
+  padding:        0;
+}
+
+.atom-toast-base--stacked .atom-toast-base__icon {
+  margin-top: var(--space-3);
+}
+
+.atom-toast-base--stacked .atom-toast-base__header {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+  padding:     var(--space-3) var(--space-3) 0 calc(var(--domain-tool-rule-width) + var(--space-3));
+}
+
+.atom-toast-base--stacked .atom-toast-base__header .atom-toast-base__icon {
+  margin-left: 0;
+  margin-top:  0;
+  width:       14px; /* structural geometry — 14px in header row */
+  height:      14px;
+}
+
+.atom-toast-base--stacked .atom-toast-base__content {
+  padding: var(--space-1) var(--space-3) 0 calc(var(--domain-tool-rule-width) + var(--space-3));
+}
+
+.atom-toast-base--stacked .atom-toast-base__dismiss {
+  display:  flex;
+  position: absolute;
+  top:      0;
+  right:    0;
+}
+
+.atom-toast-base--stacked .atom-toast-base__actions {
+  padding: var(--space-2) var(--space-3) var(--space-3) calc(var(--domain-tool-rule-width) + var(--space-3));
+}
+
+.atom-toast-base--info .atom-toast-base__rule  { background: var(--accent-primary); }
+.atom-toast-base--info .atom-toast-base__icon  { color: var(--accent-primary); }
+
+.atom-toast-base--success .atom-toast-base__rule { background: var(--state-success-fg); }
+.atom-toast-base--success .atom-toast-base__icon { color: var(--state-success-fg); }
+
+.atom-toast-base--warning .atom-toast-base__rule { background: var(--state-warning-fg); }
+.atom-toast-base--warning .atom-toast-base__icon { color: var(--state-warning-fg); }
+
+.atom-toast-base--danger .atom-toast-base__rule { background: var(--state-danger-fg); }
+.atom-toast-base--danger .atom-toast-base__icon { color: var(--state-danger-fg); }
+
+.atom-toast-base--loading .atom-toast-base__rule { background: transparent; }
+.atom-toast-base--loading .atom-toast-base__icon { color: var(--text-muted); }
+
+.atom-toast-base.is-entering {
+  opacity:   0;
+  transform: translateY(8px); /* structural geometry — 8px slide-up */
+}
+
+.atom-toast-base.is-exiting {
+  opacity:   0;
+  transform: translateY(0);
+}
+
+
+/* ================================================================
+   atom-tool-status-rule
+   Source: designs/atoms/tool-status-rule/tool-status-rule.html
+   ================================================================ */
+
+.atom-tool-status-rule {
+  background:    var(--text-muted); /* --neutral default */
+  border-radius: var(--radius-subtle);
+  flex-shrink:   0;
+}
+
+.atom-tool-status-rule--vertical {
+  width:      var(--domain-tool-rule-width);
+  align-self: stretch;
+  min-height: var(--space-6);
+}
+
+.atom-tool-status-rule--horizontal {
+  height: var(--domain-tool-rule-width);
+  width:  100%;
+}
+
+.atom-tool-status-rule--running {
+  background: var(--state-live-fg);
+  box-shadow: 0 0 6px var(--state-live-fg);
+}
+
+.atom-tool-status-rule--done {
+  background: var(--state-success-fg);
+}
+
+.atom-tool-status-rule--pending {
+  background: var(--state-warning-fg);
+  box-shadow: 0 0 4px var(--state-warning-fg);
+}
+
+.atom-tool-status-rule--error {
+  background: var(--state-danger-fg);
+}
+
+.atom-tool-status-rule--neutral {
+  background: var(--text-muted);
+}
+
+
+/* ================================================================
+   atom-tooltip
+   Source: designs/atoms/tooltip/tooltip.html
+   ================================================================ */
+
+.atom-tooltip {
+  position:       absolute;
+  z-index:        100;
+  display:        inline-flex;
+  flex-direction: column;
+  align-items:    center;
+  pointer-events: none;
+
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-meta);
+  font-weight:    var(--font-weight-meta);
+  letter-spacing: var(--tracking-mono);
+  line-height:    var(--line-height-tight);
+  white-space:    nowrap;
+
+  opacity:   1;
+  transform: scale(1);
+  transition:
+    opacity   var(--motion-fast) var(--motion-ease-out),
+    transform var(--motion-fast) var(--motion-ease-out);
+}
+
+.atom-tooltip__body {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           var(--space-2);
+  padding:       var(--space-2) var(--space-3);
+  border-radius: var(--radius-default);
+  box-shadow:    var(--elevation-overlay);
+}
+
+.atom-tooltip__arrow {
+  display:     block;
+  flex-shrink: 0;
+  width:       12px;
+  height:      6px;
+}
+
+.atom-tooltip--inverse .atom-tooltip__body {
+  background-color: var(--surface-inverse);
+  color:            var(--text-on-inverse);
+  border:           none;
+}
+.atom-tooltip--inverse .atom-tooltip__arrow {
+  background-color: var(--surface-inverse);
+}
+
+.atom-tooltip--default .atom-tooltip__body {
+  background-color: var(--surface-overlay);
+  color:            var(--text-body);
+  border:           1px solid var(--border-default);
+}
+.atom-tooltip--default .atom-tooltip__arrow {
+  background-color: var(--surface-overlay);
+  outline:          1px solid var(--border-default);
+  outline-offset:   -1px;
+}
+
+.atom-tooltip--shortcut .atom-tooltip__body {
+  background-color: var(--surface-overlay);
+  color:            var(--text-body);
+  border:           1px solid var(--border-default);
+}
+.atom-tooltip--shortcut .atom-tooltip__arrow {
+  background-color: var(--surface-overlay);
+  outline:          1px solid var(--border-default);
+  outline-offset:   -1px;
+}
+
+.atom-tooltip__kbd {
+  display:          inline-flex;
+  align-items:      center;
+  justify-content:  center;
+  padding:          0 var(--space-1);
+  border-radius:    var(--radius-subtle);
+  background-color: var(--surface-soft);
+  border:           1px solid var(--border-default);
+  color:            var(--text-muted);
+  font-family:      var(--font-mono);
+  font-size:        var(--font-size-meta);
+  font-weight:      var(--font-weight-meta);
+  letter-spacing:   var(--tracking-mono);
+  line-height:      var(--line-height-tight);
+}
+
+.atom-tooltip--top {
+  bottom:           calc(100% + 8px);
+  left:             50%;
+  transform:        translateX(-50%) scale(1);
+  transform-origin: bottom center;
+  flex-direction:   column;
+}
+.atom-tooltip--top.is-entering,
+.atom-tooltip--top.is-exiting {
+  transform: translateX(-50%) scale(0.95);
+}
+.atom-tooltip--top .atom-tooltip__arrow {
+  clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
+  order: 2;
+}
+
+.atom-tooltip--bottom {
+  top:              calc(100% + 8px);
+  left:             50%;
+  transform:        translateX(-50%) scale(1);
+  transform-origin: top center;
+  flex-direction:   column;
+  align-items:      center;
+}
+.atom-tooltip--bottom.is-entering,
+.atom-tooltip--bottom.is-exiting {
+  transform: translateX(-50%) scale(0.95);
+}
+.atom-tooltip--bottom .atom-tooltip__body { order: 2; }
+.atom-tooltip--bottom .atom-tooltip__arrow {
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  order: 1;
+}
+
+.atom-tooltip--left {
+  right:            calc(100% + 8px);
+  top:              50%;
+  transform:        translateY(-50%) scale(1);
+  transform-origin: right center;
+  flex-direction:   row;
+  align-items:      center;
+}
+.atom-tooltip--left.is-entering,
+.atom-tooltip--left.is-exiting {
+  transform: translateY(-50%) scale(0.95);
+}
+.atom-tooltip--left .atom-tooltip__arrow {
+  clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
+  width:  6px;
+  height: 12px;
+  order:  2;
+}
+
+.atom-tooltip--right {
+  left:             calc(100% + 8px);
+  top:              50%;
+  transform:        translateY(-50%) scale(1);
+  transform-origin: left center;
+  flex-direction:   row;
+  align-items:      center;
+}
+.atom-tooltip--right.is-entering,
+.atom-tooltip--right.is-exiting {
+  transform: translateY(-50%) scale(0.95);
+}
+.atom-tooltip--right .atom-tooltip__body { order: 2; }
+.atom-tooltip--right .atom-tooltip__arrow {
+  clip-path: polygon(100% 0%, 0% 50%, 100% 100%);
+  width:  6px;
+  height: 12px;
+  order:  1;
+}
+
+.atom-tooltip.is-entering {
+  opacity: 0;
+}
+.atom-tooltip.is-visible {
+  opacity: 1;
+}
+.atom-tooltip.is-exiting {
+  opacity: 0;
+}
