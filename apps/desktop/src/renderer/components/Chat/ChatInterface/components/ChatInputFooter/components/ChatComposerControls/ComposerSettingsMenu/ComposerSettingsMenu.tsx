@@ -1,5 +1,3 @@
-"use client";
-
 import { ModelSelectorLogo } from "@superset/ui/ai-elements/model-selector";
 import { PromptInputButton } from "@superset/ui/ai-elements/prompt-input";
 import type { ThinkingLevel } from "@superset/ui/ai-elements/thinking-toggle";
@@ -12,12 +10,7 @@ import {
 	DropdownMenuTrigger,
 } from "@superset/ui/dropdown-menu";
 import { claudeIcon } from "@superset/ui/icons/preset-icons";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@superset/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import {
 	BrainIcon,
 	CheckIcon,
@@ -126,32 +119,30 @@ export function ComposerSettingsMenu({
 
 	return (
 		<DropdownMenu>
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<DropdownMenuTrigger asChild>
-							<PromptInputButton
-								className={`${PILL_BUTTON_CLASS} px-2 gap-1 text-xs text-foreground cursor-pointer`}
-								aria-label={ariaLabel}
-							>
-								<PermissionIcon className="size-3.5 text-foreground" />
-								{selectedLogo === ANTHROPIC_LOGO_PROVIDER ? (
-									<img alt="Claude" className="size-3" src={claudeIcon} />
-								) : selectedLogo ? (
-									<ModelSelectorLogo provider={selectedLogo} />
-								) : null}
-								<span className="max-w-[180px] truncate">
-									{selectedModel?.name ?? "Model"}
-								</span>
-								<BrainIcon className={`size-3.5 ${brainIconColor}`} />
-							</PromptInputButton>
-						</DropdownMenuTrigger>
-					</TooltipTrigger>
-					<TooltipContent>
-						<p>{tooltipText}</p>
-					</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<DropdownMenuTrigger asChild>
+						<PromptInputButton
+							className={`${PILL_BUTTON_CLASS} px-2 gap-1 text-xs text-foreground cursor-pointer`}
+							aria-label={ariaLabel}
+						>
+							<PermissionIcon className="size-3.5 text-foreground" />
+							{selectedLogo === ANTHROPIC_LOGO_PROVIDER ? (
+								<img alt="Claude" className="size-3" src={claudeIcon} />
+							) : selectedLogo ? (
+								<ModelSelectorLogo provider={selectedLogo} />
+							) : null}
+							<span className="max-w-[180px] truncate">
+								{selectedModel?.name ?? "Model"}
+							</span>
+							<BrainIcon className={`size-3.5 ${brainIconColor}`} />
+						</PromptInputButton>
+					</DropdownMenuTrigger>
+				</TooltipTrigger>
+				<TooltipContent>
+					<p>{tooltipText}</p>
+				</TooltipContent>
+			</Tooltip>
 			<DropdownMenuContent align="start" className="w-64">
 				<DropdownMenuLabel>Model</DropdownMenuLabel>
 				<DropdownMenuItem
