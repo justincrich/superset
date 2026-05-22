@@ -11,7 +11,7 @@ Atomic-composition primitives — each molecule combines 2+ atoms with layout/gl
 | 3 | `load-more-pill` | button (secondary md), icon-glyph (chevron-down) | pending |
 | 4 | `host-chip` | pill, status-dot, icon-glyph (host + chevron) | completed |
 | 5 | `search-bar` | text-input (inset), icon-glyph (search + ✕), hit-target-wrapper | completed |
-| 6 | `host-picker-row` | status-dot, icon-glyph (host + check), section-label (meta), divider | pending |
+| 6 | `host-picker-row` | status-dot, icon-glyph (host + check), section-label (meta), divider | completed |
 | 7 | `empty-state` | icon-glyph (xl hero), button (primary), section-label, body text | completed |
 
 ## Chat-tree tier
