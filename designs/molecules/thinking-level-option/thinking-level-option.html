@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-thinking-level-option — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-thinking-level-option — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       ================================================================ */
+
+    /* ---- Base row -------------------------------------------- */
+    .mol-thinking-level-option {
+      display:         flex;
+      align-items:     center;
+      gap:             var(--space-3);
+      padding:         var(--space-3) var(--space-4);
+      min-height:      var(--touch-target-min);
+      cursor:          pointer;
+      border-radius:   var(--radius-default);
+      background:      transparent;
+      transition:      background-color var(--motion-fast) var(--motion-ease-out);
+      -webkit-tap-highlight-color: transparent;
+      /* Ensures the <label> spans full width inside a popover list */
+      display:         flex;
+      width:           100%;
+      box-sizing:      border-box;
+    }
+
+    /* ---- Level/mode name ------------------------------------- */
+    .mol-thinking-level-option__label {
+      flex:       0 0 auto;
+      min-width:  4em;    /* aligns hint column across all option rows */
+      color:      var(--text-body);  /* override: type-label defaults to --text-muted */
+    }
+
+    /* ---- Budget / description hint --------------------------- */
+    .mol-thinking-level-option__hint {
+      margin-left: auto;
+      color:       var(--text-muted); /* atom-section-label default — explicit for clarity */
+      /* atom-section-label is display:block by default; override for inline-flex row */
+      display:     inline;
+    }
+
+    /* ---- States ---------------------------------------------- */
+    .mol-thinking-level-option:hover,
+    .mol-thinking-level-option.is-hover {
+      background: var(--surface-soft);
+    }
+
+    .mol-thinking-level-option.is-selected,
+    .mol-thinking-level-option:has(.atom-radio__input:checked) {
+      background: var(--surface-active);
+    }
+
+    .mol-thinking-level-option.is-disabled {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: --permission -------------------------------- */
+    /* Reserved for future per-kind styling (e.g. danger tint on bypass).
+       No visual difference from --thinking at this phase. */
+    .mol-thinking-level-option--permission {}
+
+    /* ================================================================
+       Preview layout helpers — not part of molecule contract
+       ================================================================ */
+
+    /* Popover shell — mimics overlay surface */
+    .popover-demo {
+      background:    var(--surface-overlay);
+      border-radius: var(--radius-default);
+      box-shadow:    var(--elevation-overlay);
+      padding:       var(--space-2) 0;
+      min-width:     240px;
+      max-width:     320px;
+    }
+
+    /* Fieldset reset inside popover */
+    .popover-demo fieldset {
+      border:  none;
+      margin:  0;
+      padding: 0;
+    }
+
+    .popover-demo legend {
+      padding:       var(--space-2) var(--space-4);
+      margin-bottom: var(--space-1);
+    }
+
+    /* Section spacing within pane */
+    .section-block {
+      margin-bottom: var(--spacing-section);
+    }
+    .section-block:last-child {
+      margin-bottom: 0;
+    }
+
+    /* State grid for individual row states */
+    .state-stack {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">thinking-level-option</h1>
+    <p class="crumb">mol · single row in the thinking-level / permission-mode picker popover</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT MATRIX --------------------------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>variant matrix — thinking (left) · permission (right)</h3>
+          <div style="display: flex; gap: var(--space-8); flex-wrap: wrap;">
+
+            <!-- --thinking variant -->
+            <div>
+              <div class="state" style="margin-bottom: var(--space-2);">
+                <span class="state-label">--thinking (default)</span>
+              </div>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-2) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="d-v-thinking" value="off" class="atom-radio__input" aria-label="off — no extended thinking" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">off</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">No extended thinking</span>
+                </label>
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking is-selected">
+                  <span class="atom-radio atom-radio--md is-checked">
+                    <input type="radio" name="d-v-thinking" value="low" checked class="atom-radio__input" aria-label="low — about 1K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">low</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~1K tokens</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- --permission variant -->
+            <div>
+              <div class="state" style="margin-bottom: var(--space-2);">
+                <span class="state-label">--permission</span>
+              </div>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-2) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission is-selected">
+                  <span class="atom-radio atom-radio--md is-checked">
+                    <input type="radio" name="d-v-perm" value="default" checked class="atom-radio__input" aria-label="default — ask for risky ops" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">default</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">Ask for risky ops</span>
+                </label>
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="d-v-perm" value="acceptEdits" class="atom-radio__input" aria-label="acceptEdits — auto-approve edits" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">acceptEdits</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">Auto-approve edits</span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /variant matrix -->
+
+      <!-- ---- 2. STATE ROW -------------------------------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>state row — all states on a single option</h3>
+          <div class="state-grid">
+
+            <div class="state">
+              <span class="state-label">default (unselected)</span>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-1) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="d-state-1" value="medium" class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-hover</span>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-1) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking is-hover">
+                  <span class="atom-radio atom-radio--md is-hover">
+                    <input type="radio" name="d-state-2" value="medium" class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-selected</span>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-1) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking is-selected">
+                  <span class="atom-radio atom-radio--md is-checked">
+                    <input type="radio" name="d-state-3" value="medium" checked class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-focus (focus-within on radio)</span>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-1) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md is-focus">
+                    <input type="radio" name="d-state-4" value="medium" class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-disabled</span>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-1) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking is-disabled">
+                  <span class="atom-radio atom-radio--md is-disabled">
+                    <input type="radio" name="d-state-5" value="medium" disabled class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /state row -->
+
+      <!-- ---- 3. COMPOSITION — Thinking picker ----------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>composition — thinking-level picker (5 rows · low selected)</h3>
+          <div class="popover-demo">
+            <fieldset>
+              <legend>
+                <span class="atom-section-label atom-section-label--strong">Extended thinking</span>
+              </legend>
+              <div role="radiogroup" aria-label="Extended thinking level">
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="d-thinking" value="off" class="atom-radio__input" aria-label="off — no extended thinking" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">off</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">No extended thinking</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking is-selected">
+                  <span class="atom-radio atom-radio--md is-checked">
+                    <input type="radio" name="d-thinking" value="low" checked class="atom-radio__input" aria-label="low — about 1K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">low</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~1K tokens</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="d-thinking" value="medium" class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="d-thinking" value="high" class="atom-radio__input" aria-label="high — about 10K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">high</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~10K tokens</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="d-thinking" value="xhigh" class="atom-radio__input" aria-label="xhigh — about 20K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">xhigh</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~20K tokens</span>
+                </label>
+
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div><!-- /thinking picker -->
+
+      <!-- ---- 4. COMPOSITION — Permission picker --------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>composition — permission-mode picker (4 rows · default selected)</h3>
+          <div class="popover-demo">
+            <fieldset>
+              <legend>
+                <span class="atom-section-label atom-section-label--strong">Permission mode</span>
+              </legend>
+              <div role="radiogroup" aria-label="Permission mode">
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission is-selected">
+                  <span class="atom-radio atom-radio--md is-checked">
+                    <input type="radio" name="d-perm" value="default" checked class="atom-radio__input" aria-label="default — ask for risky ops" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">default</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">Ask for risky ops</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="d-perm" value="acceptEdits" class="atom-radio__input" aria-label="acceptEdits — auto-approve edits" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">acceptEdits</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">Auto-approve edits</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="d-perm" value="plan" class="atom-radio__input" aria-label="plan — plan-only mode" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">plan</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">Plan-only mode</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="d-perm" value="bypassPermissions" class="atom-radio__input" aria-label="bypassPermissions — YOLO" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">bypassPermissions</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">YOLO</span>
+                </label>
+
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div><!-- /permission picker -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT MATRIX --------------------------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>variant matrix — thinking (left) · permission (right)</h3>
+          <div style="display: flex; gap: var(--space-8); flex-wrap: wrap;">
+
+            <!-- --thinking variant -->
+            <div>
+              <div class="state" style="margin-bottom: var(--space-2);">
+                <span class="state-label">--thinking (default)</span>
+              </div>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-2) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="l-v-thinking" value="off" class="atom-radio__input" aria-label="off — no extended thinking" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">off</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">No extended thinking</span>
+                </label>
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking is-selected">
+                  <span class="atom-radio atom-radio--md is-checked">
+                    <input type="radio" name="l-v-thinking" value="low" checked class="atom-radio__input" aria-label="low — about 1K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">low</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~1K tokens</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- --permission variant -->
+            <div>
+              <div class="state" style="margin-bottom: var(--space-2);">
+                <span class="state-label">--permission</span>
+              </div>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-2) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission is-selected">
+                  <span class="atom-radio atom-radio--md is-checked">
+                    <input type="radio" name="l-v-perm" value="default" checked class="atom-radio__input" aria-label="default — ask for risky ops" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">default</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">Ask for risky ops</span>
+                </label>
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="l-v-perm" value="acceptEdits" class="atom-radio__input" aria-label="acceptEdits — auto-approve edits" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">acceptEdits</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">Auto-approve edits</span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /variant matrix -->
+
+      <!-- ---- 2. STATE ROW -------------------------------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>state row — all states on a single option</h3>
+          <div class="state-grid">
+
+            <div class="state">
+              <span class="state-label">default (unselected)</span>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-1) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="l-state-1" value="medium" class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-hover</span>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-1) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking is-hover">
+                  <span class="atom-radio atom-radio--md is-hover">
+                    <input type="radio" name="l-state-2" value="medium" class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-selected</span>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-1) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking is-selected">
+                  <span class="atom-radio atom-radio--md is-checked">
+                    <input type="radio" name="l-state-3" value="medium" checked class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-focus (focus-within on radio)</span>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-1) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md is-focus">
+                    <input type="radio" name="l-state-4" value="medium" class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-disabled</span>
+              <div style="background: var(--surface-overlay); border-radius: var(--radius-default); padding: var(--space-1) 0; min-width: 220px;">
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking is-disabled">
+                  <span class="atom-radio atom-radio--md is-disabled">
+                    <input type="radio" name="l-state-5" value="medium" disabled class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /state row -->
+
+      <!-- ---- 3. COMPOSITION — Thinking picker ----------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>composition — thinking-level picker (5 rows · low selected)</h3>
+          <div class="popover-demo">
+            <fieldset>
+              <legend>
+                <span class="atom-section-label atom-section-label--strong">Extended thinking</span>
+              </legend>
+              <div role="radiogroup" aria-label="Extended thinking level">
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="l-thinking" value="off" class="atom-radio__input" aria-label="off — no extended thinking" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">off</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">No extended thinking</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking is-selected">
+                  <span class="atom-radio atom-radio--md is-checked">
+                    <input type="radio" name="l-thinking" value="low" checked class="atom-radio__input" aria-label="low — about 1K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">low</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~1K tokens</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="l-thinking" value="medium" class="atom-radio__input" aria-label="medium — about 5K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">medium</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~5K tokens</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="l-thinking" value="high" class="atom-radio__input" aria-label="high — about 10K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">high</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~10K tokens</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--thinking">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="l-thinking" value="xhigh" class="atom-radio__input" aria-label="xhigh — about 20K tokens" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">xhigh</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">~20K tokens</span>
+                </label>
+
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div><!-- /thinking picker -->
+
+      <!-- ---- 4. COMPOSITION — Permission picker --------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>composition — permission-mode picker (4 rows · default selected)</h3>
+          <div class="popover-demo">
+            <fieldset>
+              <legend>
+                <span class="atom-section-label atom-section-label--strong">Permission mode</span>
+              </legend>
+              <div role="radiogroup" aria-label="Permission mode">
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission is-selected">
+                  <span class="atom-radio atom-radio--md is-checked">
+                    <input type="radio" name="l-perm" value="default" checked class="atom-radio__input" aria-label="default — ask for risky ops" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">default</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">Ask for risky ops</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="l-perm" value="acceptEdits" class="atom-radio__input" aria-label="acceptEdits — auto-approve edits" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">acceptEdits</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">Auto-approve edits</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="l-perm" value="plan" class="atom-radio__input" aria-label="plan — plan-only mode" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">plan</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">Plan-only mode</span>
+                </label>
+
+                <label class="mol-thinking-level-option mol-thinking-level-option--permission">
+                  <span class="atom-radio atom-radio--md">
+                    <input type="radio" name="l-perm" value="bypassPermissions" class="atom-radio__input" aria-label="bypassPermissions — YOLO" />
+                    <span class="atom-radio__ring" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-thinking-level-option__label type-label">bypassPermissions</span>
+                  <span class="mol-thinking-level-option__hint atom-section-label">YOLO</span>
+                </label>
+
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div><!-- /permission picker -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe table
+       ============================================================ -->
+  <div class="recipe-footer">
+    <h2>Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Dark resolved</th>
+          <th>Light resolved</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>min-height</td>
+          <td>--touch-target-min</td>
+          <td>44px</td>
+          <td>44px</td>
+          <td>WCAG AA + iOS HIG</td>
+        </tr>
+        <tr>
+          <td>padding-block</td>
+          <td>--space-3</td>
+          <td>12px</td>
+          <td>12px</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>padding-inline</td>
+          <td>--space-4</td>
+          <td>16px</td>
+          <td>16px</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>gap</td>
+          <td>--space-3</td>
+          <td>12px</td>
+          <td>12px</td>
+          <td>Between radio · label · hint</td>
+        </tr>
+        <tr>
+          <td>__label min-width</td>
+          <td>4em (relative scalar)</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Aligns hint column; relative to --font-size-label</td>
+        </tr>
+        <tr>
+          <td>border-radius</td>
+          <td>--radius-default</td>
+          <td>var(--radius-default)</td>
+          <td>var(--radius-default)</td>
+          <td>Rounded corners on hover/selected bg</td>
+        </tr>
+        <tr>
+          <td>background (hover)</td>
+          <td>--surface-soft</td>
+          <td>—</td>
+          <td>—</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>background (selected)</td>
+          <td>--surface-active</td>
+          <td>—</td>
+          <td>—</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>__label color</td>
+          <td>--text-body</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Override — .type-label defaults to --text-muted</td>
+        </tr>
+        <tr>
+          <td>__hint color</td>
+          <td>--text-muted</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Via atom-section-label default</td>
+        </tr>
+        <tr>
+          <td>__hint font-family</td>
+          <td>--font-mono</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Via atom-section-label</td>
+        </tr>
+        <tr>
+          <td>__hint font-size</td>
+          <td>--font-size-meta</td>
+          <td>11px</td>
+          <td>11px</td>
+          <td>Via atom-section-label</td>
+        </tr>
+        <tr>
+          <td>__hint text-transform</td>
+          <td>uppercase (atom-section-label)</td>
+          <td>—</td>
+          <td>—</td>
+          <td>No token needed — CSS keyword</td>
+        </tr>
+        <tr>
+          <td>popover background</td>
+          <td>--surface-overlay</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Parent popover surface (not molecule-owned)</td>
+        </tr>
+        <tr>
+          <td>popover shadow</td>
+          <td>--elevation-overlay</td>
+          <td>—</td>
+          <td>—</td>
+          <td>Parent popover surface (not molecule-owned)</td>
+        </tr>
+        <tr>
+          <td>transition</td>
+          <td>--motion-fast / --motion-ease-out</td>
+          <td>120ms</td>
+          <td>120ms</td>
+          <td>background-color only</td>
+        </tr>
+        <tr>
+          <td>disabled opacity</td>
+          <td>0.5 (scalar)</td>
+          <td>—</td>
+          <td>—</td>
+          <td>No dedicated token; consistent with atom-radio.is-disabled</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
