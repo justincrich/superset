@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · backdrop</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-backdrop — full-screen dimmer overlay
+       Hardware-black exception: rgba(0,0,0,X) is intentional.
+       Opacity values 0.55 / 0.30 / 0.40 / 0.50 are per-variant
+       design decisions, not tokens. See README § Hardware-black.
+       Motion via --motion-medium + --motion-ease-out.
+       Blur 8px / 20px are structural geometry exceptions.
+       ============================================================ */
+
+    /* ---- Keyframes ------------------------------------------- */
+    @keyframes atom-backdrop-fade-in {
+      to { opacity: 1; }
+    }
+    @keyframes atom-backdrop-fade-out {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+
+    /* ---- Base ------------------------------------------------ */
+    .atom-backdrop {
+      position:   fixed;
+      inset:      0;
+      z-index:    100;
+      background: rgba(0, 0, 0, 0.55); /* hardware-black, scrim default */
+      transition: opacity var(--motion-medium) var(--motion-ease-out);
+    }
+
+    /* ---- Variants -------------------------------------------- */
+    .atom-backdrop--scrim       { background: rgba(0, 0, 0, 0.55); }
+    .atom-backdrop--scrim-light { background: rgba(0, 0, 0, 0.30); }
+
+    .atom-backdrop--blur {
+      background:             rgba(0, 0, 0, 0.40);
+      backdrop-filter:        blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .atom-backdrop--blur-strong {
+      background:             rgba(0, 0, 0, 0.50);
+      backdrop-filter:        blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    /* ---- States --------------------------------------------- */
+    .atom-backdrop.is-entering {
+      opacity:   0;
+      animation: atom-backdrop-fade-in var(--motion-medium) var(--motion-ease-out) forwards;
+    }
+    .atom-backdrop.is-exiting {
+      animation: atom-backdrop-fade-out var(--motion-medium) var(--motion-ease-out) forwards;
+    }
+
+    /* ---- Reduced motion ------------------------------------- */
+    @media (prefers-reduced-motion: reduce) {
+      .atom-backdrop.is-entering,
+      .atom-backdrop.is-exiting {
+        animation:  none;
+        transition: none;
+        opacity:    1;
+      }
+    }
+
+    /* ---- sr-only -------------------------------------------- */
+    .sr-only {
+      position:    absolute;
+      width:       1px;
+      height:      1px;
+      padding:     0;
+      margin:      -1px;
+      overflow:    hidden;
+      clip:        rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    /* ============================================================
+       Preview layout — backdrop can't be fixed in a preview pane,
+       so we simulate it as absolute within a .preview-stage.
+       Each .preview-stage is a scaled-down context container.
+       ============================================================ */
+
+    /* Variant gallery grid */
+    .variant-gallery {
+      display:               grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:                   var(--spacing-between);
+      margin-bottom:         var(--spacing-section);
+    }
+
+    .gallery-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-3);
+    }
+
+    .gallery-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+    }
+
+    /* Mini iPhone frame for variant gallery */
+    .mini-iphone {
+      position:   relative;
+      width:      148px;      /* ~1/3 device-width — structural scale */
+      height:     321px;      /* ~1/3 device-height */
+      border-radius: 20px;   /* structural geometry at scale */
+      background: var(--device-bg);
+      padding:    2.5px;      /* scaled bezel */
+      box-shadow: var(--elevation-modal);
+      flex-shrink: 0;
+    }
+
+    .mini-viewport {
+      width:         100%;
+      height:        100%;
+      border-radius: 18px;    /* structural at scale */
+      background:    var(--surface-page);
+      overflow:      hidden;
+      position:      relative;
+      display:       flex;
+      flex-direction: column;
+    }
+
+    /* Mini Dynamic Island */
+    .mini-island {
+      position:         absolute;
+      top:              4px;
+      left:             50%;
+      transform:        translateX(-50%);
+      width:            42px;
+      height:           12px;
+      background:       #000;   /* hardware-black; Island is always OLED-black */
+      border-radius:    var(--radius-pill);
+      z-index:          20;
+    }
+
+    /* Mini status bar */
+    .mini-status-bar {
+      height:    18px;
+      flex-shrink: 0;
+      display:   flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding:   0 var(--space-3) var(--space-1);
+      position:  relative;
+      z-index:   10;
+    }
+
+    .mini-time {
+      font-family:  var(--font-body);
+      font-size:    7px;          /* structural — sub meta at scale */
+      font-weight:  var(--font-weight-heading);
+      color:        var(--text-body);
+    }
+
+    .mini-icons {
+      font-family:  var(--font-mono);
+      font-size:    6px;          /* structural at scale */
+      color:        var(--text-body);
+      letter-spacing: 1px;
+    }
+
+    /* Mini sessions list content */
+    .mini-content {
+      flex:    1;
+      padding: var(--space-2);
+      display: flex;
+      flex-direction: column;
+      gap:     var(--space-1);
+      overflow: hidden;
+    }
+
+    .mini-session-row {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-2);
+      padding:       var(--space-1) var(--space-2);
+      background:    var(--surface-raised);
+      border-radius: var(--radius-subtle);
+      border:        1px solid var(--border-subtle);
+    }
+
+    .mini-session-dot {
+      width:         5px;
+      height:        5px;
+      border-radius: var(--radius-round);
+      background:    var(--state-live-dot);
+      flex-shrink:   0;
+    }
+
+    .mini-session-dot--muted {
+      background: var(--text-muted);
+    }
+
+    .mini-session-text {
+      font-family: var(--font-mono);
+      font-size:   6px;     /* structural at scale */
+      color:       var(--text-body);
+      white-space: nowrap;
+      overflow:    hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Backdrop overlay — positioned absolute within mini-viewport */
+    .mini-backdrop {
+      position:         absolute;
+      inset:            0;
+      z-index:          50;
+      /* Variants set background/filter below */
+    }
+
+    .mini-backdrop--scrim {
+      background: rgba(0, 0, 0, 0.55);
+    }
+    .mini-backdrop--scrim-light {
+      background: rgba(0, 0, 0, 0.30);
+    }
+    .mini-backdrop--blur {
+      background:              rgba(0, 0, 0, 0.40);
+      backdrop-filter:         blur(3px);    /* scaled: 8px / 3 ≈ 3 */
+      -webkit-backdrop-filter: blur(3px);
+    }
+    .mini-backdrop--blur-strong {
+      background:              rgba(0, 0, 0, 0.50);
+      backdrop-filter:         blur(7px);    /* scaled: 20px / 3 ≈ 7 */
+      -webkit-backdrop-filter: blur(7px);
+    }
+
+    /* State badges for gallery */
+    .state-badge-row {
+      display:     flex;
+      gap:         var(--space-2);
+      flex-wrap:   wrap;
+      margin-top:  var(--space-1);
+    }
+
+    .state-badge {
+      padding:        2px var(--space-2);
+      background:     var(--surface-raised);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-pill);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      white-space:    nowrap;
+    }
+
+    /* ============================================================
+       Composition examples — full-height iPhone frames
+       ============================================================ */
+
+    .composition-grid {
+      display:               grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:                   var(--spacing-section);
+    }
+
+    .comp-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .comp-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+    }
+
+    .comp-cell-desc {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-body-sm);
+      color:        var(--text-faint);
+      text-align:   center;
+      line-height:  var(--line-height-snug);
+      max-width:    220px;
+    }
+
+    /* Full-size iPhone frame (from tokens.html section 11) */
+    .iphone-frame {
+      width:        var(--device-width);
+      height:       var(--device-height);
+      border-radius: var(--device-radius);
+      background:   var(--device-bg);
+      padding:      var(--device-bezel);
+      position:     relative;
+      flex-shrink:  0;
+      box-shadow:
+        0 0 0 0.5px rgba(255, 255, 255, 0.08),
+        var(--elevation-modal);
+    }
+
+    .iphone-viewport {
+      width:        var(--viewport-width);
+      height:       var(--viewport-height);
+      background:   var(--surface-page);
+      border-radius: var(--viewport-radius);
+      position:     relative;
+      overflow:     hidden;
+      display:      flex;
+      flex-direction: column;
+    }
+
+    /* Dynamic Island */
+    .dynamic-island {
+      position:         absolute;
+      top:              var(--dynamic-island-top);
+      left:             50%;
+      transform:        translateX(-50%);
+      width:            var(--dynamic-island-width);
+      height:           var(--dynamic-island-height);
+      background:       #000;  /* hardware-black — OLED Island */
+      border-radius:    var(--radius-pill);
+      z-index:          30;
+      display:          flex;
+      align-items:      center;
+      justify-content:  center;
+    }
+
+    /* Status bar */
+    .iphone-status-bar {
+      height:       var(--status-bar-height);
+      padding:      var(--space-5) var(--space-8) 0;
+      display:      flex;
+      align-items:  center;
+      justify-content: space-between;
+      flex-shrink:  0;
+      position:     relative;
+      z-index:      20;
+    }
+
+    .status-time {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-label);
+      font-weight:  var(--font-weight-heading);
+      color:        var(--text-body);
+    }
+
+    .status-icons {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+    }
+
+    .status-icon {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-body);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* Sessions list content (underlying app content) */
+    .sessions-content {
+      flex:    1;
+      padding: var(--spacing-between) var(--spacing-internal);
+      display: flex;
+      flex-direction: column;
+      gap:     var(--spacing-internal);
+      overflow: hidden;
+    }
+
+    .sessions-nav {
+      display:        flex;
+      align-items:    center;
+      justify-content: space-between;
+      padding-bottom: var(--spacing-internal);
+      border-bottom:  1px solid var(--border-subtle);
+      flex-shrink:    0;
+    }
+
+    .sessions-nav-title {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-title);
+      font-weight:  var(--font-weight-heading);
+      color:        var(--text-heading);
+    }
+
+    .sessions-list {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      overflow:       hidden;
+    }
+
+    .session-row {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-3);
+      padding:       var(--spacing-internal);
+      background:    var(--surface-raised);
+      border-radius: var(--radius-default);
+      border:        1px solid var(--border-subtle);
+    }
+
+    .session-dot {
+      width:         8px;
+      height:        8px;
+      border-radius: var(--radius-round);
+      background:    var(--state-live-dot);
+      flex-shrink:   0;
+    }
+
+    .session-dot--muted { background: var(--text-muted); }
+    .session-dot--warn  { background: var(--state-warning-dot); }
+
+    .session-info {
+      display:        flex;
+      flex-direction: column;
+      gap:            2px;
+      min-width:      0;
+    }
+
+    .session-name {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-body-sm);
+      font-weight:  var(--font-weight-label);
+      color:        var(--text-body);
+      white-space:  nowrap;
+      overflow:     hidden;
+      text-overflow: ellipsis;
+    }
+
+    .session-meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* Home indicator */
+    .home-indicator {
+      width:         var(--home-indicator-width);
+      height:        var(--home-indicator-height);
+      background:    var(--text-muted);
+      border-radius: var(--radius-pill);
+      align-self:    center;
+      margin:        var(--safe-area-bottom) auto var(--space-2);
+      flex-shrink:   0;
+      opacity:       0.4;
+    }
+
+    /* ---- Backdrop overlay inside full iphone-viewport --------- */
+    .iphone-backdrop {
+      position: absolute;
+      inset:    0;
+      z-index:  50;
+    }
+
+    .iphone-backdrop--scrim {
+      background: rgba(0, 0, 0, 0.55);
+    }
+
+    .iphone-backdrop--scrim-light {
+      background: rgba(0, 0, 0, 0.30);
+    }
+
+    .iphone-backdrop--blur {
+      background:              rgba(0, 0, 0, 0.40);
+      backdrop-filter:         blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .iphone-backdrop--blur-strong {
+      background:              rgba(0, 0, 0, 0.50);
+      backdrop-filter:         blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    /* ---- Modal / sheet overlays rendered above the backdrop --- */
+    /* (Minimal styling — molecules will define proper components) */
+
+    .floating-modal {
+      position:         absolute;
+      z-index:          60;
+      left:             50%;
+      top:              50%;
+      transform:        translate(-50%, -50%);
+      width:            calc(var(--viewport-width) - var(--space-8));
+      background:       var(--surface-overlay);
+      border:           1px solid var(--border-subtle);
+      border-radius:    var(--radius-xl);
+      box-shadow:       var(--elevation-modal);
+      padding:          var(--spacing-section);
+      display:          flex;
+      flex-direction:   column;
+      gap:              var(--spacing-between);
+    }
+
+    .modal-title {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-title);
+      font-weight:  var(--font-weight-heading);
+      color:        var(--text-heading);
+      margin:       0;
+    }
+
+    .modal-body {
+      font-family: var(--font-body);
+      font-size:   var(--font-size-body-sm);
+      color:       var(--text-muted);
+      line-height: var(--line-height-normal);
+      margin:      0;
+    }
+
+    .modal-actions {
+      display:         flex;
+      gap:             var(--space-3);
+      justify-content: flex-end;
+      margin-top:      var(--space-2);
+    }
+
+    .btn-ghost {
+      padding:       var(--space-2) var(--spacing-internal);
+      background:    transparent;
+      border:        1px solid var(--border-default);
+      border-radius: var(--radius-default);
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      font-weight:   var(--font-weight-label);
+      color:         var(--text-body);
+      cursor:        pointer;
+    }
+
+    .btn-danger {
+      padding:       var(--space-2) var(--spacing-internal);
+      background:    var(--state-danger-fg);
+      border:        none;
+      border-radius: var(--radius-default);
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      font-weight:   var(--font-weight-label);
+      color:         #fff;  /* white text on red — structural exception */
+      cursor:        pointer;
+    }
+
+    /* Popover (scrim-light context) */
+    .floating-popover {
+      position:      absolute;
+      z-index:       60;
+      right:         var(--space-6);
+      top:           calc(var(--status-bar-height) + var(--space-2));
+      width:         200px;
+      background:    var(--surface-overlay);
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      box-shadow:    var(--elevation-overlay);
+      padding:       var(--space-2) 0;
+    }
+
+    .popover-item {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-3);
+      padding:       var(--space-3) var(--spacing-internal);
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      color:         var(--text-body);
+    }
+
+    .popover-item--selected {
+      background: var(--surface-active);
+      color:      var(--accent-primary);
+    }
+
+    .popover-dot {
+      width:         6px;
+      height:        6px;
+      border-radius: var(--radius-round);
+      background:    var(--accent-primary);
+      flex-shrink:   0;
+    }
+
+    .popover-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      padding:        var(--space-2) var(--spacing-internal);
+      border-bottom:  1px solid var(--border-subtle);
+      margin-bottom:  var(--space-1);
+    }
+
+    /* Bottom sheet (blur context) */
+    .floating-sheet {
+      position:         absolute;
+      z-index:          60;
+      left:             0;
+      right:            0;
+      bottom:           0;
+      background:       var(--surface-overlay);
+      border-top:       1px solid var(--border-subtle);
+      border-radius:    var(--radius-xl) var(--radius-xl) 0 0;
+      box-shadow:       var(--elevation-sheet);
+      padding:          var(--spacing-internal) var(--spacing-between) var(--safe-area-bottom);
+      display:          flex;
+      flex-direction:   column;
+      gap:              var(--spacing-internal);
+      max-height:       var(--sheet-snap-half);
+    }
+
+    .sheet-handle {
+      width:         var(--sheet-handle-width);
+      height:        var(--sheet-handle-height);
+      background:    var(--border-strong);
+      border-radius: var(--radius-pill);
+      align-self:    center;
+      margin-bottom: var(--space-2);
+      flex-shrink:   0;
+    }
+
+    .sheet-title {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-title);
+      font-weight:  var(--font-weight-heading);
+      color:        var(--text-heading);
+    }
+
+    .sheet-item {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-3);
+      padding:       var(--spacing-internal);
+      border-radius: var(--radius-default);
+      border:        1px solid var(--border-subtle);
+      background:    var(--surface-raised);
+    }
+
+    .sheet-item-dot {
+      width:         8px;
+      height:        8px;
+      border-radius: var(--radius-round);
+      flex-shrink:   0;
+    }
+
+    .sheet-item-dot--live  { background: var(--state-live-dot); }
+    .sheet-item-dot--muted { background: var(--text-muted); }
+
+    .sheet-item-name {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-body-sm);
+      color:        var(--text-body);
+    }
+
+    /* Full-screen plan-review (blur-strong context) */
+    .floating-fullscreen {
+      position:         absolute;
+      z-index:          60;
+      inset:            var(--safe-area-top) 0 0;
+      background:       var(--surface-overlay);
+      border-radius:    var(--radius-xl) var(--radius-xl) 0 0;
+      box-shadow:       var(--elevation-modal);
+      display:          flex;
+      flex-direction:   column;
+      padding:          var(--spacing-between);
+      gap:              var(--spacing-internal);
+      overflow:         hidden;
+    }
+
+    .fullscreen-header {
+      display:         flex;
+      align-items:     center;
+      justify-content: space-between;
+      padding-bottom:  var(--spacing-internal);
+      border-bottom:   1px solid var(--border-subtle);
+      flex-shrink:     0;
+    }
+
+    .fullscreen-title {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-title);
+      font-weight:  var(--font-weight-heading);
+      color:        var(--text-heading);
+    }
+
+    .fullscreen-close {
+      width:         var(--touch-target-min);
+      height:        var(--touch-target-min);
+      display:       flex;
+      align-items:   center;
+      justify-content: center;
+      border-radius: var(--radius-round);
+      background:    var(--surface-raised);
+      border:        1px solid var(--border-subtle);
+      font-family:   var(--font-mono);
+      font-size:     var(--font-size-label);
+      color:         var(--text-muted);
+      cursor:        pointer;
+    }
+
+    .fullscreen-body {
+      flex:        1;
+      overflow:    hidden;
+      display:     flex;
+      flex-direction: column;
+      gap:         var(--space-3);
+    }
+
+    .plan-line {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      color:          var(--text-body);
+      padding:        var(--space-2) var(--space-3);
+      background:     var(--surface-raised);
+      border-radius:  var(--radius-subtle);
+      border:         1px solid var(--border-subtle);
+    }
+
+    .plan-line--accent {
+      color:          var(--accent-primary);
+      border-color:   var(--accent-primary-subtle);
+      background:     var(--accent-primary-subtle);
+    }
+
+    /* ============================================================
+       Preview-only layout helpers
+       ============================================================ */
+
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0;
+    }
+
+    .iphone-scaler {
+      transform:        scale(0.55);
+      transform-origin: top center;
+      margin-bottom:    calc((var(--device-height) * -0.45) + var(--space-4));
+    }
+
+    /* When we display the full iphone side by side in a 2-col grid
+       we need them centered regardless of actual pixel width */
+    .iphone-wrapper {
+      display:        flex;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">backdrop</h1>
+    <p class="crumb">atom · full-screen dimmer — scrim / scrim-light / blur / blur-strong</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ── 1. VARIANT GALLERY ─────────────────────────────── -->
+      <div class="variant">
+        <h3>1 · variant gallery — 4 backdrop variants over sessions-list mock</h3>
+
+        <div class="variant-gallery">
+
+          <!-- scrim (default) -->
+          <div class="gallery-cell">
+            <span class="gallery-cell-label">scrim<br>(default)<br>rgba(0,0,0,0.55)</span>
+            <div class="mini-iphone" aria-label="scrim variant preview">
+              <div class="mini-viewport">
+                <div class="mini-island" aria-hidden="true"></div>
+                <div class="mini-status-bar">
+                  <span class="mini-time">9:41</span>
+                  <span class="mini-icons">▲▲▲</span>
+                </div>
+                <div class="mini-content">
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">macbook-pro</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">linux-dev</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">api-server</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">staging</span>
+                  </div>
+                </div>
+                <!-- backdrop overlay -->
+                <div class="mini-backdrop mini-backdrop--scrim"
+                     role="presentation"
+                     aria-hidden="true">
+                  <span class="sr-only">Tap outside to dismiss</span>
+                </div>
+              </div>
+            </div>
+            <div class="state-badge-row" style="justify-content:center">
+              <span class="state-badge">default</span>
+            </div>
+          </div>
+
+          <!-- scrim-light -->
+          <div class="gallery-cell">
+            <span class="gallery-cell-label">scrim-light<br>rgba(0,0,0,0.30)</span>
+            <div class="mini-iphone" aria-label="scrim-light variant preview">
+              <div class="mini-viewport">
+                <div class="mini-island" aria-hidden="true"></div>
+                <div class="mini-status-bar">
+                  <span class="mini-time">9:41</span>
+                  <span class="mini-icons">▲▲▲</span>
+                </div>
+                <div class="mini-content">
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">macbook-pro</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">linux-dev</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">api-server</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">staging</span>
+                  </div>
+                </div>
+                <div class="mini-backdrop mini-backdrop--scrim-light"
+                     role="presentation"
+                     aria-hidden="true">
+                  <span class="sr-only">Tap outside to dismiss</span>
+                </div>
+              </div>
+            </div>
+            <div class="state-badge-row" style="justify-content:center">
+              <span class="state-badge">lighter dim</span>
+            </div>
+          </div>
+
+          <!-- blur -->
+          <div class="gallery-cell">
+            <span class="gallery-cell-label">blur<br>rgba(0,0,0,0.40)<br>+ blur(8px)</span>
+            <div class="mini-iphone" aria-label="blur variant preview">
+              <div class="mini-viewport">
+                <div class="mini-island" aria-hidden="true"></div>
+                <div class="mini-status-bar">
+                  <span class="mini-time">9:41</span>
+                  <span class="mini-icons">▲▲▲</span>
+                </div>
+                <div class="mini-content">
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">macbook-pro</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">linux-dev</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">api-server</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">staging</span>
+                  </div>
+                </div>
+                <div class="mini-backdrop mini-backdrop--blur"
+                     role="presentation"
+                     aria-hidden="true">
+                  <span class="sr-only">Tap outside to dismiss</span>
+                </div>
+              </div>
+            </div>
+            <div class="state-badge-row" style="justify-content:center">
+              <span class="state-badge">frosted</span>
+            </div>
+          </div>
+
+          <!-- blur-strong -->
+          <div class="gallery-cell">
+            <span class="gallery-cell-label">blur-strong<br>rgba(0,0,0,0.50)<br>+ blur(20px)</span>
+            <div class="mini-iphone" aria-label="blur-strong variant preview">
+              <div class="mini-viewport">
+                <div class="mini-island" aria-hidden="true"></div>
+                <div class="mini-status-bar">
+                  <span class="mini-time">9:41</span>
+                  <span class="mini-icons">▲▲▲</span>
+                </div>
+                <div class="mini-content">
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">macbook-pro</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">linux-dev</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">api-server</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">staging</span>
+                  </div>
+                </div>
+                <div class="mini-backdrop mini-backdrop--blur-strong"
+                     role="presentation"
+                     aria-hidden="true">
+                  <span class="sr-only">Tap outside to dismiss</span>
+                </div>
+              </div>
+            </div>
+            <div class="state-badge-row" style="justify-content:center">
+              <span class="state-badge">heavy frosted</span>
+            </div>
+          </div>
+
+        </div><!-- /variant-gallery -->
+
+        <!-- State strip: is-entering / is-exiting shown as static renders -->
+        <div class="variant">
+          <h3>1b · entrance / exit states — static opacity snapshots</h3>
+          <div class="state-grid">
+            <div class="state">
+              <span class="state-label">is-entering (start frame — opacity 0)</span>
+              <div style="
+                height: 48px;
+                border-radius: var(--radius-default);
+                border: 1px dashed var(--border-subtle);
+                background: rgba(0, 0, 0, 0.0);
+                display: flex; align-items: center; justify-content: center;
+              ">
+                <span style="font-family:var(--font-mono); font-size:var(--font-size-meta); color:var(--text-faint); text-transform:uppercase; letter-spacing:var(--tracking-mono);">opacity: 0</span>
+              </div>
+            </div>
+            <div class="state">
+              <span class="state-label">is-entering (mid frame — opacity 0.5)</span>
+              <div style="
+                height: 48px;
+                border-radius: var(--radius-default);
+                background: rgba(0, 0, 0, 0.27);
+                display: flex; align-items: center; justify-content: center;
+              ">
+                <span style="font-family:var(--font-mono); font-size:var(--font-size-meta); color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:var(--tracking-mono);">opacity: 0.5</span>
+              </div>
+            </div>
+            <div class="state">
+              <span class="state-label">fully visible (default — opacity 1)</span>
+              <div style="
+                height: 48px;
+                border-radius: var(--radius-default);
+                background: rgba(0, 0, 0, 0.55);
+                display: flex; align-items: center; justify-content: center;
+              ">
+                <span style="font-family:var(--font-mono); font-size:var(--font-size-meta); color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:var(--tracking-mono);">opacity: 1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /variant section 1 -->
+
+      <hr class="preview-divider">
+
+      <!-- ── 2. COMPOSITION EXAMPLES ───────────────────────── -->
+      <div class="variant">
+        <h3>2 · composition examples — each variant in real context</h3>
+
+        <div class="composition-grid">
+
+          <!-- 2a. scrim behind confirmation modal -->
+          <div class="comp-cell">
+            <span class="comp-cell-label">--scrim · confirmation modal</span>
+            <span class="comp-cell-desc">"Delete session?" dialog. Standard 55% dim clearly separates modal from app content.</span>
+            <div class="iphone-wrapper">
+              <div class="iphone-scaler">
+                <div class="iphone-frame" aria-label="scrim with confirmation modal">
+                  <div class="iphone-viewport">
+                    <div class="dynamic-island" aria-hidden="true"></div>
+                    <div class="iphone-status-bar">
+                      <span class="status-time">9:41</span>
+                      <div class="status-icons">
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                      </div>
+                    </div>
+                    <div class="sessions-content">
+                      <div class="sessions-nav">
+                        <span class="sessions-nav-title">Sessions</span>
+                      </div>
+                      <div class="sessions-list">
+                        <div class="session-row">
+                          <div class="session-dot"></div>
+                          <div class="session-info">
+                            <span class="session-name">macbook-pro</span>
+                            <span class="session-meta">streaming · 2m ago</span>
+                          </div>
+                        </div>
+                        <div class="session-row">
+                          <div class="session-dot session-dot--muted"></div>
+                          <div class="session-info">
+                            <span class="session-name">linux-dev</span>
+                            <span class="session-meta">idle · 1h ago</span>
+                          </div>
+                        </div>
+                        <div class="session-row">
+                          <div class="session-dot session-dot--warn"></div>
+                          <div class="session-info">
+                            <span class="session-name">api-server</span>
+                            <span class="session-meta">pending · 5m ago</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="home-indicator" aria-hidden="true"></div>
+
+                    <!-- scrim backdrop -->
+                    <div class="iphone-backdrop iphone-backdrop--scrim"
+                         role="presentation"
+                         aria-hidden="true">
+                      <span class="sr-only">Tap outside to dismiss</span>
+                    </div>
+
+                    <!-- confirmation modal above backdrop -->
+                    <div class="floating-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-dark">
+                      <h2 class="modal-title" id="modal-title-dark">Delete session?</h2>
+                      <p class="modal-body">This will permanently remove "linux-dev" and all its history. This action cannot be undone.</p>
+                      <div class="modal-actions">
+                        <button class="btn-ghost" type="button">Cancel</button>
+                        <button class="btn-danger" type="button">Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2b. scrim-light behind model picker popover -->
+          <div class="comp-cell">
+            <span class="comp-cell-label">--scrim-light · model picker</span>
+            <span class="comp-cell-desc">Dropdown/popover stays visually connected to underlying content. Lighter dim at 30% keeps context readable.</span>
+            <div class="iphone-wrapper">
+              <div class="iphone-scaler">
+                <div class="iphone-frame" aria-label="scrim-light with model picker popover">
+                  <div class="iphone-viewport">
+                    <div class="dynamic-island" aria-hidden="true"></div>
+                    <div class="iphone-status-bar">
+                      <span class="status-time">9:41</span>
+                      <div class="status-icons">
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                      </div>
+                    </div>
+                    <div class="sessions-content">
+                      <div class="sessions-nav">
+                        <span class="sessions-nav-title">Sessions</span>
+                      </div>
+                      <div class="sessions-list">
+                        <div class="session-row">
+                          <div class="session-dot"></div>
+                          <div class="session-info">
+                            <span class="session-name">macbook-pro</span>
+                            <span class="session-meta">streaming · 2m ago</span>
+                          </div>
+                        </div>
+                        <div class="session-row">
+                          <div class="session-dot session-dot--muted"></div>
+                          <div class="session-info">
+                            <span class="session-name">linux-dev</span>
+                            <span class="session-meta">idle · 1h ago</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="home-indicator" aria-hidden="true"></div>
+
+                    <!-- scrim-light backdrop -->
+                    <div class="iphone-backdrop iphone-backdrop--scrim-light"
+                         role="presentation"
+                         aria-hidden="true">
+                      <span class="sr-only">Tap outside to dismiss</span>
+                    </div>
+
+                    <!-- popover above backdrop -->
+                    <div class="floating-popover" role="dialog" aria-modal="true" aria-label="Model picker">
+                      <div class="popover-label">Model</div>
+                      <div class="popover-item popover-item--selected">
+                        <span class="popover-dot"></span>
+                        claude-opus-4
+                      </div>
+                      <div class="popover-item">claude-sonnet-4-5</div>
+                      <div class="popover-item">claude-haiku-3-5</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2c. blur behind bottom sheet -->
+          <div class="comp-cell">
+            <span class="comp-cell-label">--blur · host picker sheet</span>
+            <span class="comp-cell-desc">iOS-style frosted glass sheet. 8px blur creates spatial separation while keeping the underlying view legible through frosting.</span>
+            <div class="iphone-wrapper">
+              <div class="iphone-scaler">
+                <div class="iphone-frame" aria-label="blur backdrop with host picker sheet">
+                  <div class="iphone-viewport">
+                    <div class="dynamic-island" aria-hidden="true"></div>
+                    <div class="iphone-status-bar">
+                      <span class="status-time">9:41</span>
+                      <div class="status-icons">
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                      </div>
+                    </div>
+                    <div class="sessions-content">
+                      <div class="sessions-nav">
+                        <span class="sessions-nav-title">Sessions</span>
+                      </div>
+                      <div class="sessions-list">
+                        <div class="session-row">
+                          <div class="session-dot"></div>
+                          <div class="session-info">
+                            <span class="session-name">macbook-pro</span>
+                            <span class="session-meta">streaming · 2m ago</span>
+                          </div>
+                        </div>
+                        <div class="session-row">
+                          <div class="session-dot session-dot--muted"></div>
+                          <div class="session-info">
+                            <span class="session-name">linux-dev</span>
+                            <span class="session-meta">idle · 1h ago</span>
+                          </div>
+                        </div>
+                        <div class="session-row">
+                          <div class="session-dot session-dot--warn"></div>
+                          <div class="session-info">
+                            <span class="session-name">api-server</span>
+                            <span class="session-meta">pending · 5m ago</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="home-indicator" aria-hidden="true"></div>
+
+                    <!-- blur backdrop -->
+                    <div class="iphone-backdrop iphone-backdrop--blur"
+                         role="presentation"
+                         aria-hidden="true">
+                      <span class="sr-only">Tap outside to dismiss</span>
+                    </div>
+
+                    <!-- bottom sheet above backdrop -->
+                    <div class="floating-sheet" role="dialog" aria-modal="true" aria-label="Select host">
+                      <div class="sheet-handle" aria-hidden="true"></div>
+                      <span class="sheet-title">Select Host</span>
+                      <div class="sheet-item">
+                        <div class="sheet-item-dot sheet-item-dot--live"></div>
+                        <span class="sheet-item-name">macbook-pro</span>
+                      </div>
+                      <div class="sheet-item">
+                        <div class="sheet-item-dot sheet-item-dot--muted"></div>
+                        <span class="sheet-item-name">linux-dev</span>
+                      </div>
+                      <div class="sheet-item">
+                        <div class="sheet-item-dot sheet-item-dot--muted"></div>
+                        <span class="sheet-item-name">api-server</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2d. blur-strong behind full-screen plan-review -->
+          <div class="comp-cell">
+            <span class="comp-cell-label">--blur-strong · plan-review modal</span>
+            <span class="comp-cell-desc">Full-screen glass overlay for plan review. 20px blur + 50% dim creates maximum focus separation while retaining spatial depth.</span>
+            <div class="iphone-wrapper">
+              <div class="iphone-scaler">
+                <div class="iphone-frame" aria-label="blur-strong backdrop with plan-review modal">
+                  <div class="iphone-viewport">
+                    <div class="dynamic-island" aria-hidden="true"></div>
+                    <div class="iphone-status-bar">
+                      <span class="status-time">9:41</span>
+                      <div class="status-icons">
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                      </div>
+                    </div>
+                    <div class="sessions-content">
+                      <div class="sessions-nav">
+                        <span class="sessions-nav-title">Sessions</span>
+                      </div>
+                      <div class="sessions-list">
+                        <div class="session-row">
+                          <div class="session-dot"></div>
+                          <div class="session-info">
+                            <span class="session-name">macbook-pro</span>
+                            <span class="session-meta">streaming · 2m ago</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="home-indicator" aria-hidden="true"></div>
+
+                    <!-- blur-strong backdrop -->
+                    <div class="iphone-backdrop iphone-backdrop--blur-strong"
+                         role="presentation"
+                         aria-hidden="true">
+                      <span class="sr-only">Tap outside to dismiss</span>
+                    </div>
+
+                    <!-- full-screen plan-review above backdrop -->
+                    <div class="floating-fullscreen" role="dialog" aria-modal="true" aria-labelledby="plan-title-dark">
+                      <div class="fullscreen-header">
+                        <span class="fullscreen-title" id="plan-title-dark">Review Plan</span>
+                        <button class="fullscreen-close" type="button" aria-label="Close">✕</button>
+                      </div>
+                      <div class="fullscreen-body">
+                        <div class="plan-line plan-line--accent">1. Read CLAUDE.md</div>
+                        <div class="plan-line">2. Scan existing components</div>
+                        <div class="plan-line">3. Implement backdrop atom</div>
+                        <div class="plan-line">4. Write HTML preview</div>
+                        <div class="plan-line">5. Commit changes</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /composition-grid -->
+      </div><!-- /variant section 2 -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ── 1. VARIANT GALLERY ─────────────────────────────── -->
+      <div class="variant">
+        <h3>1 · variant gallery — 4 backdrop variants over sessions-list mock</h3>
+
+        <div class="variant-gallery">
+
+          <!-- scrim (default) -->
+          <div class="gallery-cell">
+            <span class="gallery-cell-label">scrim<br>(default)<br>rgba(0,0,0,0.55)</span>
+            <div class="mini-iphone" aria-label="scrim variant preview (light)">
+              <div class="mini-viewport">
+                <div class="mini-island" aria-hidden="true"></div>
+                <div class="mini-status-bar">
+                  <span class="mini-time">9:41</span>
+                  <span class="mini-icons">▲▲▲</span>
+                </div>
+                <div class="mini-content">
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">macbook-pro</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">linux-dev</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">api-server</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">staging</span>
+                  </div>
+                </div>
+                <div class="mini-backdrop mini-backdrop--scrim"
+                     role="presentation"
+                     aria-hidden="true">
+                  <span class="sr-only">Tap outside to dismiss</span>
+                </div>
+              </div>
+            </div>
+            <div class="state-badge-row" style="justify-content:center">
+              <span class="state-badge">identical · hardware-black</span>
+            </div>
+          </div>
+
+          <!-- scrim-light -->
+          <div class="gallery-cell">
+            <span class="gallery-cell-label">scrim-light<br>rgba(0,0,0,0.30)</span>
+            <div class="mini-iphone" aria-label="scrim-light variant preview (light)">
+              <div class="mini-viewport">
+                <div class="mini-island" aria-hidden="true"></div>
+                <div class="mini-status-bar">
+                  <span class="mini-time">9:41</span>
+                  <span class="mini-icons">▲▲▲</span>
+                </div>
+                <div class="mini-content">
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">macbook-pro</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">linux-dev</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">api-server</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">staging</span>
+                  </div>
+                </div>
+                <div class="mini-backdrop mini-backdrop--scrim-light"
+                     role="presentation"
+                     aria-hidden="true">
+                  <span class="sr-only">Tap outside to dismiss</span>
+                </div>
+              </div>
+            </div>
+            <div class="state-badge-row" style="justify-content:center">
+              <span class="state-badge">identical · hardware-black</span>
+            </div>
+          </div>
+
+          <!-- blur -->
+          <div class="gallery-cell">
+            <span class="gallery-cell-label">blur<br>rgba(0,0,0,0.40)<br>+ blur(8px)</span>
+            <div class="mini-iphone" aria-label="blur variant preview (light)">
+              <div class="mini-viewport">
+                <div class="mini-island" aria-hidden="true"></div>
+                <div class="mini-status-bar">
+                  <span class="mini-time">9:41</span>
+                  <span class="mini-icons">▲▲▲</span>
+                </div>
+                <div class="mini-content">
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">macbook-pro</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">linux-dev</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">api-server</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">staging</span>
+                  </div>
+                </div>
+                <div class="mini-backdrop mini-backdrop--blur"
+                     role="presentation"
+                     aria-hidden="true">
+                  <span class="sr-only">Tap outside to dismiss</span>
+                </div>
+              </div>
+            </div>
+            <div class="state-badge-row" style="justify-content:center">
+              <span class="state-badge">identical · hardware-black</span>
+            </div>
+          </div>
+
+          <!-- blur-strong -->
+          <div class="gallery-cell">
+            <span class="gallery-cell-label">blur-strong<br>rgba(0,0,0,0.50)<br>+ blur(20px)</span>
+            <div class="mini-iphone" aria-label="blur-strong variant preview (light)">
+              <div class="mini-viewport">
+                <div class="mini-island" aria-hidden="true"></div>
+                <div class="mini-status-bar">
+                  <span class="mini-time">9:41</span>
+                  <span class="mini-icons">▲▲▲</span>
+                </div>
+                <div class="mini-content">
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">macbook-pro</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">linux-dev</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot mini-session-dot--muted"></div>
+                    <span class="mini-session-text">api-server</span>
+                  </div>
+                  <div class="mini-session-row">
+                    <div class="mini-session-dot"></div>
+                    <span class="mini-session-text">staging</span>
+                  </div>
+                </div>
+                <div class="mini-backdrop mini-backdrop--blur-strong"
+                     role="presentation"
+                     aria-hidden="true">
+                  <span class="sr-only">Tap outside to dismiss</span>
+                </div>
+              </div>
+            </div>
+            <div class="state-badge-row" style="justify-content:center">
+              <span class="state-badge">identical · hardware-black</span>
+            </div>
+          </div>
+
+        </div><!-- /variant-gallery -->
+
+        <!-- State strip -->
+        <div class="variant">
+          <h3>1b · entrance / exit states — static opacity snapshots</h3>
+          <div class="state-grid">
+            <div class="state">
+              <span class="state-label">is-entering (start — opacity 0)</span>
+              <div style="
+                height: 48px;
+                border-radius: var(--radius-default);
+                border: 1px dashed var(--border-subtle);
+                background: rgba(0, 0, 0, 0.0);
+                display: flex; align-items: center; justify-content: center;
+              ">
+                <span style="font-family:var(--font-mono); font-size:var(--font-size-meta); color:var(--text-faint); text-transform:uppercase; letter-spacing:var(--tracking-mono);">opacity: 0</span>
+              </div>
+            </div>
+            <div class="state">
+              <span class="state-label">is-entering (mid — opacity 0.5)</span>
+              <div style="
+                height: 48px;
+                border-radius: var(--radius-default);
+                background: rgba(0, 0, 0, 0.27);
+                display: flex; align-items: center; justify-content: center;
+              ">
+                <span style="font-family:var(--font-mono); font-size:var(--font-size-meta); color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:var(--tracking-mono);">opacity: 0.5</span>
+              </div>
+            </div>
+            <div class="state">
+              <span class="state-label">fully visible — opacity 1</span>
+              <div style="
+                height: 48px;
+                border-radius: var(--radius-default);
+                background: rgba(0, 0, 0, 0.55);
+                display: flex; align-items: center; justify-content: center;
+              ">
+                <span style="font-family:var(--font-mono); font-size:var(--font-size-meta); color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:var(--tracking-mono);">opacity: 1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /variant section 1 -->
+
+      <hr class="preview-divider">
+
+      <!-- ── 2. COMPOSITION EXAMPLES ───────────────────────── -->
+      <div class="variant">
+        <h3>2 · composition examples — each variant in real context (light theme)</h3>
+
+        <div class="composition-grid">
+
+          <!-- 2a. scrim behind confirmation modal -->
+          <div class="comp-cell">
+            <span class="comp-cell-label">--scrim · confirmation modal</span>
+            <span class="comp-cell-desc">Backdrop is hardware-black — appears identically regardless of app theme.</span>
+            <div class="iphone-wrapper">
+              <div class="iphone-scaler">
+                <div class="iphone-frame" aria-label="scrim with confirmation modal (light)">
+                  <div class="iphone-viewport">
+                    <div class="dynamic-island" aria-hidden="true"></div>
+                    <div class="iphone-status-bar">
+                      <span class="status-time">9:41</span>
+                      <div class="status-icons">
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                      </div>
+                    </div>
+                    <div class="sessions-content">
+                      <div class="sessions-nav">
+                        <span class="sessions-nav-title">Sessions</span>
+                      </div>
+                      <div class="sessions-list">
+                        <div class="session-row">
+                          <div class="session-dot"></div>
+                          <div class="session-info">
+                            <span class="session-name">macbook-pro</span>
+                            <span class="session-meta">streaming · 2m ago</span>
+                          </div>
+                        </div>
+                        <div class="session-row">
+                          <div class="session-dot session-dot--muted"></div>
+                          <div class="session-info">
+                            <span class="session-name">linux-dev</span>
+                            <span class="session-meta">idle · 1h ago</span>
+                          </div>
+                        </div>
+                        <div class="session-row">
+                          <div class="session-dot session-dot--warn"></div>
+                          <div class="session-info">
+                            <span class="session-name">api-server</span>
+                            <span class="session-meta">pending · 5m ago</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="home-indicator" aria-hidden="true"></div>
+                    <div class="iphone-backdrop iphone-backdrop--scrim"
+                         role="presentation"
+                         aria-hidden="true">
+                      <span class="sr-only">Tap outside to dismiss</span>
+                    </div>
+                    <div class="floating-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-light">
+                      <h2 class="modal-title" id="modal-title-light">Delete session?</h2>
+                      <p class="modal-body">This will permanently remove "linux-dev" and all its history.</p>
+                      <div class="modal-actions">
+                        <button class="btn-ghost" type="button">Cancel</button>
+                        <button class="btn-danger" type="button">Delete</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2b. scrim-light behind popover -->
+          <div class="comp-cell">
+            <span class="comp-cell-label">--scrim-light · model picker</span>
+            <span class="comp-cell-desc">Light theme surface beneath remains clearly visible through 30% black dim.</span>
+            <div class="iphone-wrapper">
+              <div class="iphone-scaler">
+                <div class="iphone-frame" aria-label="scrim-light with model picker (light)">
+                  <div class="iphone-viewport">
+                    <div class="dynamic-island" aria-hidden="true"></div>
+                    <div class="iphone-status-bar">
+                      <span class="status-time">9:41</span>
+                      <div class="status-icons">
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                      </div>
+                    </div>
+                    <div class="sessions-content">
+                      <div class="sessions-nav">
+                        <span class="sessions-nav-title">Sessions</span>
+                      </div>
+                      <div class="sessions-list">
+                        <div class="session-row">
+                          <div class="session-dot"></div>
+                          <div class="session-info">
+                            <span class="session-name">macbook-pro</span>
+                            <span class="session-meta">streaming · 2m ago</span>
+                          </div>
+                        </div>
+                        <div class="session-row">
+                          <div class="session-dot session-dot--muted"></div>
+                          <div class="session-info">
+                            <span class="session-name">linux-dev</span>
+                            <span class="session-meta">idle · 1h ago</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="home-indicator" aria-hidden="true"></div>
+                    <div class="iphone-backdrop iphone-backdrop--scrim-light"
+                         role="presentation"
+                         aria-hidden="true">
+                      <span class="sr-only">Tap outside to dismiss</span>
+                    </div>
+                    <div class="floating-popover" role="dialog" aria-modal="true" aria-label="Model picker">
+                      <div class="popover-label">Model</div>
+                      <div class="popover-item popover-item--selected">
+                        <span class="popover-dot"></span>
+                        claude-opus-4
+                      </div>
+                      <div class="popover-item">claude-sonnet-4-5</div>
+                      <div class="popover-item">claude-haiku-3-5</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2c. blur behind sheet -->
+          <div class="comp-cell">
+            <span class="comp-cell-label">--blur · host picker sheet</span>
+            <span class="comp-cell-desc">Frosted-glass effect blurs the light-theme content identically to dark — hardware-black is theme-invariant.</span>
+            <div class="iphone-wrapper">
+              <div class="iphone-scaler">
+                <div class="iphone-frame" aria-label="blur backdrop with sheet (light)">
+                  <div class="iphone-viewport">
+                    <div class="dynamic-island" aria-hidden="true"></div>
+                    <div class="iphone-status-bar">
+                      <span class="status-time">9:41</span>
+                      <div class="status-icons">
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                      </div>
+                    </div>
+                    <div class="sessions-content">
+                      <div class="sessions-nav">
+                        <span class="sessions-nav-title">Sessions</span>
+                      </div>
+                      <div class="sessions-list">
+                        <div class="session-row">
+                          <div class="session-dot"></div>
+                          <div class="session-info">
+                            <span class="session-name">macbook-pro</span>
+                            <span class="session-meta">streaming · 2m ago</span>
+                          </div>
+                        </div>
+                        <div class="session-row">
+                          <div class="session-dot session-dot--muted"></div>
+                          <div class="session-info">
+                            <span class="session-name">linux-dev</span>
+                            <span class="session-meta">idle · 1h ago</span>
+                          </div>
+                        </div>
+                        <div class="session-row">
+                          <div class="session-dot session-dot--warn"></div>
+                          <div class="session-info">
+                            <span class="session-name">api-server</span>
+                            <span class="session-meta">pending · 5m ago</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="home-indicator" aria-hidden="true"></div>
+                    <div class="iphone-backdrop iphone-backdrop--blur"
+                         role="presentation"
+                         aria-hidden="true">
+                      <span class="sr-only">Tap outside to dismiss</span>
+                    </div>
+                    <div class="floating-sheet" role="dialog" aria-modal="true" aria-label="Select host">
+                      <div class="sheet-handle" aria-hidden="true"></div>
+                      <span class="sheet-title">Select Host</span>
+                      <div class="sheet-item">
+                        <div class="sheet-item-dot sheet-item-dot--live"></div>
+                        <span class="sheet-item-name">macbook-pro</span>
+                      </div>
+                      <div class="sheet-item">
+                        <div class="sheet-item-dot sheet-item-dot--muted"></div>
+                        <span class="sheet-item-name">linux-dev</span>
+                      </div>
+                      <div class="sheet-item">
+                        <div class="sheet-item-dot sheet-item-dot--muted"></div>
+                        <span class="sheet-item-name">api-server</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2d. blur-strong behind full-screen -->
+          <div class="comp-cell">
+            <span class="comp-cell-label">--blur-strong · plan-review modal</span>
+            <span class="comp-cell-desc">Heavy frosted glass maximally separates review content from light-theme app surface.</span>
+            <div class="iphone-wrapper">
+              <div class="iphone-scaler">
+                <div class="iphone-frame" aria-label="blur-strong with plan-review (light)">
+                  <div class="iphone-viewport">
+                    <div class="dynamic-island" aria-hidden="true"></div>
+                    <div class="iphone-status-bar">
+                      <span class="status-time">9:41</span>
+                      <div class="status-icons">
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                        <span class="status-icon">▲</span>
+                      </div>
+                    </div>
+                    <div class="sessions-content">
+                      <div class="sessions-nav">
+                        <span class="sessions-nav-title">Sessions</span>
+                      </div>
+                      <div class="sessions-list">
+                        <div class="session-row">
+                          <div class="session-dot"></div>
+                          <div class="session-info">
+                            <span class="session-name">macbook-pro</span>
+                            <span class="session-meta">streaming · 2m ago</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="home-indicator" aria-hidden="true"></div>
+                    <div class="iphone-backdrop iphone-backdrop--blur-strong"
+                         role="presentation"
+                         aria-hidden="true">
+                      <span class="sr-only">Tap outside to dismiss</span>
+                    </div>
+                    <div class="floating-fullscreen" role="dialog" aria-modal="true" aria-labelledby="plan-title-light">
+                      <div class="fullscreen-header">
+                        <span class="fullscreen-title" id="plan-title-light">Review Plan</span>
+                        <button class="fullscreen-close" type="button" aria-label="Close">✕</button>
+                      </div>
+                      <div class="fullscreen-body">
+                        <div class="plan-line plan-line--accent">1. Read CLAUDE.md</div>
+                        <div class="plan-line">2. Scan existing components</div>
+                        <div class="plan-line">3. Implement backdrop atom</div>
+                        <div class="plan-line">4. Write HTML preview</div>
+                        <div class="plan-line">5. Commit changes</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /composition-grid -->
+      </div><!-- /variant section 2 -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe table
+       ============================================================ -->
+  <div style="padding: var(--spacing-section) var(--spacing-between); border-top: 1px solid var(--border-subtle);">
+    <h2 style="font-family: var(--font-mono); font-size: var(--font-size-body-sm); font-weight: var(--font-weight-heading); letter-spacing: var(--tracking-tight); color: var(--text-heading); margin: 0 0 var(--spacing-between);">Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token / Value</th>
+          <th>Dark resolved</th>
+          <th>Light resolved</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>background (--scrim)</td>
+          <td>rgba(0,0,0,0.55) — hardware-black exception</td>
+          <td>rgba(0,0,0,0.55)</td>
+          <td>rgba(0,0,0,0.55)</td>
+          <td>Theme-invariant. See README § Hardware-black.</td>
+        </tr>
+        <tr>
+          <td>background (--scrim-light)</td>
+          <td>rgba(0,0,0,0.30) — hardware-black exception</td>
+          <td>rgba(0,0,0,0.30)</td>
+          <td>rgba(0,0,0,0.30)</td>
+          <td>Lighter dim for popovers/menus.</td>
+        </tr>
+        <tr>
+          <td>background (--blur)</td>
+          <td>rgba(0,0,0,0.40) — hardware-black exception</td>
+          <td>rgba(0,0,0,0.40)</td>
+          <td>rgba(0,0,0,0.40)</td>
+          <td>Bottom sheet frosted.</td>
+        </tr>
+        <tr>
+          <td>background (--blur-strong)</td>
+          <td>rgba(0,0,0,0.50) — hardware-black exception</td>
+          <td>rgba(0,0,0,0.50)</td>
+          <td>rgba(0,0,0,0.50)</td>
+          <td>Full-screen plan-review.</td>
+        </tr>
+        <tr>
+          <td>backdrop-filter (--blur)</td>
+          <td>blur(8px) — structural geometry</td>
+          <td>blur(8px)</td>
+          <td>blur(8px)</td>
+          <td>-webkit- prefixed for Safari.</td>
+        </tr>
+        <tr>
+          <td>backdrop-filter (--blur-strong)</td>
+          <td>blur(20px) — structural geometry</td>
+          <td>blur(20px)</td>
+          <td>blur(20px)</td>
+          <td>-webkit- prefixed for Safari.</td>
+        </tr>
+        <tr>
+          <td>transition-duration</td>
+          <td>--motion-medium</td>
+          <td>220ms</td>
+          <td>220ms</td>
+          <td>Fade in/out duration.</td>
+        </tr>
+        <tr>
+          <td>transition-timing-function</td>
+          <td>--motion-ease-out</td>
+          <td>cubic-bezier(0.16,1,0.3,1)</td>
+          <td>cubic-bezier(0.16,1,0.3,1)</td>
+          <td>Spring-like deceleration.</td>
+        </tr>
+        <tr>
+          <td>animation-duration (is-entering / is-exiting)</td>
+          <td>--motion-medium</td>
+          <td>220ms</td>
+          <td>220ms</td>
+          <td>Keyframe animation duration.</td>
+        </tr>
+        <tr>
+          <td>z-index</td>
+          <td>100 — structural layer</td>
+          <td>100</td>
+          <td>100</td>
+          <td>Modal/sheet content renders at z-index 60+ above (in context).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      margin-top: var(--spacing-between);
+      padding-top: var(--spacing-between);
+      border-top: 1px solid var(--border-subtle);
+    ">
+      TOKEN_GAPs: none. rgba(0,0,0,X) background values are hardware-black structural exceptions (same precedent as Dynamic Island + device bezel). Blur radii 8px/20px are structural geometry (same exception category as the 6px dot in live-activity-dot).
+    </p>
+  </div>
+
+</body>
+</html>
