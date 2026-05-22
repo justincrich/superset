@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · badge</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-badge — token-governed badge atom
+       Composition purity: only .atom-badge rules defined here.
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Numeric heights/sizes (8/16/18/20) are structural geometry — allowed.
+       Padding via var(--space-*) only.
+       ============================================================ */
+
+    /* ---- Base ---------------------------------------------- */
+    .atom-badge {
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      flex-shrink:     0;
+      white-space:     nowrap;
+      /* Shape defaults (pill) */
+      border-radius:   var(--radius-pill);
+      padding:         var(--space-1) var(--space-2);
+      /* Typography — use type-meta by default; lg overrides */
+      font-family:     var(--font-mono);
+      font-size:       var(--font-size-meta);
+      font-weight:     var(--font-weight-meta);
+      letter-spacing:  var(--tracking-mono);
+      line-height:     var(--line-height-snug);
+      text-transform:  uppercase;
+    }
+
+    /* ---- Sizes (pill shape only) --------------------------- */
+    /* sm (default) */
+    .atom-badge--sm,
+    .atom-badge:not(.atom-badge--md):not(.atom-badge--lg):not(.atom-badge--dot) {
+      height:     16px;
+      min-width:  16px;
+    }
+
+    .atom-badge--md {
+      height:    18px;
+      min-width: 18px;
+    }
+
+    .atom-badge--lg {
+      height:     20px;
+      min-width:  20px;
+      /* lg bumps to type-label */
+      font-size:      var(--font-size-label);
+      font-weight:    var(--font-weight-label);
+    }
+
+    /* ---- Dot shape ----------------------------------------- */
+    .atom-badge--dot {
+      width:         8px;
+      height:        8px;
+      min-width:     8px;
+      border-radius: var(--radius-round);
+      padding:       0;
+      font-size:     0;
+      line-height:   0;
+    }
+
+    /* ---- Variant: accent (default, ember brand) ------------ */
+    .atom-badge--accent,
+    .atom-badge:not(.atom-badge--neutral):not(.atom-badge--live):not(.atom-badge--danger) {
+      background-color: var(--accent-primary);
+      color:            var(--accent-primary-fg);
+    }
+
+    /* ---- Variant: neutral ---------------------------------- */
+    .atom-badge--neutral {
+      background-color: var(--surface-soft);
+      color:            var(--text-body);
+    }
+
+    /* ---- Variant: live (streaming / running) --------------- */
+    .atom-badge--live {
+      background-color: var(--state-live-fg);
+      color:            var(--accent-primary-fg);
+    }
+
+    /* ---- Variant: danger ----------------------------------- */
+    .atom-badge--danger {
+      background-color: var(--state-danger-fg);
+      color:            var(--accent-primary-fg);
+    }
+
+    /* ---- State: disabled ----------------------------------- */
+    .atom-badge.is-disabled {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Preview layout helpers ---------------------------- */
+
+    /* Matrix grid — 4 variants per row, uniform columns */
+    .badge-matrix {
+      display:               grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:                   var(--space-4);
+      align-items:           start;
+      margin-bottom:         var(--space-6);
+    }
+
+    .badge-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      align-items:    flex-start;
+    }
+
+    .badge-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    /* Dot row — inline */
+    .dot-row {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-6);
+      margin-bottom: var(--space-6);
+    }
+
+    .dot-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      align-items:    flex-start;
+    }
+
+    /* Section title within pane */
+    .section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-3);
+    }
+
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+      margin: var(--space-8) 0;
+    }
+
+    /* State row — disabled demos */
+    .state-row {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-4);
+      flex-wrap:     wrap;
+      margin-bottom: var(--space-6);
+    }
+
+    /* ---- Composition examples layout helpers --------------- */
+
+    /* Approval footer mock */
+    .comp-approval-footer {
+      background:     var(--surface-raised);
+      border:         1px solid var(--border-default);
+      border-radius:  var(--radius-lg);
+      padding:        var(--space-4);
+      max-width:      380px;
+    }
+
+    .comp-approval-header {
+      display:         flex;
+      align-items:     center;
+      gap:             var(--space-2);
+      margin-bottom:   var(--space-4);
+    }
+
+    .comp-approval-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+    }
+
+    .comp-approval-buttons {
+      display:               grid;
+      grid-template-columns: 1fr 1fr;
+      gap:                   var(--space-2);
+    }
+
+    .comp-btn {
+      display:          inline-flex;
+      align-items:      center;
+      justify-content:  center;
+      height:           40px;
+      border:           none;
+      border-radius:    var(--radius-default);
+      font-family:      var(--font-mono);
+      font-size:        var(--font-size-label);
+      font-weight:      var(--font-weight-label);
+      letter-spacing:   var(--tracking-mono);
+      text-transform:   uppercase;
+      cursor:           pointer;
+    }
+
+    .comp-btn--approve {
+      background-color: var(--accent-primary);
+      color:            var(--accent-primary-fg);
+    }
+
+    .comp-btn--deny {
+      background-color: var(--state-danger-fg);
+      color:            var(--accent-primary-fg);
+    }
+
+    /* Session row with dot badge on icon */
+    .comp-session-row {
+      display:         flex;
+      align-items:     center;
+      gap:             var(--space-3);
+      padding:         var(--space-3) var(--space-4);
+      background:      var(--surface-raised);
+      border:          1px solid var(--border-default);
+      border-radius:   var(--radius-lg);
+      max-width:       380px;
+    }
+
+    .comp-icon-slot {
+      position:   relative;
+      width:      32px;
+      height:     32px;
+      flex-shrink: 0;
+    }
+
+    .comp-icon-bg {
+      width:            32px;
+      height:           32px;
+      border-radius:    var(--radius-default);
+      background:       var(--surface-soft);
+      display:          flex;
+      align-items:      center;
+      justify-content:  center;
+    }
+
+    /* SVG icon placeholder */
+    .comp-icon-svg {
+      width:  18px;
+      height: 18px;
+      color:  var(--text-muted);
+    }
+
+    /* Badge anchored to top-right of icon slot */
+    .comp-icon-badge {
+      position: absolute;
+      top:      -3px;
+      right:    -3px;
+    }
+
+    .comp-session-title {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-title);
+      letter-spacing: var(--tracking-snug);
+      color:          var(--text-heading);
+      flex: 1;
+    }
+
+    .comp-session-meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    /* "NEW" badge on session row title */
+    .comp-session-title-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+    }
+
+    /* Tab bar mock */
+    .comp-tab-bar {
+      display:          flex;
+      align-items:      center;
+      justify-content:  space-around;
+      background:       var(--surface-raised);
+      border:           1px solid var(--border-default);
+      border-radius:    var(--radius-lg);
+      padding:          var(--space-2) var(--space-4);
+      max-width:        380px;
+    }
+
+    .comp-tab-item {
+      display:         flex;
+      flex-direction:  column;
+      align-items:     center;
+      gap:             var(--space-1);
+      position:        relative;
+      padding:         var(--space-2) var(--space-3);
+    }
+
+    .comp-tab-icon {
+      position: relative;
+      width: 24px;
+      height: 24px;
+    }
+
+    .comp-tab-icon-placeholder {
+      width:            24px;
+      height:           24px;
+      border-radius:    var(--radius-subtle);
+      background:       var(--surface-soft);
+      display:          flex;
+      align-items:      center;
+      justify-content:  center;
+    }
+
+    .comp-tab-icon-placeholder--active {
+      background:  var(--accent-primary-subtle);
+    }
+
+    .comp-tab-dot {
+      position: absolute;
+      top:      -2px;
+      right:    -2px;
+    }
+
+    .comp-tab-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .comp-tab-label--active {
+      color: var(--accent-primary);
+    }
+
+    .comp-compositions {
+      display:               grid;
+      grid-template-columns: 1fr 1fr;
+      gap:                   var(--space-6);
+      align-items:           start;
+    }
+
+    .comp-block {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+    }
+
+    .comp-block-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">badge</h1>
+    <p class="crumb">atom · compact count / status indicator</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- VARIANT + SIZE MATRIX (4 variants × 3 sizes = 12) --- -->
+
+      <!-- sm row -->
+      <p class="section-title">variant × size matrix — sm (16px)</p>
+      <div class="badge-matrix">
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">accent · sm</span>
+          <span class="atom-badge atom-badge--accent atom-badge--sm"
+                role="status" aria-label="New">NEW</span>
+          <span class="atom-badge atom-badge--accent atom-badge--sm"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--accent atom-badge--sm"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--accent atom-badge--sm"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">neutral · sm</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--sm"
+                role="status" aria-label="1 of 4 approvals">1 OF 4</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--sm"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--sm"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--sm"
+                aria-hidden="true">WAIT</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">live · sm</span>
+          <span class="atom-badge atom-badge--live atom-badge--sm"
+                role="status" aria-label="Streaming">STREAMING</span>
+          <span class="atom-badge atom-badge--live atom-badge--sm"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--live atom-badge--sm"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--live atom-badge--sm"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">danger · sm</span>
+          <span class="atom-badge atom-badge--danger atom-badge--sm"
+                role="status" aria-label="Failed">FAILED</span>
+          <span class="atom-badge atom-badge--danger atom-badge--sm"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--danger atom-badge--sm"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--danger atom-badge--sm"
+                aria-hidden="true">99+</span>
+        </div>
+
+      </div><!-- /sm row -->
+
+      <!-- md row -->
+      <p class="section-title">variant × size matrix — md (18px)</p>
+      <div class="badge-matrix">
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">accent · md</span>
+          <span class="atom-badge atom-badge--accent atom-badge--md"
+                role="status" aria-label="New">NEW</span>
+          <span class="atom-badge atom-badge--accent atom-badge--md"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--accent atom-badge--md"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--accent atom-badge--md"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">neutral · md</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--md"
+                role="status" aria-label="1 of 4 approvals">1 OF 4</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--md"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--md"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--md"
+                aria-hidden="true">WAIT</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">live · md</span>
+          <span class="atom-badge atom-badge--live atom-badge--md"
+                role="status" aria-label="Streaming">STREAMING</span>
+          <span class="atom-badge atom-badge--live atom-badge--md"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--live atom-badge--md"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--live atom-badge--md"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">danger · md</span>
+          <span class="atom-badge atom-badge--danger atom-badge--md"
+                role="status" aria-label="Failed">FAILED</span>
+          <span class="atom-badge atom-badge--danger atom-badge--md"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--danger atom-badge--md"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--danger atom-badge--md"
+                aria-hidden="true">99+</span>
+        </div>
+
+      </div><!-- /md row -->
+
+      <!-- lg row -->
+      <p class="section-title">variant × size matrix — lg (20px)</p>
+      <div class="badge-matrix">
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">accent · lg</span>
+          <span class="atom-badge atom-badge--accent atom-badge--lg"
+                role="status" aria-label="New">NEW</span>
+          <span class="atom-badge atom-badge--accent atom-badge--lg"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--accent atom-badge--lg"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--accent atom-badge--lg"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">neutral · lg</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--lg"
+                role="status" aria-label="1 of 4 approvals">1 OF 4</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--lg"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--lg"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--lg"
+                aria-hidden="true">WAIT</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">live · lg</span>
+          <span class="atom-badge atom-badge--live atom-badge--lg"
+                role="status" aria-label="Streaming">STREAMING</span>
+          <span class="atom-badge atom-badge--live atom-badge--lg"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--live atom-badge--lg"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--live atom-badge--lg"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">danger · lg</span>
+          <span class="atom-badge atom-badge--danger atom-badge--lg"
+                role="status" aria-label="Failed">FAILED</span>
+          <span class="atom-badge atom-badge--danger atom-badge--lg"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--danger atom-badge--lg"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--danger atom-badge--lg"
+                aria-hidden="true">99+</span>
+        </div>
+
+      </div><!-- /lg row -->
+
+      <hr class="section-divider">
+
+      <!-- ---- DOT SHAPE ROW ---------------------------------- -->
+      <p class="section-title">dot shape — all 4 variants</p>
+      <div class="dot-row">
+
+        <div class="dot-cell">
+          <span class="badge-cell-label">accent</span>
+          <span class="atom-badge atom-badge--accent atom-badge--dot"
+                role="img" aria-label="new"></span>
+        </div>
+
+        <div class="dot-cell">
+          <span class="badge-cell-label">neutral</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--dot"
+                aria-hidden="true"></span>
+        </div>
+
+        <div class="dot-cell">
+          <span class="badge-cell-label">live</span>
+          <span class="atom-badge atom-badge--live atom-badge--dot"
+                role="img" aria-label="streaming"></span>
+        </div>
+
+        <div class="dot-cell">
+          <span class="badge-cell-label">danger</span>
+          <span class="atom-badge atom-badge--danger atom-badge--dot"
+                role="img" aria-label="error"></span>
+        </div>
+
+      </div><!-- /dot row -->
+
+      <hr class="section-divider">
+
+      <!-- ---- DISABLED STATE --------------------------------- -->
+      <p class="section-title">disabled state — is-disabled</p>
+      <div class="state-row">
+        <span class="atom-badge atom-badge--accent atom-badge--md is-disabled"
+              aria-hidden="true">NEW</span>
+        <span class="atom-badge atom-badge--neutral atom-badge--md is-disabled"
+              aria-hidden="true">1 OF 4</span>
+        <span class="atom-badge atom-badge--live atom-badge--md is-disabled"
+              aria-hidden="true">STREAMING</span>
+        <span class="atom-badge atom-badge--danger atom-badge--md is-disabled"
+              aria-hidden="true">FAILED</span>
+        <span class="atom-badge atom-badge--accent atom-badge--dot is-disabled"
+              aria-hidden="true"></span>
+        <span class="atom-badge atom-badge--live atom-badge--dot is-disabled"
+              aria-hidden="true"></span>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ---- COMPOSITION EXAMPLES -------------------------- -->
+      <p class="section-title">composition examples</p>
+
+      <div class="comp-compositions">
+
+        <!-- 1. Pending-approval footer mock -->
+        <div class="comp-block">
+          <span class="comp-block-label">approval footer · "1 of 4" neutral badge</span>
+          <div class="comp-approval-footer">
+            <div class="comp-approval-header">
+              <span class="atom-badge atom-badge--neutral atom-badge--sm"
+                    role="status" aria-label="1 of 4 tool approvals pending">1 OF 4</span>
+              <span class="comp-approval-title">Tool approval required</span>
+            </div>
+            <p style="
+              font-family: var(--font-mono);
+              font-size:   var(--font-size-meta);
+              color:       var(--text-muted);
+              letter-spacing: var(--tracking-mono);
+              text-transform: uppercase;
+              margin:      0 0 var(--space-4);
+            ">write_file · /src/app.ts</p>
+            <div class="comp-approval-buttons">
+              <button class="comp-btn comp-btn--approve">Approve</button>
+              <button class="comp-btn comp-btn--deny">Deny</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Session row with live dot atop icon -->
+        <div class="comp-block">
+          <span class="comp-block-label">session row · live dot on icon</span>
+          <div class="comp-session-row"
+               aria-label="Chat session: refactor auth module — streaming">
+            <div class="comp-icon-slot">
+              <div class="comp-icon-bg">
+                <!-- message-square icon (SVG outline) -->
+                <svg class="comp-icon-svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <!-- Live dot — decorative; parent aria-label covers it -->
+              <span class="atom-badge atom-badge--live atom-badge--dot comp-icon-badge"
+                    aria-hidden="true"></span>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div class="comp-session-title">Refactor auth module</div>
+              <div class="comp-session-meta">streaming · 2 min ago</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Tab bar with notification dot on Chat tab -->
+        <div class="comp-block">
+          <span class="comp-block-label">tab bar · notification dot on chat tab</span>
+          <div class="comp-tab-bar" role="tablist" aria-label="Main navigation">
+            <!-- Chat tab — active, has unread dot -->
+            <div class="comp-tab-item"
+                 role="tab" aria-selected="true"
+                 aria-label="Chat, 3 unread messages">
+              <div class="comp-tab-icon">
+                <div class="comp-tab-icon-placeholder comp-tab-icon-placeholder--active">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true"
+                       style="color: var(--accent-primary);">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
+                <!-- Dot is decorative — tab item carries aria-label -->
+                <span class="atom-badge atom-badge--accent atom-badge--dot comp-tab-dot"
+                      aria-hidden="true"></span>
+              </div>
+              <span class="comp-tab-label comp-tab-label--active">Chat</span>
+            </div>
+            <!-- Files tab — inactive, no badge -->
+            <div class="comp-tab-item"
+                 role="tab" aria-selected="false" aria-label="Files">
+              <div class="comp-tab-icon">
+                <div class="comp-tab-icon-placeholder">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true"
+                       style="color: var(--text-muted);">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                </div>
+              </div>
+              <span class="comp-tab-label">Files</span>
+            </div>
+            <!-- Settings tab — inactive, no badge -->
+            <div class="comp-tab-item"
+                 role="tab" aria-selected="false" aria-label="Settings">
+              <div class="comp-tab-icon">
+                <div class="comp-tab-icon-placeholder">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true"
+                       style="color: var(--text-muted);">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+                  </svg>
+                </div>
+              </div>
+              <span class="comp-tab-label">Settings</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. "NEW" accent badge on session row title -->
+        <div class="comp-block">
+          <span class="comp-block-label">session row title · "NEW" accent badge</span>
+          <div class="comp-session-row">
+            <div class="comp-icon-slot">
+              <div class="comp-icon-bg">
+                <svg class="comp-icon-svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div class="comp-session-title-row">
+                <span class="comp-session-title">Debug CI pipeline</span>
+                <!-- "NEW" badge — adjacent title provides context; badge is decorative -->
+                <span class="atom-badge atom-badge--accent atom-badge--sm"
+                      aria-hidden="true">NEW</span>
+              </div>
+              <div class="comp-session-meta">idle · just now</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /comp-compositions -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- VARIANT + SIZE MATRIX (4 variants × 3 sizes = 12) --- -->
+
+      <!-- sm row -->
+      <p class="section-title">variant × size matrix — sm (16px)</p>
+      <div class="badge-matrix">
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">accent · sm</span>
+          <span class="atom-badge atom-badge--accent atom-badge--sm"
+                role="status" aria-label="New">NEW</span>
+          <span class="atom-badge atom-badge--accent atom-badge--sm"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--accent atom-badge--sm"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--accent atom-badge--sm"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">neutral · sm</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--sm"
+                role="status" aria-label="1 of 4 approvals">1 OF 4</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--sm"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--sm"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--sm"
+                aria-hidden="true">WAIT</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">live · sm</span>
+          <span class="atom-badge atom-badge--live atom-badge--sm"
+                role="status" aria-label="Streaming">STREAMING</span>
+          <span class="atom-badge atom-badge--live atom-badge--sm"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--live atom-badge--sm"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--live atom-badge--sm"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">danger · sm</span>
+          <span class="atom-badge atom-badge--danger atom-badge--sm"
+                role="status" aria-label="Failed">FAILED</span>
+          <span class="atom-badge atom-badge--danger atom-badge--sm"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--danger atom-badge--sm"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--danger atom-badge--sm"
+                aria-hidden="true">99+</span>
+        </div>
+
+      </div><!-- /sm row -->
+
+      <!-- md row -->
+      <p class="section-title">variant × size matrix — md (18px)</p>
+      <div class="badge-matrix">
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">accent · md</span>
+          <span class="atom-badge atom-badge--accent atom-badge--md"
+                role="status" aria-label="New">NEW</span>
+          <span class="atom-badge atom-badge--accent atom-badge--md"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--accent atom-badge--md"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--accent atom-badge--md"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">neutral · md</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--md"
+                role="status" aria-label="1 of 4 approvals">1 OF 4</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--md"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--md"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--md"
+                aria-hidden="true">WAIT</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">live · md</span>
+          <span class="atom-badge atom-badge--live atom-badge--md"
+                role="status" aria-label="Streaming">STREAMING</span>
+          <span class="atom-badge atom-badge--live atom-badge--md"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--live atom-badge--md"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--live atom-badge--md"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">danger · md</span>
+          <span class="atom-badge atom-badge--danger atom-badge--md"
+                role="status" aria-label="Failed">FAILED</span>
+          <span class="atom-badge atom-badge--danger atom-badge--md"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--danger atom-badge--md"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--danger atom-badge--md"
+                aria-hidden="true">99+</span>
+        </div>
+
+      </div><!-- /md row -->
+
+      <!-- lg row -->
+      <p class="section-title">variant × size matrix — lg (20px)</p>
+      <div class="badge-matrix">
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">accent · lg</span>
+          <span class="atom-badge atom-badge--accent atom-badge--lg"
+                role="status" aria-label="New">NEW</span>
+          <span class="atom-badge atom-badge--accent atom-badge--lg"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--accent atom-badge--lg"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--accent atom-badge--lg"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">neutral · lg</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--lg"
+                role="status" aria-label="1 of 4 approvals">1 OF 4</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--lg"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--lg"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--lg"
+                aria-hidden="true">WAIT</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">live · lg</span>
+          <span class="atom-badge atom-badge--live atom-badge--lg"
+                role="status" aria-label="Streaming">STREAMING</span>
+          <span class="atom-badge atom-badge--live atom-badge--lg"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--live atom-badge--lg"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--live atom-badge--lg"
+                aria-hidden="true">99+</span>
+        </div>
+
+        <div class="badge-cell">
+          <span class="badge-cell-label">danger · lg</span>
+          <span class="atom-badge atom-badge--danger atom-badge--lg"
+                role="status" aria-label="Failed">FAILED</span>
+          <span class="atom-badge atom-badge--danger atom-badge--lg"
+                aria-hidden="true">3</span>
+          <span class="atom-badge atom-badge--danger atom-badge--lg"
+                aria-hidden="true">12</span>
+          <span class="atom-badge atom-badge--danger atom-badge--lg"
+                aria-hidden="true">99+</span>
+        </div>
+
+      </div><!-- /lg row -->
+
+      <hr class="section-divider">
+
+      <!-- ---- DOT SHAPE ROW ---------------------------------- -->
+      <p class="section-title">dot shape — all 4 variants</p>
+      <div class="dot-row">
+
+        <div class="dot-cell">
+          <span class="badge-cell-label">accent</span>
+          <span class="atom-badge atom-badge--accent atom-badge--dot"
+                role="img" aria-label="new"></span>
+        </div>
+
+        <div class="dot-cell">
+          <span class="badge-cell-label">neutral</span>
+          <span class="atom-badge atom-badge--neutral atom-badge--dot"
+                aria-hidden="true"></span>
+        </div>
+
+        <div class="dot-cell">
+          <span class="badge-cell-label">live</span>
+          <span class="atom-badge atom-badge--live atom-badge--dot"
+                role="img" aria-label="streaming"></span>
+        </div>
+
+        <div class="dot-cell">
+          <span class="badge-cell-label">danger</span>
+          <span class="atom-badge atom-badge--danger atom-badge--dot"
+                role="img" aria-label="error"></span>
+        </div>
+
+      </div><!-- /dot row -->
+
+      <hr class="section-divider">
+
+      <!-- ---- DISABLED STATE --------------------------------- -->
+      <p class="section-title">disabled state — is-disabled</p>
+      <div class="state-row">
+        <span class="atom-badge atom-badge--accent atom-badge--md is-disabled"
+              aria-hidden="true">NEW</span>
+        <span class="atom-badge atom-badge--neutral atom-badge--md is-disabled"
+              aria-hidden="true">1 OF 4</span>
+        <span class="atom-badge atom-badge--live atom-badge--md is-disabled"
+              aria-hidden="true">STREAMING</span>
+        <span class="atom-badge atom-badge--danger atom-badge--md is-disabled"
+              aria-hidden="true">FAILED</span>
+        <span class="atom-badge atom-badge--accent atom-badge--dot is-disabled"
+              aria-hidden="true"></span>
+        <span class="atom-badge atom-badge--live atom-badge--dot is-disabled"
+              aria-hidden="true"></span>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ---- COMPOSITION EXAMPLES -------------------------- -->
+      <p class="section-title">composition examples</p>
+
+      <div class="comp-compositions">
+
+        <!-- 1. Pending-approval footer mock -->
+        <div class="comp-block">
+          <span class="comp-block-label">approval footer · "1 of 4" neutral badge</span>
+          <div class="comp-approval-footer">
+            <div class="comp-approval-header">
+              <span class="atom-badge atom-badge--neutral atom-badge--sm"
+                    role="status" aria-label="1 of 4 tool approvals pending">1 OF 4</span>
+              <span class="comp-approval-title">Tool approval required</span>
+            </div>
+            <p style="
+              font-family: var(--font-mono);
+              font-size:   var(--font-size-meta);
+              color:       var(--text-muted);
+              letter-spacing: var(--tracking-mono);
+              text-transform: uppercase;
+              margin:      0 0 var(--space-4);
+            ">write_file · /src/app.ts</p>
+            <div class="comp-approval-buttons">
+              <button class="comp-btn comp-btn--approve">Approve</button>
+              <button class="comp-btn comp-btn--deny">Deny</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Session row with live dot atop icon -->
+        <div class="comp-block">
+          <span class="comp-block-label">session row · live dot on icon</span>
+          <div class="comp-session-row"
+               aria-label="Chat session: refactor auth module — streaming">
+            <div class="comp-icon-slot">
+              <div class="comp-icon-bg">
+                <svg class="comp-icon-svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="atom-badge atom-badge--live atom-badge--dot comp-icon-badge"
+                    aria-hidden="true"></span>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div class="comp-session-title">Refactor auth module</div>
+              <div class="comp-session-meta">streaming · 2 min ago</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Tab bar with notification dot on Chat tab -->
+        <div class="comp-block">
+          <span class="comp-block-label">tab bar · notification dot on chat tab</span>
+          <div class="comp-tab-bar" role="tablist" aria-label="Main navigation">
+            <div class="comp-tab-item"
+                 role="tab" aria-selected="true"
+                 aria-label="Chat, 3 unread messages">
+              <div class="comp-tab-icon">
+                <div class="comp-tab-icon-placeholder comp-tab-icon-placeholder--active">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true"
+                       style="color: var(--accent-primary);">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
+                <span class="atom-badge atom-badge--accent atom-badge--dot comp-tab-dot"
+                      aria-hidden="true"></span>
+              </div>
+              <span class="comp-tab-label comp-tab-label--active">Chat</span>
+            </div>
+            <div class="comp-tab-item"
+                 role="tab" aria-selected="false" aria-label="Files">
+              <div class="comp-tab-icon">
+                <div class="comp-tab-icon-placeholder">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true"
+                       style="color: var(--text-muted);">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                </div>
+              </div>
+              <span class="comp-tab-label">Files</span>
+            </div>
+            <div class="comp-tab-item"
+                 role="tab" aria-selected="false" aria-label="Settings">
+              <div class="comp-tab-icon">
+                <div class="comp-tab-icon-placeholder">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true"
+                       style="color: var(--text-muted);">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+                  </svg>
+                </div>
+              </div>
+              <span class="comp-tab-label">Settings</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. "NEW" accent badge on session row title -->
+        <div class="comp-block">
+          <span class="comp-block-label">session row title · "NEW" accent badge</span>
+          <div class="comp-session-row">
+            <div class="comp-icon-slot">
+              <div class="comp-icon-bg">
+                <svg class="comp-icon-svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div class="comp-session-title-row">
+                <span class="comp-session-title">Debug CI pipeline</span>
+                <span class="atom-badge atom-badge--accent atom-badge--sm"
+                      aria-hidden="true">NEW</span>
+              </div>
+              <div class="comp-session-meta">idle · just now</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /comp-compositions -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>

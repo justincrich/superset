@@ -11,7 +11,7 @@ Single-purpose, indivisible primitives used by chat + adjacent surfaces. Each at
 | 5 | `divider` | hairline horizontal + vertical, default / strong variants | completed |
 | 6 | `text-input` | single-line text field; default / focus / error / disabled | pending |
 | 7 | `textarea` | multi-line auto-grow; placeholder / typing / disabled | pending |
-| 8 | `pill` | base pill — used by chips, slash command pills, model badges; default / selected / dismissible | pending |
+| 8 | `pill` | base pill — used by chips, slash command pills, model badges; default / selected / dismissible | completed |
 | 9 | `kbd` | keyboard glyph for shortcut hints (`⌘ ⏎`, `Esc`) | completed |
 | 10 | `backdrop` | full-screen dimmer; opaque / translucent / blur variants | pending |
 | 11 | `tooltip` | positioned bubble with arrow; top / bottom / left / right | pending |
@@ -19,14 +19,14 @@ Single-purpose, indivisible primitives used by chat + adjacent surfaces. Each at
 | 13 | `progress-dots` | 3-dot loading indicator | pending |
 | 14 | `toast-base` | single toast layout; success / error / info / loading | pending |
 | 15 | `avatar` | single-letter / icon / image; circle, sizes sm/md/lg | pending |
-| 16 | `icon-glyph` | lucide stroke icons sized 14/16/20/24 via tokens | pending |
-| 17 | `live-activity-dot` | Dynamic Island pulsing dot — live / paused / dormant | pending |
-| 18 | `section-label` | mono uppercase wide-tracking label (`.type-meta` consumer) | pending |
+| 16 | `icon-glyph` | lucide stroke icons sized 14/16/20/24 via tokens | completed |
+| 17 | `live-activity-dot` | Dynamic Island pulsing dot — live / paused / dormant | completed |
+| 18 | `section-label` | mono uppercase wide-tracking label (`.type-meta` consumer) | completed |
 | 19 | `tool-status-rule` | 3px left accent in 4 status colors (running/done/pending/error) | pending |
 | 20 | `fab-base` | 56pt circular floating action button | pending |
 | 21 | `hit-target-wrapper` | invisible 44pt min tap zone wrapper | pending |
 | 22 | `scroll-fade` | top/bottom gradient fade overlay | pending |
-| 23 | `badge` | small count / status badge (`1 of N`, `New`) | pending |
+| 23 | `badge` | small count / status badge (`1 of N`, `New`) | completed |
 | 24 | `device-bezel` | iPhone 16 Pro Max bezel shell (used to frame views) | pending |
 | 25 | `home-indicator` | iOS home-indicator pill | pending |
 

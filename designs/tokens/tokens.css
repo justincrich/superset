@@ -240,6 +240,11 @@
   --motion-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
   --motion-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
+  /* Motion — loop cadences (animation-duration, not transition-duration) */
+  --motion-cadence-pulse-fast:   1s;       /* streaming-cursor blink */
+  --motion-cadence-pulse-medium: 1.4s;     /* live-activity-dot, Dynamic Island */
+  --motion-cadence-pulse-slow:   2s;       /* status-dot live variant ambient */
+
   /* Mobile chrome — iPhone 16 Pro Max ---------------------- */
   --device-width:          444px;
   --device-height:         962px;
@@ -412,6 +417,11 @@
   --motion-slow:        360ms;
   --motion-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
   --motion-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Motion — loop cadences (animation-duration, not transition-duration) */
+  --motion-cadence-pulse-fast:   1s;       /* streaming-cursor blink */
+  --motion-cadence-pulse-medium: 1.4s;     /* live-activity-dot, Dynamic Island */
+  --motion-cadence-pulse-slow:   2s;       /* status-dot live variant ambient */
 
   /* Mobile chrome — same geometry both themes -------------- */
   --device-width:          444px;
