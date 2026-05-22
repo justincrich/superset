@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-slash-command-option — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-slash-command-option — molecule-local layout + glue only.
+       NEVER redefines .atom-* styles — composes by class only.
+       TOKEN_GAP: gap: var(--space-half) in __body uses the defined
+       sub-scale token (2px). No true gap.
+       ================================================================ */
+
+    /* ---- Row base ----------------------------------------------- */
+    .mol-slash-command-option {
+      display:         flex;
+      align-items:     flex-start;
+      gap:             var(--space-3);
+      padding:         var(--space-3) var(--space-4);
+      min-height:      var(--touch-target-min);
+      background:      transparent;
+      border:          none;
+      width:           100%;
+      text-align:      left;
+      cursor:          pointer;
+      color:           var(--text-body);
+      outline:         none;
+      position:        relative;
+      transition:      background-color var(--motion-fast) var(--motion-ease-out);
+      -webkit-tap-highlight-color: transparent;
+      box-sizing:      border-box;
+    }
+
+    /* ---- Body slot ---------------------------------------------- */
+    .mol-slash-command-option__body {
+      flex:           1;
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-half);
+      min-width:      0;
+    }
+
+    /* ---- Row-1: name + badge ------------------------------------ */
+    .mol-slash-command-option__row-1 {
+      display:     inline-flex;
+      align-items: center;
+      gap:         var(--space-2);
+      flex-wrap:   nowrap;
+    }
+
+    /* ---- Command name ------------------------------------------- */
+    .mol-slash-command-option__name {
+      /* type-code provides font-family, size, weight */
+      color:          var(--accent-primary);
+      font-weight:    var(--font-weight-meta);
+      white-space:    nowrap;
+      flex-shrink:    0;
+    }
+
+    /* ---- Source badge (positioned in row-1 via atom-badge) ------ */
+    .mol-slash-command-option__source {
+      flex-shrink: 0;
+    }
+
+    /* ---- Description text --------------------------------------- */
+    .mol-slash-command-option__description {
+      /* type-body-sm provides font-family, size, weight, line-height */
+      color:     var(--text-muted);
+      min-width: 0;
+      overflow:  hidden;
+      display:   -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    /* ---- Loading indicator (trailing right side) ---------------- */
+    .mol-slash-command-option__loading {
+      display:     none;
+      flex-shrink: 0;
+      align-self:  center;
+    }
+
+    /* ---- Hover state -------------------------------------------- */
+    .mol-slash-command-option:hover,
+    .mol-slash-command-option.is-hover {
+      background: var(--surface-soft);
+    }
+
+    /* ---- Highlighted state (arrow-key navigation) --------------- */
+    .mol-slash-command-option.is-highlighted {
+      background: var(--surface-active);
+    }
+
+    /* ---- Focus state -------------------------------------------- */
+    .mol-slash-command-option:focus-visible,
+    .mol-slash-command-option.is-focus {
+      background: transparent;
+      box-shadow: inset 0 0 0 2px var(--border-focus);
+    }
+
+    .mol-slash-command-option.is-highlighted:focus-visible,
+    .mol-slash-command-option.is-highlighted.is-focus {
+      background: var(--surface-active);
+      box-shadow: inset 0 0 0 2px var(--border-focus);
+    }
+
+    /* ---- Loading state ------------------------------------------ */
+    .mol-slash-command-option.is-loading {
+      pointer-events: none;
+    }
+    .mol-slash-command-option.is-loading .mol-slash-command-option__loading {
+      display: flex;
+    }
+
+    /* ---- Category divider row ----------------------------------- */
+    .mol-slash-command-option__divider-row {
+      padding: var(--space-2) var(--space-4) var(--space-1);
+    }
+
+    /* ---- Faux popover composition shell ------------------------ */
+    .mol-popover-shell {
+      background:    var(--surface-overlay);
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      box-shadow:    var(--elevation-overlay);
+      overflow:      hidden;
+      width:         280px;
+    }
+
+    .mol-popover-shell__header {
+      padding:       var(--space-2) var(--space-4) var(--space-1);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* ================================================================
+       Preview layout helpers — not part of molecule spec
+       ================================================================ */
+
+    .demo-section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-heading);
+      margin:         0 0 var(--space-4);
+    }
+
+    .demo-row-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-faint);
+      margin:         0 0 var(--space-2);
+    }
+
+    .demo-block {
+      margin-bottom: var(--space-8);
+    }
+
+    .demo-states-row {
+      display:        flex;
+      flex-direction: column;
+      gap:            0;
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      overflow:       hidden;
+    }
+
+    .demo-states-row .mol-slash-command-option {
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .demo-states-row .mol-slash-command-option:last-child {
+      border-bottom: none;
+    }
+
+    .demo-state-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-faint);
+      padding:        var(--space-2) var(--space-4);
+      border-bottom:  1px solid var(--border-subtle);
+      background:     var(--surface-sunken);
+    }
+
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--space-8) 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">slash-command-option</h1>
+    <p class="crumb">molecule · slash-command popover row · atoms: badge, progress-dots, type-code, type-body-sm</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ====================================================
+           1. VARIANT MATRIX — 3 source variants
+           ==================================================== -->
+      <div class="variant">
+        <h3>1 · variant matrix — 3 source variants</h3>
+
+        <p class="demo-row-label">builtin (default)</p>
+        <div class="demo-block">
+          <button class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+        </div>
+
+        <p class="demo-row-label">project</p>
+        <div class="demo-block">
+          <button class="mol-slash-command-option mol-slash-command-option--project"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/typecheck — Run TypeScript type-check on workspace">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/typecheck</span>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">PROJECT</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Run TypeScript type-check on workspace</span>
+            </span>
+          </button>
+        </div>
+
+        <p class="demo-row-label">user</p>
+        <div class="demo-block">
+          <button class="mol-slash-command-option mol-slash-command-option--user"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/deploy — Deploy to staging">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/deploy</span>
+                <span class="atom-badge atom-badge--live atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">USER</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Deploy to staging</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ====================================================
+           2. STATE ROW — builtin in 5 states
+           ==================================================== -->
+      <div class="variant">
+        <h3>2 · state row — --builtin in 5 states</h3>
+        <div class="demo-states-row">
+
+          <!-- default -->
+          <div class="demo-state-label">default</div>
+          <button class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+
+          <!-- hover -->
+          <div class="demo-state-label">is-hover</div>
+          <button class="mol-slash-command-option mol-slash-command-option--builtin is-hover"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+
+          <!-- highlighted -->
+          <div class="demo-state-label">is-highlighted</div>
+          <button class="mol-slash-command-option mol-slash-command-option--builtin is-highlighted"
+                  role="option"
+                  aria-selected="true"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+
+          <!-- focus -->
+          <div class="demo-state-label">is-focus</div>
+          <button class="mol-slash-command-option mol-slash-command-option--builtin is-focus"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+
+          <!-- loading -->
+          <div class="demo-state-label">is-loading</div>
+          <button class="mol-slash-command-option mol-slash-command-option--builtin is-loading"
+                  role="option"
+                  aria-selected="false"
+                  aria-busy="true"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+            <span class="mol-slash-command-option__loading" aria-hidden="true">
+              <span class="atom-progress-dots atom-progress-dots--sm atom-progress-dots--muted">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </span>
+          </button>
+
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ====================================================
+           3. COMPOSITION — Faux popover list
+           ==================================================== -->
+      <div class="variant">
+        <h3>3 · composition — faux slash-command popover</h3>
+
+        <div class="mol-popover-shell" role="listbox" aria-label="Slash commands" aria-activedescendant="dark-cmd-plan">
+
+          <!-- Header search hint -->
+          <div class="mol-popover-shell__header">
+            <span class="atom-section-label atom-section-label--faint">slash commands</span>
+          </div>
+
+          <!-- Built-in 1: /model highlighted -->
+          <button id="dark-cmd-model"
+                  class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+
+          <!-- Built-in 2: /plan highlighted -->
+          <button id="dark-cmd-plan"
+                  class="mol-slash-command-option mol-slash-command-option--builtin is-highlighted"
+                  role="option"
+                  aria-selected="true"
+                  aria-label="/plan — Create a plan">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/plan</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Create a plan</span>
+            </span>
+          </button>
+
+          <!-- Built-in 3: /review -->
+          <button class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/review — Review changes">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/review</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Review changes</span>
+            </span>
+          </button>
+
+          <!-- Built-in 4: /stop -->
+          <button class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/stop — Stop current session">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/stop</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Stop current session</span>
+            </span>
+          </button>
+
+          <!-- Built-in 5: /clear -->
+          <button class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/clear — Clear conversation">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/clear</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Clear conversation</span>
+            </span>
+          </button>
+
+          <!-- Divider + section label -->
+          <div class="mol-slash-command-option__divider-row" aria-hidden="true">
+            <span class="atom-section-label atom-section-label--with-rule">custom</span>
+          </div>
+
+          <!-- Project command: /typecheck -->
+          <button class="mol-slash-command-option mol-slash-command-option--project"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/typecheck — Run TypeScript type-check on workspace">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/typecheck</span>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">PROJECT</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Run TypeScript type-check on workspace</span>
+            </span>
+          </button>
+
+          <!-- User command: /deploy -->
+          <button class="mol-slash-command-option mol-slash-command-option--user"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/deploy — Deploy to staging">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/deploy</span>
+                <span class="atom-badge atom-badge--live atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">USER</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Deploy to staging</span>
+            </span>
+          </button>
+
+        </div><!-- /mol-popover-shell -->
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ====================================================
+           1. VARIANT MATRIX — 3 source variants
+           ==================================================== -->
+      <div class="variant">
+        <h3>1 · variant matrix — 3 source variants</h3>
+
+        <p class="demo-row-label">builtin (default)</p>
+        <div class="demo-block">
+          <button class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+        </div>
+
+        <p class="demo-row-label">project</p>
+        <div class="demo-block">
+          <button class="mol-slash-command-option mol-slash-command-option--project"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/typecheck — Run TypeScript type-check on workspace">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/typecheck</span>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">PROJECT</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Run TypeScript type-check on workspace</span>
+            </span>
+          </button>
+        </div>
+
+        <p class="demo-row-label">user</p>
+        <div class="demo-block">
+          <button class="mol-slash-command-option mol-slash-command-option--user"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/deploy — Deploy to staging">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/deploy</span>
+                <span class="atom-badge atom-badge--live atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">USER</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Deploy to staging</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ====================================================
+           2. STATE ROW — builtin in 5 states
+           ==================================================== -->
+      <div class="variant">
+        <h3>2 · state row — --builtin in 5 states</h3>
+        <div class="demo-states-row">
+
+          <!-- default -->
+          <div class="demo-state-label">default</div>
+          <button class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+
+          <!-- hover -->
+          <div class="demo-state-label">is-hover</div>
+          <button class="mol-slash-command-option mol-slash-command-option--builtin is-hover"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+
+          <!-- highlighted -->
+          <div class="demo-state-label">is-highlighted</div>
+          <button class="mol-slash-command-option mol-slash-command-option--builtin is-highlighted"
+                  role="option"
+                  aria-selected="true"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+
+          <!-- focus -->
+          <div class="demo-state-label">is-focus</div>
+          <button class="mol-slash-command-option mol-slash-command-option--builtin is-focus"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+
+          <!-- loading -->
+          <div class="demo-state-label">is-loading</div>
+          <button class="mol-slash-command-option mol-slash-command-option--builtin is-loading"
+                  role="option"
+                  aria-selected="false"
+                  aria-busy="true"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+            <span class="mol-slash-command-option__loading" aria-hidden="true">
+              <span class="atom-progress-dots atom-progress-dots--sm atom-progress-dots--muted">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </span>
+          </button>
+
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ====================================================
+           3. COMPOSITION — Faux popover list
+           ==================================================== -->
+      <div class="variant">
+        <h3>3 · composition — faux slash-command popover</h3>
+
+        <div class="mol-popover-shell" role="listbox" aria-label="Slash commands" aria-activedescendant="light-cmd-plan">
+
+          <!-- Header search hint -->
+          <div class="mol-popover-shell__header">
+            <span class="atom-section-label atom-section-label--faint">slash commands</span>
+          </div>
+
+          <!-- Built-in 1: /model -->
+          <button id="light-cmd-model"
+                  class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/model — Switch model">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/model</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Switch model</span>
+            </span>
+          </button>
+
+          <!-- Built-in 2: /plan highlighted -->
+          <button id="light-cmd-plan"
+                  class="mol-slash-command-option mol-slash-command-option--builtin is-highlighted"
+                  role="option"
+                  aria-selected="true"
+                  aria-label="/plan — Create a plan">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/plan</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Create a plan</span>
+            </span>
+          </button>
+
+          <!-- Built-in 3: /review -->
+          <button class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/review — Review changes">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/review</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Review changes</span>
+            </span>
+          </button>
+
+          <!-- Built-in 4: /stop -->
+          <button class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/stop — Stop current session">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/stop</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Stop current session</span>
+            </span>
+          </button>
+
+          <!-- Built-in 5: /clear -->
+          <button class="mol-slash-command-option mol-slash-command-option--builtin"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/clear — Clear conversation">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/clear</span>
+                <span class="atom-badge atom-badge--neutral atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">BUILT-IN</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Clear conversation</span>
+            </span>
+          </button>
+
+          <!-- Divider + section label -->
+          <div class="mol-slash-command-option__divider-row" aria-hidden="true">
+            <span class="atom-section-label atom-section-label--with-rule">custom</span>
+          </div>
+
+          <!-- Project command: /typecheck -->
+          <button class="mol-slash-command-option mol-slash-command-option--project"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/typecheck — Run TypeScript type-check on workspace">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/typecheck</span>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">PROJECT</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Run TypeScript type-check on workspace</span>
+            </span>
+          </button>
+
+          <!-- User command: /deploy -->
+          <button class="mol-slash-command-option mol-slash-command-option--user"
+                  role="option"
+                  aria-selected="false"
+                  aria-label="/deploy — Deploy to staging">
+            <span class="mol-slash-command-option__body">
+              <span class="mol-slash-command-option__row-1">
+                <span class="mol-slash-command-option__name type-code">/deploy</span>
+                <span class="atom-badge atom-badge--live atom-badge--sm mol-slash-command-option__source"
+                      aria-hidden="true">USER</span>
+              </span>
+              <span class="mol-slash-command-option__description type-body-sm">Deploy to staging</span>
+            </span>
+          </button>
+
+        </div><!-- /mol-popover-shell -->
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
