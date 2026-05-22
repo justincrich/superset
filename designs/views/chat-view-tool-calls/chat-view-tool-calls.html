@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>chat-view-tool-calls — UC-RENDER-04 §A</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-local layout glue — ONLY .view-chat-view-tool-calls__* rules.
+       Never redefines .atom-* or .mol-* classes.
+       ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding: var(--space-8) var(--space-4);
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    /* Full-width pane — device centered inside */
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- View viewport layout --------------------------------- */
+    /* The viewport inside atom-device-bezel is a flex column.
+       These classes wire up the flex slots without touching any
+       atom or molecule rule. */
+
+    .view-chat-view-tool-calls__thread {
+      flex:           1;
+      overflow-y:     auto;
+      padding:        var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-5);
+      position:       relative; /* scroll-fade absolute anchor */
+    }
+
+    .view-chat-view-tool-calls__assistant {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    /* Prose text that wraps each tool call card */
+    .view-chat-view-tool-calls__body {
+      /* paragraph container — type-body provides font */
+    }
+
+    .view-chat-view-tool-calls__body p {
+      margin:      0 0 var(--space-3);
+      line-height: var(--line-height-normal);
+    }
+
+    .view-chat-view-tool-calls__body p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Stack of tool call cards: gap between prose + card pairs */
+    .view-chat-view-tool-calls__tool-stack {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+    }
+
+    /* Each prose+card pair sits together */
+    .view-chat-view-tool-calls__tool-item {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    /* Composer footer matches chat-view-thread pattern exactly */
+    .view-chat-view-tool-calls__composer {
+      border-top:        1px solid var(--border-subtle);
+      display:           flex;
+      flex-direction:    column;
+      gap:               var(--space-2);
+      padding-block-end: var(--safe-area-bottom);
+      background:        var(--surface-page);
+      flex-shrink:       0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">chat-view-tool-calls</h1>
+    <p class="crumb">UC-RENDER-04 §A · tool-call status states: running / done / error</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- App Header (mol-app-header) -->
+          <header class="mol-app-header" role="banner">
+            <div class="mol-app-header__back">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Back to sessions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mol-app-header__title-wrap">
+              <h1 class="mol-app-header__title type-title">Run test suite</h1>
+              <p class="mol-app-header__subtitle type-meta">superset · main</p>
+            </div>
+
+            <div class="mol-app-header__actions">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Session actions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="5"  r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </header><!-- /mol-app-header -->
+
+          <!-- Thread scroll region -->
+          <main
+            class="view-chat-view-tool-calls__thread"
+            role="log"
+            aria-label="Chat thread"
+            aria-live="polite"
+          >
+            <!-- Scroll fade top -->
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden" aria-hidden="true"></div>
+
+            <!-- User message -->
+            <div class="mol-user-message-bubble" role="article" aria-label="Your message">
+              <button
+                class="mol-user-message-bubble__bubble type-body"
+                type="button"
+                aria-label="Long press to copy message"
+              >
+                <p class="mol-user-message-bubble__text">Run the billing tests and report</p>
+              </button>
+              <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:41">
+                <span class="type-meta">9:41</span>
+              </div>
+            </div><!-- /mol-user-message-bubble -->
+
+            <!-- Assistant message — mid-turn (streaming, tools in progress) -->
+            <article class="view-chat-view-tool-calls__assistant" aria-label="Assistant message, streaming">
+
+              <!-- mol-assistant-message-head — streaming variant -->
+              <div class="mol-assistant-message-head mol-assistant-message-head--streaming">
+                <span
+                  class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                  aria-hidden="true"
+                >A</span>
+                <span class="mol-assistant-message-head__label">Assistant</span>
+                <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                <span class="mol-assistant-message-head__time">9:41 AM</span>
+                <div class="mol-assistant-message-head__status" aria-label="Streaming">
+                  <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+                  <span class="atom-section-label atom-section-label--inline" style="color: var(--state-live-fg);">STREAMING</span>
+                </div>
+              </div><!-- /mol-assistant-message-head -->
+
+              <!-- Assistant body intro -->
+              <div class="view-chat-view-tool-calls__body type-body" aria-label="Assistant response">
+                <p>I'll run the test suite to verify:</p>
+              </div>
+
+              <!-- Three stacked tool call cards -->
+              <div class="view-chat-view-tool-calls__tool-stack" role="list" aria-label="Tool calls">
+
+                <!-- ── Tool call 1 — RUNNING ───────────────────── -->
+                <div class="view-chat-view-tool-calls__tool-item" role="listitem">
+
+                  <!-- Prose just above card -->
+                  <p class="type-body-sm" style="color: var(--text-muted); margin: 0;">Starting test suite…</p>
+
+                  <!-- mol-tool-call-card — running state -->
+                  <div
+                    class="mol-tool-call-card"
+                    role="article"
+                    aria-label="Tool call: bash, status running"
+                    tabindex="0"
+                  >
+                    <!-- Left status rule — glowing green for running -->
+                    <div class="mol-tool-call-card__rule">
+                      <span class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--running" aria-hidden="true"></span>
+                    </div>
+
+                    <div class="mol-tool-call-card__content">
+                      <!-- Header row: tool name pill + status pill -->
+                      <div class="mol-tool-call-card__header">
+                        <!-- Tool name -->
+                        <span
+                          class="mol-tool-call-card__name atom-pill atom-pill--default atom-pill--sm"
+                          aria-label="Tool: bash"
+                        >bash</span>
+
+                        <!-- Status: RUNNING — live pill with spinner -->
+                        <div class="mol-tool-call-card__status" aria-label="Status: running">
+                          <span
+                            class="atom-pill atom-pill--live atom-pill--sm atom-pill--leading-icon"
+                            role="status"
+                            aria-label="Running"
+                          >
+                            <!-- Spinner replaces icon slot -->
+                            <span class="atom-spinner--circular atom-spinner--xs atom-spinner--live" aria-hidden="true"></span>
+                            RUNNING
+                          </span>
+                        </div>
+                      </div><!-- /header -->
+
+                      <!-- Args preview -->
+                      <p class="mol-tool-call-card__args" aria-label="Command arguments">bun test --filter '**/relay/*' --bail</p>
+                    </div><!-- /content -->
+
+                    <!-- Collapse chevron -->
+                    <div class="mol-tool-call-card__chevron" aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                    </div>
+                  </div><!-- /mol-tool-call-card running -->
+
+                </div><!-- /tool-item 1 -->
+
+                <!-- ── Tool call 2 — DONE ──────────────────────── -->
+                <div class="view-chat-view-tool-calls__tool-item" role="listitem">
+
+                  <!-- Prose just above card -->
+                  <p class="type-body-sm" style="color: var(--text-muted); margin: 0;">Type checks passed cleanly.</p>
+
+                  <!-- mol-tool-call-card — done state -->
+                  <div
+                    class="mol-tool-call-card"
+                    role="article"
+                    aria-label="Tool call: bash, status done"
+                    tabindex="0"
+                  >
+                    <!-- Left status rule — green success -->
+                    <div class="mol-tool-call-card__rule">
+                      <span class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--done" aria-hidden="true"></span>
+                    </div>
+
+                    <div class="mol-tool-call-card__content">
+                      <!-- Header row -->
+                      <div class="mol-tool-call-card__header">
+                        <!-- Tool name -->
+                        <span
+                          class="mol-tool-call-card__name atom-pill atom-pill--default atom-pill--sm"
+                          aria-label="Tool: bash"
+                        >bash</span>
+
+                        <!-- Status: DONE -->
+                        <div class="mol-tool-call-card__status" aria-label="Status: done">
+                          <span
+                            class="atom-pill atom-pill--default atom-pill--sm atom-pill--leading-icon"
+                            role="status"
+                            aria-label="Done in 0.4 seconds"
+                          >
+                            <!-- Checkmark icon -->
+                            <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true" style="color: var(--state-success-fg);">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            DONE · 0.4s
+                          </span>
+                        </div>
+                      </div><!-- /header -->
+
+                      <!-- Args preview -->
+                      <p class="mol-tool-call-card__args" aria-label="Command arguments">npm run typecheck</p>
+                    </div><!-- /content -->
+
+                    <!-- Collapse chevron -->
+                    <div class="mol-tool-call-card__chevron" aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                    </div>
+                  </div><!-- /mol-tool-call-card done -->
+
+                </div><!-- /tool-item 2 -->
+
+                <!-- ── Tool call 3 — ERROR ─────────────────────── -->
+                <div class="view-chat-view-tool-calls__tool-item" role="listitem">
+
+                  <!-- Prose just above card -->
+                  <p class="type-body-sm" style="color: var(--text-muted); margin: 0;">But the billing tests turned up a regression:</p>
+
+                  <!-- mol-tool-call-card — error state -->
+                  <div
+                    class="mol-tool-call-card"
+                    role="article"
+                    aria-label="Tool call: bash, status failed"
+                    tabindex="0"
+                  >
+                    <!-- Left status rule — red for error -->
+                    <div class="mol-tool-call-card__rule">
+                      <span class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--error" aria-hidden="true"></span>
+                    </div>
+
+                    <div class="mol-tool-call-card__content">
+                      <!-- Header row -->
+                      <div class="mol-tool-call-card__header">
+                        <!-- Tool name -->
+                        <span
+                          class="mol-tool-call-card__name atom-pill atom-pill--default atom-pill--sm"
+                          aria-label="Tool: bash"
+                        >bash</span>
+
+                        <!-- Status: FAILED -->
+                        <div class="mol-tool-call-card__status" aria-label="Status: failed">
+                          <span
+                            class="atom-pill atom-pill--danger atom-pill--sm atom-pill--leading-icon"
+                            role="status"
+                            aria-label="Failed with exit code 1"
+                          >
+                            <!-- Warning triangle icon -->
+                            <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                              <line x1="12" y1="9" x2="12" y2="13"/>
+                              <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            FAILED · exit 1
+                          </span>
+                        </div>
+                      </div><!-- /header -->
+
+                      <!-- Args preview -->
+                      <p class="mol-tool-call-card__args" aria-label="Command arguments">bun test --filter='**/billing/*'</p>
+                    </div><!-- /content -->
+
+                    <!-- Collapse chevron -->
+                    <div class="mol-tool-call-card__chevron" aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                    </div>
+                  </div><!-- /mol-tool-call-card error -->
+
+                </div><!-- /tool-item 3 -->
+
+              </div><!-- /tool-stack -->
+
+              <!-- Assistant body continuation — after the failed card -->
+              <div class="view-chat-view-tool-calls__body type-body" aria-label="Continuation">
+                <p>Investigating the failed test now<span class="atom-streaming-cursor" aria-hidden="true"></span></p>
+              </div>
+
+            </article><!-- /assistant -->
+
+            <!-- Scroll fade bottom -->
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+
+          </main><!-- /role=log -->
+
+          <!-- Composer footer -->
+          <footer class="view-chat-view-tool-calls__composer" aria-label="Message composer">
+
+            <!-- mol-composer-toolbar -->
+            <div class="mol-composer-toolbar" role="toolbar" aria-label="Composer options">
+              <!-- Model trigger -->
+              <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Model: Sonnet 4.6"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/>
+                    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                  </svg>
+                  Sonnet 4.6
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Thinking level trigger -->
+              <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Thinking: low"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                  </svg>
+                  Thinking: low
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Permission trigger -->
+              <div class="mol-composer-toolbar__trigger" data-trigger="permission">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Permission: default"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  Permission: default
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Right-fade for overflow -->
+              <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+            </div><!-- /mol-composer-toolbar -->
+
+            <!-- mol-composer-row — streaming variant (Stop button) -->
+            <div class="mol-composer-row mol-composer-row--streaming">
+              <textarea
+                class="mol-composer-row__input atom-textarea atom-textarea--composer is-disabled"
+                placeholder="(input disabled while turn is streaming)"
+                disabled
+                aria-label="Message input — disabled while streaming"
+                rows="1"
+              ></textarea>
+
+              <div class="mol-composer-row__action">
+                <!-- Stop button — destructive pill -->
+                <button
+                  class="atom-icon-button atom-icon-button--destructive atom-icon-button--md atom-icon-button--pill"
+                  type="button"
+                  aria-label="Stop streaming"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="14" rx="2"/>
+                  </svg>
+                </button>
+              </div>
+            </div><!-- /mol-composer-row -->
+
+          </footer><!-- /composer -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- App Header -->
+          <header class="mol-app-header" role="banner">
+            <div class="mol-app-header__back">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Back to sessions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mol-app-header__title-wrap">
+              <h1 class="mol-app-header__title type-title">Run test suite</h1>
+              <p class="mol-app-header__subtitle type-meta">superset · main</p>
+            </div>
+
+            <div class="mol-app-header__actions">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Session actions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="5"  r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </header><!-- /mol-app-header -->
+
+          <!-- Thread scroll region -->
+          <main
+            class="view-chat-view-tool-calls__thread"
+            role="log"
+            aria-label="Chat thread"
+            aria-live="polite"
+          >
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden" aria-hidden="true"></div>
+
+            <!-- User message -->
+            <div class="mol-user-message-bubble" role="article" aria-label="Your message">
+              <button
+                class="mol-user-message-bubble__bubble type-body"
+                type="button"
+                aria-label="Long press to copy message"
+              >
+                <p class="mol-user-message-bubble__text">Run the billing tests and report</p>
+              </button>
+              <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:41">
+                <span class="type-meta">9:41</span>
+              </div>
+            </div><!-- /mol-user-message-bubble -->
+
+            <!-- Assistant message -->
+            <article class="view-chat-view-tool-calls__assistant" aria-label="Assistant message, streaming">
+
+              <div class="mol-assistant-message-head mol-assistant-message-head--streaming">
+                <span
+                  class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                  aria-hidden="true"
+                >A</span>
+                <span class="mol-assistant-message-head__label">Assistant</span>
+                <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                <span class="mol-assistant-message-head__time">9:41 AM</span>
+                <div class="mol-assistant-message-head__status" aria-label="Streaming">
+                  <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+                  <span class="atom-section-label atom-section-label--inline" style="color: var(--state-live-fg);">STREAMING</span>
+                </div>
+              </div>
+
+              <!-- Intro prose -->
+              <div class="view-chat-view-tool-calls__body type-body">
+                <p>I'll run the test suite to verify:</p>
+              </div>
+
+              <!-- Three stacked tool call cards -->
+              <div class="view-chat-view-tool-calls__tool-stack" role="list" aria-label="Tool calls">
+
+                <!-- Tool call 1 — RUNNING -->
+                <div class="view-chat-view-tool-calls__tool-item" role="listitem">
+                  <p class="type-body-sm" style="color: var(--text-muted); margin: 0;">Starting test suite…</p>
+                  <div
+                    class="mol-tool-call-card"
+                    role="article"
+                    aria-label="Tool call: bash, status running"
+                    tabindex="0"
+                  >
+                    <div class="mol-tool-call-card__rule">
+                      <span class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--running" aria-hidden="true"></span>
+                    </div>
+                    <div class="mol-tool-call-card__content">
+                      <div class="mol-tool-call-card__header">
+                        <span class="mol-tool-call-card__name atom-pill atom-pill--default atom-pill--sm" aria-label="Tool: bash">bash</span>
+                        <div class="mol-tool-call-card__status" aria-label="Status: running">
+                          <span
+                            class="atom-pill atom-pill--live atom-pill--sm atom-pill--leading-icon"
+                            role="status"
+                            aria-label="Running"
+                          >
+                            <span class="atom-spinner--circular atom-spinner--xs atom-spinner--live" aria-hidden="true"></span>
+                            RUNNING
+                          </span>
+                        </div>
+                      </div>
+                      <p class="mol-tool-call-card__args" aria-label="Command arguments">bun test --filter '**/relay/*' --bail</p>
+                    </div>
+                    <div class="mol-tool-call-card__chevron" aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tool call 2 — DONE -->
+                <div class="view-chat-view-tool-calls__tool-item" role="listitem">
+                  <p class="type-body-sm" style="color: var(--text-muted); margin: 0;">Type checks passed cleanly.</p>
+                  <div
+                    class="mol-tool-call-card"
+                    role="article"
+                    aria-label="Tool call: bash, status done"
+                    tabindex="0"
+                  >
+                    <div class="mol-tool-call-card__rule">
+                      <span class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--done" aria-hidden="true"></span>
+                    </div>
+                    <div class="mol-tool-call-card__content">
+                      <div class="mol-tool-call-card__header">
+                        <span class="mol-tool-call-card__name atom-pill atom-pill--default atom-pill--sm" aria-label="Tool: bash">bash</span>
+                        <div class="mol-tool-call-card__status" aria-label="Status: done">
+                          <span
+                            class="atom-pill atom-pill--default atom-pill--sm atom-pill--leading-icon"
+                            role="status"
+                            aria-label="Done in 0.4 seconds"
+                          >
+                            <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true" style="color: var(--state-success-fg);">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            DONE · 0.4s
+                          </span>
+                        </div>
+                      </div>
+                      <p class="mol-tool-call-card__args" aria-label="Command arguments">npm run typecheck</p>
+                    </div>
+                    <div class="mol-tool-call-card__chevron" aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tool call 3 — ERROR -->
+                <div class="view-chat-view-tool-calls__tool-item" role="listitem">
+                  <p class="type-body-sm" style="color: var(--text-muted); margin: 0;">But the billing tests turned up a regression:</p>
+                  <div
+                    class="mol-tool-call-card"
+                    role="article"
+                    aria-label="Tool call: bash, status failed"
+                    tabindex="0"
+                  >
+                    <div class="mol-tool-call-card__rule">
+                      <span class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--error" aria-hidden="true"></span>
+                    </div>
+                    <div class="mol-tool-call-card__content">
+                      <div class="mol-tool-call-card__header">
+                        <span class="mol-tool-call-card__name atom-pill atom-pill--default atom-pill--sm" aria-label="Tool: bash">bash</span>
+                        <div class="mol-tool-call-card__status" aria-label="Status: failed">
+                          <span
+                            class="atom-pill atom-pill--danger atom-pill--sm atom-pill--leading-icon"
+                            role="status"
+                            aria-label="Failed with exit code 1"
+                          >
+                            <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                              <line x1="12" y1="9" x2="12" y2="13"/>
+                              <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            FAILED · exit 1
+                          </span>
+                        </div>
+                      </div>
+                      <p class="mol-tool-call-card__args" aria-label="Command arguments">bun test --filter='**/billing/*'</p>
+                    </div>
+                    <div class="mol-tool-call-card__chevron" aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- /tool-stack -->
+
+              <!-- Continuation prose with streaming cursor -->
+              <div class="view-chat-view-tool-calls__body type-body">
+                <p>Investigating the failed test now<span class="atom-streaming-cursor" aria-hidden="true"></span></p>
+              </div>
+
+            </article>
+
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+
+          </main><!-- /role=log -->
+
+          <!-- Composer footer -->
+          <footer class="view-chat-view-tool-calls__composer" aria-label="Message composer">
+
+            <div class="mol-composer-toolbar" role="toolbar" aria-label="Composer options">
+              <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Model: Sonnet 4.6"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/>
+                    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                  </svg>
+                  Sonnet 4.6
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Thinking: low"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                  </svg>
+                  Thinking: low
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="mol-composer-toolbar__trigger" data-trigger="permission">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Permission: default"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  Permission: default
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+            </div><!-- /mol-composer-toolbar -->
+
+            <div class="mol-composer-row mol-composer-row--streaming">
+              <textarea
+                class="mol-composer-row__input atom-textarea atom-textarea--composer is-disabled"
+                placeholder="(input disabled while turn is streaming)"
+                disabled
+                aria-label="Message input — disabled while streaming"
+                rows="1"
+              ></textarea>
+
+              <div class="mol-composer-row__action">
+                <button
+                  class="atom-icon-button atom-icon-button--destructive atom-icon-button--md atom-icon-button--pill"
+                  type="button"
+                  aria-label="Stop streaming"
+                >
+                  <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="14" rx="2"/>
+                  </svg>
+                </button>
+              </div>
+            </div><!-- /mol-composer-row -->
+
+          </footer><!-- /composer -->
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
