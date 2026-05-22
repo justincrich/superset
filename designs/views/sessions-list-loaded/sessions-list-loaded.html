@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sessions-list-loaded — UC-NAV §A</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-local layout glue — ONLY .view-sessions-list-loaded__* rules.
+       Never redefines .atom-* or .mol-* classes.
+       ================================================================ */
+
+    /* ---- Page harness -------------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding:       var(--space-8) var(--space-4);
+      background:    var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- Viewport layout ----------------------------------------- */
+    /*
+     * The atom-device-bezel__viewport is a flex column.
+     * This view slots: header | scrollable-list | tab-bar
+     */
+
+    /* Sessions scroll region — grows to fill remaining space */
+    .view-sessions-list-loaded__list {
+      flex:           1;
+      overflow-y:     auto;
+      position:       relative; /* scroll-fade anchor */
+    }
+
+    /* The ordered list inside the scroll region */
+    .view-sessions-list-loaded__items {
+      list-style: none;
+      margin:     0;
+      padding:    0;
+    }
+
+    /* ---- Session row meta line ------------------------------------ */
+    /*
+     * The project-first meta layout adds branch icon + branch name +
+     * separator + host icon + host name + separator + timestamp,
+     * plus an optional status badge (streaming / pause pending).
+     * All composed inline from atom-icon-glyph and type-meta.
+     */
+    .view-sessions-list-loaded__meta-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-1);
+      flex-wrap:   nowrap;
+      overflow:    hidden;
+    }
+
+    .view-sessions-list-loaded__meta-sep {
+      color:       var(--text-faint);
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .view-sessions-list-loaded__meta-text {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      white-space:    nowrap;
+      overflow:       hidden;
+      text-overflow:  ellipsis;
+    }
+
+    /* Status badge appended after timestamp for live/warning rows */
+    .view-sessions-list-loaded__meta-status {
+      flex-shrink:    0;
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      white-space:    nowrap;
+    }
+
+    .view-sessions-list-loaded__meta-status--live {
+      color: var(--state-live-fg);
+    }
+
+    .view-sessions-list-loaded__meta-status--warning {
+      color: var(--state-warning-fg);
+    }
+
+    /* ---- Tab bar -------------------------------------------------- */
+    /*
+     * Fixed to bottom of the viewport. Hairline top border + surface-page
+     * bg + backdrop-blur 20px. Sits above home indicator.
+     */
+    .view-sessions-list-loaded__tab-bar {
+      display:          flex;
+      align-items:      stretch;
+      border-top:       1px solid var(--border-subtle);
+      background:       var(--surface-page);
+      backdrop-filter:  blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      flex-shrink:      0;
+      padding-bottom:   var(--safe-area-bottom, 0px);
+      position:         relative;
+      z-index:          20;
+    }
+
+    /* ---- FAB ----------------------------------------------------- */
+    /*
+     * Absolutely positioned in the content area (relative to
+     * atom-device-bezel__viewport). Sits above the tab bar.
+     * We position it relative to the viewport using bottom offset
+     * that clears the tab bar (~56px) + space-4 margin.
+     */
+    .view-sessions-list-loaded__fab-wrap {
+      position: absolute;
+      right:    var(--space-4);
+      bottom:   calc(var(--touch-target-min) + var(--space-6));
+      z-index:  15;
+    }
+
+    /* ---- Screen-reader-only utility ------------------------------ */
+    .sr-only {
+      position:    absolute;
+      width:       1px;
+      height:      1px;
+      padding:     0;
+      margin:      -1px;
+      overflow:    hidden;
+      clip:        rect(0 0 0 0);
+      white-space: nowrap;
+      border:      0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================================================================
+       Header plate
+  ================================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">sessions-list-loaded</h1>
+    <p class="crumb">UC-NAV §A · canonical Chat tab landing — project-first sessions list</p>
+  </div>
+
+  <!-- ================================================================
+       Stacked theme panes — dark first, light second
+  ================================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ──────────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- ── mol-project-chip-header --multi-project ──────────── -->
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project" role="banner">
+            <!-- Row 1: hamburger + project chip -->
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu"
+                type="button"
+                aria-label="Open navigation drawer"
+              >
+                <!-- hamburger / menu icon -->
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+
+              <!-- Project chip — tappable in multi-project mode -->
+              <button
+                class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md"
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                aria-label="Switch project — currently: superset"
+              >
+                <!-- package / box icon -->
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <!-- chevron -->
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Row 2: search + filter -->
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="dark-search">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input
+                  id="dark-search"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input"
+                  placeholder="Search sessions"
+                  aria-label="Search sessions"
+                />
+              </div>
+
+              <!-- Filter / settings icon-button -->
+              <div class="mol-project-chip-header__filter">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Filter sessions"
+                >
+                  <!-- settings / sliders icon -->
+                  <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4"  y1="6"  x2="20" y2="6"/>
+                    <line x1="4"  y1="12" x2="20" y2="12"/>
+                    <line x1="4"  y1="18" x2="20" y2="18"/>
+                    <circle cx="8"  cy="6"  r="2" fill="var(--surface-page)"/>
+                    <circle cx="16" cy="12" r="2" fill="var(--surface-page)"/>
+                    <circle cx="10" cy="18" r="2" fill="var(--surface-page)"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </header><!-- /mol-project-chip-header -->
+
+          <!-- ── Sessions scroll region ────────────────────────────── -->
+          <main
+            class="view-sessions-list-loaded__list"
+            role="list"
+            aria-label="Sessions"
+          >
+            <ol class="view-sessions-list-loaded__items" role="list">
+
+              <!-- ── Row 1: Chat-v2 design · live · streaming ─────── -->
+              <li role="listitem">
+                <button
+                  class="mol-session-row"
+                  type="button"
+                  aria-label="Chat-v2 design · chat-mobile-plan · macbook · 2 minutes ago · streaming"
+                >
+                  <!-- Status dot: live (mint, pulsing) -->
+                  <div class="mol-session-row__leading" aria-hidden="true">
+                    <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm"></span>
+                  </div>
+
+                  <div class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body-sm">Chat-v2 design</span>
+                    <!-- Meta: branch · host · time · streaming -->
+                    <div class="mol-session-row__meta view-sessions-list-loaded__meta-row" aria-hidden="true">
+                      <!-- branch icon -->
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6"  cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 0 1-9 9"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">chat-mobile-plan</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <!-- host icon: laptop -->
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <path d="M8 21h8M12 17v4"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">macbook</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-text">2m ago</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-status view-sessions-list-loaded__meta-status--live">streaming</span>
+                    </div>
+                  </div>
+                </button>
+                <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              </li>
+
+              <!-- ── Row 2: Migration plan · live · streaming ──────── -->
+              <li role="listitem">
+                <button
+                  class="mol-session-row"
+                  type="button"
+                  aria-label="Migration plan · api-rewrite · cloud-1 · 5 minutes ago · streaming"
+                >
+                  <div class="mol-session-row__leading" aria-hidden="true">
+                    <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm"></span>
+                  </div>
+
+                  <div class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body-sm">Migration plan</span>
+                    <div class="mol-session-row__meta view-sessions-list-loaded__meta-row" aria-hidden="true">
+                      <!-- branch icon -->
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6"  cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 0 1-9 9"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">api-rewrite</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <!-- host icon: cloud -->
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">cloud-1</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-text">5m ago</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-status view-sessions-list-loaded__meta-status--live">streaming</span>
+                    </div>
+                  </div>
+                </button>
+                <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              </li>
+
+              <!-- ── Row 3: API cleanup · idle · 1h ago ────────────── -->
+              <li role="listitem">
+                <button
+                  class="mol-session-row"
+                  type="button"
+                  aria-label="API cleanup · chat-mobile-plan · macbook · 1 hour ago"
+                >
+                  <div class="mol-session-row__leading" aria-hidden="true">
+                    <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm"></span>
+                  </div>
+
+                  <div class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body-sm">API cleanup</span>
+                    <div class="mol-session-row__meta view-sessions-list-loaded__meta-row" aria-hidden="true">
+                      <!-- branch icon -->
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6"  cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 0 1-9 9"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">chat-mobile-plan</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <!-- host icon: laptop -->
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <path d="M8 21h8M12 17v4"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">macbook</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-text">1h ago</span>
+                    </div>
+                  </div>
+                </button>
+                <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              </li>
+
+              <!-- ── Row 4: Auth refactor · warning · pause pending ── -->
+              <li role="listitem">
+                <button
+                  class="mol-session-row"
+                  type="button"
+                  aria-label="Auth refactor · main · desktop · pause pending"
+                >
+                  <div class="mol-session-row__leading" aria-hidden="true">
+                    <span class="atom-status-dot atom-status-dot--warning atom-status-dot--sm"></span>
+                  </div>
+
+                  <div class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body-sm">Auth refactor</span>
+                    <div class="mol-session-row__meta view-sessions-list-loaded__meta-row" aria-hidden="true">
+                      <!-- branch icon -->
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6"  cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 0 1-9 9"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">main</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <!-- host icon: laptop -->
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <path d="M8 21h8M12 17v4"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">desktop</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-status view-sessions-list-loaded__meta-status--warning">pause pending</span>
+                    </div>
+                  </div>
+                </button>
+                <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              </li>
+
+              <!-- ── Row 5: Hot-fix backport · idle · 1d ago ────────── -->
+              <li role="listitem">
+                <button
+                  class="mol-session-row"
+                  type="button"
+                  aria-label="Hot-fix backport · main · desktop · 1 day ago"
+                >
+                  <div class="mol-session-row__leading" aria-hidden="true">
+                    <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm"></span>
+                  </div>
+
+                  <div class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body-sm">Hot-fix backport</span>
+                    <div class="mol-session-row__meta view-sessions-list-loaded__meta-row" aria-hidden="true">
+                      <!-- branch icon -->
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6"  cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 0 1-9 9"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">main</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <!-- host icon: laptop -->
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <path d="M8 21h8M12 17v4"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">desktop</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-text">1d ago</span>
+                    </div>
+                  </div>
+                </button>
+                <!-- No trailing divider on last row -->
+              </li>
+
+            </ol><!-- /view-sessions-list-loaded__items -->
+          </main><!-- /sessions scroll region -->
+
+          <!-- ── FAB: New chat ───────────────────────────────────────── -->
+          <div class="view-sessions-list-loaded__fab-wrap" aria-hidden="false">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md"
+              type="button"
+              aria-label="New chat"
+            >
+              <div class="atom-fab-base__icon" aria-hidden="true">
+                <!-- plus icon -->
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5"  y1="12" x2="19" y2="12"/>
+                </svg>
+              </div>
+            </button>
+          </div>
+
+          <!-- ── Tab bar ─────────────────────────────────────────────── -->
+          <nav class="view-sessions-list-loaded__tab-bar" role="tablist" aria-label="Main navigation">
+
+            <!-- Tasks tab — has notification dot -->
+            <button
+              class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-label="Tasks — 3 pending"
+            >
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <!-- check-square icon -->
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+                <!-- notification dot -->
+                <span
+                  class="mol-bottom-tab-bar-item__notif atom-badge atom-badge--accent atom-badge--dot"
+                  aria-hidden="true"
+                ></span>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+
+            <!-- Chat tab — selected -->
+            <button
+              class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-label="Chat"
+            >
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <!-- message-circle icon -->
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+
+            <!-- More tab -->
+            <button
+              class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--more"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-label="More options"
+            >
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <!-- more-horizontal icon (three dots) -->
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+
+          </nav><!-- /tab-bar -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ─────────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- ── mol-project-chip-header --multi-project ──────────── -->
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project" role="banner">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu"
+                type="button"
+                aria-label="Open navigation drawer"
+              >
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+
+              <button
+                class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md"
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                aria-label="Switch project — currently: superset"
+              >
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="light-search">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input
+                  id="light-search"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input"
+                  placeholder="Search sessions"
+                  aria-label="Search sessions"
+                />
+              </div>
+
+              <div class="mol-project-chip-header__filter">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                  type="button"
+                  aria-label="Filter sessions"
+                >
+                  <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4"  y1="6"  x2="20" y2="6"/>
+                    <line x1="4"  y1="12" x2="20" y2="12"/>
+                    <line x1="4"  y1="18" x2="20" y2="18"/>
+                    <circle cx="8"  cy="6"  r="2" fill="var(--surface-page)"/>
+                    <circle cx="16" cy="12" r="2" fill="var(--surface-page)"/>
+                    <circle cx="10" cy="18" r="2" fill="var(--surface-page)"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </header><!-- /mol-project-chip-header -->
+
+          <!-- ── Sessions scroll region ────────────────────────────── -->
+          <main
+            class="view-sessions-list-loaded__list"
+            role="list"
+            aria-label="Sessions"
+          >
+            <ol class="view-sessions-list-loaded__items" role="list">
+
+              <!-- Row 1: Chat-v2 design · live -->
+              <li role="listitem">
+                <button
+                  class="mol-session-row"
+                  type="button"
+                  aria-label="Chat-v2 design · chat-mobile-plan · macbook · 2 minutes ago · streaming"
+                >
+                  <div class="mol-session-row__leading" aria-hidden="true">
+                    <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm"></span>
+                  </div>
+                  <div class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body-sm">Chat-v2 design</span>
+                    <div class="mol-session-row__meta view-sessions-list-loaded__meta-row" aria-hidden="true">
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6"  cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 0 1-9 9"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">chat-mobile-plan</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <path d="M8 21h8M12 17v4"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">macbook</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-text">2m ago</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-status view-sessions-list-loaded__meta-status--live">streaming</span>
+                    </div>
+                  </div>
+                </button>
+                <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              </li>
+
+              <!-- Row 2: Migration plan · live -->
+              <li role="listitem">
+                <button
+                  class="mol-session-row"
+                  type="button"
+                  aria-label="Migration plan · api-rewrite · cloud-1 · 5 minutes ago · streaming"
+                >
+                  <div class="mol-session-row__leading" aria-hidden="true">
+                    <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm"></span>
+                  </div>
+                  <div class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body-sm">Migration plan</span>
+                    <div class="mol-session-row__meta view-sessions-list-loaded__meta-row" aria-hidden="true">
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6"  cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 0 1-9 9"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">api-rewrite</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">cloud-1</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-text">5m ago</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-status view-sessions-list-loaded__meta-status--live">streaming</span>
+                    </div>
+                  </div>
+                </button>
+                <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              </li>
+
+              <!-- Row 3: API cleanup · idle -->
+              <li role="listitem">
+                <button
+                  class="mol-session-row"
+                  type="button"
+                  aria-label="API cleanup · chat-mobile-plan · macbook · 1 hour ago"
+                >
+                  <div class="mol-session-row__leading" aria-hidden="true">
+                    <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm"></span>
+                  </div>
+                  <div class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body-sm">API cleanup</span>
+                    <div class="mol-session-row__meta view-sessions-list-loaded__meta-row" aria-hidden="true">
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6"  cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 0 1-9 9"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">chat-mobile-plan</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <path d="M8 21h8M12 17v4"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">macbook</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-text">1h ago</span>
+                    </div>
+                  </div>
+                </button>
+                <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              </li>
+
+              <!-- Row 4: Auth refactor · warning -->
+              <li role="listitem">
+                <button
+                  class="mol-session-row"
+                  type="button"
+                  aria-label="Auth refactor · main · desktop · pause pending"
+                >
+                  <div class="mol-session-row__leading" aria-hidden="true">
+                    <span class="atom-status-dot atom-status-dot--warning atom-status-dot--sm"></span>
+                  </div>
+                  <div class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body-sm">Auth refactor</span>
+                    <div class="mol-session-row__meta view-sessions-list-loaded__meta-row" aria-hidden="true">
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6"  cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 0 1-9 9"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">main</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <path d="M8 21h8M12 17v4"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">desktop</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-status view-sessions-list-loaded__meta-status--warning">pause pending</span>
+                    </div>
+                  </div>
+                </button>
+                <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              </li>
+
+              <!-- Row 5: Hot-fix backport · idle -->
+              <li role="listitem">
+                <button
+                  class="mol-session-row"
+                  type="button"
+                  aria-label="Hot-fix backport · main · desktop · 1 day ago"
+                >
+                  <div class="mol-session-row__leading" aria-hidden="true">
+                    <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm"></span>
+                  </div>
+                  <div class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body-sm">Hot-fix backport</span>
+                    <div class="mol-session-row__meta view-sessions-list-loaded__meta-row" aria-hidden="true">
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6"  cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 0 1-9 9"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">main</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <path d="M8 21h8M12 17v4"/>
+                      </svg>
+                      <span class="view-sessions-list-loaded__meta-text">desktop</span>
+                      <span class="view-sessions-list-loaded__meta-sep" aria-hidden="true">·</span>
+                      <span class="view-sessions-list-loaded__meta-text">1d ago</span>
+                    </div>
+                  </div>
+                </button>
+              </li>
+
+            </ol><!-- /view-sessions-list-loaded__items -->
+          </main><!-- /sessions scroll region -->
+
+          <!-- FAB -->
+          <div class="view-sessions-list-loaded__fab-wrap" aria-hidden="false">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md"
+              type="button"
+              aria-label="New chat"
+            >
+              <div class="atom-fab-base__icon" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5"  y1="12" x2="19" y2="12"/>
+                </svg>
+              </div>
+            </button>
+          </div>
+
+          <!-- Tab bar -->
+          <nav class="view-sessions-list-loaded__tab-bar" role="tablist" aria-label="Main navigation">
+
+            <button
+              class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-label="Tasks — 3 pending"
+            >
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+                <span class="mol-bottom-tab-bar-item__notif atom-badge atom-badge--accent atom-badge--dot" aria-hidden="true"></span>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+
+            <button
+              class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-label="Chat"
+            >
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+
+            <button
+              class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--more"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-label="More options"
+            >
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+
+          </nav><!-- /tab-bar -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+</body>
+</html>
