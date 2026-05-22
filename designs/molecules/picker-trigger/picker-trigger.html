@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol · picker-trigger</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_atoms.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <style>
+    /* ================================================================
+       mol-picker-trigger — molecule-local layout glue only.
+       Composition purity: ZERO .atom-* rules redefined here.
+       ZERO hex literals. ZERO raw font-size/weight/line-height/tracking.
+       ZERO raw px in padding/margin/gap.
+       Structural exceptions: transform rotate(180deg) for chevron flip;
+         cursor:pointer (no token for cursor).
+    ================================================================ */
+
+    /* ---- Base layout glue ------------------------------------- */
+    .mol-picker-trigger {
+      display:        inline-flex;
+      align-items:    center;
+      gap:            var(--space-2);
+      cursor:         pointer; /* structural: interactive affordance */
+      text-decoration: none;
+    }
+
+    /* ---- Inner text slots ------------------------------------- */
+    .mol-picker-trigger__prefix {
+      color: var(--text-muted);
+      /* typography inherited from atom-section-label --inline */
+    }
+
+    .mol-picker-trigger__value {
+      font-weight: var(--font-weight-meta);
+      color:       var(--text-body);
+    }
+
+    /* ---- Trailing chevron ------------------------------------- */
+    .mol-picker-trigger__chevron {
+      margin-left: var(--space-1);
+      transition:  transform var(--motion-fast) var(--motion-ease-out);
+      flex-shrink: 0;
+    }
+
+    /* ---- State: open ----------------------------------------- */
+    .mol-picker-trigger.is-open .mol-picker-trigger__chevron {
+      transform: rotate(180deg);
+    }
+
+    .mol-picker-trigger.is-open {
+      background: var(--surface-active);
+    }
+
+    /* ---- State: disabled ------------------------------------- */
+    .mol-picker-trigger.is-disabled {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Reduced-motion override ----------------------------- */
+    @media (prefers-reduced-motion: reduce) {
+      .mol-picker-trigger__chevron {
+        transition: none;
+      }
+    }
+
+    /* ================================================================
+       Preview layout helpers — not part of molecule spec
+    ================================================================ */
+
+    .variant-group {
+      margin-bottom: var(--spacing-section);
+    }
+    .variant-group-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      margin:         0 0 var(--space-3);
+      text-transform: uppercase;
+    }
+
+    .matrix-table {
+      display:               grid;
+      grid-template-columns: max-content repeat(2, auto);
+      gap:                   var(--space-3) var(--space-6);
+      align-items:           center;
+      margin-bottom:         var(--space-4);
+    }
+    .matrix-header {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+    .matrix-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+      white-space:    nowrap;
+    }
+
+    .state-grid {
+      display:     flex;
+      flex-wrap:   wrap;
+      gap:         var(--space-6);
+      align-items: flex-start;
+    }
+    .state-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    flex-start;
+      gap:            var(--space-2);
+    }
+    .state-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    .composition-bar {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-2);
+      padding:       var(--space-3) var(--space-4);
+      background:    var(--surface-raised);
+      border-radius: var(--radius-default);
+      border:        1px solid var(--border-subtle);
+      width:         380px;
+      overflow-x:    auto;
+      overflow-y:    hidden;
+      /* 380px simulates composer toolbar on a mobile viewport */
+    }
+
+    .section-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0 var(--spacing-between);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+  ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">picker-trigger</h1>
+    <p class="crumb">molecule · pill-shaped trigger that opens a picker popover</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ==========================================================
+         DARK PANE
+    ========================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ========================================================
+           1. VARIANT MATRIX — 3 kinds × 2 sizes = 6 cells
+      ======================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">1 · variant matrix — 3 kinds × 2 sizes</p>
+
+        <div class="matrix-table">
+          <!-- Header row -->
+          <span class="matrix-header">kind / size</span>
+          <span class="matrix-header">--sm · 20px</span>
+          <span class="matrix-header">--md · 28px (default)</span>
+
+          <!-- model -->
+          <span class="matrix-label">--model</span>
+
+          <!-- model sm -->
+          <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--sm atom-pill atom-pill--default atom-pill--sm"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Model picker — Sonnet 4.6 selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+              <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+              <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+            </svg>
+            <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- model md -->
+          <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Model picker — Sonnet 4.6 selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+              <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+              <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+            </svg>
+            <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- thinking -->
+          <span class="matrix-label">--thinking</span>
+
+          <!-- thinking sm -->
+          <button class="mol-picker-trigger mol-picker-trigger--thinking mol-picker-trigger--sm atom-pill atom-pill--default atom-pill--sm"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Thinking level — low selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Thinking:</span>
+            <span class="mol-picker-trigger__value">low</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- thinking md -->
+          <button class="mol-picker-trigger mol-picker-trigger--thinking mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Thinking level — low selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Thinking:</span>
+            <span class="mol-picker-trigger__value">low</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- permission -->
+          <span class="matrix-label">--permission</span>
+
+          <!-- permission sm -->
+          <button class="mol-picker-trigger mol-picker-trigger--permission mol-picker-trigger--sm atom-pill atom-pill--default atom-pill--sm"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Permission mode — default selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Permission:</span>
+            <span class="mol-picker-trigger__value">default</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- permission md -->
+          <button class="mol-picker-trigger mol-picker-trigger--permission mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Permission mode — default selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Permission:</span>
+            <span class="mol-picker-trigger__value">default</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+        </div><!-- /matrix-table -->
+      </div><!-- /variant-group -->
+
+      <hr class="section-divider">
+
+      <!-- ========================================================
+           2. STATE ROW — --model --md in 6 states
+      ======================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">2 · states — model md</p>
+
+        <div class="state-grid">
+
+          <!-- default -->
+          <div class="state-cell">
+            <span class="state-label">default</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- hover -->
+          <div class="state-cell">
+            <span class="state-label">hover</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md is-hover"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- active -->
+          <div class="state-cell">
+            <span class="state-label">active</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md is-active"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- focus -->
+          <div class="state-cell">
+            <span class="state-label">focus</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md is-focus"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- open (aria-expanded="true") -->
+          <div class="state-cell">
+            <span class="state-label">open</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md is-open"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="true"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- disabled -->
+          <div class="state-cell">
+            <span class="state-label">disabled</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md is-disabled"
+                    type="button"
+                    disabled
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+        </div><!-- /state-grid -->
+      </div><!-- /variant-group -->
+
+      <hr class="section-divider">
+
+      <!-- ========================================================
+           3. COMPOSITION — Faux composer toolbar (380px)
+      ======================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">3 · composition — composer toolbar · 380px</p>
+
+        <div class="composition-bar" role="toolbar" aria-label="Composer options">
+
+          <!-- Model picker: Opus 4.7 -->
+          <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="model-listbox"
+                  aria-label="Model picker — Opus 4.7 selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+              <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+              <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+            </svg>
+            <span class="mol-picker-trigger__value">Opus 4.7</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- Thinking picker: low (open state) -->
+          <button class="mol-picker-trigger mol-picker-trigger--thinking mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md is-open"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="true"
+                  aria-controls="thinking-listbox"
+                  aria-label="Thinking level — low selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Thinking:</span>
+            <span class="mol-picker-trigger__value">low</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- Permission picker: default -->
+          <button class="mol-picker-trigger mol-picker-trigger--permission mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="permission-listbox"
+                  aria-label="Permission mode — default selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Permission:</span>
+            <span class="mol-picker-trigger__value">default</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+        </div><!-- /composition-bar -->
+
+        <!-- Bonus: second row with alternate values -->
+        <div style="margin-top: var(--space-3);">
+          <p class="state-label" style="margin-bottom: var(--space-2);">alternate values — Haiku 4.5 / high / acceptEdits</p>
+          <div class="composition-bar" role="toolbar" aria-label="Composer options — alternate values">
+
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Haiku 4.5 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Haiku 4.5</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+
+            <button class="mol-picker-trigger mol-picker-trigger--thinking mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Thinking level — high selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Thinking:</span>
+              <span class="mol-picker-trigger__value">high</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+
+            <button class="mol-picker-trigger mol-picker-trigger--permission mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Permission mode — acceptEdits selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Permission:</span>
+              <span class="mol-picker-trigger__value">acceptEdits</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Third row: plan mode -->
+        <div style="margin-top: var(--space-3);">
+          <p class="state-label" style="margin-bottom: var(--space-2);">plan mode values — Sonnet 4.6 / medium / plan</p>
+          <div class="composition-bar" role="toolbar" aria-label="Composer options — plan mode">
+
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+
+            <button class="mol-picker-trigger mol-picker-trigger--thinking mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Thinking level — medium selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Thinking:</span>
+              <span class="mol-picker-trigger__value">medium</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+
+            <button class="mol-picker-trigger mol-picker-trigger--permission mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Permission mode — plan selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Permission:</span>
+              <span class="mol-picker-trigger__value">plan</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+
+          </div>
+        </div>
+
+      </div><!-- /variant-group -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ==========================================================
+         LIGHT PANE
+    ========================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ========================================================
+           1. VARIANT MATRIX — 3 kinds × 2 sizes = 6 cells
+      ======================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">1 · variant matrix — 3 kinds × 2 sizes</p>
+
+        <div class="matrix-table">
+          <!-- Header row -->
+          <span class="matrix-header">kind / size</span>
+          <span class="matrix-header">--sm · 20px</span>
+          <span class="matrix-header">--md · 28px (default)</span>
+
+          <!-- model -->
+          <span class="matrix-label">--model</span>
+
+          <!-- model sm -->
+          <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--sm atom-pill atom-pill--default atom-pill--sm"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Model picker — Opus 4.7 selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+              <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+              <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+            </svg>
+            <span class="mol-picker-trigger__value">Opus 4.7</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- model md -->
+          <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Model picker — Opus 4.7 selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+              <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+              <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+            </svg>
+            <span class="mol-picker-trigger__value">Opus 4.7</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- thinking -->
+          <span class="matrix-label">--thinking</span>
+
+          <!-- thinking sm -->
+          <button class="mol-picker-trigger mol-picker-trigger--thinking mol-picker-trigger--sm atom-pill atom-pill--default atom-pill--sm"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Thinking level — medium selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Thinking:</span>
+            <span class="mol-picker-trigger__value">medium</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- thinking md -->
+          <button class="mol-picker-trigger mol-picker-trigger--thinking mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Thinking level — medium selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Thinking:</span>
+            <span class="mol-picker-trigger__value">medium</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- permission -->
+          <span class="matrix-label">--permission</span>
+
+          <!-- permission sm -->
+          <button class="mol-picker-trigger mol-picker-trigger--permission mol-picker-trigger--sm atom-pill atom-pill--default atom-pill--sm"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Permission mode — acceptEdits selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Permission:</span>
+            <span class="mol-picker-trigger__value">acceptEdits</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <!-- permission md -->
+          <button class="mol-picker-trigger mol-picker-trigger--permission mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-label="Permission mode — acceptEdits selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Permission:</span>
+            <span class="mol-picker-trigger__value">acceptEdits</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+        </div><!-- /matrix-table -->
+      </div><!-- /variant-group -->
+
+      <hr class="section-divider">
+
+      <!-- ========================================================
+           2. STATE ROW — --model --md in 6 states
+      ======================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">2 · states — model md</p>
+
+        <div class="state-grid">
+
+          <!-- default -->
+          <div class="state-cell">
+            <span class="state-label">default</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- hover -->
+          <div class="state-cell">
+            <span class="state-label">hover</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md is-hover"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- active -->
+          <div class="state-cell">
+            <span class="state-label">active</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md is-active"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- focus -->
+          <div class="state-cell">
+            <span class="state-label">focus</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md is-focus"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- open -->
+          <div class="state-cell">
+            <span class="state-label">open</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md is-open"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="true"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- disabled -->
+          <div class="state-cell">
+            <span class="state-label">disabled</span>
+            <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md is-disabled"
+                    type="button"
+                    disabled
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-label="Model picker — Sonnet 4.6 selected">
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+              </svg>
+              <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+        </div><!-- /state-grid -->
+      </div><!-- /variant-group -->
+
+      <hr class="section-divider">
+
+      <!-- ========================================================
+           3. COMPOSITION — Faux composer toolbar (380px)
+      ======================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">3 · composition — composer toolbar · 380px</p>
+
+        <div class="composition-bar" role="toolbar" aria-label="Composer options">
+
+          <button class="mol-picker-trigger mol-picker-trigger--model mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="model-listbox-light"
+                  aria-label="Model picker — Sonnet 4.6 selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+              <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+              <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+            </svg>
+            <span class="mol-picker-trigger__value">Sonnet 4.6</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <button class="mol-picker-trigger mol-picker-trigger--thinking mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="thinking-listbox-light"
+                  aria-label="Thinking level — low selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Thinking:</span>
+            <span class="mol-picker-trigger__value">low</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <button class="mol-picker-trigger mol-picker-trigger--permission mol-picker-trigger--md atom-pill atom-pill--default atom-pill--md"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="permission-listbox-light"
+                  aria-label="Permission mode — default selected">
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span class="atom-section-label atom-section-label--inline mol-picker-trigger__prefix">Permission:</span>
+            <span class="mol-picker-trigger__value">default</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-picker-trigger__chevron"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+        </div><!-- /composition-bar -->
+      </div><!-- /variant-group -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
