@@ -613,3 +613,59 @@ The `ModelPicker` (Dialog) stays rendered outside the `PromptInputTools` div, wi
 4. **Model row text truncation in the menu?** The current `ModelPicker` trigger truncates the model name. Inside the menu (w-64, more space), is it acceptable to show the full model name? Or should it still truncate at, say, `max-w-[160px]` to leave room for the `ChevronRightIcon`?
 
 5. **`onSelect` vs `onClick` for Permission/Thinking items?** `PermissionModePicker` uses `onClick` on `DropdownMenuItem`; `ThinkingToggle` uses `onSelect`. For the consolidated menu's inlined items, `onSelect` is semantically correct (it fires before menu close, allowing the menu to close on selection). Is there any reason to use `onClick` instead for consistency with the existing pickers?
+
+## Challenge
+
+### Ground-truth re-verification
+
+All five cited file:line references verified against actual code. Two minor imprecisions (not fabrications):
+
+- **v2 three-pill block cited as L53–L72**: Accurate JSX block shown. The `<PromptInputTools>` wrapper opens at L55; pills are L56–L71; `</PromptInputTools>` closes at L72. Lines L53–L54 are `return (` and `<PromptInputFooter>`. Over-cites by 2 lines at the start; the rendered block is correct.
+- **v1 three-pill block cited as L52–L72**: The `<PromptInputTools>` wrapper opens at L52; pills are L53–L68; the block ends at L69. Lines L70–L72 are the `<div>` containing `PlusMenu` and the submit button — outside the pill block. Over-cites by 3 lines at the end.
+- **ModelPicker `open`/`onOpenChange` cited as L25–L31**: `open: boolean` at L28; `onOpenChange` at L29. Confirmed.
+- **`ModelSelector = Dialog` cited as L21–L25**: Type at L21; component at L23–L24. Confirmed.
+- **`PILL_BUTTON_CLASS` at `styles.ts:L5–L6`**: Confirmed exactly.
+
+**One factual error in the strategic option's risk section**: The "Type boundary" risk states both `PermissionMode` and `ThinkingLevel` are defined in `apps/desktop/src/renderer/components/Chat/ChatInterface/types.ts`. This is wrong for `ThinkingLevel`. `ThinkingLevel` is defined in `packages/ui/src/components/ai-elements/thinking-toggle.tsx:L20` — already in `packages/ui`. Only `PermissionMode` lives in the desktop `types.ts`. The strategic type-boundary problem is narrower than described: only one type (`PermissionMode`) needs resolution, not two.
+
+### Smaller-than-minimum candidates
+
+No credible smaller option exists. Three candidates evaluated and rejected:
+
+**Candidate A — just restyle/group the three pills visually (no collapse)**: Rejected. Ticket explicitly requests "collapse these into a single consolidated menu." Visual grouping without collapsing does not satisfy the stated requirement.
+
+**Candidate B — single trigger that opens existing `PermissionModePicker` + `ThinkingToggle` as child components (no inner-item reauthoring)**: Rejected. Both components are self-contained `DropdownMenu` components. Mounting them inside a parent `DropdownMenu` creates nested `DropdownMenu` — Radix does not support this pattern; dismiss/focus logic collides. Not a viable shortcut.
+
+**Candidate C — collapse only Permission + Thinking into one icon popover; leave Model as its own pill (3 pills → 2 pills)**: Technically feasible at ~30 LOC net (smaller than minimum's ~60 LOC). Does not satisfy the ticket's "single consolidated menu" language or the screenshots showing a single trigger. Reduces clutter but does not resolve the stated intent.
+
+### Does minimum resolve the symptom?
+
+Yes. After the minimum change, `PromptInputTools` renders one pill instead of three. The clutter described in the ticket (three sibling pills side-by-side) is causally removed. Existing `ModelPicker` Dialog, `PermissionModePicker` logic, and `ThinkingToggle` logic all remain reachable one click away. The ticket asks for settings to be "reachable" not "visible at a glance," so the one-pill trigger fully satisfies the goal.
+
+### Scope-creep flags in moderate/strategic
+
+**moderate**: No files flagged outside the two `ChatComposerControls.tsx` files. The `ModelPicker`, `PermissionModePicker`, and `ThinkingToggle` components are not modified. The `ChatInputFooter` props interface in both v1 and v2 is unchanged. The trpc divergence (v2 uses `workspaceTrpc`, v1 uses `chatServiceTrpc`) is entirely inside `ModelPicker` — the consolidated menu never touches it. Moderate is genuinely 2-file-only.
+
+**strategic**: The 150 LOC budget is plausible but the type boundary risk is overstated. `ThinkingLevel` is already in `packages/ui` (no migration needed). Only `PermissionMode` needs resolution — likely moved to `packages/shared`. That is a genuine DX decision worth a separate ticket. The Rule of 2 violation (only 2 consumers, both app-internal) remains the primary strategic risk. The LOC estimate is not the problem.
+
+### Verdict on frontend-designer's Option B
+
+**fold-into-moderate**
+
+Option B (co-located `ComposerSettingsMenu/` beside each `ChatComposerControls/`) is an implementation detail of how to structure the moderate change — not a distinct scope tier. The scope question is "how many files change and what is the blast radius." Moderate answers: 2 `ChatComposerControls.tsx` files, app-only, no `packages/ui` touch. Whether the implementer inlines the 60-LOC block directly or extracts it to a sibling `ComposerSettingsMenu/` directory is a build-time decision. The frontend-designer's readability rationale is valid; add it as an implementation note to the moderate option.
+
+### Refinement sanity check
+
+- **ChevronDown removal: agree**. At `h-[23px]`, every pixel counts. `aria-expanded` covers the a11y requirement. Provider logo + model name reads as a trigger by convention without a chevron.
+- **Conditional BrainIcon: agree with one caveat**. Showing `BrainIcon` only when `thinkingLevel !== "off"` is correct — zero noise when inactive. Caveat: the icon's presence/absence causes a minor layout shift (pill width changes when thinking activates). Implementer should smoke-test in a narrow pane.
+- **ChevronRightIcon on Model row: agree**. `ChevronRight` is the correct affordance for "opens another layer." Using `CheckIcon` here would imply "currently selected" — semantically wrong for a navigation action.
+- **Open questions**:
+  - Q1 (permission mode in trigger): Real question for the human — product decision about safety signal visibility.
+  - Q2 (BrainIcon threshold): Real question for the human — UX preference.
+  - Q3 (ChevronDown): Resolved by this review — remove it. Not a question for the human unless they disagree.
+  - Q4 (Model row truncation in menu): Code-resolvable. At `w-64` with `px-2` padding and a `ChevronRightIcon`, ~200px is available for the name. Use `truncate` with no fixed `max-w`; implementer verifies in running UI.
+  - Q5 (`onSelect` vs `onClick`): Code-resolvable. Use `onSelect` throughout the consolidated menu — semantically correct and consistent with `ThinkingToggle`. `PermissionModePicker`'s `onClick` is a pre-existing minor inconsistency in the existing code, not a reason to propagate it.
+
+### Minimum-proves-problem-resolved
+
+true
