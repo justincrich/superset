@@ -6,13 +6,13 @@ Single-purpose, indivisible primitives used by chat + adjacent surfaces. Each at
 |---|------|------------------------------------|--------|
 | 1 | `button` | `packages/ui/src/components/ui/button.tsx` (shadcn cva) | completed |
 | 2 | `icon-button` | square 44pt variant of button + `lucide-react` icons | pending |
-| 3 | `status-dot` | live (mint pulse) · warning (amber ring) · danger (red) · success · neutral · streaming | pending |
-| 4 | `streaming-cursor` | inline mint block, blinks via `@keyframes blink` 1s | pending |
-| 5 | `divider` | hairline horizontal + vertical, default / strong variants | pending |
+| 3 | `status-dot` | live (mint pulse) · warning (amber ring) · danger (red) · success · neutral · streaming | completed |
+| 4 | `streaming-cursor` | inline mint block, blinks via `@keyframes blink` 1s | completed |
+| 5 | `divider` | hairline horizontal + vertical, default / strong variants | completed |
 | 6 | `text-input` | single-line text field; default / focus / error / disabled | pending |
 | 7 | `textarea` | multi-line auto-grow; placeholder / typing / disabled | pending |
 | 8 | `pill` | base pill — used by chips, slash command pills, model badges; default / selected / dismissible | pending |
-| 9 | `kbd` | keyboard glyph for shortcut hints (`⌘ ⏎`, `Esc`) | pending |
+| 9 | `kbd` | keyboard glyph for shortcut hints (`⌘ ⏎`, `Esc`) | completed |
 | 10 | `backdrop` | full-screen dimmer; opaque / translucent / blur variants | pending |
 | 11 | `tooltip` | positioned bubble with arrow; top / bottom / left / right | pending |
 | 12 | `spinner` | circular spinner + ASCII spinner (matches `AsciiSpinner.tsx`) | pending |
