@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-modal-header — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-modal-header — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. 1px border values are structural geometry
+       (TOKEN_GAP: hairline rule consistent with mol-app-header).
+       ================================================================ */
+
+    /* ---- Base layout -------------------------------------------- */
+    .mol-modal-header {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-2);
+      padding:       var(--space-2) var(--space-3);
+      min-height:    var(--touch-target-min);
+      background:    var(--surface-page);
+      border-bottom: 1px solid var(--border-subtle); /* structural: hairline separator */
+      position:      sticky;
+      top:           0;
+      z-index:       20;
+    }
+
+    /* ---- Title -------------------------------------------------- */
+    .mol-modal-header__title {
+      margin:        0;
+      flex:          1;
+      text-align:    center;
+      white-space:   nowrap;
+      overflow:      hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---- Close button slot ------------------------------------- */
+    /* Fixed width mirrors spacer for optical centering balance */
+    .mol-modal-header__close {
+      flex-shrink: 0;
+      width:       var(--touch-target-min);
+    }
+
+    /* ---- Spacer (balance element for --default) --------------- */
+    .mol-modal-header__spacer {
+      flex-shrink: 0;
+      width:       var(--touch-target-min);
+    }
+
+    /* ---- Trailing action slot (--with-action) ----------------- */
+    .mol-modal-header__action {
+      flex-shrink: 0;
+    }
+
+    /* ---- Variant: simple (left-aligned title, no spacer) ------ */
+    .mol-modal-header--simple .mol-modal-header__title {
+      text-align: left;
+    }
+
+    /* ---- State: is-scrolled ----------------------------------- */
+    /* Adds a subtle depth layer when modal body scrolls beneath */
+    .mol-modal-header.is-scrolled {
+      box-shadow: 0 1px 0 var(--border-subtle); /* structural: 1px shadow layer — TOKEN_GAP */
+    }
+
+    /* ================================================================
+       Preview-local helpers — not part of the mol-modal-header spec
+       ================================================================ */
+
+    /* Faux modal body for composition section */
+    .faux-modal {
+      display:        flex;
+      flex-direction: column;
+      width:          375px;
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      overflow:       hidden;
+      background:     var(--surface-page);
+    }
+
+    .faux-modal__body {
+      padding:    var(--space-4) var(--space-5);
+      overflow-y: auto;
+      max-height: 340px;
+    }
+
+    .faux-modal__body .type-h2 {
+      margin:       0 0 var(--space-3);
+      padding-top:  var(--space-4);
+    }
+    .faux-modal__body .type-h2:first-child {
+      padding-top: 0;
+    }
+    .faux-modal__body p.type-body {
+      margin: 0 0 var(--space-3);
+    }
+    .faux-modal__body p.type-body:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Variant label rows */
+    .variant-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-faint);
+      margin:         0 0 var(--space-2);
+    }
+
+    .variant-block {
+      margin-bottom: var(--space-6);
+    }
+
+    /* State row columns */
+    .state-columns {
+      display:   flex;
+      gap:       var(--space-4);
+      flex-wrap: wrap;
+    }
+
+    .state-column {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .state-column-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-faint);
+      margin:         0 0 var(--space-2);
+      display:        block;
+    }
+
+    .state-column .mol-modal-header {
+      /* break sticky for preview context */
+      position: relative;
+      top:      auto;
+      /* borrow full column width */
+      width:    100%;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">modal-header</h1>
+    <p class="crumb">molecule · modal-specific sticky header — close + title + optional action</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT MATRIX --------------------------------- -->
+      <div class="variant-block">
+        <p class="variant-label">1 · variant matrix</p>
+
+        <!-- default: close + centred title + spacer -->
+        <p class="variant-label">default — ✕ "Review Plan" (centred)</p>
+        <header class="mol-modal-header mol-modal-header--default" style="position:relative;top:auto;">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+            aria-label="Close plan review"
+          >
+            <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <h2 class="mol-modal-header__title type-title">Review Plan</h2>
+          <span class="mol-modal-header__spacer" aria-hidden="true"></span>
+        </header>
+
+        <!-- with-action: close + centred title + trailing Save -->
+        <p class="variant-label" style="margin-top:var(--space-4);">with-action — ✕ "Settings" Save</p>
+        <header class="mol-modal-header mol-modal-header--with-action" style="position:relative;top:auto;">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+            aria-label="Close settings"
+          >
+            <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <h2 class="mol-modal-header__title type-title">Settings</h2>
+          <button
+            class="atom-button atom-button--ghost atom-button--sm mol-modal-header__action"
+            aria-label="Save settings"
+          >Save</button>
+        </header>
+
+        <!-- simple: close + left-aligned title (no spacer) -->
+        <p class="variant-label" style="margin-top:var(--space-4);">simple — ✕ "Filter sessions" (left-aligned)</p>
+        <header class="mol-modal-header mol-modal-header--simple" style="position:relative;top:auto;">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+            aria-label="Close filter sessions"
+          >
+            <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <h2 class="mol-modal-header__title type-title">Filter sessions</h2>
+        </header>
+      </div>
+
+      <!-- ---- 2. STATE ROW -------------------------------------- -->
+      <div class="variant-block">
+        <p class="variant-label">2 · state row — default variant</p>
+
+        <div class="state-columns">
+          <!-- default state -->
+          <div class="state-column">
+            <span class="state-column-label">default</span>
+            <header class="mol-modal-header mol-modal-header--default">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+                aria-label="Close plan review"
+              >
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+              <h2 class="mol-modal-header__title type-title">Review Plan</h2>
+              <span class="mol-modal-header__spacer" aria-hidden="true"></span>
+            </header>
+          </div>
+
+          <!-- is-scrolled state -->
+          <div class="state-column">
+            <span class="state-column-label">is-scrolled</span>
+            <header class="mol-modal-header mol-modal-header--default is-scrolled">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+                aria-label="Close plan review"
+              >
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+              <h2 class="mol-modal-header__title type-title">Review Plan</h2>
+              <span class="mol-modal-header__spacer" aria-hidden="true"></span>
+            </header>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 3. COMPOSITION — faux scrollable modal body ------- -->
+      <div class="variant-block">
+        <p class="variant-label">3 · composition — modal-header at top of scrollable plan body</p>
+
+        <div class="faux-modal">
+          <header class="mol-modal-header mol-modal-header--default is-scrolled">
+            <button
+              class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+              aria-label="Close plan review"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+            <h2 class="mol-modal-header__title type-title">Review Plan</h2>
+            <span class="mol-modal-header__spacer" aria-hidden="true"></span>
+          </header>
+
+          <div class="faux-modal__body">
+            <h2 class="type-h2">Overview</h2>
+            <p class="type-body">This plan proposes a three-phase migration of the relay tunnel reconnect logic. Phase one isolates the transport layer behind a stable interface. Phase two introduces offline-queue persistence so messages survive network gaps. Phase three enables full duplex streaming with backpressure.</p>
+
+            <h2 class="type-h2">Phase 1 — Transport Isolation</h2>
+            <p class="type-body">Extract the current inline WebSocket calls into a <code class="type-code">RelayTransport</code> interface. Introduce two concrete implementations: <code class="type-code">WebSocketTransport</code> (production) and <code class="type-code">LocalTransport</code> (test). All consumer code becomes transport-agnostic.</p>
+
+            <h2 class="type-h2">Phase 2 — Offline Queue</h2>
+            <p class="type-body">Persist outbound messages to a local SQLite queue before handoff to the transport layer. On reconnect, drain the queue in FIFO order with exponential back-off. Duplicate detection uses a client-assigned <code class="type-code">msgId</code> correlated against the server-side idempotency log.</p>
+
+            <h2 class="type-h2">Phase 3 — Streaming</h2>
+            <p class="type-body">Replace the request–response model with a full-duplex stream. Apply backpressure via a bounded token-bucket on the sender side. The receiver signals demand through <code class="type-code">WINDOW_UPDATE</code> frames — mirroring HTTP/2 flow control semantics at the application layer.</p>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT MATRIX --------------------------------- -->
+      <div class="variant-block">
+        <p class="variant-label">1 · variant matrix</p>
+
+        <!-- default: close + centred title + spacer -->
+        <p class="variant-label">default — ✕ "Review Plan" (centred)</p>
+        <header class="mol-modal-header mol-modal-header--default" style="position:relative;top:auto;">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+            aria-label="Close plan review"
+          >
+            <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <h2 class="mol-modal-header__title type-title">Review Plan</h2>
+          <span class="mol-modal-header__spacer" aria-hidden="true"></span>
+        </header>
+
+        <!-- with-action: close + centred title + trailing Save -->
+        <p class="variant-label" style="margin-top:var(--space-4);">with-action — ✕ "Settings" Save</p>
+        <header class="mol-modal-header mol-modal-header--with-action" style="position:relative;top:auto;">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+            aria-label="Close settings"
+          >
+            <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <h2 class="mol-modal-header__title type-title">Settings</h2>
+          <button
+            class="atom-button atom-button--ghost atom-button--sm mol-modal-header__action"
+            aria-label="Save settings"
+          >Save</button>
+        </header>
+
+        <!-- simple: close + left-aligned title (no spacer) -->
+        <p class="variant-label" style="margin-top:var(--space-4);">simple — ✕ "Filter sessions" (left-aligned)</p>
+        <header class="mol-modal-header mol-modal-header--simple" style="position:relative;top:auto;">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+            aria-label="Close filter sessions"
+          >
+            <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <h2 class="mol-modal-header__title type-title">Filter sessions</h2>
+        </header>
+      </div>
+
+      <!-- ---- 2. STATE ROW -------------------------------------- -->
+      <div class="variant-block">
+        <p class="variant-label">2 · state row — default variant</p>
+
+        <div class="state-columns">
+          <!-- default state -->
+          <div class="state-column">
+            <span class="state-column-label">default</span>
+            <header class="mol-modal-header mol-modal-header--default">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+                aria-label="Close plan review"
+              >
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+              <h2 class="mol-modal-header__title type-title">Review Plan</h2>
+              <span class="mol-modal-header__spacer" aria-hidden="true"></span>
+            </header>
+          </div>
+
+          <!-- is-scrolled state -->
+          <div class="state-column">
+            <span class="state-column-label">is-scrolled</span>
+            <header class="mol-modal-header mol-modal-header--default is-scrolled">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+                aria-label="Close plan review"
+              >
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+              <h2 class="mol-modal-header__title type-title">Review Plan</h2>
+              <span class="mol-modal-header__spacer" aria-hidden="true"></span>
+            </header>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 3. COMPOSITION — faux scrollable modal body ------- -->
+      <div class="variant-block">
+        <p class="variant-label">3 · composition — modal-header at top of scrollable plan body</p>
+
+        <div class="faux-modal">
+          <header class="mol-modal-header mol-modal-header--default is-scrolled">
+            <button
+              class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-modal-header__close"
+              aria-label="Close plan review"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+            <h2 class="mol-modal-header__title type-title">Review Plan</h2>
+            <span class="mol-modal-header__spacer" aria-hidden="true"></span>
+          </header>
+
+          <div class="faux-modal__body">
+            <h2 class="type-h2">Overview</h2>
+            <p class="type-body">This plan proposes a three-phase migration of the relay tunnel reconnect logic. Phase one isolates the transport layer behind a stable interface. Phase two introduces offline-queue persistence so messages survive network gaps. Phase three enables full duplex streaming with backpressure.</p>
+
+            <h2 class="type-h2">Phase 1 — Transport Isolation</h2>
+            <p class="type-body">Extract the current inline WebSocket calls into a <code class="type-code">RelayTransport</code> interface. Introduce two concrete implementations: <code class="type-code">WebSocketTransport</code> (production) and <code class="type-code">LocalTransport</code> (test). All consumer code becomes transport-agnostic.</p>
+
+            <h2 class="type-h2">Phase 2 — Offline Queue</h2>
+            <p class="type-body">Persist outbound messages to a local SQLite queue before handoff to the transport layer. On reconnect, drain the queue in FIFO order with exponential back-off. Duplicate detection uses a client-assigned <code class="type-code">msgId</code> correlated against the server-side idempotency log.</p>
+
+            <h2 class="type-h2">Phase 3 — Streaming</h2>
+            <p class="type-body">Replace the request–response model with a full-duplex stream. Apply backpressure via a bounded token-bucket on the sender side. The receiver signals demand through <code class="type-code">WINDOW_UPDATE</code> frames — mirroring HTTP/2 flow control semantics at the application layer.</p>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
