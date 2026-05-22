@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · icon-button</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-icon-button — token-governed square icon-only button atom
+       Sibling of atom-button. Icon-only, square, mobile-tuned 44pt.
+       Zero hex literals. Size literals (28/36/56) are allowed per spec.
+       ============================================================ */
+
+    /* ---- Base reset ------------------------------------------ */
+    .atom-icon-button {
+      /* Layout — square, centered */
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      flex-shrink:     0;
+
+      /* Shape */
+      border:        none;
+      border-radius: var(--radius-default);
+      outline:       none;
+      cursor:        pointer;
+      padding:       0;
+
+      /* Motion */
+      transition:
+        background-color var(--motion-fast) var(--motion-ease-out),
+        color            var(--motion-fast) var(--motion-ease-out),
+        box-shadow       var(--motion-fast) var(--motion-ease-out),
+        opacity          var(--motion-fast) var(--motion-ease-out),
+        transform        var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Sizes --------------------------------------------- */
+    /* xs: 28×28 container, 14px icon */
+    .atom-icon-button--xs {
+      width:  28px;
+      height: 28px;
+    }
+    .atom-icon-button--xs .atom-icon-button__icon {
+      width:  14px;
+      height: 14px;
+    }
+
+    /* sm: 36×36 container, 16px icon */
+    .atom-icon-button--sm {
+      width:  36px;
+      height: 36px;
+    }
+    .atom-icon-button--sm .atom-icon-button__icon {
+      width:  16px;
+      height: 16px;
+    }
+
+    /* md (default): var(--touch-target-min) × var(--touch-target-min), 20px icon */
+    .atom-icon-button--md,
+    .atom-icon-button:not(.atom-icon-button--xs):not(.atom-icon-button--sm):not(.atom-icon-button--lg) {
+      width:  var(--touch-target-min);
+      height: var(--touch-target-min);
+    }
+    .atom-icon-button--md .atom-icon-button__icon,
+    .atom-icon-button:not(.atom-icon-button--xs):not(.atom-icon-button--sm):not(.atom-icon-button--lg) .atom-icon-button__icon {
+      width:  20px;
+      height: 20px;
+    }
+
+    /* lg: 56×56 container, 24px icon */
+    .atom-icon-button--lg {
+      width:  56px;
+      height: 56px;
+    }
+    .atom-icon-button--lg .atom-icon-button__icon {
+      width:  24px;
+      height: 24px;
+    }
+
+    /* ---- Shape modifier: pill (fully round) ---------------- */
+    .atom-icon-button--pill {
+      border-radius: var(--radius-pill);
+    }
+
+    /* ---- Icon sizing passthrough --------------------------- */
+    .atom-icon-button__icon {
+      display:      block;
+      flex-shrink:  0;
+      stroke-width: 2;
+    }
+
+    /* ---- Variant: ghost (default — transparent bg) --------- */
+    .atom-icon-button--ghost {
+      background-color: transparent;
+      color:            var(--text-body);
+    }
+    .atom-icon-button--ghost:hover,
+    .atom-icon-button--ghost.is-hover {
+      background-color: var(--surface-soft);
+    }
+    .atom-icon-button--ghost:active,
+    .atom-icon-button--ghost.is-active {
+      background-color: var(--surface-active);
+      transform: scale(0.95);
+    }
+    .atom-icon-button--ghost:focus-visible,
+    .atom-icon-button--ghost.is-focus {
+      background-color: transparent;
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .atom-icon-button--ghost:disabled,
+    .atom-icon-button--ghost.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: soft (--surface-soft bg) ----------------- */
+    .atom-icon-button--soft {
+      background-color: var(--surface-soft);
+      color:            var(--text-body);
+    }
+    .atom-icon-button--soft:hover,
+    .atom-icon-button--soft.is-hover {
+      background-color: var(--surface-active);
+    }
+    .atom-icon-button--soft:active,
+    .atom-icon-button--soft.is-active {
+      background-color: var(--surface-active);
+      transform: scale(0.95);
+    }
+    .atom-icon-button--soft:focus-visible,
+    .atom-icon-button--soft.is-focus {
+      background-color: var(--surface-soft);
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .atom-icon-button--soft:disabled,
+    .atom-icon-button--soft.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: primary (ember brand) -------------------- */
+    .atom-icon-button--primary {
+      background-color: var(--accent-primary);
+      color:            var(--accent-primary-fg);
+    }
+    .atom-icon-button--primary:hover,
+    .atom-icon-button--primary.is-hover {
+      background-color: var(--accent-primary-hover);
+    }
+    .atom-icon-button--primary:active,
+    .atom-icon-button--primary.is-active {
+      background-color: var(--accent-primary-pressed);
+      transform: scale(0.95);
+    }
+    .atom-icon-button--primary:focus-visible,
+    .atom-icon-button--primary.is-focus {
+      background-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .atom-icon-button--primary:disabled,
+    .atom-icon-button--primary.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: neutral (high-contrast) ------------------ */
+    .atom-icon-button--neutral {
+      background-color: var(--surface-inverse);
+      color:            var(--text-on-inverse);
+    }
+    .atom-icon-button--neutral:hover,
+    .atom-icon-button--neutral.is-hover {
+      background-color: color-mix(in oklch, var(--surface-inverse) 85%, transparent 15%);
+    }
+    .atom-icon-button--neutral:active,
+    .atom-icon-button--neutral.is-active {
+      background-color: color-mix(in oklch, var(--surface-inverse) 70%, transparent 30%);
+      transform: scale(0.95);
+    }
+    .atom-icon-button--neutral:focus-visible,
+    .atom-icon-button--neutral.is-focus {
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .atom-icon-button--neutral:disabled,
+    .atom-icon-button--neutral.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: destructive ------------------------------ */
+    .atom-icon-button--destructive {
+      background-color: var(--state-danger-fg);
+      color:            var(--accent-primary-fg);
+    }
+    .atom-icon-button--destructive:hover,
+    .atom-icon-button--destructive.is-hover {
+      background-color: color-mix(in oklch, var(--state-danger-fg) 85%, black 15%);
+    }
+    .atom-icon-button--destructive:active,
+    .atom-icon-button--destructive.is-active {
+      background-color: color-mix(in oklch, var(--state-danger-fg) 70%, black 30%);
+      transform: scale(0.95);
+    }
+    .atom-icon-button--destructive:focus-visible,
+    .atom-icon-button--destructive.is-focus {
+      background-color: var(--state-danger-fg);
+      box-shadow: 0 0 0 3px color-mix(in oklch, var(--state-danger-fg) 50%, transparent 50%);
+    }
+    .atom-icon-button--destructive:disabled,
+    .atom-icon-button--destructive.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Loading state (cross-variant) --------------------- */
+    .atom-icon-button.is-loading {
+      pointer-events: none;
+      position:       relative;
+    }
+    /* hide the icon child when loading */
+    .atom-icon-button.is-loading .atom-icon-button__icon {
+      opacity: 0;
+    }
+    .atom-icon-button.is-loading::after {
+      content:       '';
+      position:      absolute;
+      width:         var(--space-4);
+      height:        var(--space-4);
+      border-radius: var(--radius-round);
+      border:        2px solid currentColor;
+      border-top-color: transparent;
+      animation:     atom-icon-button-spin var(--motion-slow) linear infinite;
+    }
+    /* Explicit spinner colors per variant */
+    .atom-icon-button--primary.is-loading::after    { border-color: var(--accent-primary-fg);  border-top-color: transparent; }
+    .atom-icon-button--neutral.is-loading::after    { border-color: var(--text-on-inverse);     border-top-color: transparent; }
+    .atom-icon-button--soft.is-loading::after       { border-color: var(--text-body);           border-top-color: transparent; }
+    .atom-icon-button--ghost.is-loading::after      { border-color: var(--text-body);           border-top-color: transparent; }
+    .atom-icon-button--destructive.is-loading::after { border-color: var(--accent-primary-fg); border-top-color: transparent; }
+
+    @keyframes atom-icon-button-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ---- Preview layout helpers ---------------------------- */
+    .variant-group {
+      margin-bottom: var(--spacing-section);
+    }
+    .variant-group-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      margin: 0 0 var(--space-2);
+      text-transform: uppercase;
+    }
+    .matrix-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-4);
+      flex-wrap:   wrap;
+      margin-bottom: var(--spacing-between);
+    }
+    .matrix-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-2);
+    }
+    .matrix-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      white-space:    nowrap;
+    }
+
+    /* Composition helpers */
+    .comp-section-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-2);
+    }
+    .comp-header-bar {
+      display:         flex;
+      align-items:     center;
+      gap:             var(--space-2);
+      padding:         var(--space-3) var(--space-4);
+      background:      var(--surface-raised);
+      border-radius:   var(--radius-default);
+      border:          1px solid var(--border-subtle);
+      margin-bottom:   var(--space-3);
+    }
+    .comp-header-bar .bar-title {
+      flex:           1;
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-title);
+      font-weight:    var(--font-weight-title);
+      color:          var(--text-heading);
+      letter-spacing: var(--tracking-snug);
+      white-space:    nowrap;
+      overflow:       hidden;
+      text-overflow:  ellipsis;
+    }
+    .comp-composer-bar {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-1);
+      padding:       var(--space-2) var(--space-3);
+      background:    var(--surface-raised);
+      border-radius: var(--radius-default);
+      border:        1px solid var(--border-subtle);
+      margin-bottom: var(--space-3);
+    }
+    .comp-composer-bar .bar-spacer {
+      flex: 1;
+    }
+    .comp-session-row {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-3);
+      padding:       var(--space-3) var(--space-4);
+      background:    var(--surface-raised);
+      border-radius: var(--radius-default);
+      border:        1px solid var(--border-subtle);
+      margin-bottom: var(--space-3);
+    }
+    .comp-session-row .row-label {
+      flex:           1;
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-body);
+      color:          var(--text-body);
+    }
+    .comp-session-row .row-meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    .preview-divider {
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+      margin: var(--spacing-section) 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">icon-button</h1>
+    <p class="crumb">atom · square icon-only tappable button — 44pt mobile minimum</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT × SIZE MATRIX (5 × 4 = 20 cells) ---------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">1 · variant × size matrix</p>
+
+        <!-- ghost row -->
+        <div class="matrix-row">
+          <span class="matrix-label" style="width:80px">ghost</span>
+          <!-- xs -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--xs" aria-label="Open menu">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="matrix-label">xs·28</span>
+          </div>
+          <!-- sm -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm" aria-label="Open menu">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="matrix-label">sm·36</span>
+          </div>
+          <!-- md -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md" aria-label="Open menu">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="matrix-label">md·44</span>
+          </div>
+          <!-- lg -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--lg" aria-label="Open menu">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="matrix-label">lg·56</span>
+          </div>
+        </div>
+
+        <!-- soft row -->
+        <div class="matrix-row">
+          <span class="matrix-label" style="width:80px">soft</span>
+          <!-- xs -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--soft atom-icon-button--xs" aria-label="Search">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </button>
+            <span class="matrix-label">xs·28</span>
+          </div>
+          <!-- sm -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--soft atom-icon-button--sm" aria-label="Search">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </button>
+            <span class="matrix-label">sm·36</span>
+          </div>
+          <!-- md -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--soft atom-icon-button--md" aria-label="Search">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </button>
+            <span class="matrix-label">md·44</span>
+          </div>
+          <!-- lg -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--soft atom-icon-button--lg" aria-label="Search">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </button>
+            <span class="matrix-label">lg·56</span>
+          </div>
+        </div>
+
+        <!-- primary row -->
+        <div class="matrix-row">
+          <span class="matrix-label" style="width:80px">primary</span>
+          <!-- xs -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--xs" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">xs·28</span>
+          </div>
+          <!-- sm -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--sm" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">sm·36</span>
+          </div>
+          <!-- md -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">md·44</span>
+          </div>
+          <!-- lg -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--lg" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">lg·56</span>
+          </div>
+        </div>
+
+        <!-- neutral row -->
+        <div class="matrix-row">
+          <span class="matrix-label" style="width:80px">neutral</span>
+          <!-- xs -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--neutral atom-icon-button--xs" aria-label="New chat">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="matrix-label">xs·28</span>
+          </div>
+          <!-- sm -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--neutral atom-icon-button--sm" aria-label="New chat">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="matrix-label">sm·36</span>
+          </div>
+          <!-- md -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--neutral atom-icon-button--md" aria-label="New chat">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="matrix-label">md·44</span>
+          </div>
+          <!-- lg -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--neutral atom-icon-button--lg" aria-label="New chat">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="matrix-label">lg·56</span>
+          </div>
+        </div>
+
+        <!-- destructive row -->
+        <div class="matrix-row">
+          <span class="matrix-label" style="width:80px">destructive</span>
+          <!-- xs -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--destructive atom-icon-button--xs" aria-label="Delete">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+            <span class="matrix-label">xs·28</span>
+          </div>
+          <!-- sm -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--destructive atom-icon-button--sm" aria-label="Delete">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+            <span class="matrix-label">sm·36</span>
+          </div>
+          <!-- md -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--destructive atom-icon-button--md" aria-label="Delete">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+            <span class="matrix-label">md·44</span>
+          </div>
+          <!-- lg -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--destructive atom-icon-button--lg" aria-label="Delete">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+            <span class="matrix-label">lg·56</span>
+          </div>
+        </div>
+      </div><!-- /matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. SHAPE MODIFIER --------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">2 · shape modifier — primary md: default vs pill</p>
+
+        <div class="matrix-row">
+          <!-- default (rounded square) -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">default<br>radius-default</span>
+          </div>
+          <!-- pill (fully round) -->
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">pill<br>radius-pill</span>
+          </div>
+        </div>
+      </div><!-- /shape modifier -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. STATE ROW — primary md, 6 states --------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">3 · state row — primary md (send icon)</p>
+
+        <div class="state-grid">
+          <!-- default -->
+          <div class="state">
+            <span class="state-label">default</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+          <!-- hover -->
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md is-hover" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+          <!-- active -->
+          <div class="state">
+            <span class="state-label">active</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md is-active" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+          <!-- focus -->
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md is-focus" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+          <!-- disabled -->
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md is-disabled" aria-label="Send message" aria-disabled="true">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+          <!-- loading -->
+          <div class="state">
+            <span class="state-label">loading</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md is-loading" aria-label="Send message" aria-busy="true">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 4. COMPOSITIONS ----------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">4 · compositions</p>
+
+        <!-- Header bar -->
+        <p class="comp-section-label">header bar — back + title + more</p>
+        <div class="comp-header-bar">
+          <!-- back-arrow ghost lg -->
+          <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--lg" aria-label="Back to sessions">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <span class="bar-title">Refactor relay tunnel</span>
+          <!-- more-vertical ghost lg -->
+          <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--lg" aria-label="Open menu">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Composer footer -->
+        <p class="comp-section-label">composer footer — paperclip + sparkles + brain + (spacer) + send pill</p>
+        <div class="comp-composer-bar">
+          <!-- paperclip ghost sm -->
+          <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm" aria-label="Attach file">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
+          </button>
+          <!-- sparkles ghost sm -->
+          <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm" aria-label="AI suggestions">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+              <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+              <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+            </svg>
+          </button>
+          <!-- brain ghost sm -->
+          <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm" aria-label="Context settings">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+              <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+              <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+              <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
+              <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+              <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+              <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
+              <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+              <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+            </svg>
+          </button>
+          <!-- spacer -->
+          <div class="bar-spacer"></div>
+          <!-- send primary md pill -->
+          <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill" aria-label="Send message">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Session row with trash -->
+        <p class="comp-section-label">session row — destructive sm</p>
+        <div class="comp-session-row">
+          <span class="row-label">Refactor relay tunnel</span>
+          <span class="row-meta">2h ago</span>
+          <!-- trash destructive sm -->
+          <button class="atom-icon-button atom-icon-button--destructive atom-icon-button--sm" aria-label="Delete session">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+          </button>
+        </div>
+      </div><!-- /compositions -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT × SIZE MATRIX (5 × 4 = 20 cells) ---------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">1 · variant × size matrix</p>
+
+        <!-- ghost row -->
+        <div class="matrix-row">
+          <span class="matrix-label" style="width:80px">ghost</span>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--xs" aria-label="Open menu">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="matrix-label">xs·28</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm" aria-label="Open menu">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="matrix-label">sm·36</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md" aria-label="Open menu">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="matrix-label">md·44</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--lg" aria-label="Open menu">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="matrix-label">lg·56</span>
+          </div>
+        </div>
+
+        <!-- soft row -->
+        <div class="matrix-row">
+          <span class="matrix-label" style="width:80px">soft</span>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--soft atom-icon-button--xs" aria-label="Search">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </button>
+            <span class="matrix-label">xs·28</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--soft atom-icon-button--sm" aria-label="Search">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </button>
+            <span class="matrix-label">sm·36</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--soft atom-icon-button--md" aria-label="Search">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </button>
+            <span class="matrix-label">md·44</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--soft atom-icon-button--lg" aria-label="Search">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </button>
+            <span class="matrix-label">lg·56</span>
+          </div>
+        </div>
+
+        <!-- primary row -->
+        <div class="matrix-row">
+          <span class="matrix-label" style="width:80px">primary</span>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--xs" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">xs·28</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--sm" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">sm·36</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">md·44</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--lg" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">lg·56</span>
+          </div>
+        </div>
+
+        <!-- neutral row -->
+        <div class="matrix-row">
+          <span class="matrix-label" style="width:80px">neutral</span>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--neutral atom-icon-button--xs" aria-label="New chat">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="matrix-label">xs·28</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--neutral atom-icon-button--sm" aria-label="New chat">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="matrix-label">sm·36</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--neutral atom-icon-button--md" aria-label="New chat">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="matrix-label">md·44</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--neutral atom-icon-button--lg" aria-label="New chat">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="matrix-label">lg·56</span>
+          </div>
+        </div>
+
+        <!-- destructive row -->
+        <div class="matrix-row">
+          <span class="matrix-label" style="width:80px">destructive</span>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--destructive atom-icon-button--xs" aria-label="Delete">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+            <span class="matrix-label">xs·28</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--destructive atom-icon-button--sm" aria-label="Delete">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+            <span class="matrix-label">sm·36</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--destructive atom-icon-button--md" aria-label="Delete">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+            <span class="matrix-label">md·44</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--destructive atom-icon-button--lg" aria-label="Delete">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+            <span class="matrix-label">lg·56</span>
+          </div>
+        </div>
+      </div><!-- /matrix light -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. SHAPE MODIFIER --------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">2 · shape modifier — primary md: default vs pill</p>
+
+        <div class="matrix-row">
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">default<br>radius-default</span>
+          </div>
+          <div class="matrix-cell">
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+            <span class="matrix-label">pill<br>radius-pill</span>
+          </div>
+        </div>
+      </div><!-- /shape modifier light -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. STATE ROW — primary md, 6 states --------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">3 · state row — primary md (send icon)</p>
+
+        <div class="state-grid">
+          <div class="state">
+            <span class="state-label">default</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md is-hover" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="state">
+            <span class="state-label">active</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md is-active" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md is-focus" aria-label="Send message">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md is-disabled" aria-label="Send message" aria-disabled="true">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="state">
+            <span class="state-label">loading</span>
+            <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md is-loading" aria-label="Send message" aria-busy="true">
+              <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div><!-- /state row light -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 4. COMPOSITIONS ----------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">4 · compositions</p>
+
+        <!-- Header bar -->
+        <p class="comp-section-label">header bar — back + title + more</p>
+        <div class="comp-header-bar">
+          <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--lg" aria-label="Back to sessions">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <span class="bar-title">Refactor relay tunnel</span>
+          <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--lg" aria-label="Open menu">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Composer footer -->
+        <p class="comp-section-label">composer footer — paperclip + sparkles + brain + (spacer) + send pill</p>
+        <div class="comp-composer-bar">
+          <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm" aria-label="Attach file">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
+          </button>
+          <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm" aria-label="AI suggestions">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+              <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+              <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+            </svg>
+          </button>
+          <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm" aria-label="Context settings">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+              <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+              <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+              <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
+              <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+              <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+              <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
+              <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+              <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+            </svg>
+          </button>
+          <div class="bar-spacer"></div>
+          <button class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill" aria-label="Send message">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Session row with trash -->
+        <p class="comp-section-label">session row — destructive sm</p>
+        <div class="comp-session-row">
+          <span class="row-label">Refactor relay tunnel</span>
+          <span class="row-meta">2h ago</span>
+          <button class="atom-icon-button atom-icon-button--destructive atom-icon-button--sm" aria-label="Delete session">
+            <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+          </button>
+        </div>
+      </div><!-- /compositions light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
