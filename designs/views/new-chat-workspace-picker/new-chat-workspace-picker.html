@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>new-chat-workspace-picker — UC-NAV §D</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-new-chat-workspace-picker — view-local layout glue only.
+       Composition purity:
+         ZERO .atom-* rules redefined here.
+         ZERO .mol-* rules redefined here.
+         ZERO hex literals.
+         ZERO raw font-size / font-weight / line-height values.
+         ZERO raw px in padding/margin/gap (1px structural borders
+         and --elevation-sheet box-shadow documented as exceptions).
+       Structural exceptions documented inline.
+    ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding:       var(--space-8) var(--space-4);
+      background:    var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- Viewport flex column --------------------------------- */
+    /*
+      atom-device-bezel__viewport is display:flex; flex-direction:column.
+      The content area (flex:1) holds both the dimmed sessions list and
+      the absolutely-positioned sheet overlay.
+    */
+
+    /* ---- Sessions list behind the sheet ----------------------- */
+    /*
+      Fills the full content region; the sheet overlay floats on top.
+      aria-hidden — this is decorative context, not interactive.
+    */
+    .view-new-chat-workspace-picker__sessions-behind {
+      position:       absolute;
+      inset:          0;
+      overflow:       hidden;
+      display:        flex;
+      flex-direction: column;
+    }
+
+    /* Simulated sessions-list app header stub */
+    .view-new-chat-workspace-picker__stub-header {
+      flex-shrink:    0;
+      display:        flex;
+      align-items:    center;
+      justify-content: space-between;
+      padding:        var(--space-3) var(--space-4);
+      border-bottom:  1px solid var(--border-subtle); /* 1px structural */
+    }
+
+    .view-new-chat-workspace-picker__stub-header-title {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-title);
+      font-weight:    var(--font-weight-title);
+      color:          var(--text-heading);
+      line-height:    var(--line-height-snug);
+    }
+
+    /* Sessions list scroll area stub */
+    .view-new-chat-workspace-picker__stub-list {
+      flex:           1;
+      overflow:       hidden;
+      display:        flex;
+      flex-direction: column;
+      padding:        var(--space-2) 0;
+    }
+
+    /* FAB stub — anchored to bottom-right, behind the sheet overlay */
+    .view-new-chat-workspace-picker__stub-fab {
+      position:  absolute;
+      bottom:    var(--space-8);
+      right:     var(--space-5);
+      z-index:   1; /* structural: below sheet overlay z-index:10 */
+    }
+
+    /* Scrim over the sessions list — sits atop the stub, below the sheet */
+    .view-new-chat-workspace-picker__sessions-behind .atom-backdrop {
+      position: absolute; /* structural: scrim anchored to content area */
+      z-index:  2;        /* structural: above stub, below sheet overlay */
+    }
+
+    /* ---- Sheet overlay ---------------------------------------- */
+    /*
+      Absolutely positioned at the bottom of atom-device-bezel__content.
+      Covers approximately 70% of viewport height per the brief spec.
+      Does not use position:fixed because the device-bezel__content
+      provides the scroll-isolation boundary.
+    */
+    .view-new-chat-workspace-picker__overlay {
+      position:       absolute;
+      bottom:         0;
+      left:           0;
+      right:          0;
+      z-index:        10; /* structural: above scrim (z:2) */
+      display:        flex;
+      flex-direction: column;
+      /* ~70vh expressed via max-height on the viewport height token */
+      max-height:     70%;
+      min-height:     0;
+    }
+
+    /* Sheet card surface */
+    .view-new-chat-workspace-picker__sheet {
+      background:              var(--surface-overlay);
+      border-top-left-radius:  var(--radius-xl);
+      border-top-right-radius: var(--radius-xl);
+      box-shadow:              var(--elevation-sheet);
+      display:                 flex;
+      flex-direction:          column;
+      overflow:                hidden;
+      flex:                    1;
+      min-height:              0;
+    }
+
+    /* Drag handle row — centered pill at sheet top */
+    .view-new-chat-workspace-picker__handle-row {
+      display:         flex;
+      justify-content: center;
+      padding:         var(--space-3) 0 var(--space-2);
+      flex-shrink:     0;
+    }
+
+    /* Sheet header — title + close button row */
+    .view-new-chat-workspace-picker__header {
+      display:         flex;
+      align-items:     center;
+      justify-content: space-between;
+      padding:         var(--space-1) var(--space-4) var(--space-3);
+      flex-shrink:     0;
+    }
+
+    /* Title group — diamond glyph + "Start a new chat" label */
+    .view-new-chat-workspace-picker__title-group {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+    }
+
+    /* Section label below header — "Pick a workspace in superset" */
+    .view-new-chat-workspace-picker__section-label {
+      padding:     0 var(--space-4) var(--space-3);
+      flex-shrink: 0;
+    }
+
+    /* Workspace row list — scrollable */
+    .view-new-chat-workspace-picker__row-list {
+      flex:            1;
+      overflow-y:      auto;
+      min-height:      0;
+      list-style:      none;
+      margin:          0;
+      padding:         var(--space-1) 0 var(--safe-area-bottom);
+      scrollbar-width: none;
+      display:         flex;
+      flex-direction:  column;
+    }
+
+    .view-new-chat-workspace-picker__row-list::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Scroll fade on the bottom of the list, anchored inside the sheet */
+    .view-new-chat-workspace-picker__list-wrap {
+      flex:     1;
+      min-height: 0;
+      position: relative;
+      display:  flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ---- Workspace row layout --------------------------------- */
+    /*
+      Each row is a full-width button composed from:
+        leading:  atom-icon-glyph (git-branch, --sm --muted)
+        body:     two-line column (title+host inline, meta below)
+        trailing: atom-icon-glyph (chevron-right, --xs --faint)
+
+      This is structurally equivalent to mol-session-row layout;
+      we define it as a view-local pattern since it carries workspace
+      (not session) semantics and uses a different line-1 composition.
+    */
+    .view-new-chat-workspace-picker__row {
+      display:                     flex;
+      align-items:                 center;
+      gap:                         var(--space-3);
+      padding:                     var(--space-3) var(--space-4);
+      min-height:                  var(--touch-target-min);
+      background:                  transparent;
+      border:                      none;
+      width:                       100%;
+      text-align:                  left;
+      cursor:                      pointer;
+      color:                       var(--text-body);
+      outline:                     none;
+      -webkit-tap-highlight-color: transparent;
+      transition:                  background-color var(--motion-fast) var(--motion-ease-out);
+    }
+
+    .view-new-chat-workspace-picker__row:hover,
+    .view-new-chat-workspace-picker__row.is-hover {
+      background: var(--surface-soft);
+    }
+
+    .view-new-chat-workspace-picker__row:active,
+    .view-new-chat-workspace-picker__row.is-active {
+      background: var(--surface-active);
+    }
+
+    .view-new-chat-workspace-picker__row:focus-visible,
+    .view-new-chat-workspace-picker__row.is-focus {
+      background: var(--surface-soft);
+      box-shadow: inset 0 0 0 2px var(--border-focus);
+    }
+
+    /* Leading icon slot */
+    .view-new-chat-workspace-picker__row-leading {
+      flex-shrink: 0;
+      display:     flex;
+      align-items: center;
+    }
+
+    /* Body column — two lines */
+    .view-new-chat-workspace-picker__row-body {
+      flex:           1;
+      min-width:      0;
+      display:        flex;
+      flex-direction: column;
+      gap:            2px; /* structural: tight 2px line gap matches mol-session-row */
+    }
+
+    /* Line 1 — workspace name + separator + host icon + host name */
+    .view-new-chat-workspace-picker__row-title-line {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-1);
+      white-space:   nowrap;
+      overflow:      hidden;
+      text-overflow: ellipsis;
+      min-width:     0;
+    }
+
+    /* Workspace name — body weight, truncatable */
+    .view-new-chat-workspace-picker__row-name {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body);
+      font-weight:    var(--font-weight-meta);
+      color:          var(--text-body);
+      line-height:    var(--line-height-snug);
+      white-space:    nowrap;
+      overflow:       hidden;
+      text-overflow:  ellipsis;
+      flex-shrink:    1;
+      min-width:      0;
+    }
+
+    /* Middle-dot separator between workspace name and host */
+    .view-new-chat-workspace-picker__row-sep {
+      font-family:  var(--font-body);
+      color:        var(--text-faint);
+      line-height:  var(--line-height-snug);
+      flex-shrink:  0;
+      user-select:  none;
+      font-size:    var(--font-size-body);
+    }
+
+    /* Host label — faint, no-shrink to keep it legible */
+    .view-new-chat-workspace-picker__row-host {
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      color:         var(--text-faint);
+      line-height:   var(--line-height-snug);
+      white-space:   nowrap;
+      overflow:      hidden;
+      text-overflow: ellipsis;
+      flex-shrink:   1;
+      min-width:     0;
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-1);
+    }
+
+    /* Line 2 — session count + timeago (meta text) */
+    .view-new-chat-workspace-picker__row-meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      color:          var(--text-muted);
+      line-height:    var(--line-height-snug);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      white-space:    nowrap;
+      overflow:       hidden;
+      text-overflow:  ellipsis;
+    }
+
+    /* Empty workspace — "no sessions yet" meta rendered faint */
+    .view-new-chat-workspace-picker__row-meta--empty {
+      color: var(--text-faint);
+    }
+
+    /* Trailing chevron slot */
+    .view-new-chat-workspace-picker__row-trailing {
+      flex-shrink: 0;
+      display:     flex;
+      align-items: center;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">new-chat-workspace-picker</h1>
+    <p class="crumb">UC-NAV §D · Start a new chat — workspace picker bottom sheet</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- Content area — position:relative, flex:1 -->
+          <div class="atom-device-bezel__content">
+
+            <!-- ── Sessions list behind the sheet (aria-hidden) ─── -->
+            <div
+              class="view-new-chat-workspace-picker__sessions-behind"
+              aria-hidden="true"
+            >
+
+              <!-- Backdrop scrim over sessions list -->
+              <div
+                class="atom-backdrop atom-backdrop--scrim"
+                aria-hidden="true"
+              ></div>
+
+              <!-- Sessions list header stub -->
+              <div class="view-new-chat-workspace-picker__stub-header">
+                <span class="view-new-chat-workspace-picker__stub-header-title">Sessions</span>
+                <!-- Workspace pill stub -->
+                <span
+                  class="atom-pill atom-pill--default atom-pill--sm"
+                  aria-hidden="true"
+                >superset</span>
+              </div>
+
+              <!-- Session row stubs — decorative backdrop -->
+              <div class="view-new-chat-workspace-picker__stub-list">
+
+                <button class="mol-session-row" type="button" tabindex="-1" aria-hidden="true">
+                  <span class="mol-session-row__leading">
+                    <span class="atom-status-dot atom-status-dot--live" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body">Fix auth bug</span>
+                    <span class="mol-session-row__meta type-meta">chat-mobile-plan · 2m ago</span>
+                  </span>
+                </button>
+
+                <button class="mol-session-row" type="button" tabindex="-1" aria-hidden="true">
+                  <span class="mol-session-row__leading">
+                    <span class="atom-status-dot atom-status-dot--neutral" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body">Refactor billing API</span>
+                    <span class="mol-session-row__meta type-meta">api-rewrite · 1h ago</span>
+                  </span>
+                </button>
+
+                <button class="mol-session-row" type="button" tabindex="-1" aria-hidden="true">
+                  <span class="mol-session-row__leading">
+                    <span class="atom-status-dot atom-status-dot--neutral" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body">Update README</span>
+                    <span class="mol-session-row__meta type-meta">main · yesterday</span>
+                  </span>
+                </button>
+
+              </div><!-- /stub-list -->
+
+              <!-- FAB stub — dimmed behind scrim -->
+              <div class="view-new-chat-workspace-picker__stub-fab" aria-hidden="true">
+                <button
+                  class="atom-fab-base atom-fab-base--accent"
+                  type="button"
+                  tabindex="-1"
+                  aria-label="New chat"
+                  aria-hidden="true"
+                >
+                  <span class="atom-fab-base__icon" aria-hidden="true">
+                    <!-- Plus icon -->
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+            </div><!-- /sessions-behind -->
+
+            <!-- ── Sheet overlay ──────────────────────────────── -->
+            <div
+              class="view-new-chat-workspace-picker__overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Start a new chat"
+            >
+              <div class="view-new-chat-workspace-picker__sheet">
+
+                <!-- Drag handle -->
+                <div
+                  class="view-new-chat-workspace-picker__handle-row"
+                  aria-hidden="true"
+                >
+                  <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--muted"></div>
+                </div>
+
+                <!-- Sheet header: title + close button -->
+                <div class="view-new-chat-workspace-picker__header">
+                  <div class="view-new-chat-workspace-picker__title-group">
+                    <!-- Diamond / sparkle glyph (◇) -->
+                    <svg
+                      class="atom-icon-glyph atom-icon-glyph--md atom-icon-glyph--muted"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                    </svg>
+                    <h2 class="type-title">Start a new chat</h2>
+                  </div>
+
+                  <!-- Close button -->
+                  <button
+                    class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                    type="button"
+                    aria-label="Close"
+                  >
+                    <svg
+                      class="atom-icon-button__icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div><!-- /header -->
+
+                <!-- Section label: "Pick a workspace in superset" -->
+                <div class="view-new-chat-workspace-picker__section-label">
+                  <p class="type-body" style="color: var(--text-muted); margin: 0;">Pick a workspace in superset</p>
+                </div>
+
+                <!-- Workspace row list — scrollable -->
+                <div class="view-new-chat-workspace-picker__list-wrap">
+
+                  <!-- Scroll fade top -->
+                  <div
+                    class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-overlay is-hidden"
+                    aria-hidden="true"
+                  ></div>
+
+                  <ul
+                    class="view-new-chat-workspace-picker__row-list"
+                    role="list"
+                    aria-label="Workspaces"
+                  >
+
+                    <!-- Row 1: chat-mobile-plan · macbook -->
+                    <li role="listitem">
+                      <button
+                        class="view-new-chat-workspace-picker__row"
+                        type="button"
+                        aria-label="Start new chat in chat-mobile-plan on macbook, 5 sessions, 2 minutes ago"
+                      >
+                        <!-- Leading: git-branch icon -->
+                        <span class="view-new-chat-workspace-picker__row-leading" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <line x1="6" y1="3" x2="6" y2="15"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <path d="M18 9a9 9 0 0 1-9 9"/>
+                          </svg>
+                        </span>
+                        <!-- Body: two-line column -->
+                        <span class="view-new-chat-workspace-picker__row-body">
+                          <!-- Line 1: name · host -->
+                          <span class="view-new-chat-workspace-picker__row-title-line">
+                            <span class="view-new-chat-workspace-picker__row-name">chat-mobile-plan</span>
+                            <span class="view-new-chat-workspace-picker__row-sep" aria-hidden="true">·</span>
+                            <span class="view-new-chat-workspace-picker__row-host">
+                              💻 macbook
+                            </span>
+                          </span>
+                          <!-- Line 2: meta -->
+                          <span class="view-new-chat-workspace-picker__row-meta">5 sessions · 2m ago</span>
+                        </span>
+                        <!-- Trailing: chevron-right -->
+                        <span class="view-new-chat-workspace-picker__row-trailing" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                      </button>
+                    </li><!-- /row 1 -->
+
+                    <!-- Row 2: api-rewrite · cloud-1 -->
+                    <li role="listitem">
+                      <button
+                        class="view-new-chat-workspace-picker__row"
+                        type="button"
+                        aria-label="Start new chat in api-rewrite on cloud-1, 3 sessions, 1 hour ago"
+                      >
+                        <span class="view-new-chat-workspace-picker__row-leading" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <line x1="6" y1="3" x2="6" y2="15"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <path d="M18 9a9 9 0 0 1-9 9"/>
+                          </svg>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-body">
+                          <span class="view-new-chat-workspace-picker__row-title-line">
+                            <span class="view-new-chat-workspace-picker__row-name">api-rewrite</span>
+                            <span class="view-new-chat-workspace-picker__row-sep" aria-hidden="true">·</span>
+                            <span class="view-new-chat-workspace-picker__row-host">
+                              ☁️ cloud-1
+                            </span>
+                          </span>
+                          <span class="view-new-chat-workspace-picker__row-meta">3 sessions · 1h ago</span>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-trailing" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                      </button>
+                    </li><!-- /row 2 -->
+
+                    <!-- Row 3: main · macbook -->
+                    <li role="listitem">
+                      <button
+                        class="view-new-chat-workspace-picker__row"
+                        type="button"
+                        aria-label="Start new chat in main on macbook, 2 sessions, yesterday"
+                      >
+                        <span class="view-new-chat-workspace-picker__row-leading" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <line x1="6" y1="3" x2="6" y2="15"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <path d="M18 9a9 9 0 0 1-9 9"/>
+                          </svg>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-body">
+                          <span class="view-new-chat-workspace-picker__row-title-line">
+                            <span class="view-new-chat-workspace-picker__row-name">main</span>
+                            <span class="view-new-chat-workspace-picker__row-sep" aria-hidden="true">·</span>
+                            <span class="view-new-chat-workspace-picker__row-host">
+                              💻 macbook
+                            </span>
+                          </span>
+                          <span class="view-new-chat-workspace-picker__row-meta">2 sessions · yesterday</span>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-trailing" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                      </button>
+                    </li><!-- /row 3 -->
+
+                    <!-- Row 4: main · desktop -->
+                    <li role="listitem">
+                      <button
+                        class="view-new-chat-workspace-picker__row"
+                        type="button"
+                        aria-label="Start new chat in main on desktop, 1 session, 3 days ago"
+                      >
+                        <span class="view-new-chat-workspace-picker__row-leading" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <line x1="6" y1="3" x2="6" y2="15"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <path d="M18 9a9 9 0 0 1-9 9"/>
+                          </svg>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-body">
+                          <span class="view-new-chat-workspace-picker__row-title-line">
+                            <span class="view-new-chat-workspace-picker__row-name">main</span>
+                            <span class="view-new-chat-workspace-picker__row-sep" aria-hidden="true">·</span>
+                            <span class="view-new-chat-workspace-picker__row-host">
+                              💻 desktop
+                            </span>
+                          </span>
+                          <span class="view-new-chat-workspace-picker__row-meta">1 session · 3 days ago</span>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-trailing" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                      </button>
+                    </li><!-- /row 4 -->
+
+                    <!-- Row 5: feature-x · cloud-1 (no sessions yet) -->
+                    <li role="listitem">
+                      <button
+                        class="view-new-chat-workspace-picker__row"
+                        type="button"
+                        aria-label="Start new chat in feature-x on cloud-1, no sessions yet"
+                      >
+                        <span class="view-new-chat-workspace-picker__row-leading" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <line x1="6" y1="3" x2="6" y2="15"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <path d="M18 9a9 9 0 0 1-9 9"/>
+                          </svg>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-body">
+                          <span class="view-new-chat-workspace-picker__row-title-line">
+                            <span class="view-new-chat-workspace-picker__row-name">feature-x</span>
+                            <span class="view-new-chat-workspace-picker__row-sep" aria-hidden="true">·</span>
+                            <span class="view-new-chat-workspace-picker__row-host">
+                              ☁️ cloud-1
+                            </span>
+                          </span>
+                          <!-- Empty workspace — faint meta text -->
+                          <span class="view-new-chat-workspace-picker__row-meta view-new-chat-workspace-picker__row-meta--empty">no sessions yet</span>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-trailing" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                      </button>
+                    </li><!-- /row 5 -->
+
+                  </ul><!-- /row-list -->
+
+                  <!-- Scroll fade bottom -->
+                  <div
+                    class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-overlay"
+                    aria-hidden="true"
+                  ></div>
+
+                </div><!-- /list-wrap -->
+
+              </div><!-- /sheet -->
+            </div><!-- /overlay -->
+
+          </div><!-- /atom-device-bezel__content -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- Content area -->
+          <div class="atom-device-bezel__content">
+
+            <!-- ── Sessions list behind the sheet (aria-hidden) ─── -->
+            <div
+              class="view-new-chat-workspace-picker__sessions-behind"
+              aria-hidden="true"
+            >
+              <div
+                class="atom-backdrop atom-backdrop--scrim"
+                aria-hidden="true"
+              ></div>
+
+              <div class="view-new-chat-workspace-picker__stub-header">
+                <span class="view-new-chat-workspace-picker__stub-header-title">Sessions</span>
+                <span
+                  class="atom-pill atom-pill--default atom-pill--sm"
+                  aria-hidden="true"
+                >superset</span>
+              </div>
+
+              <div class="view-new-chat-workspace-picker__stub-list">
+
+                <button class="mol-session-row" type="button" tabindex="-1" aria-hidden="true">
+                  <span class="mol-session-row__leading">
+                    <span class="atom-status-dot atom-status-dot--live" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body">Fix auth bug</span>
+                    <span class="mol-session-row__meta type-meta">chat-mobile-plan · 2m ago</span>
+                  </span>
+                </button>
+
+                <button class="mol-session-row" type="button" tabindex="-1" aria-hidden="true">
+                  <span class="mol-session-row__leading">
+                    <span class="atom-status-dot atom-status-dot--neutral" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body">Refactor billing API</span>
+                    <span class="mol-session-row__meta type-meta">api-rewrite · 1h ago</span>
+                  </span>
+                </button>
+
+                <button class="mol-session-row" type="button" tabindex="-1" aria-hidden="true">
+                  <span class="mol-session-row__leading">
+                    <span class="atom-status-dot atom-status-dot--neutral" aria-hidden="true"></span>
+                  </span>
+                  <span class="mol-session-row__body">
+                    <span class="mol-session-row__title type-body">Update README</span>
+                    <span class="mol-session-row__meta type-meta">main · yesterday</span>
+                  </span>
+                </button>
+
+              </div><!-- /stub-list -->
+
+              <div class="view-new-chat-workspace-picker__stub-fab" aria-hidden="true">
+                <button
+                  class="atom-fab-base atom-fab-base--accent"
+                  type="button"
+                  tabindex="-1"
+                  aria-hidden="true"
+                >
+                  <span class="atom-fab-base__icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+            </div><!-- /sessions-behind -->
+
+            <!-- ── Sheet overlay ──────────────────────────────── -->
+            <div
+              class="view-new-chat-workspace-picker__overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Start a new chat"
+            >
+              <div class="view-new-chat-workspace-picker__sheet">
+
+                <!-- Drag handle -->
+                <div
+                  class="view-new-chat-workspace-picker__handle-row"
+                  aria-hidden="true"
+                >
+                  <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--muted"></div>
+                </div>
+
+                <!-- Sheet header: title + close button -->
+                <div class="view-new-chat-workspace-picker__header">
+                  <div class="view-new-chat-workspace-picker__title-group">
+                    <svg
+                      class="atom-icon-glyph atom-icon-glyph--md atom-icon-glyph--muted"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.75"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                    </svg>
+                    <h2 class="type-title">Start a new chat</h2>
+                  </div>
+
+                  <button
+                    class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                    type="button"
+                    aria-label="Close"
+                  >
+                    <svg
+                      class="atom-icon-button__icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div><!-- /header -->
+
+                <!-- Section label -->
+                <div class="view-new-chat-workspace-picker__section-label">
+                  <p class="type-body" style="color: var(--text-muted); margin: 0;">Pick a workspace in superset</p>
+                </div>
+
+                <!-- Workspace row list -->
+                <div class="view-new-chat-workspace-picker__list-wrap">
+
+                  <div
+                    class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-overlay is-hidden"
+                    aria-hidden="true"
+                  ></div>
+
+                  <ul
+                    class="view-new-chat-workspace-picker__row-list"
+                    role="list"
+                    aria-label="Workspaces"
+                  >
+
+                    <!-- Row 1: chat-mobile-plan · macbook -->
+                    <li role="listitem">
+                      <button
+                        class="view-new-chat-workspace-picker__row"
+                        type="button"
+                        aria-label="Start new chat in chat-mobile-plan on macbook, 5 sessions, 2 minutes ago"
+                      >
+                        <span class="view-new-chat-workspace-picker__row-leading" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <line x1="6" y1="3" x2="6" y2="15"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <path d="M18 9a9 9 0 0 1-9 9"/>
+                          </svg>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-body">
+                          <span class="view-new-chat-workspace-picker__row-title-line">
+                            <span class="view-new-chat-workspace-picker__row-name">chat-mobile-plan</span>
+                            <span class="view-new-chat-workspace-picker__row-sep" aria-hidden="true">·</span>
+                            <span class="view-new-chat-workspace-picker__row-host">💻 macbook</span>
+                          </span>
+                          <span class="view-new-chat-workspace-picker__row-meta">5 sessions · 2m ago</span>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-trailing" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                      </button>
+                    </li>
+
+                    <!-- Row 2: api-rewrite · cloud-1 -->
+                    <li role="listitem">
+                      <button
+                        class="view-new-chat-workspace-picker__row"
+                        type="button"
+                        aria-label="Start new chat in api-rewrite on cloud-1, 3 sessions, 1 hour ago"
+                      >
+                        <span class="view-new-chat-workspace-picker__row-leading" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <line x1="6" y1="3" x2="6" y2="15"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <path d="M18 9a9 9 0 0 1-9 9"/>
+                          </svg>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-body">
+                          <span class="view-new-chat-workspace-picker__row-title-line">
+                            <span class="view-new-chat-workspace-picker__row-name">api-rewrite</span>
+                            <span class="view-new-chat-workspace-picker__row-sep" aria-hidden="true">·</span>
+                            <span class="view-new-chat-workspace-picker__row-host">☁️ cloud-1</span>
+                          </span>
+                          <span class="view-new-chat-workspace-picker__row-meta">3 sessions · 1h ago</span>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-trailing" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                      </button>
+                    </li>
+
+                    <!-- Row 3: main · macbook -->
+                    <li role="listitem">
+                      <button
+                        class="view-new-chat-workspace-picker__row"
+                        type="button"
+                        aria-label="Start new chat in main on macbook, 2 sessions, yesterday"
+                      >
+                        <span class="view-new-chat-workspace-picker__row-leading" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <line x1="6" y1="3" x2="6" y2="15"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <path d="M18 9a9 9 0 0 1-9 9"/>
+                          </svg>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-body">
+                          <span class="view-new-chat-workspace-picker__row-title-line">
+                            <span class="view-new-chat-workspace-picker__row-name">main</span>
+                            <span class="view-new-chat-workspace-picker__row-sep" aria-hidden="true">·</span>
+                            <span class="view-new-chat-workspace-picker__row-host">💻 macbook</span>
+                          </span>
+                          <span class="view-new-chat-workspace-picker__row-meta">2 sessions · yesterday</span>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-trailing" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                      </button>
+                    </li>
+
+                    <!-- Row 4: main · desktop -->
+                    <li role="listitem">
+                      <button
+                        class="view-new-chat-workspace-picker__row"
+                        type="button"
+                        aria-label="Start new chat in main on desktop, 1 session, 3 days ago"
+                      >
+                        <span class="view-new-chat-workspace-picker__row-leading" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <line x1="6" y1="3" x2="6" y2="15"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <path d="M18 9a9 9 0 0 1-9 9"/>
+                          </svg>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-body">
+                          <span class="view-new-chat-workspace-picker__row-title-line">
+                            <span class="view-new-chat-workspace-picker__row-name">main</span>
+                            <span class="view-new-chat-workspace-picker__row-sep" aria-hidden="true">·</span>
+                            <span class="view-new-chat-workspace-picker__row-host">💻 desktop</span>
+                          </span>
+                          <span class="view-new-chat-workspace-picker__row-meta">1 session · 3 days ago</span>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-trailing" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                      </button>
+                    </li>
+
+                    <!-- Row 5: feature-x · cloud-1 (no sessions yet) -->
+                    <li role="listitem">
+                      <button
+                        class="view-new-chat-workspace-picker__row"
+                        type="button"
+                        aria-label="Start new chat in feature-x on cloud-1, no sessions yet"
+                      >
+                        <span class="view-new-chat-workspace-picker__row-leading" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <line x1="6" y1="3" x2="6" y2="15"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <path d="M18 9a9 9 0 0 1-9 9"/>
+                          </svg>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-body">
+                          <span class="view-new-chat-workspace-picker__row-title-line">
+                            <span class="view-new-chat-workspace-picker__row-name">feature-x</span>
+                            <span class="view-new-chat-workspace-picker__row-sep" aria-hidden="true">·</span>
+                            <span class="view-new-chat-workspace-picker__row-host">☁️ cloud-1</span>
+                          </span>
+                          <span class="view-new-chat-workspace-picker__row-meta view-new-chat-workspace-picker__row-meta--empty">no sessions yet</span>
+                        </span>
+                        <span class="view-new-chat-workspace-picker__row-trailing" aria-hidden="true">
+                          <svg
+                            class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                      </button>
+                    </li>
+
+                  </ul><!-- /row-list -->
+
+                  <div
+                    class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-overlay"
+                    aria-hidden="true"
+                  ></div>
+
+                </div><!-- /list-wrap -->
+
+              </div><!-- /sheet -->
+            </div><!-- /overlay -->
+
+          </div><!-- /atom-device-bezel__content -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
