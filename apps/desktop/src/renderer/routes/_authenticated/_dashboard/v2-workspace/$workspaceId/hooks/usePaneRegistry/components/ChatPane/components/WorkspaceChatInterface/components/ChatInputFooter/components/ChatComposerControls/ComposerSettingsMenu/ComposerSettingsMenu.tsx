@@ -14,12 +14,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import {
 	BrainIcon,
 	CheckIcon,
+	ChevronRightIcon,
 	ShieldCheckIcon,
 	ShieldIcon,
 	ShieldOffIcon,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PILL_BUTTON_CLASS } from "renderer/components/Chat/ChatInterface/styles";
 import type {
 	ModelOption,
@@ -98,6 +99,7 @@ export function ComposerSettingsMenu({
 	setThinkingLevel,
 }: ComposerSettingsMenuProps) {
 	const [menuOpen, setMenuOpen] = useState(false);
+	const pendingDialogOpenRef = useRef(false);
 
 	const activePermission =
 		PERMISSION_MODES.find((m) => m.value === permissionMode) ??
@@ -145,28 +147,17 @@ export function ComposerSettingsMenu({
 					<p>{tooltipText}</p>
 				</TooltipContent>
 			</Tooltip>
-			<DropdownMenuContent align="start" className="w-64">
-				<DropdownMenuLabel>Model</DropdownMenuLabel>
-				<DropdownMenuItem
-					onSelect={(event) => {
+			<DropdownMenuContent
+				align="start"
+				className="w-64"
+				onCloseAutoFocus={(event) => {
+					if (pendingDialogOpenRef.current) {
 						event.preventDefault();
-						setMenuOpen(false);
-						queueMicrotask(() => setModelSelectorOpen(true));
-					}}
-					className="flex items-center gap-2"
-				>
-					{selectedLogo === ANTHROPIC_LOGO_PROVIDER ? (
-						<img alt="Claude" className="size-3" src={claudeIcon} />
-					) : selectedLogo ? (
-						<ModelSelectorLogo provider={selectedLogo} />
-					) : null}
-					<span className="truncate flex-1">
-						{selectedModel?.name ?? "Model"}
-					</span>
-				</DropdownMenuItem>
-
-				<DropdownMenuSeparator />
-
+						pendingDialogOpenRef.current = false;
+						setModelSelectorOpen(true);
+					}
+				}}
+			>
 				<DropdownMenuLabel>Permission</DropdownMenuLabel>
 				{PERMISSION_MODES.map((mode) => {
 					const Icon = mode.icon;
@@ -210,6 +201,33 @@ export function ComposerSettingsMenu({
 						</DropdownMenuItem>
 					);
 				})}
+
+				<DropdownMenuSeparator />
+
+				<div className="p-1">
+					<button
+						type="button"
+						className="flex w-full items-center justify-between gap-2 rounded-md border border-border bg-foreground/[0.04] px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-foreground/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						aria-label={`Change model. Current model: ${selectedModel?.name ?? "Model"}`}
+						onClick={() => {
+							pendingDialogOpenRef.current = true;
+							setMenuOpen(false);
+						}}
+					>
+						<span className="flex items-center gap-2 min-w-0">
+							{selectedLogo === ANTHROPIC_LOGO_PROVIDER ? (
+								<img alt="Claude" className="size-3" src={claudeIcon} />
+							) : selectedLogo ? (
+								<ModelSelectorLogo provider={selectedLogo} />
+							) : null}
+							<span className="truncate">{selectedModel?.name ?? "Model"}</span>
+						</span>
+						<span className="flex items-center gap-0.5 text-muted-foreground">
+							Change
+							<ChevronRightIcon className="size-3" />
+						</span>
+					</button>
+				</div>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
