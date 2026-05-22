@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>molecule · filter-checkbox-row</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+  <style>
+    /* ============================================================
+       mol-filter-checkbox-row
+       Token-governed filter row: checkbox + icon + label.
+       Two variants: --workspace (branch + host icon) and --status
+       (status-encoded icon only).
+
+       Composition purity:
+         - Zero hex literals
+         - Zero numeric font-* values
+         - All spacing via var(--space-*) or var(--touch-target-min)
+         - SVG stroke-width is structural geometry (TOKEN-AUDIT exception)
+         - Atom classes used unchanged; no overrides to atom internals
+       ============================================================ */
+
+    /* ---- Base ------------------------------------------------- */
+    .mol-filter-checkbox-row {
+      display:         flex;
+      align-items:     center;
+      gap:             var(--space-3);
+      padding-block:   var(--space-3);
+      padding-inline:  var(--space-4);
+      min-height:      var(--touch-target-min);
+      cursor:          pointer;
+      border-radius:   var(--radius-default);
+      -webkit-tap-highlight-color: transparent;
+
+      transition: background-color var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Slots ------------------------------------------------ */
+    .mol-filter-checkbox-row__icon      { flex-shrink: 0; }
+    .mol-filter-checkbox-row__label     { flex: 1; min-width: 0; }
+    .mol-filter-checkbox-row__separator { color: var(--text-faint); flex-shrink: 0; }
+    .mol-filter-checkbox-row__host-icon { flex-shrink: 0; }
+    .mol-filter-checkbox-row__host      { color: var(--text-muted); flex-shrink: 0; }
+
+    /* ---- Hover state ------------------------------------------ */
+    .mol-filter-checkbox-row:hover,
+    .mol-filter-checkbox-row.is-hover {
+      background: var(--surface-soft);
+    }
+
+    /* ---- Active (pressed) state ------------------------------- */
+    .mol-filter-checkbox-row:active,
+    .mol-filter-checkbox-row.is-active {
+      background: var(--surface-active);
+    }
+
+    /* ---- Checked state (any variant) -------------------------- */
+    .mol-filter-checkbox-row:has(.atom-checkbox__input:checked),
+    .mol-filter-checkbox-row.is-checked {
+      background: var(--surface-active);
+    }
+
+    /* ---- Disabled state --------------------------------------- */
+    .mol-filter-checkbox-row.is-disabled {
+      opacity:        0.5;
+      pointer-events: none;
+      cursor:         not-allowed;
+    }
+
+    /* ---- Status variant: default icon color is live ----------- */
+    .mol-filter-checkbox-row--status .mol-filter-checkbox-row__icon {
+      color: var(--state-live-fg);
+    }
+
+    /* ---- Status variant: warning override --------------------- */
+    .mol-filter-checkbox-row--status.mol-filter-checkbox-row--warning .mol-filter-checkbox-row__icon {
+      color: var(--state-warning-fg);
+    }
+
+    /* ---- Status variant: idle override (muted = neutral idle) - */
+    .mol-filter-checkbox-row--status.mol-filter-checkbox-row--idle .mol-filter-checkbox-row__icon {
+      color: var(--text-muted);
+    }
+
+    /* ============================================================
+       Preview layout helpers — not part of the molecule contract
+       ============================================================ */
+
+    .matrix-section {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      max-width:      360px;
+    }
+
+    .matrix-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin-bottom:  var(--space-1);
+    }
+
+    .state-strip {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+      max-width:      360px;
+    }
+
+    .state-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      padding-left:   var(--space-4);
+      margin-top:     var(--space-2);
+      margin-bottom:  var(--space-1);
+    }
+
+    /* Composition: filter sheet content area */
+    .filter-sheet-content {
+      max-width:       360px;
+      background:      var(--surface-overlay);
+      border-radius:   var(--radius-lg);
+      padding:         var(--space-4) 0 var(--space-6);
+      border:          1px solid var(--border-subtle);
+    }
+
+    .filter-section-header {
+      padding:        var(--space-3) var(--space-4) var(--space-2);
+    }
+
+    .filter-section-rows {
+      display:        flex;
+      flex-direction: column;
+      gap:            0;
+      padding:        0 var(--space-2);
+    }
+
+    .filter-section-spacer {
+      height: var(--space-4);
+    }
+
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">filter-checkbox-row</h1>
+    <p class="crumb">molecule · filter sheet row — workspace + status variants</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- 1. VARIANT MATRIX ------------------------------------ -->
+      <div class="variant">
+        <h3>1 · variant matrix — workspace + status × unchecked + checked = 4 rows</h3>
+
+        <p class="matrix-label">workspace variant</p>
+        <div class="matrix-section">
+
+          <!-- workspace · unchecked -->
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: chat-mobile-plan on macbook">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">chat-mobile-plan</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+          <!-- workspace · checked -->
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-checked">
+              <input type="checkbox" checked class="atom-checkbox__input" aria-label="Filter by workspace: api-rewrite on cloud-1">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">api-rewrite</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M17.5 19a4.5 4.5 0 1 0-1.36-8.79A6 6 0 0 0 5 13.5h-.5a3.5 3.5 0 0 0 0 7H17.5"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">cloud-1</span>
+          </label>
+
+        </div>
+
+        <p class="matrix-label" style="margin-top: var(--space-5);">status variant</p>
+        <div class="matrix-section">
+
+          <!-- status · unchecked (streaming / live) -->
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--status">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by status: Streaming">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/>
+              <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4"/>
+              <circle cx="12" cy="12" r="2"/>
+              <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4"/>
+              <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">Streaming</span>
+          </label>
+
+          <!-- status · checked (streaming / live) -->
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--status">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-checked">
+              <input type="checkbox" checked class="atom-checkbox__input" aria-label="Filter by status: Streaming">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/>
+              <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4"/>
+              <circle cx="12" cy="12" r="2"/>
+              <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4"/>
+              <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">Streaming</span>
+          </label>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- 2. STATE ROW ------------------------------------------ -->
+      <div class="variant">
+        <h3>2 · state row — workspace variant in 5 states</h3>
+
+        <div class="state-strip">
+
+          <p class="state-cell-label">default</p>
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">main</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+          <p class="state-cell-label">hover</p>
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace is-hover">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook (hover state)">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">main</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+          <p class="state-cell-label">active</p>
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace is-active">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-active">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook (active state)">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">main</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+          <p class="state-cell-label">focus</p>
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-focus">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook (focus state)">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">main</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+          <p class="state-cell-label">disabled</p>
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace is-disabled">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-disabled">
+              <input type="checkbox" disabled class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook (disabled)">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">main</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+        </div>
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- 3. COMPOSITION — Full filter sheet content area --------- -->
+      <div class="variant">
+        <h3>3 · composition — filter sheet content area (workspaces + status)</h3>
+
+        <div class="filter-sheet-content">
+
+          <!-- Workspaces section -->
+          <div class="filter-section-header">
+            <span class="atom-section-label">Workspaces</span>
+          </div>
+          <div class="filter-section-rows">
+
+            <!-- checked: chat-mobile-plan · macbook -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-checked">
+                <input type="checkbox" checked class="atom-checkbox__input" aria-label="Filter by workspace: chat-mobile-plan on macbook">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <line x1="6" y1="3" x2="6" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">chat-mobile-plan</span>
+              <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+            </label>
+
+            <!-- checked: api-rewrite · cloud-1 -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-checked">
+                <input type="checkbox" checked class="atom-checkbox__input" aria-label="Filter by workspace: api-rewrite on cloud-1">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <line x1="6" y1="3" x2="6" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">api-rewrite</span>
+              <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M17.5 19a4.5 4.5 0 1 0-1.36-8.79A6 6 0 0 0 5 13.5h-.5a3.5 3.5 0 0 0 0 7H17.5"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__host type-meta">cloud-1</span>
+            </label>
+
+            <!-- unchecked: main · macbook -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+                <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <line x1="6" y1="3" x2="6" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">main</span>
+              <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+            </label>
+
+            <!-- unchecked: main · desktop -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+                <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on desktop">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <line x1="6" y1="3" x2="6" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">main</span>
+              <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__host type-meta">desktop</span>
+            </label>
+
+            <!-- unchecked: feature-x · cloud-1 -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+                <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: feature-x on cloud-1">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <line x1="6" y1="3" x2="6" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">feature-x</span>
+              <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M17.5 19a4.5 4.5 0 1 0-1.36-8.79A6 6 0 0 0 5 13.5h-.5a3.5 3.5 0 0 0 0 7H17.5"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__host type-meta">cloud-1</span>
+            </label>
+
+          </div><!-- /workspaces rows -->
+
+          <div class="filter-section-spacer"></div>
+
+          <!-- Status section -->
+          <div class="filter-section-header">
+            <span class="atom-section-label">Status</span>
+          </div>
+          <div class="filter-section-rows">
+
+            <!-- checked: Streaming (live) -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--status">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-checked">
+                <input type="checkbox" checked class="atom-checkbox__input" aria-label="Filter by status: Streaming">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/>
+                <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4"/>
+                <circle cx="12" cy="12" r="2"/>
+                <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4"/>
+                <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">Streaming</span>
+            </label>
+
+            <!-- unchecked: Pause pending (warning) -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--status mol-filter-checkbox-row--warning">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+                <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by status: Pause pending">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">Pause pending</span>
+            </label>
+
+            <!-- unchecked: Idle (neutral) -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--status mol-filter-checkbox-row--idle">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+                <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by status: Idle">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">Idle</span>
+            </label>
+
+          </div><!-- /status rows -->
+
+        </div><!-- /filter-sheet-content -->
+
+      </div><!-- /composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- 1. VARIANT MATRIX ------------------------------------ -->
+      <div class="variant">
+        <h3>1 · variant matrix — workspace + status × unchecked + checked = 4 rows</h3>
+
+        <p class="matrix-label">workspace variant</p>
+        <div class="matrix-section">
+
+          <!-- workspace · unchecked -->
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: chat-mobile-plan on macbook">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">chat-mobile-plan</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+          <!-- workspace · checked -->
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-checked">
+              <input type="checkbox" checked class="atom-checkbox__input" aria-label="Filter by workspace: api-rewrite on cloud-1">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">api-rewrite</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M17.5 19a4.5 4.5 0 1 0-1.36-8.79A6 6 0 0 0 5 13.5h-.5a3.5 3.5 0 0 0 0 7H17.5"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">cloud-1</span>
+          </label>
+
+        </div>
+
+        <p class="matrix-label" style="margin-top: var(--space-5);">status variant</p>
+        <div class="matrix-section">
+
+          <!-- status · unchecked (streaming / live) -->
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--status">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by status: Streaming">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/>
+              <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4"/>
+              <circle cx="12" cy="12" r="2"/>
+              <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4"/>
+              <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">Streaming</span>
+          </label>
+
+          <!-- status · checked (streaming / live) -->
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--status">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-checked">
+              <input type="checkbox" checked class="atom-checkbox__input" aria-label="Filter by status: Streaming">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/>
+              <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4"/>
+              <circle cx="12" cy="12" r="2"/>
+              <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4"/>
+              <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">Streaming</span>
+          </label>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- 2. STATE ROW ------------------------------------------ -->
+      <div class="variant">
+        <h3>2 · state row — workspace variant in 5 states</h3>
+
+        <div class="state-strip">
+
+          <p class="state-cell-label">default</p>
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">main</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+          <p class="state-cell-label">hover</p>
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace is-hover">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook (hover state)">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">main</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+          <p class="state-cell-label">active</p>
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace is-active">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-active">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook (active state)">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">main</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+          <p class="state-cell-label">focus</p>
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-focus">
+              <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook (focus state)">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">main</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+          <p class="state-cell-label">disabled</p>
+          <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace is-disabled">
+            <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-disabled">
+              <input type="checkbox" disabled class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook (disabled)">
+              <span class="atom-checkbox__box" aria-hidden="true">
+                <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </span>
+            </span>
+            <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <line x1="6" y1="3" x2="6" y2="15"/>
+              <circle cx="18" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <path d="M18 9a9 9 0 0 1-9 9"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__label type-body">main</span>
+            <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+            </svg>
+            <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+          </label>
+
+        </div>
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- 3. COMPOSITION — Full filter sheet content area --------- -->
+      <div class="variant">
+        <h3>3 · composition — filter sheet content area (workspaces + status)</h3>
+
+        <div class="filter-sheet-content">
+
+          <!-- Workspaces section -->
+          <div class="filter-section-header">
+            <span class="atom-section-label">Workspaces</span>
+          </div>
+          <div class="filter-section-rows">
+
+            <!-- checked: chat-mobile-plan · macbook -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-checked">
+                <input type="checkbox" checked class="atom-checkbox__input" aria-label="Filter by workspace: chat-mobile-plan on macbook">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <line x1="6" y1="3" x2="6" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">chat-mobile-plan</span>
+              <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+            </label>
+
+            <!-- checked: api-rewrite · cloud-1 -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-checked">
+                <input type="checkbox" checked class="atom-checkbox__input" aria-label="Filter by workspace: api-rewrite on cloud-1">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <line x1="6" y1="3" x2="6" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">api-rewrite</span>
+              <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M17.5 19a4.5 4.5 0 1 0-1.36-8.79A6 6 0 0 0 5 13.5h-.5a3.5 3.5 0 0 0 0 7H17.5"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__host type-meta">cloud-1</span>
+            </label>
+
+            <!-- unchecked: main · macbook -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+                <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on macbook">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <line x1="6" y1="3" x2="6" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">main</span>
+              <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__host type-meta">macbook</span>
+            </label>
+
+            <!-- unchecked: main · desktop -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+                <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: main on desktop">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <line x1="6" y1="3" x2="6" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">main</span>
+              <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__host type-meta">desktop</span>
+            </label>
+
+            <!-- unchecked: feature-x · cloud-1 -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--workspace">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+                <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by workspace: feature-x on cloud-1">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <line x1="6" y1="3" x2="6" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">feature-x</span>
+              <span class="mol-filter-checkbox-row__separator" aria-hidden="true">·</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-filter-checkbox-row__host-icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M17.5 19a4.5 4.5 0 1 0-1.36-8.79A6 6 0 0 0 5 13.5h-.5a3.5 3.5 0 0 0 0 7H17.5"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__host type-meta">cloud-1</span>
+            </label>
+
+          </div><!-- /workspaces rows -->
+
+          <div class="filter-section-spacer"></div>
+
+          <!-- Status section -->
+          <div class="filter-section-header">
+            <span class="atom-section-label">Status</span>
+          </div>
+          <div class="filter-section-rows">
+
+            <!-- checked: Streaming (live) -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--status">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md is-checked">
+                <input type="checkbox" checked class="atom-checkbox__input" aria-label="Filter by status: Streaming">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/>
+                <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4"/>
+                <circle cx="12" cy="12" r="2"/>
+                <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4"/>
+                <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">Streaming</span>
+            </label>
+
+            <!-- unchecked: Pause pending (warning) -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--status mol-filter-checkbox-row--warning">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+                <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by status: Pause pending">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">Pause pending</span>
+            </label>
+
+            <!-- unchecked: Idle (neutral) -->
+            <label class="mol-filter-checkbox-row mol-filter-checkbox-row--status mol-filter-checkbox-row--idle">
+              <span class="atom-checkbox atom-checkbox--default atom-checkbox--md">
+                <input type="checkbox" class="atom-checkbox__input" aria-label="Filter by status: Idle">
+                <span class="atom-checkbox__box" aria-hidden="true">
+                  <svg class="atom-checkbox__check" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </span>
+              </span>
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-filter-checkbox-row__icon"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+              </svg>
+              <span class="mol-filter-checkbox-row__label type-body">Idle</span>
+            </label>
+
+          </div><!-- /status rows -->
+
+        </div><!-- /filter-sheet-content -->
+
+      </div><!-- /composition -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
