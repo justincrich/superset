@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · kbd</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-kbd — token-governed keyboard glyph atom
+       Composition purity: only .atom-kbd rules defined here.
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Zero raw px in padding/margin/gap.
+       ============================================================ */
+
+    /* ---- Base ----------------------------------------------- */
+    .atom-kbd {
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      flex-shrink:     0;
+
+      font-family:    var(--font-mono);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      line-height:    var(--line-height-tight);
+      white-space:    nowrap;
+
+      border-radius:  var(--radius-subtle);
+      padding:        var(--space-1) var(--space-2);
+
+      /* Motion */
+      transition:
+        transform         var(--motion-fast) var(--motion-ease-out),
+        background-color  var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Sizes --------------------------------------------- */
+    /* sm is the default (also explicit class for clarity) */
+    .atom-kbd--sm {
+      font-size: var(--font-size-meta);
+    }
+
+    .atom-kbd--md {
+      font-size: var(--font-size-label);
+    }
+
+    /* ---- Variant: default ---------------------------------- */
+    .atom-kbd--default {
+      background-color: var(--surface-soft);
+      border:           1px solid var(--border-default);
+      color:            var(--text-muted);
+    }
+
+    .atom-kbd--default.is-pressed,
+    .atom-kbd--default:active {
+      background-color: color-mix(in oklch, var(--surface-soft) 80%, black 20%);
+      transform:        translateY(1px);
+    }
+
+    /* ---- Variant: inline ----------------------------------- */
+    /* Smaller visual weight for mid-sentence use */
+    .atom-kbd--inline {
+      background-color: var(--surface-sunken);
+      border:           1px solid var(--border-subtle);
+      color:            var(--text-body);
+    }
+
+    .atom-kbd--inline.is-pressed,
+    .atom-kbd--inline:active {
+      background-color: color-mix(in oklch, var(--surface-sunken) 80%, black 20%);
+      transform:        translateY(1px);
+    }
+
+    /* ---- Variant: strong ----------------------------------- */
+    /* High contrast — inverted surface, used in hotkey menus */
+    .atom-kbd--strong {
+      background-color: var(--surface-inverse);
+      border:           none;
+      color:            var(--text-on-inverse);
+    }
+
+    .atom-kbd--strong.is-pressed,
+    .atom-kbd--strong:active {
+      background-color: color-mix(in oklch, var(--surface-inverse) 80%, black 20%);
+      transform:        translateY(1px);
+    }
+
+    /* ---- Chord separator ----------------------------------- */
+    .atom-kbd-sep {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      color:          var(--text-faint);
+      padding:        0 var(--space-1);
+      line-height:    var(--line-height-tight);
+      user-select:    none;
+    }
+
+    /* ---- Preview layout helpers ---------------------------- */
+    .kbd-row {
+      display:     flex;
+      flex-wrap:   wrap;
+      align-items: center;
+      gap:         var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+
+    .kbd-chord {
+      display:     inline-flex;
+      align-items: center;
+    }
+
+    .size-compare {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+
+    .size-compare-group {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+    }
+
+    .size-compare-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin-right:   var(--space-1);
+    }
+
+    .inline-sentence {
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body);
+      line-height:   var(--line-height-normal);
+      color:         var(--text-body);
+      margin-bottom: var(--space-4);
+    }
+
+    .recipe-footer {
+      padding:    var(--spacing-section) var(--spacing-between);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .recipe-footer h2 {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-heading);
+      letter-spacing: var(--tracking-tight);
+      color:          var(--text-heading);
+      margin:         0 0 var(--spacing-between);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">kbd</h1>
+    <p class="crumb">atom · keyboard glyph</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- DEFAULT VARIANT --------------------------------- -->
+      <div class="variant">
+        <h3>default</h3>
+
+        <!-- 1. Single keys -->
+        <div class="state">
+          <span class="state-label">single keys</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌥</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌃</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⇧</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⎋</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌫</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">A</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">B</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">K</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">N</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">P</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">1</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">5</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">0</kbd>
+          </div>
+        </div>
+
+        <!-- 2. Chords -->
+        <div class="state">
+          <span class="state-label">chords</span>
+          <div class="kbd-row">
+            <!-- ⌘ K — Command Palette -->
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">K</kbd>
+            </span>
+            <!-- ⌘ ⏎ — Send -->
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⏎</kbd>
+            </span>
+            <!-- ⌘ / — Slash menu -->
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">/</kbd>
+            </span>
+            <!-- Esc — Cancel -->
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">Esc</kbd>
+            <!-- ⌘ ⇧ F — Find -->
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⇧</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">F</kbd>
+            </span>
+            <!-- ⌘ N — New chat -->
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">N</kbd>
+            </span>
+          </div>
+        </div>
+
+        <!-- 3. Sizes -->
+        <div class="state">
+          <span class="state-label">sizes — sm vs md</span>
+          <div class="size-compare">
+            <div class="size-compare-group">
+              <span class="size-compare-label">sm</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">K</kbd>
+            </div>
+            <div class="size-compare-group">
+              <span class="size-compare-label">md</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--md">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--md">K</kbd>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Inline use -->
+        <div class="state">
+          <span class="state-label">inline use</span>
+          <p class="inline-sentence">
+            Press <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd><span class="atom-kbd-sep" aria-hidden="true">+</span><kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">K</kbd> to open the command palette, or <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">Esc</kbd> to cancel.
+          </p>
+        </div>
+
+        <!-- 5. Pressed state -->
+        <div class="state">
+          <span class="state-label">is-pressed — ⏎</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm is-pressed">⏎</kbd>
+          </div>
+        </div>
+      </div><!-- /default -->
+
+      <!-- ---- INLINE VARIANT ---------------------------------- -->
+      <div class="variant">
+        <h3>inline</h3>
+
+        <div class="state">
+          <span class="state-label">single keys</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌥</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌃</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⇧</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⎋</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌫</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">A</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">K</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">N</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">P</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">1</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">5</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">0</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">Esc</kbd>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">chords</span>
+          <div class="kbd-row">
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">K</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⏎</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⇧</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">F</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">N</kbd>
+            </span>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">sizes — sm vs md</span>
+          <div class="size-compare">
+            <div class="size-compare-group">
+              <span class="size-compare-label">sm</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">K</kbd>
+            </div>
+            <div class="size-compare-group">
+              <span class="size-compare-label">md</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--md">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--md">K</kbd>
+            </div>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">inline use</span>
+          <p class="inline-sentence">
+            Use <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd><span class="atom-kbd-sep" aria-hidden="true">+</span><kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">K</kbd> to open the command palette, or <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">Esc</kbd> to cancel.
+          </p>
+        </div>
+
+        <div class="state">
+          <span class="state-label">is-pressed — ⏎</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm is-pressed">⏎</kbd>
+          </div>
+        </div>
+      </div><!-- /inline -->
+
+      <!-- ---- STRONG VARIANT ---------------------------------- -->
+      <div class="variant">
+        <h3>strong</h3>
+
+        <div class="state">
+          <span class="state-label">single keys</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌥</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌃</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⇧</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⎋</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌫</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">A</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">K</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">N</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">P</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">1</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">5</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">0</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">Esc</kbd>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">chords</span>
+          <div class="kbd-row">
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">K</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⏎</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⇧</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">F</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">N</kbd>
+            </span>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">sizes — sm vs md</span>
+          <div class="size-compare">
+            <div class="size-compare-group">
+              <span class="size-compare-label">sm</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">K</kbd>
+            </div>
+            <div class="size-compare-group">
+              <span class="size-compare-label">md</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--md">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--md">K</kbd>
+            </div>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">inline use</span>
+          <p class="inline-sentence">
+            Press <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd><span class="atom-kbd-sep" aria-hidden="true">+</span><kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">K</kbd> to open the command palette, or <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">Esc</kbd> to cancel.
+          </p>
+        </div>
+
+        <div class="state">
+          <span class="state-label">is-pressed — ⏎</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm is-pressed">⏎</kbd>
+          </div>
+        </div>
+      </div><!-- /strong -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- DEFAULT VARIANT --------------------------------- -->
+      <div class="variant">
+        <h3>default</h3>
+
+        <div class="state">
+          <span class="state-label">single keys</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌥</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌃</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⇧</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⎋</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌫</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">A</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">B</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">K</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">N</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">P</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">1</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">5</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">0</kbd>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">chords</span>
+          <div class="kbd-row">
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">K</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⏎</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">/</kbd>
+            </span>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">Esc</kbd>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⇧</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">F</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">N</kbd>
+            </span>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">sizes — sm vs md</span>
+          <div class="size-compare">
+            <div class="size-compare-group">
+              <span class="size-compare-label">sm</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">K</kbd>
+            </div>
+            <div class="size-compare-group">
+              <span class="size-compare-label">md</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--md">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--default atom-kbd--md">K</kbd>
+            </div>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">inline use</span>
+          <p class="inline-sentence">
+            Press <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd><span class="atom-kbd-sep" aria-hidden="true">+</span><kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">K</kbd> to open the command palette, or <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">Esc</kbd> to cancel.
+          </p>
+        </div>
+
+        <div class="state">
+          <span class="state-label">is-pressed — ⏎</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--default atom-kbd--sm is-pressed">⏎</kbd>
+          </div>
+        </div>
+      </div><!-- /default light -->
+
+      <!-- ---- INLINE VARIANT ---------------------------------- -->
+      <div class="variant">
+        <h3>inline</h3>
+
+        <div class="state">
+          <span class="state-label">single keys</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌥</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌃</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⇧</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⎋</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌫</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">A</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">K</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">N</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">P</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">1</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">5</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">0</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">Esc</kbd>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">chords</span>
+          <div class="kbd-row">
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">K</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⏎</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⇧</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">F</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">N</kbd>
+            </span>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">sizes — sm vs md</span>
+          <div class="size-compare">
+            <div class="size-compare-group">
+              <span class="size-compare-label">sm</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">K</kbd>
+            </div>
+            <div class="size-compare-group">
+              <span class="size-compare-label">md</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--md">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--inline atom-kbd--md">K</kbd>
+            </div>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">inline use</span>
+          <p class="inline-sentence">
+            Use <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⌘</kbd><span class="atom-kbd-sep" aria-hidden="true">+</span><kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">K</kbd> to open the command palette, or <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">Esc</kbd> to cancel.
+          </p>
+        </div>
+
+        <div class="state">
+          <span class="state-label">is-pressed — ⏎</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--inline atom-kbd--sm is-pressed">⏎</kbd>
+          </div>
+        </div>
+      </div><!-- /inline light -->
+
+      <!-- ---- STRONG VARIANT ---------------------------------- -->
+      <div class="variant">
+        <h3>strong</h3>
+
+        <div class="state">
+          <span class="state-label">single keys</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌥</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌃</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⇧</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⎋</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌫</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">A</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">K</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">N</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">P</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">1</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">5</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">0</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">Esc</kbd>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">chords</span>
+          <div class="kbd-row">
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">K</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⏎</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⇧</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">F</kbd>
+            </span>
+            <span class="kbd-chord">
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">N</kbd>
+            </span>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">sizes — sm vs md</span>
+          <div class="size-compare">
+            <div class="size-compare-group">
+              <span class="size-compare-label">sm</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">K</kbd>
+            </div>
+            <div class="size-compare-group">
+              <span class="size-compare-label">md</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--md">⌘</kbd>
+              <span class="atom-kbd-sep" aria-hidden="true">+</span>
+              <kbd class="atom-kbd atom-kbd--strong atom-kbd--md">K</kbd>
+            </div>
+          </div>
+        </div>
+
+        <div class="state">
+          <span class="state-label">inline use</span>
+          <p class="inline-sentence">
+            Press <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⌘</kbd><span class="atom-kbd-sep" aria-hidden="true">+</span><kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">K</kbd> to open the command palette, or <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">Esc</kbd> to cancel.
+          </p>
+        </div>
+
+        <div class="state">
+          <span class="state-label">is-pressed — ⏎</span>
+          <div class="kbd-row">
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm">⏎</kbd>
+            <kbd class="atom-kbd atom-kbd--strong atom-kbd--sm is-pressed">⏎</kbd>
+          </div>
+        </div>
+      </div><!-- /strong light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe table
+       ============================================================ -->
+  <footer class="recipe-footer">
+    <h2>token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>property</th>
+          <th>variant / size</th>
+          <th>token</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>background-color</td><td>default</td><td>var(--surface-soft)</td></tr>
+        <tr><td>background-color</td><td>default · pressed</td><td>color-mix(in oklch, var(--surface-soft) 80%, black 20%)</td></tr>
+        <tr><td>background-color</td><td>inline</td><td>var(--surface-sunken)</td></tr>
+        <tr><td>background-color</td><td>inline · pressed</td><td>color-mix(in oklch, var(--surface-sunken) 80%, black 20%)</td></tr>
+        <tr><td>background-color</td><td>strong</td><td>var(--surface-inverse)</td></tr>
+        <tr><td>background-color</td><td>strong · pressed</td><td>color-mix(in oklch, var(--surface-inverse) 80%, black 20%)</td></tr>
+        <tr><td>border</td><td>default</td><td>1px solid var(--border-default)</td></tr>
+        <tr><td>border</td><td>inline</td><td>1px solid var(--border-subtle)</td></tr>
+        <tr><td>border</td><td>strong</td><td>none</td></tr>
+        <tr><td>color</td><td>default</td><td>var(--text-muted)</td></tr>
+        <tr><td>color</td><td>inline</td><td>var(--text-body)</td></tr>
+        <tr><td>color</td><td>strong</td><td>var(--text-on-inverse)</td></tr>
+        <tr><td>font-family</td><td>all</td><td>var(--font-mono)</td></tr>
+        <tr><td>font-size</td><td>sm</td><td>var(--font-size-meta)</td></tr>
+        <tr><td>font-size</td><td>md</td><td>var(--font-size-label)</td></tr>
+        <tr><td>font-weight</td><td>all</td><td>var(--font-weight-meta)</td></tr>
+        <tr><td>letter-spacing</td><td>all</td><td>var(--tracking-mono)</td></tr>
+        <tr><td>line-height</td><td>all</td><td>var(--line-height-tight)</td></tr>
+        <tr><td>padding</td><td>all sizes</td><td>var(--space-1) var(--space-2)</td></tr>
+        <tr><td>border-radius</td><td>all sizes</td><td>var(--radius-subtle)</td></tr>
+        <tr><td>transform</td><td>pressed state</td><td>translateY(1px)</td></tr>
+        <tr><td>transition</td><td>all</td><td>var(--motion-fast) var(--motion-ease-out)</td></tr>
+      </tbody>
+    </table>
+  </footer>
+
+</body>
+</html>
