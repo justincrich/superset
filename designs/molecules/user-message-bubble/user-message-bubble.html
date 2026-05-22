@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-user-message-bubble — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-user-message-bubble — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. Structural exceptions documented inline.
+       ================================================================ */
+
+    /* ---- Article container --------------------------------------- */
+    .mol-user-message-bubble {
+      display:        flex;
+      flex-direction: column;
+      align-items:    flex-end;
+      gap:            var(--space-1);
+      max-width:      100%;
+    }
+
+    /* ---- Bubble surface: long-press tap zone -------------------- */
+    /* Uses atom-hit-target-wrapper as base; molecule overrides
+       display to block so text wraps naturally inside the bubble. */
+    .mol-user-message-bubble__bubble {
+      display:                  block; /* override inline-flex from atom */
+      background:               var(--surface-soft);
+      color:                    var(--text-body);
+      padding:                  var(--space-3) var(--space-4);
+      border-radius:            var(--radius-xl);
+      border-top-right-radius:  var(--radius-default); /* sender-tail convention */
+      max-width:                85%;  /* structural layout constraint — TOKEN_GAP */
+      word-wrap:                break-word;
+      text-align:               left;
+      border:                   none;
+      outline:                  none;
+      cursor:                   pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        transform  var(--motion-fast) var(--motion-ease-out),
+        box-shadow var(--motion-fast) var(--motion-ease-out);
+    }
+
+    .mol-user-message-bubble__bubble:focus-visible {
+      outline:    none;
+      box-shadow: 0 0 0 2px var(--border-focus);
+    }
+
+    /* ---- Message text ------------------------------------------ */
+    .mol-user-message-bubble__text {
+      margin:      0;
+      line-height: var(--line-height-normal);
+    }
+
+    /* ---- Meta row: timestamp + optional retry ------------------ */
+    .mol-user-message-bubble__meta {
+      display:           flex;
+      align-items:       center;
+      gap:               var(--space-2);
+      padding-inline-end: var(--space-2);
+    }
+
+    /* ---- Retry button (is-failed only) ------------------------- */
+    .mol-user-message-bubble__retry {
+      /* Composed from atom-button--link atom-button--sm;
+         no additional rules needed here */
+    }
+
+    /* ---- Variant: accent --------------------------------------- */
+    .mol-user-message-bubble--accent .mol-user-message-bubble__bubble {
+      background: var(--accent-primary-subtle);
+    }
+
+    /* ---- Variant: pending -------------------------------------- */
+    /* opacity: 0.6 — raw float structural geometry (TOKEN_GAP) */
+    .mol-user-message-bubble--pending .mol-user-message-bubble__bubble {
+      opacity: 0.6;
+    }
+
+    /* ---- State: is-long-press ---------------------------------- */
+    .mol-user-message-bubble.is-long-press .mol-user-message-bubble__bubble {
+      transform:  scale(1.02);
+      box-shadow: var(--elevation-raised);
+    }
+
+    /* ---- State: is-failed -------------------------------------- */
+    /* domain-tool-rule-width matches tool-status-rule convention */
+    .mol-user-message-bubble.is-failed .mol-user-message-bubble__bubble {
+      border-left: var(--domain-tool-rule-width) solid var(--state-danger-fg);
+    }
+
+    /* ---- Reduced motion ---------------------------------------- */
+    @media (prefers-reduced-motion: reduce) {
+      .mol-user-message-bubble__bubble {
+        transition: none;
+      }
+      .mol-user-message-bubble.is-long-press .mol-user-message-bubble__bubble {
+        transform:  none;
+        box-shadow: var(--elevation-raised);
+      }
+    }
+
+
+    /* ================================================================
+       Preview layout helpers — not part of the molecule export
+       ================================================================ */
+
+    /* Stub: assistant message head placeholder for composition demo */
+    .preview-asst-stub {
+      display:         flex;
+      align-items:     center;
+      gap:             var(--space-2);
+      padding:         var(--space-3) var(--space-4);
+      color:           var(--text-muted);
+      font-family:     var(--font-body);
+      font-size:       var(--font-size-body-sm);
+    }
+
+    .preview-asst-stub__text {
+      color:      var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Chat scroll: constrained width + vertical stack */
+    .preview-chat-scroll {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-4);
+      max-width:      375px; /* iPhone viewport width */
+      padding:        var(--space-4);
+    }
+
+    /* State label beneath a demo cell */
+    .preview-state-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin-top:     var(--space-2);
+      text-align:     right;
+    }
+
+    /* Variant label above a demo block */
+    .preview-variant-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin-bottom:  var(--space-3);
+    }
+
+    /* Demo cell wrapper */
+    .preview-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    flex-end;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       HEADER
+       ============================================================ -->
+  <div class="preview-plate">
+    <p class="crumb">molecules / user-message-bubble</p>
+    <h1>mol-user-message-bubble</h1>
+  </div>
+
+  <!-- ============================================================
+       DARK PANE
+       ============================================================ -->
+  <div class="pegboard">
+  <div class="pane" data-theme="dark">
+    <span class="pane-label">dark</span>
+
+    <!-- ---- 1. Variant matrix ----------------------------------- -->
+    <div class="variant">
+      <h3>1 · Variant Matrix (3 variants × realistic content)</h3>
+
+      <!-- --default -->
+      <div class="preview-cell" style="margin-bottom: var(--space-6);">
+        <p class="preview-variant-label">--default · standard outgoing message</p>
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default"
+          aria-label="Your message: The relay tunnel is reconnecting on every Wi-Fi flap. Can you find where we set the backoff and increase it?"
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              The relay tunnel is reconnecting on every Wi-Fi flap. Can you find where we set the backoff and increase it?
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:42 PM</span>
+          </footer>
+        </article>
+      </div>
+
+      <!-- --accent -->
+      <div class="preview-cell" style="margin-bottom: var(--space-6);">
+        <p class="preview-variant-label">--accent · @mention reference (ember tint)</p>
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--accent"
+          aria-label="Your message: @assistant Yes, but keep the connect attempt itself synchronous so we can still log the failure reason."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              @assistant Yes, but keep the connect attempt itself synchronous so we can still log the failure reason.
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:45 PM</span>
+          </footer>
+        </article>
+      </div>
+
+      <!-- --pending -->
+      <div class="preview-cell" style="margin-bottom: var(--space-6);">
+        <p class="preview-variant-label">--pending · optimistic-append (0.6 opacity)</p>
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--pending"
+          aria-label="Your message: Send this when you get a chance: the chat composer should auto-grow."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              Send this when you get a chance: the chat composer should auto-grow.
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:46 PM</span>
+          </footer>
+        </article>
+      </div>
+    </div>
+
+    <!-- ---- 2. State row ---------------------------------------- -->
+    <div class="variant">
+      <h3>2 · State Row (--default bubble × 3 states)</h3>
+
+      <!-- default state -->
+      <div class="preview-cell" style="margin-bottom: var(--space-5);">
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default"
+          aria-label="Your message: Increase the reconnect backoff."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">Increase the reconnect backoff.</p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">9:03 AM</span>
+          </footer>
+        </article>
+        <p class="preview-state-label">default</p>
+      </div>
+
+      <!-- is-long-press -->
+      <div class="preview-cell" style="margin-bottom: var(--space-5);">
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default is-long-press"
+          aria-label="Your message: Increase the reconnect backoff."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">Increase the reconnect backoff.</p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">9:03 AM</span>
+          </footer>
+        </article>
+        <p class="preview-state-label">is-long-press</p>
+      </div>
+
+      <!-- is-failed -->
+      <div class="preview-cell" style="margin-bottom: var(--space-5);">
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default is-failed"
+          aria-label="Your message: Increase the reconnect backoff."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">Increase the reconnect backoff.</p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">Failed to send</span>
+            <button
+              class="mol-user-message-bubble__retry atom-button atom-button--link atom-button--sm"
+              type="button"
+            >Retry</button>
+          </footer>
+        </article>
+        <p class="preview-state-label">is-failed</p>
+      </div>
+    </div>
+
+    <!-- ---- 3. Composition: faux chat scroll ------------------- -->
+    <div class="variant">
+      <h3>3 · Composition · Faux Chat Scroll (4 user bubbles + assistant stubs)</h3>
+      <p style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-faint); letter-spacing: var(--tracking-mono); text-transform: uppercase; margin-bottom: var(--space-4);">
+        Demonstrates right-alignment · max-width 85% · corner-tight pattern · alternating with assistant
+      </p>
+
+      <div class="preview-chat-scroll">
+
+        <!-- User message 1 -->
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default"
+          aria-label="Your message: The relay tunnel is reconnecting on every Wi-Fi flap. Can you find where we set the backoff and increase it?"
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              The relay tunnel is reconnecting on every Wi-Fi flap. Can you find where we set the backoff and increase it?
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:42 PM</span>
+          </footer>
+        </article>
+
+        <!-- Assistant stub 1 -->
+        <div class="preview-asst-stub" aria-label="Assistant reply placeholder">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm" role="img" aria-label="Assistant">A</div>
+          <span class="preview-asst-stub__text">Found it. The reconnect loop uses a hardcoded 250ms backoff…</span>
+        </div>
+
+        <!-- User message 2: accent (@mention) -->
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--accent"
+          aria-label="Your message: @assistant Yes, but keep the connect attempt itself synchronous so we can still log the failure reason."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              @assistant Yes, but keep the connect attempt itself synchronous so we can still log the failure reason.
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:45 PM</span>
+          </footer>
+        </article>
+
+        <!-- Assistant stub 2 -->
+        <div class="preview-asst-stub" aria-label="Assistant reply placeholder">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm" role="img" aria-label="Assistant">A</div>
+          <span class="preview-asst-stub__text">Done. I'll preserve the inner try/catch and log err.code + err.message…</span>
+        </div>
+
+        <!-- User message 3: short -->
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default"
+          aria-label="Your message: Can you also add a comment explaining the jitter formula?"
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              Can you also add a comment explaining the jitter formula?
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:47 PM</span>
+          </footer>
+        </article>
+
+        <!-- Assistant stub 3 -->
+        <div class="preview-asst-stub" aria-label="Assistant reply placeholder">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm" role="img" aria-label="Assistant">A</div>
+          <span class="preview-asst-stub__text">Added inline doc comment above the jitter call…</span>
+        </div>
+
+        <!-- User message 4: pending -->
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--pending"
+          aria-label="Your message: Send this when you get a chance: the chat composer should auto-grow."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              Send this when you get a chance: the chat composer should auto-grow.
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:49 PM</span>
+          </footer>
+        </article>
+
+      </div><!-- /preview-chat-scroll -->
+    </div>
+
+  </div><!-- /dark pane -->
+
+  <!-- ============================================================
+       LIGHT PANE
+       ============================================================ -->
+  <div class="pane" data-theme="light">
+    <span class="pane-label">light</span>
+
+    <!-- ---- 1. Variant matrix ----------------------------------- -->
+    <div class="variant">
+      <h3>1 · Variant Matrix (3 variants × realistic content)</h3>
+
+      <!-- --default -->
+      <div class="preview-cell" style="margin-bottom: var(--space-6);">
+        <p class="preview-variant-label">--default · standard outgoing message</p>
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default"
+          aria-label="Your message: The relay tunnel is reconnecting on every Wi-Fi flap. Can you find where we set the backoff and increase it?"
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              The relay tunnel is reconnecting on every Wi-Fi flap. Can you find where we set the backoff and increase it?
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:42 PM</span>
+          </footer>
+        </article>
+      </div>
+
+      <!-- --accent -->
+      <div class="preview-cell" style="margin-bottom: var(--space-6);">
+        <p class="preview-variant-label">--accent · @mention reference (ember tint)</p>
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--accent"
+          aria-label="Your message: @assistant Yes, but keep the connect attempt itself synchronous so we can still log the failure reason."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              @assistant Yes, but keep the connect attempt itself synchronous so we can still log the failure reason.
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:45 PM</span>
+          </footer>
+        </article>
+      </div>
+
+      <!-- --pending -->
+      <div class="preview-cell" style="margin-bottom: var(--space-6);">
+        <p class="preview-variant-label">--pending · optimistic-append (0.6 opacity)</p>
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--pending"
+          aria-label="Your message: Send this when you get a chance: the chat composer should auto-grow."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              Send this when you get a chance: the chat composer should auto-grow.
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:46 PM</span>
+          </footer>
+        </article>
+      </div>
+    </div>
+
+    <!-- ---- 2. State row ---------------------------------------- -->
+    <div class="variant">
+      <h3>2 · State Row (--default bubble × 3 states)</h3>
+
+      <!-- default state -->
+      <div class="preview-cell" style="margin-bottom: var(--space-5);">
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default"
+          aria-label="Your message: Increase the reconnect backoff."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">Increase the reconnect backoff.</p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">9:03 AM</span>
+          </footer>
+        </article>
+        <p class="preview-state-label">default</p>
+      </div>
+
+      <!-- is-long-press -->
+      <div class="preview-cell" style="margin-bottom: var(--space-5);">
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default is-long-press"
+          aria-label="Your message: Increase the reconnect backoff."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">Increase the reconnect backoff.</p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">9:03 AM</span>
+          </footer>
+        </article>
+        <p class="preview-state-label">is-long-press</p>
+      </div>
+
+      <!-- is-failed -->
+      <div class="preview-cell" style="margin-bottom: var(--space-5);">
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default is-failed"
+          aria-label="Your message: Increase the reconnect backoff."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">Increase the reconnect backoff.</p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">Failed to send</span>
+            <button
+              class="mol-user-message-bubble__retry atom-button atom-button--link atom-button--sm"
+              type="button"
+            >Retry</button>
+          </footer>
+        </article>
+        <p class="preview-state-label">is-failed</p>
+      </div>
+    </div>
+
+    <!-- ---- 3. Composition: faux chat scroll ------------------- -->
+    <div class="variant">
+      <h3>3 · Composition · Faux Chat Scroll (4 user bubbles + assistant stubs)</h3>
+      <p style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-faint); letter-spacing: var(--tracking-mono); text-transform: uppercase; margin-bottom: var(--space-4);">
+        Demonstrates right-alignment · max-width 85% · corner-tight pattern · alternating with assistant
+      </p>
+
+      <div class="preview-chat-scroll">
+
+        <!-- User message 1 -->
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default"
+          aria-label="Your message: The relay tunnel is reconnecting on every Wi-Fi flap. Can you find where we set the backoff and increase it?"
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              The relay tunnel is reconnecting on every Wi-Fi flap. Can you find where we set the backoff and increase it?
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:42 PM</span>
+          </footer>
+        </article>
+
+        <!-- Assistant stub 1 -->
+        <div class="preview-asst-stub" aria-label="Assistant reply placeholder">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm" role="img" aria-label="Assistant">A</div>
+          <span class="preview-asst-stub__text">Found it. The reconnect loop uses a hardcoded 250ms backoff…</span>
+        </div>
+
+        <!-- User message 2: accent -->
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--accent"
+          aria-label="Your message: @assistant Yes, but keep the connect attempt itself synchronous so we can still log the failure reason."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              @assistant Yes, but keep the connect attempt itself synchronous so we can still log the failure reason.
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:45 PM</span>
+          </footer>
+        </article>
+
+        <!-- Assistant stub 2 -->
+        <div class="preview-asst-stub" aria-label="Assistant reply placeholder">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm" role="img" aria-label="Assistant">A</div>
+          <span class="preview-asst-stub__text">Done. I'll preserve the inner try/catch and log err.code + err.message…</span>
+        </div>
+
+        <!-- User message 3: short -->
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--default"
+          aria-label="Your message: Can you also add a comment explaining the jitter formula?"
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              Can you also add a comment explaining the jitter formula?
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:47 PM</span>
+          </footer>
+        </article>
+
+        <!-- Assistant stub 3 -->
+        <div class="preview-asst-stub" aria-label="Assistant reply placeholder">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm" role="img" aria-label="Assistant">A</div>
+          <span class="preview-asst-stub__text">Added inline doc comment above the jitter call…</span>
+        </div>
+
+        <!-- User message 4: pending -->
+        <article
+          class="mol-user-message-bubble mol-user-message-bubble--pending"
+          aria-label="Your message: Send this when you get a chance: the chat composer should auto-grow."
+        >
+          <button
+            class="mol-user-message-bubble__bubble"
+            aria-haspopup="menu"
+            aria-label="Long-press to copy or share"
+          >
+            <p class="mol-user-message-bubble__text type-body">
+              Send this when you get a chance: the chat composer should auto-grow.
+            </p>
+          </button>
+          <footer class="mol-user-message-bubble__meta">
+            <span class="atom-section-label atom-section-label--faint">12:49 PM</span>
+          </footer>
+        </article>
+
+      </div><!-- /preview-chat-scroll -->
+    </div>
+
+  </div><!-- /light pane -->
+  </div><!-- /pegboard -->
+
+</body>
+</html>
