@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>molecule · composer-row</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-composer-row — molecule-local glue
+       Composition purity: no atom rule redefinition.
+       Zero hex literals. Zero raw px in padding/margin/gap.
+       Only layout glue + molecule-specific structure lives here.
+       ================================================================ */
+
+    /* ---- Screen-reader-only utility (local helper) ----------- */
+    .sr-only {
+      position:    absolute;
+      width:       1px;
+      height:      1px;
+      padding:     0;
+      margin:      -1px;
+      overflow:    hidden;
+      clip:        rect(0 0 0 0);
+      white-space: nowrap;
+      border:      0;
+    }
+
+    /* ---- Row shell ------------------------------------------- */
+    .mol-composer-row {
+      display:         flex;
+      align-items:     flex-end;
+      gap:             var(--space-2);
+      padding:         var(--space-2) var(--space-3);
+      width:           100%;
+      box-sizing:      border-box;
+    }
+
+    /* ---- Input slot ------------------------------------------ */
+    .mol-composer-row__input {
+      flex:       1;
+      min-height: var(--composer-min-height);
+    }
+
+    /* ---- Action slot ----------------------------------------- */
+    .mol-composer-row__action {
+      flex-shrink: 0;
+    }
+
+    /* ---- Variant: idle (no content — send disabled) ---------- */
+    .mol-composer-row--idle .mol-composer-row__action {
+      opacity: 0.6;
+    }
+
+    /* ---- Variant: typing (content present — send active) ----- */
+    .mol-composer-row--typing .mol-composer-row__action {
+      opacity: 1;
+    }
+
+    /* ---- Variant: streaming (model generating — input locked) */
+    .mol-composer-row--streaming .mol-composer-row__input {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: sending (action slot becomes progress dots) */
+    .mol-composer-row--sending .mol-composer-row__action {
+      /* progress-dots replaces button; alignment matches button center */
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      width:           var(--touch-target-min);
+      height:          var(--touch-target-min);
+    }
+
+    /* ---- State: is-disabled (whole row — e.g. host offline) -- */
+    .mol-composer-row.is-disabled {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+
+    /* ================================================================
+       Preview-local helpers
+       ================================================================ */
+
+    /* Section heading above each group */
+    .section-head {
+      margin:         0 0 var(--space-3);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+    }
+
+    /* Variant matrix: 4-up grid */
+    .matrix-grid {
+      display:               grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap:                   var(--spacing-between);
+      margin-bottom:         var(--spacing-section);
+    }
+
+    /* State row: 2-up grid */
+    .state-row-grid {
+      display:               grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap:                   var(--spacing-between);
+      margin-bottom:         var(--spacing-section);
+    }
+
+    /* Individual cell label */
+    .cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--spacing-micro);
+    }
+
+    /* ---- Composition demo: 430px container with toolbar stub -- */
+    .composition-wrap {
+      width:         430px;
+      max-width:     100%;
+      margin:        0 auto var(--spacing-section);
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      overflow:      hidden;
+    }
+
+    /* Toolbar stub: 3 inline pill chips above the composer row */
+    .toolbar-stub {
+      display:      flex;
+      align-items:  center;
+      gap:          var(--space-2);
+      padding:      var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--border-subtle);
+      flex-wrap:    wrap;
+    }
+
+    /* Recipe footer */
+    .recipe-footer {
+      padding:    var(--spacing-section) var(--spacing-between);
+      border-top: 1px solid var(--border-subtle);
+    }
+    .recipe-footer h2 {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-heading);
+      letter-spacing: var(--tracking-tight);
+      color:          var(--text-heading);
+      margin:         0 0 var(--spacing-between);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">composer-row</h1>
+    <p class="crumb">molecule · textarea + send/stop action row</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT MATRIX -------------------------------- -->
+      <!-- 4 state-driven variants × realistic content -->
+
+      <p class="section-head">variant matrix — 4 state variants</p>
+      <div class="matrix-grid">
+
+        <!-- idle: empty textarea, send disabled -->
+        <div class="cell">
+          <span class="state-label">idle · send disabled</span>
+          <form class="mol-composer-row mol-composer-row--idle" aria-label="Compose message">
+            <label class="sr-only" for="cr-idle-dark">Message</label>
+            <textarea id="cr-idle-dark"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      placeholder="Type a message…"
+                      rows="1"
+                      aria-label="Message"></textarea>
+            <button type="submit"
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                    aria-label="Send message"
+                    aria-disabled="true"
+                    disabled>
+              <!-- paper-plane (send) -->
+              <svg class="atom-icon-glyph atom-icon-glyph--md"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M22 2L11 13"/>
+                <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- typing: populated textarea, send active -->
+        <div class="cell">
+          <span class="state-label">typing · send active</span>
+          <form class="mol-composer-row mol-composer-row--typing" aria-label="Compose message">
+            <label class="sr-only" for="cr-typing-dark">Message</label>
+            <textarea id="cr-typing-dark"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      rows="2"
+                      aria-label="Message">Can you refactor the billing module to use tRPC?</textarea>
+            <button type="submit"
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                    aria-label="Send message">
+              <svg class="atom-icon-glyph atom-icon-glyph--md"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M22 2L11 13"/>
+                <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- streaming: input locked, stop button shown -->
+        <div class="cell">
+          <span class="state-label">streaming · stop button</span>
+          <form class="mol-composer-row mol-composer-row--streaming" aria-label="Compose message">
+            <label class="sr-only" for="cr-streaming-dark">Message</label>
+            <textarea id="cr-streaming-dark"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      placeholder="(input disabled while turn is streaming)"
+                      rows="1"
+                      aria-label="Message"
+                      disabled></textarea>
+            <button type="button"
+                    class="atom-icon-button atom-icon-button--destructive atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                    aria-label="Stop streaming turn">
+              <!-- square (stop) -->
+              <svg class="atom-icon-glyph atom-icon-glyph--md"
+                   viewBox="0 0 24 24" fill="currentColor"
+                   aria-hidden="true">
+                <rect x="5" y="5" width="14" height="14" rx="2" ry="2"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- sending: textarea disabled with content, progress-dots replace send -->
+        <div class="cell">
+          <span class="state-label">sending · progress-dots</span>
+          <form class="mol-composer-row mol-composer-row--sending" aria-label="Compose message">
+            <label class="sr-only" for="cr-sending-dark">Message</label>
+            <textarea id="cr-sending-dark"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      rows="1"
+                      aria-label="Message"
+                      disabled>Refactor relay tunnel reconnect</textarea>
+            <!-- progress-dots replace the send button while message is in-flight -->
+            <span class="atom-progress-dots atom-progress-dots--sm atom-progress-dots--accent mol-composer-row__action"
+                  role="status"
+                  aria-label="Sending…">
+              <span class="atom-progress-dots__dot"></span>
+              <span class="atom-progress-dots__dot"></span>
+              <span class="atom-progress-dots__dot"></span>
+            </span>
+          </form>
+        </div>
+
+      </div><!-- /matrix-grid dark -->
+
+      <!-- ---- 2. STATES: typing default vs is-disabled ---------- -->
+      <p class="section-head">states — typing default vs is-disabled (host-offline)</p>
+      <div class="state-row-grid">
+
+        <!-- typing default -->
+        <div class="cell">
+          <span class="state-label">typing · default</span>
+          <form class="mol-composer-row mol-composer-row--typing" aria-label="Compose message">
+            <label class="sr-only" for="cr-st-typing-dark">Message</label>
+            <textarea id="cr-st-typing-dark"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      rows="2"
+                      aria-label="Message">Can you refactor the billing module to use tRPC?</textarea>
+            <button type="submit"
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                    aria-label="Send message">
+              <svg class="atom-icon-glyph atom-icon-glyph--md"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M22 2L11 13"/>
+                <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- typing + is-disabled (host offline) -->
+        <div class="cell">
+          <span class="state-label">typing · is-disabled (host-offline)</span>
+          <form class="mol-composer-row mol-composer-row--typing is-disabled" aria-label="Compose message">
+            <label class="sr-only" for="cr-st-disabled-dark">Message</label>
+            <textarea id="cr-st-disabled-dark"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      rows="2"
+                      aria-label="Message"
+                      disabled>Can you refactor the billing module to use tRPC?</textarea>
+            <button type="submit"
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                    aria-label="Send message"
+                    aria-disabled="true"
+                    disabled>
+              <svg class="atom-icon-glyph atom-icon-glyph--md"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M22 2L11 13"/>
+                <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+      </div><!-- /state-row-grid dark -->
+
+      <!-- ---- 3. COMPOSITION: 430px container with toolbar stub - -->
+      <p class="section-head">composition — 430px container with composer-toolbar stub</p>
+      <div class="composition-wrap">
+
+        <!-- Toolbar stub: 3 inline pill chips (represents mol-composer-toolbar) -->
+        <div class="toolbar-stub">
+          <!-- Attach pill -->
+          <button class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  aria-label="Attach file">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </span>
+            Attach
+          </button>
+          <!-- Model picker pill -->
+          <button class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  aria-label="Model: sonnet-4.6">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3c-1 3-3 5-6 6 3 1 5 3 6 6 1-3 3-5 6-6-3-1-5-3-6-6z"/>
+              </svg>
+            </span>
+            sonnet-4.6
+          </button>
+          <!-- Thinking mode pill -->
+          <button class="atom-pill atom-pill--accent atom-pill--md atom-pill--leading-icon"
+                  aria-label="Thinking: medium">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2a9 9 0 0 1 9 9 8.5 8.5 0 0 1-1.3 4.5L21 22l-6-2a9 9 0 1 1-3-18z"/>
+              </svg>
+            </span>
+            med
+          </button>
+        </div>
+
+        <!-- Composer row: typing variant (realistic content) -->
+        <form class="mol-composer-row mol-composer-row--typing" aria-label="Compose message">
+          <label class="sr-only" for="cr-comp-dark">Message</label>
+          <textarea id="cr-comp-dark"
+                    class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                    rows="2"
+                    aria-label="Message">Can you refactor the billing module to use tRPC?</textarea>
+          <button type="submit"
+                  class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                  aria-label="Send message">
+            <svg class="atom-icon-glyph atom-icon-glyph--md"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M22 2L11 13"/>
+              <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+            </svg>
+          </button>
+        </form>
+
+      </div><!-- /composition-wrap dark -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT MATRIX -------------------------------- -->
+      <p class="section-head">variant matrix — 4 state variants</p>
+      <div class="matrix-grid">
+
+        <!-- idle -->
+        <div class="cell">
+          <span class="state-label">idle · send disabled</span>
+          <form class="mol-composer-row mol-composer-row--idle" aria-label="Compose message">
+            <label class="sr-only" for="cr-idle-light">Message</label>
+            <textarea id="cr-idle-light"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      placeholder="Type a message…"
+                      rows="1"
+                      aria-label="Message"></textarea>
+            <button type="submit"
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                    aria-label="Send message"
+                    aria-disabled="true"
+                    disabled>
+              <svg class="atom-icon-glyph atom-icon-glyph--md"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M22 2L11 13"/>
+                <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- typing -->
+        <div class="cell">
+          <span class="state-label">typing · send active</span>
+          <form class="mol-composer-row mol-composer-row--typing" aria-label="Compose message">
+            <label class="sr-only" for="cr-typing-light">Message</label>
+            <textarea id="cr-typing-light"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      rows="2"
+                      aria-label="Message">Can you refactor the billing module to use tRPC?</textarea>
+            <button type="submit"
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                    aria-label="Send message">
+              <svg class="atom-icon-glyph atom-icon-glyph--md"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M22 2L11 13"/>
+                <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- streaming -->
+        <div class="cell">
+          <span class="state-label">streaming · stop button</span>
+          <form class="mol-composer-row mol-composer-row--streaming" aria-label="Compose message">
+            <label class="sr-only" for="cr-streaming-light">Message</label>
+            <textarea id="cr-streaming-light"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      placeholder="(input disabled while turn is streaming)"
+                      rows="1"
+                      aria-label="Message"
+                      disabled></textarea>
+            <button type="button"
+                    class="atom-icon-button atom-icon-button--destructive atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                    aria-label="Stop streaming turn">
+              <svg class="atom-icon-glyph atom-icon-glyph--md"
+                   viewBox="0 0 24 24" fill="currentColor"
+                   aria-hidden="true">
+                <rect x="5" y="5" width="14" height="14" rx="2" ry="2"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- sending -->
+        <div class="cell">
+          <span class="state-label">sending · progress-dots</span>
+          <form class="mol-composer-row mol-composer-row--sending" aria-label="Compose message">
+            <label class="sr-only" for="cr-sending-light">Message</label>
+            <textarea id="cr-sending-light"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      rows="1"
+                      aria-label="Message"
+                      disabled>Refactor relay tunnel reconnect</textarea>
+            <span class="atom-progress-dots atom-progress-dots--sm atom-progress-dots--accent mol-composer-row__action"
+                  role="status"
+                  aria-label="Sending…">
+              <span class="atom-progress-dots__dot"></span>
+              <span class="atom-progress-dots__dot"></span>
+              <span class="atom-progress-dots__dot"></span>
+            </span>
+          </form>
+        </div>
+
+      </div><!-- /matrix-grid light -->
+
+      <!-- ---- 2. STATES: typing default vs is-disabled ---------- -->
+      <p class="section-head">states — typing default vs is-disabled (host-offline)</p>
+      <div class="state-row-grid">
+
+        <!-- typing default -->
+        <div class="cell">
+          <span class="state-label">typing · default</span>
+          <form class="mol-composer-row mol-composer-row--typing" aria-label="Compose message">
+            <label class="sr-only" for="cr-st-typing-light">Message</label>
+            <textarea id="cr-st-typing-light"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      rows="2"
+                      aria-label="Message">Can you refactor the billing module to use tRPC?</textarea>
+            <button type="submit"
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                    aria-label="Send message">
+              <svg class="atom-icon-glyph atom-icon-glyph--md"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M22 2L11 13"/>
+                <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- typing + is-disabled -->
+        <div class="cell">
+          <span class="state-label">typing · is-disabled (host-offline)</span>
+          <form class="mol-composer-row mol-composer-row--typing is-disabled" aria-label="Compose message">
+            <label class="sr-only" for="cr-st-disabled-light">Message</label>
+            <textarea id="cr-st-disabled-light"
+                      class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                      rows="2"
+                      aria-label="Message"
+                      disabled>Can you refactor the billing module to use tRPC?</textarea>
+            <button type="submit"
+                    class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                    aria-label="Send message"
+                    aria-disabled="true"
+                    disabled>
+              <svg class="atom-icon-glyph atom-icon-glyph--md"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M22 2L11 13"/>
+                <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+      </div><!-- /state-row-grid light -->
+
+      <!-- ---- 3. COMPOSITION: 430px container with toolbar stub - -->
+      <p class="section-head">composition — 430px container with composer-toolbar stub</p>
+      <div class="composition-wrap">
+
+        <!-- Toolbar stub: 3 inline pill chips -->
+        <div class="toolbar-stub">
+          <button class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  aria-label="Attach file">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </span>
+            Attach
+          </button>
+          <button class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  aria-label="Model: sonnet-4.6">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3c-1 3-3 5-6 6 3 1 5 3 6 6 1-3 3-5 6-6-3-1-5-3-6-6z"/>
+              </svg>
+            </span>
+            sonnet-4.6
+          </button>
+          <button class="atom-pill atom-pill--accent atom-pill--md atom-pill--leading-icon"
+                  aria-label="Thinking: medium">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2a9 9 0 0 1 9 9 8.5 8.5 0 0 1-1.3 4.5L21 22l-6-2a9 9 0 1 1-3-18z"/>
+              </svg>
+            </span>
+            med
+          </button>
+        </div>
+
+        <!-- Composer row: typing variant -->
+        <form class="mol-composer-row mol-composer-row--typing" aria-label="Compose message">
+          <label class="sr-only" for="cr-comp-light">Message</label>
+          <textarea id="cr-comp-light"
+                    class="atom-textarea atom-textarea--composer type-body mol-composer-row__input"
+                    rows="2"
+                    aria-label="Message">Can you refactor the billing module to use tRPC?</textarea>
+          <button type="submit"
+                  class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                  aria-label="Send message">
+            <svg class="atom-icon-glyph atom-icon-glyph--md"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M22 2L11 13"/>
+              <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+            </svg>
+          </button>
+        </form>
+
+      </div><!-- /composition-wrap light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+  <!-- ============================================================
+       Token recipe table
+       ============================================================ -->
+  <div class="recipe-footer">
+    <h2>Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Resolved (dark)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>row display</td><td>flex</td><td>—</td></tr>
+        <tr><td>row align-items</td><td>flex-end</td><td>— (bottom-aligned for multi-line textarea)</td></tr>
+        <tr><td>row gap</td><td>var(--space-2)</td><td>8px</td></tr>
+        <tr><td>row padding block</td><td>var(--space-2)</td><td>8px</td></tr>
+        <tr><td>row padding inline</td><td>var(--space-3)</td><td>12px</td></tr>
+        <tr><td>input flex</td><td>flex: 1</td><td>—</td></tr>
+        <tr><td>input min-height</td><td>var(--composer-min-height) → var(--touch-target-min)</td><td>44px</td></tr>
+        <tr><td>input max-height</td><td>var(--composer-max-height)</td><td>180px</td></tr>
+        <tr><td>textarea background (composer)</td><td>var(--surface-sunken)</td><td>--_neutral-1 (#1a1716)</td></tr>
+        <tr><td>textarea border (composer)</td><td>1px solid var(--border-subtle)</td><td>--_neutral-4 (#2a2827)</td></tr>
+        <tr><td>textarea placeholder</td><td>var(--text-faint)</td><td>--_neutral-fg-1 (#a8a5a3)</td></tr>
+        <tr><td>idle action opacity</td><td>0.6</td><td>—</td></tr>
+        <tr><td>typing action opacity</td><td>1</td><td>—</td></tr>
+        <tr><td>streaming input opacity</td><td>0.5</td><td>—</td></tr>
+        <tr><td>is-disabled row opacity</td><td>0.5</td><td>—</td></tr>
+        <tr><td>send button background</td><td>var(--accent-primary)</td><td>ember</td></tr>
+        <tr><td>send button foreground</td><td>var(--accent-primary-fg)</td><td>#fff</td></tr>
+        <tr><td>send button hover</td><td>var(--accent-primary-hover)</td><td>—</td></tr>
+        <tr><td>send button border-radius</td><td>var(--radius-pill)</td><td>999px</td></tr>
+        <tr><td>stop button background</td><td>var(--state-danger-fg)</td><td>--_red (#cc4444)</td></tr>
+        <tr><td>stop button foreground</td><td>var(--accent-primary-fg)</td><td>#fff</td></tr>
+        <tr><td>progress-dots color (sending)</td><td>var(--accent-primary)</td><td>ember</td></tr>
+        <tr><td>button size (md)</td><td>var(--touch-target-min)</td><td>44px</td></tr>
+        <tr><td>focus ring</td><td>0 0 0 2px var(--border-focus)</td><td>--_neutral-5 (#3a3837)</td></tr>
+        <tr><td>motion</td><td>var(--motion-fast) var(--motion-ease-out)</td><td>120ms cubic-bezier(0.16,1,0.3,1)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
