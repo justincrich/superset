@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-empty-state — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-empty-state — molecule-local layout + glue only.
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Structural exception: 0.7 opacity on __hero (per spec).
+       36ch max-width on __body (content-adaptive — per quality bar).
+       ================================================================ */
+
+    /* --- Base layout ------------------------------------------- */
+    .mol-empty-state {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      text-align:     center;
+      padding:        var(--space-12) var(--space-6);
+      gap:            var(--space-3);
+    }
+
+    /* --- Hero icon slot --------------------------------------- */
+    .mol-empty-state__hero {
+      margin-bottom: var(--space-4);
+      opacity: 0.7; /* structural: softens decorative hero icon — spec-documented exception */
+    }
+
+    /* --- Heading ---------------------------------------------- */
+    .mol-empty-state__heading {
+      margin: 0;
+    }
+
+    /* --- Body copy -------------------------------------------- */
+    .mol-empty-state__body {
+      margin:     0;
+      color:      var(--text-muted);
+      max-width:  36ch; /* content-adaptive: comfortable measure — permitted exception */
+    }
+
+    /* --- CTA button ------------------------------------------- */
+    .mol-empty-state__cta {
+      margin-top: var(--space-4);
+    }
+
+    /* --- Variant: no-matches hides CTA ------------------------ */
+    .mol-empty-state--no-matches .mol-empty-state__cta {
+      display: none;
+    }
+
+    /* ================================================================
+       Preview layout helpers — not part of the molecule spec
+       ================================================================ */
+
+    .preview-header {
+      padding:        var(--space-8) var(--space-8) var(--space-6);
+      border-bottom:  1px solid var(--border-subtle);
+      margin-bottom:  var(--space-8);
+    }
+
+    .preview-header h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-header .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin:         0;
+    }
+
+    /* Pegboard: stacked panes */
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            0;
+    }
+
+    .pane {
+      padding:  var(--space-8);
+      position: relative;
+    }
+
+    .pane[data-theme="dark"] {
+      background: var(--surface-page);
+    }
+
+    .pane[data-theme="light"] {
+      background: var(--surface-page);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .pane-label {
+      position:       absolute;
+      top:            var(--space-4);
+      right:          var(--space-4);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-faint);
+    }
+
+    .section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-6);
+    }
+
+    .section-sub {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-4);
+    }
+
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--space-8) 0;
+    }
+
+    /* Variant matrix: all 4 variants in iPhone-width containers */
+    .variant-matrix {
+      display:               grid;
+      grid-template-columns: repeat(4, 430px);
+      gap:                   var(--space-6);
+      overflow-x:            auto;
+      padding-bottom:        var(--space-4);
+    }
+
+    .variant-cell {
+      width:         430px;
+      flex-shrink:   0;
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background:    var(--surface-raised);
+      overflow:      hidden;
+    }
+
+    .variant-cell__label {
+      padding:        var(--space-2) var(--space-4);
+      background:     var(--surface-active);
+      border-bottom:  1px solid var(--border-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+    }
+
+    .variant-cell__canvas {
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Composition section: device bezel with empty state inside */
+    .composition-wrap {
+      display:         flex;
+      justify-content: flex-start;
+      gap:             var(--space-8);
+      flex-wrap:       wrap;
+    }
+
+    /* Simulated app chrome inside device viewport */
+    .mock-app-header {
+      height:          var(--touch-target-min);
+      padding:         0 var(--space-4);
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      border-bottom:   1px solid var(--border-subtle);
+      flex-shrink:     0;
+    }
+
+    .mock-app-header__title {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-title);
+      font-weight:    var(--font-weight-title);
+      letter-spacing: var(--tracking-snug);
+      color:          var(--text-heading);
+    }
+
+    .mock-viewport-content {
+      flex:            1;
+      overflow:        hidden;
+      display:         flex;
+      flex-direction:  column;
+      align-items:     center;
+      justify-content: center;
+    }
+
+    .mock-tab-bar {
+      height:         var(--tab-bar-height);
+      border-top:     1px solid var(--border-subtle);
+      background:     var(--surface-page);
+      display:        flex;
+      align-items:    flex-start;
+      justify-content: space-around;
+      padding-top:    var(--space-3);
+      flex-shrink:    0;
+    }
+
+    .mock-tab {
+      display:         flex;
+      flex-direction:  column;
+      align-items:     center;
+      gap:             var(--space-1);
+      padding-inline:  var(--space-4);
+    }
+
+    .mock-tab__label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-faint);
+    }
+
+    .mock-tab--active .mock-tab__label {
+      color: var(--accent-primary);
+    }
+
+    .mock-tab--active svg {
+      color: var(--accent-primary);
+    }
+
+    .composition-note {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      margin:         var(--space-3) 0 0;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-header">
+    <h1 class="type-h2">empty-state</h1>
+    <p class="crumb">molecule · 4 variants · atoms: icon-glyph (xl faint), section-label (faint), button (primary md)</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- 1. VARIANT MATRIX ---------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">1 · variant matrix — all 4 contexts at 430px mobile width</h3>
+
+        <div class="variant-matrix">
+
+          <!-- VARIANT: no-hosts -->
+          <div class="variant-cell">
+            <div class="variant-cell__label">--no-hosts</div>
+            <div class="variant-cell__canvas">
+              <section
+                class="mol-empty-state mol-empty-state--no-hosts"
+                role="status"
+                aria-live="polite"
+              >
+                <div class="mol-empty-state__hero">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <!-- lucide: package-x -->
+                    <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
+                    <path d="m7.5 4.27 9 5.15"/>
+                    <polyline points="3.29 7 12 12 20.71 7"/>
+                    <line x1="12" y1="22" x2="12" y2="12"/>
+                    <path d="m17 13 5 5m-5 0 5-5"/>
+                  </svg>
+                </div>
+                <p class="mol-empty-state__label atom-section-label atom-section-label--faint">NO HOSTS</p>
+                <h2 class="mol-empty-state__heading type-h2">No devices yet</h2>
+                <p class="mol-empty-state__body type-body">
+                  Connect a Mac running Superset Desktop or sign in there to add your first host.
+                </p>
+                <a href="#workspaces" class="mol-empty-state__cta atom-button atom-button--primary atom-button--md">
+                  Go to Workspaces
+                </a>
+              </section>
+            </div>
+          </div>
+
+          <!-- VARIANT: no-workspaces -->
+          <div class="variant-cell">
+            <div class="variant-cell__label">--no-workspaces</div>
+            <div class="variant-cell__canvas">
+              <section
+                class="mol-empty-state mol-empty-state--no-workspaces"
+                role="status"
+                aria-live="polite"
+              >
+                <div class="mol-empty-state__hero">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <!-- lucide: layers -->
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                    <polyline points="2 17 12 22 22 17"/>
+                    <polyline points="2 12 12 17 22 12"/>
+                  </svg>
+                </div>
+                <p class="mol-empty-state__label atom-section-label atom-section-label--faint">NO WORKSPACES</p>
+                <h2 class="mol-empty-state__heading type-h2">No workspaces on this host</h2>
+                <p class="mol-empty-state__body type-body">
+                  Create your first workspace in Superset Desktop on macbook-pro.
+                </p>
+                <a href="#host" class="mol-empty-state__cta atom-button atom-button--primary atom-button--md">
+                  Open macbook-pro
+                </a>
+              </section>
+            </div>
+          </div>
+
+          <!-- VARIANT: no-sessions -->
+          <div class="variant-cell">
+            <div class="variant-cell__label">--no-sessions</div>
+            <div class="variant-cell__canvas">
+              <section
+                class="mol-empty-state mol-empty-state--no-sessions"
+                role="status"
+                aria-live="polite"
+              >
+                <div class="mol-empty-state__hero">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <!-- lucide: message-square-dashed -->
+                    <path d="M3 6a3 3 0 0 1 3-3h2"/>
+                    <path d="M11 3h2"/>
+                    <path d="M17 3h2a3 3 0 0 1 3 3"/>
+                    <path d="M21 11v2"/>
+                    <path d="M21 17a3 3 0 0 1-3 3h-.5"/>
+                    <path d="M14.5 20H11"/>
+                    <path d="M7 20H6a3 3 0 0 1-3-3v-.5"/>
+                    <path d="M3 13v-2"/>
+                    <path d="m8 20 4 4 4-4"/>
+                  </svg>
+                </div>
+                <p class="mol-empty-state__label atom-section-label atom-section-label--faint">NO SESSIONS</p>
+                <h2 class="mol-empty-state__heading type-h2">Start your first chat</h2>
+                <p class="mol-empty-state__body type-body">
+                  Tap + to start a new chat session in any workspace.
+                </p>
+                <a href="#new-chat" class="mol-empty-state__cta atom-button atom-button--primary atom-button--md">
+                  Start chat
+                </a>
+              </section>
+            </div>
+          </div>
+
+          <!-- VARIANT: no-matches -->
+          <div class="variant-cell">
+            <div class="variant-cell__label">--no-matches (no CTA)</div>
+            <div class="variant-cell__canvas">
+              <section
+                class="mol-empty-state mol-empty-state--no-matches"
+                role="status"
+                aria-live="polite"
+              >
+                <div class="mol-empty-state__hero">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <!-- lucide: search -->
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </div>
+                <!-- no section label for no-matches per spec -->
+                <h2 class="mol-empty-state__heading type-h2">No sessions match 'reconnect'</h2>
+                <p class="mol-empty-state__body type-body">
+                  Try a shorter or different search term.
+                </p>
+                <!-- CTA hidden by .mol-empty-state--no-matches .mol-empty-state__cta { display: none } -->
+                <a href="#" class="mol-empty-state__cta atom-button atom-button--primary atom-button--md" aria-hidden="true" tabindex="-1">
+                  (hidden by CSS)
+                </a>
+              </section>
+            </div>
+          </div>
+
+        </div><!-- /variant-matrix -->
+      </div><!-- /variant -->
+
+      <hr class="preview-divider">
+
+      <!-- 2. COMPOSITION — device bezel ---------------------- -->
+      <div class="variant">
+        <h3 class="section-title">2 · composition — --no-hosts inside iPhone viewport at position</h3>
+        <p class="section-sub">Centered vertically below app header, above tab bar</p>
+
+        <div class="composition-wrap">
+
+          <!-- Device bezel composition -->
+          <div>
+            <div class="atom-device-bezel">
+              <!-- Dynamic Island -->
+              <div class="atom-device-bezel__dynamic-island"></div>
+
+              <!-- Viewport -->
+              <div class="atom-device-bezel__viewport">
+
+                <!-- Status bar -->
+                <div class="atom-device-bezel__status-bar">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <!-- Signal bars -->
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0" y="8" width="3" height="4" rx="0.5"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5"/>
+                      <rect x="9" y="2" width="3" height="10" rx="0.5"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5"/>
+                    </svg>
+                    <!-- WiFi -->
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
+                      <path d="M8 10.8a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 3.6a11 11 0 0 0-15.6 0l1.4 1.4Z"/>
+                    </svg>
+                    <!-- Battery -->
+                    <div class="atom-device-bezel__battery">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- App header mock -->
+                <div class="mock-app-header">
+                  <span class="mock-app-header__title">Sessions</span>
+                </div>
+
+                <!-- Content area: empty state centered vertically -->
+                <div class="mock-viewport-content">
+                  <section
+                    class="mol-empty-state mol-empty-state--no-hosts"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <div class="mol-empty-state__hero">
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <!-- lucide: package-x -->
+                        <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
+                        <path d="m7.5 4.27 9 5.15"/>
+                        <polyline points="3.29 7 12 12 20.71 7"/>
+                        <line x1="12" y1="22" x2="12" y2="12"/>
+                        <path d="m17 13 5 5m-5 0 5-5"/>
+                      </svg>
+                    </div>
+                    <p class="mol-empty-state__label atom-section-label atom-section-label--faint">NO HOSTS</p>
+                    <h2 class="mol-empty-state__heading type-h2">No devices yet</h2>
+                    <p class="mol-empty-state__body type-body">
+                      Connect a Mac running Superset Desktop or sign in there to add your first host.
+                    </p>
+                    <a href="#workspaces" class="mol-empty-state__cta atom-button atom-button--primary atom-button--md">
+                      Go to Workspaces
+                    </a>
+                  </section>
+                </div>
+
+                <!-- Tab bar mock -->
+                <div class="mock-tab-bar">
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 11 12 14 22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span class="mock-tab__label">Tasks</span>
+                  </div>
+                  <div class="mock-tab mock-tab--active">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary)">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="mock-tab__label mock-tab--active" style="color: var(--accent-primary)">Chat</span>
+                  </div>
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <span class="mock-tab__label">More</span>
+                  </div>
+                </div>
+
+              </div><!-- /viewport -->
+
+              <!-- Home indicator -->
+              <div class="atom-device-bezel__home-indicator"></div>
+
+            </div><!-- /device-bezel -->
+            <p class="composition-note">mol-empty-state--no-hosts · dark · inside device-bezel</p>
+          </div>
+
+        </div><!-- /composition-wrap -->
+      </div><!-- /composition variant -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- 1. VARIANT MATRIX ---------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">1 · variant matrix — all 4 contexts at 430px mobile width</h3>
+
+        <div class="variant-matrix">
+
+          <!-- VARIANT: no-hosts -->
+          <div class="variant-cell">
+            <div class="variant-cell__label">--no-hosts</div>
+            <div class="variant-cell__canvas">
+              <section
+                class="mol-empty-state mol-empty-state--no-hosts"
+                role="status"
+                aria-live="polite"
+              >
+                <div class="mol-empty-state__hero">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
+                    <path d="m7.5 4.27 9 5.15"/>
+                    <polyline points="3.29 7 12 12 20.71 7"/>
+                    <line x1="12" y1="22" x2="12" y2="12"/>
+                    <path d="m17 13 5 5m-5 0 5-5"/>
+                  </svg>
+                </div>
+                <p class="mol-empty-state__label atom-section-label atom-section-label--faint">NO HOSTS</p>
+                <h2 class="mol-empty-state__heading type-h2">No devices yet</h2>
+                <p class="mol-empty-state__body type-body">
+                  Connect a Mac running Superset Desktop or sign in there to add your first host.
+                </p>
+                <a href="#workspaces" class="mol-empty-state__cta atom-button atom-button--primary atom-button--md">
+                  Go to Workspaces
+                </a>
+              </section>
+            </div>
+          </div>
+
+          <!-- VARIANT: no-workspaces -->
+          <div class="variant-cell">
+            <div class="variant-cell__label">--no-workspaces</div>
+            <div class="variant-cell__canvas">
+              <section
+                class="mol-empty-state mol-empty-state--no-workspaces"
+                role="status"
+                aria-live="polite"
+              >
+                <div class="mol-empty-state__hero">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                    <polyline points="2 17 12 22 22 17"/>
+                    <polyline points="2 12 12 17 22 12"/>
+                  </svg>
+                </div>
+                <p class="mol-empty-state__label atom-section-label atom-section-label--faint">NO WORKSPACES</p>
+                <h2 class="mol-empty-state__heading type-h2">No workspaces on this host</h2>
+                <p class="mol-empty-state__body type-body">
+                  Create your first workspace in Superset Desktop on macbook-pro.
+                </p>
+                <a href="#host" class="mol-empty-state__cta atom-button atom-button--primary atom-button--md">
+                  Open macbook-pro
+                </a>
+              </section>
+            </div>
+          </div>
+
+          <!-- VARIANT: no-sessions -->
+          <div class="variant-cell">
+            <div class="variant-cell__label">--no-sessions</div>
+            <div class="variant-cell__canvas">
+              <section
+                class="mol-empty-state mol-empty-state--no-sessions"
+                role="status"
+                aria-live="polite"
+              >
+                <div class="mol-empty-state__hero">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M3 6a3 3 0 0 1 3-3h2"/>
+                    <path d="M11 3h2"/>
+                    <path d="M17 3h2a3 3 0 0 1 3 3"/>
+                    <path d="M21 11v2"/>
+                    <path d="M21 17a3 3 0 0 1-3 3h-.5"/>
+                    <path d="M14.5 20H11"/>
+                    <path d="M7 20H6a3 3 0 0 1-3-3v-.5"/>
+                    <path d="M3 13v-2"/>
+                    <path d="m8 20 4 4 4-4"/>
+                  </svg>
+                </div>
+                <p class="mol-empty-state__label atom-section-label atom-section-label--faint">NO SESSIONS</p>
+                <h2 class="mol-empty-state__heading type-h2">Start your first chat</h2>
+                <p class="mol-empty-state__body type-body">
+                  Tap + to start a new chat session in any workspace.
+                </p>
+                <a href="#new-chat" class="mol-empty-state__cta atom-button atom-button--primary atom-button--md">
+                  Start chat
+                </a>
+              </section>
+            </div>
+          </div>
+
+          <!-- VARIANT: no-matches -->
+          <div class="variant-cell">
+            <div class="variant-cell__label">--no-matches (no CTA)</div>
+            <div class="variant-cell__canvas">
+              <section
+                class="mol-empty-state mol-empty-state--no-matches"
+                role="status"
+                aria-live="polite"
+              >
+                <div class="mol-empty-state__hero">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </div>
+                <h2 class="mol-empty-state__heading type-h2">No sessions match 'reconnect'</h2>
+                <p class="mol-empty-state__body type-body">
+                  Try a shorter or different search term.
+                </p>
+                <a href="#" class="mol-empty-state__cta atom-button atom-button--primary atom-button--md" aria-hidden="true" tabindex="-1">
+                  (hidden by CSS)
+                </a>
+              </section>
+            </div>
+          </div>
+
+        </div><!-- /variant-matrix -->
+      </div><!-- /variant -->
+
+      <hr class="preview-divider">
+
+      <!-- 2. COMPOSITION — device bezel ---------------------- -->
+      <div class="variant">
+        <h3 class="section-title">2 · composition — --no-hosts inside iPhone viewport at position</h3>
+        <p class="section-sub">Centered vertically below app header, above tab bar</p>
+
+        <div class="composition-wrap">
+
+          <div>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+
+              <div class="atom-device-bezel__viewport">
+
+                <div class="atom-device-bezel__status-bar">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0" y="8" width="3" height="4" rx="0.5"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5"/>
+                      <rect x="9" y="2" width="3" height="10" rx="0.5"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
+                      <path d="M8 10.8a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 3.6a11 11 0 0 0-15.6 0l1.4 1.4Z"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mock-app-header">
+                  <span class="mock-app-header__title">Sessions</span>
+                </div>
+
+                <div class="mock-viewport-content">
+                  <section
+                    class="mol-empty-state mol-empty-state--no-hosts"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <div class="mol-empty-state__hero">
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
+                        <path d="m7.5 4.27 9 5.15"/>
+                        <polyline points="3.29 7 12 12 20.71 7"/>
+                        <line x1="12" y1="22" x2="12" y2="12"/>
+                        <path d="m17 13 5 5m-5 0 5-5"/>
+                      </svg>
+                    </div>
+                    <p class="mol-empty-state__label atom-section-label atom-section-label--faint">NO HOSTS</p>
+                    <h2 class="mol-empty-state__heading type-h2">No devices yet</h2>
+                    <p class="mol-empty-state__body type-body">
+                      Connect a Mac running Superset Desktop or sign in there to add your first host.
+                    </p>
+                    <a href="#workspaces" class="mol-empty-state__cta atom-button atom-button--primary atom-button--md">
+                      Go to Workspaces
+                    </a>
+                  </section>
+                </div>
+
+                <div class="mock-tab-bar">
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 11 12 14 22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span class="mock-tab__label">Tasks</span>
+                  </div>
+                  <div class="mock-tab mock-tab--active">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary)">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="mock-tab__label" style="color: var(--accent-primary)">Chat</span>
+                  </div>
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <span class="mock-tab__label">More</span>
+                  </div>
+                </div>
+
+              </div><!-- /viewport -->
+
+              <div class="atom-device-bezel__home-indicator"></div>
+
+            </div><!-- /device-bezel -->
+            <p class="composition-note">mol-empty-state--no-hosts · light · inside device-bezel</p>
+          </div>
+
+        </div><!-- /composition-wrap -->
+      </div><!-- /composition variant -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
