@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sessions-list-empty-states — UC-NAV-06</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-local layout glue — ONLY .view-sessions-list-empty-states__* rules.
+       Never redefines .atom-* or .mol-* classes.
+       ================================================================ */
+
+    /* ---- Page harness -------------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding:       var(--space-8) var(--space-4);
+      background:    var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-8);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* Section headings between iPhone frames */
+    .type-meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+      align-self:     flex-start;
+    }
+
+    /* ---- Viewport layout ----------------------------------------- */
+    /*
+     * The atom-device-bezel__viewport is a flex column.
+     * This view slots: header | empty-state-body | tab-bar
+     */
+
+    /* Empty-state body — grows to fill remaining space, centres content */
+    .view-sessions-list-empty__body {
+      flex:            1;
+      overflow-y:      auto;
+      position:        relative;
+      display:         flex;
+      flex-direction:  column;
+      align-items:     center;
+      justify-content: center;
+    }
+
+    /* ---- Tab bar -------------------------------------------------- */
+    .view-sessions-list-empty__tab-bar {
+      display:          flex;
+      align-items:      stretch;
+      border-top:       1px solid var(--border-subtle);
+      background:       var(--surface-page);
+      backdrop-filter:  blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      flex-shrink:      0;
+      padding-bottom:   var(--safe-area-bottom, 0px);
+      position:         relative;
+      z-index:          20;
+    }
+
+    /* ---- FAB (variant 06.3 only) --------------------------------- */
+    .view-sessions-list-empty__fab-wrap {
+      position: absolute;
+      right:    var(--space-4);
+      bottom:   calc(var(--touch-target-min) + var(--space-6));
+      z-index:  15;
+    }
+
+    /* ---- Plain Sessions title (06.1) ----------------------------- */
+    .view-sessions-list-empty__plain-header {
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      gap:             var(--space-2);
+      padding:         var(--space-3) var(--space-4);
+      min-height:      var(--touch-target-min);
+      background:      var(--surface-page);
+      border-bottom:   1px solid var(--border-subtle);
+      flex-shrink:     0;
+    }
+
+    /* Remove default margin from plain header title */
+    .view-sessions-list-empty__plain-header .type-section-title {
+      margin: 0;
+    }
+
+    /* Filter button position anchor */
+    .view-sessions-list-empty__filter-wrap {
+      position:    relative;
+      flex-shrink: 0;
+    }
+
+    /* ---- Applied filter tag row (inline, below search row) ------- */
+    /*
+     * mol-project-chip-header does not expose a built-in applied-filter
+     * slot, so the filter-tag row is inlined in the view directly below
+     * the header. TOKEN_GAP: none — mol-applied-filter-tag-row already
+     * handles layout, padding, and scroll.
+     */
+    .view-sessions-list-empty__filter-tag-section {
+      flex-shrink:   0;
+      border-bottom: 1px solid var(--border-subtle);
+      background:    var(--surface-page);
+    }
+
+    /* ---- Screen-reader-only utility ------------------------------ */
+    .sr-only {
+      position:    absolute;
+      width:       1px;
+      height:      1px;
+      padding:     0;
+      margin:      -1px;
+      overflow:    hidden;
+      clip:        rect(0 0 0 0);
+      white-space: nowrap;
+      border:      0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================================================================
+       Header plate
+  ================================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">sessions-list-empty-states</h1>
+    <p class="crumb">UC-NAV-06 · 5 empty-state variants · §F</p>
+  </div>
+
+  <!-- ================================================================
+       Stacked theme panes — dark first, light second
+  ================================================================ -->
+  <div class="pegboard">
+
+    <!-- ══════════════════════════════════════════════════════════════
+         DARK PANE
+    ══════════════════════════════════════════════════════════════════ -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ── 06.1 NO PROJECTS ─────────────────────────────────────── -->
+      <span class="type-meta atom-section-label atom-section-label--strong">06.1 · NO PROJECTS</span>
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- Plain "Sessions" title — no project chip -->
+          <header class="view-sessions-list-empty__plain-header" role="banner">
+            <h1 class="type-section-title">Sessions</h1>
+          </header>
+
+          <!-- Empty state body -->
+          <main class="view-sessions-list-empty__body" aria-label="No projects empty state">
+            <div class="mol-empty-state" role="status">
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <!-- package icon -->
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+              </div>
+              <h2 class="mol-empty-state__heading type-h2">No projects yet</h2>
+              <p class="mol-empty-state__body type-body">Create one on desktop to see it here.</p>
+            </div>
+          </main>
+
+          <!-- Tab bar -->
+          <nav class="view-sessions-list-empty__tab-bar" role="tablist" aria-label="Main navigation">
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="Tasks">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item is-selected" type="button" role="tab" aria-selected="true" aria-label="Chat">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="More options">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+          </nav>
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+        </div><!-- /viewport -->
+      </div><!-- /bezel -->
+
+      <!-- ── 06.2 NO WORKSPACES ────────────────────────────────────── -->
+      <span class="type-meta atom-section-label atom-section-label--strong">06.2 · NO WORKSPACES</span>
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- mol-project-chip-header --single-project (static, no chevron) + search + filter -->
+          <header class="mol-project-chip-header mol-project-chip-header--single-project" role="banner">
+            <div class="mol-project-chip-header__row">
+              <button
+                class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md"
+                type="button"
+                aria-label="Current project: superset"
+              >
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <!-- no chevron for --single-project -->
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="d-06-2-search">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input
+                  id="d-06-2-search"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input"
+                  placeholder="Search sessions"
+                  aria-label="Search sessions"
+                />
+              </div>
+              <div class="mol-project-chip-header__filter">
+                <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md" type="button" aria-label="Filter sessions">
+                  <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4"  y1="6"  x2="20" y2="6"/>
+                    <line x1="4"  y1="12" x2="20" y2="12"/>
+                    <line x1="4"  y1="18" x2="20" y2="18"/>
+                    <circle cx="8"  cy="6"  r="2" fill="var(--surface-page)"/>
+                    <circle cx="16" cy="12" r="2" fill="var(--surface-page)"/>
+                    <circle cx="10" cy="18" r="2" fill="var(--surface-page)"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <!-- Empty state body -->
+          <main class="view-sessions-list-empty__body" aria-label="No workspaces empty state">
+            <div class="mol-empty-state" role="status">
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <!-- layers icon -->
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                  <polyline points="2 17 12 22 22 17"/>
+                  <polyline points="2 12 12 17 22 12"/>
+                </svg>
+              </div>
+              <h2 class="mol-empty-state__heading type-h2">No workspaces in superset</h2>
+              <p class="mol-empty-state__body type-body">Create one on desktop.</p>
+            </div>
+          </main>
+
+          <!-- Tab bar -->
+          <nav class="view-sessions-list-empty__tab-bar" role="tablist" aria-label="Main navigation">
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="Tasks">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item is-selected" type="button" role="tab" aria-selected="true" aria-label="Chat">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="More options">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+          </nav>
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+        </div><!-- /viewport -->
+      </div><!-- /bezel -->
+
+      <!-- ── 06.3 NO SESSIONS ──────────────────────────────────────── -->
+      <span class="type-meta atom-section-label atom-section-label--strong">06.3 · NO SESSIONS</span>
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- mol-project-chip-header --multi-project (tappable, chevron) + search + filter -->
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project" role="banner">
+            <div class="mol-project-chip-header__row">
+              <button
+                class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md"
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                aria-label="Switch project — currently: superset"
+              >
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="d-06-3-search">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input
+                  id="d-06-3-search"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input"
+                  placeholder="Search sessions"
+                  aria-label="Search sessions"
+                />
+              </div>
+              <div class="mol-project-chip-header__filter">
+                <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md" type="button" aria-label="Filter sessions">
+                  <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4"  y1="6"  x2="20" y2="6"/>
+                    <line x1="4"  y1="12" x2="20" y2="12"/>
+                    <line x1="4"  y1="18" x2="20" y2="18"/>
+                    <circle cx="8"  cy="6"  r="2" fill="var(--surface-page)"/>
+                    <circle cx="16" cy="12" r="2" fill="var(--surface-page)"/>
+                    <circle cx="10" cy="18" r="2" fill="var(--surface-page)"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <!-- Empty state body + FAB -->
+          <main class="view-sessions-list-empty__body" aria-label="No sessions empty state">
+            <div class="mol-empty-state" role="status">
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <!-- message-square icon -->
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <h2 class="mol-empty-state__heading type-h2">Start your first chat in superset</h2>
+              <p class="mol-empty-state__body type-body">Tap '+' below to pick a workspace.</p>
+            </div>
+
+            <!-- FAB anchored bottom-right of the content area -->
+            <div class="view-sessions-list-empty__fab-wrap" aria-hidden="false">
+              <button
+                class="atom-fab-base atom-fab-base--accent atom-fab-base--md"
+                type="button"
+                aria-label="New chat — pick a workspace"
+              >
+                <div class="atom-fab-base__icon" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5"  y1="12" x2="19" y2="12"/>
+                  </svg>
+                </div>
+              </button>
+            </div>
+          </main>
+
+          <!-- Tab bar -->
+          <nav class="view-sessions-list-empty__tab-bar" role="tablist" aria-label="Main navigation">
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="Tasks">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item is-selected" type="button" role="tab" aria-selected="true" aria-label="Chat">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="More options">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+          </nav>
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+        </div><!-- /viewport -->
+      </div><!-- /bezel -->
+
+      <!-- ── 06.4 SEARCH NO-MATCH ──────────────────────────────────── -->
+      <span class="type-meta atom-section-label atom-section-label--strong">06.4 · SEARCH NO-MATCH</span>
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- mol-project-chip-header + search bar with value "zzzz" + visible clear -->
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project" role="banner">
+            <div class="mol-project-chip-header__row">
+              <button
+                class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md"
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                aria-label="Switch project — currently: superset"
+              >
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <!-- Search row with "zzzz" value + clear ✕ visible -->
+            <div class="mol-project-chip-header__row">
+              <div class="mol-project-chip-header__search-wrap atom-text-input--with-trailing-clear">
+                <label class="sr-only" for="d-06-4-search">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input
+                  id="d-06-4-search"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input"
+                  value="zzzz"
+                  aria-label="Search sessions — current query: zzzz"
+                />
+                <!-- Clear ✕ button — always visible when input has value -->
+                <button class="atom-text-input-clear" type="button" aria-label="Clear search">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6"  y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="mol-project-chip-header__filter">
+                <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md" type="button" aria-label="Filter sessions">
+                  <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4"  y1="6"  x2="20" y2="6"/>
+                    <line x1="4"  y1="12" x2="20" y2="12"/>
+                    <line x1="4"  y1="18" x2="20" y2="18"/>
+                    <circle cx="8"  cy="6"  r="2" fill="var(--surface-page)"/>
+                    <circle cx="16" cy="12" r="2" fill="var(--surface-page)"/>
+                    <circle cx="10" cy="18" r="2" fill="var(--surface-page)"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <!-- Empty state body -->
+          <main class="view-sessions-list-empty__body" aria-label="Search no-match empty state">
+            <div class="mol-empty-state" role="status">
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <!-- search icon (xl, faint) -->
+                <svg class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="M21 21l-4.35-4.35"/>
+                </svg>
+              </div>
+              <h2 class="mol-empty-state__heading type-h2">No matches</h2>
+              <p class="mol-empty-state__body type-body">No sessions match "zzzz" in superset.</p>
+              <div class="mol-empty-state__cta">
+                <button class="atom-button atom-button--secondary atom-button--md" type="button">
+                  Clear search
+                </button>
+              </div>
+            </div>
+          </main>
+
+          <!-- Tab bar -->
+          <nav class="view-sessions-list-empty__tab-bar" role="tablist" aria-label="Main navigation">
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="Tasks">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item is-selected" type="button" role="tab" aria-selected="true" aria-label="Chat">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="More options">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+          </nav>
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+        </div><!-- /viewport -->
+      </div><!-- /bezel -->
+
+      <!-- ── 06.5 FILTERS NO-MATCH ─────────────────────────────────── -->
+      <span class="type-meta atom-section-label atom-section-label--strong">06.5 · FILTERS NO-MATCH</span>
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- mol-project-chip-header --multi-project is-filtering (badge "·2") -->
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project is-filtering" role="banner">
+            <div class="mol-project-chip-header__row">
+              <button
+                class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md"
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                aria-label="Switch project — currently: superset"
+              >
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="d-06-5-search">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input
+                  id="d-06-5-search"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input"
+                  placeholder="Search sessions"
+                  aria-label="Search sessions"
+                />
+              </div>
+              <!-- Filter button with ·2 badge -->
+              <div class="mol-project-chip-header__filter view-sessions-list-empty__filter-wrap">
+                <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md" type="button" aria-label="Filter sessions — 2 active filters">
+                  <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4"  y1="6"  x2="20" y2="6"/>
+                    <line x1="4"  y1="12" x2="20" y2="12"/>
+                    <line x1="4"  y1="18" x2="20" y2="18"/>
+                    <circle cx="8"  cy="6"  r="2" fill="var(--surface-page)"/>
+                    <circle cx="16" cy="12" r="2" fill="var(--surface-page)"/>
+                    <circle cx="10" cy="18" r="2" fill="var(--surface-page)"/>
+                  </svg>
+                </button>
+                <!-- ·2 badge -->
+                <span class="mol-project-chip-header__filter-badge atom-badge atom-badge--accent atom-badge--sm" aria-hidden="true">·2</span>
+              </div>
+            </div>
+          </header>
+
+          <!--
+            Applied filter tag row — inlined below the header because
+            mol-project-chip-header has no built-in slot for this row.
+            Uses mol-applied-filter-tag-row + mol-applied-filter-tag.
+          -->
+          <div class="view-sessions-list-empty__filter-tag-section" aria-label="Active filters">
+            <div class="mol-applied-filter-tag-row" role="list" aria-label="Active filter tags">
+              <!-- Workspace filter tag: 🌿 main · desktop -->
+              <div class="mol-applied-filter-tag" role="listitem" aria-label="Filter: main · desktop — remove">
+                <span class="mol-applied-filter-tag__leading-icon" aria-hidden="true">
+                  <!-- branch icon -->
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="6" y1="3" x2="6" y2="15"/>
+                    <circle cx="18" cy="6" r="3"/>
+                    <circle cx="6"  cy="18" r="3"/>
+                    <path d="M18 9a9 9 0 0 1-9 9"/>
+                  </svg>
+                </span>
+                <span class="mol-applied-filter-tag__label">main · desktop</span>
+                <button class="mol-applied-filter-tag__dismiss" type="button" aria-label="Remove filter: main · desktop">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6"  y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <!-- Status filter tag: ⌖ Streaming -->
+              <div class="mol-applied-filter-tag" role="listitem" aria-label="Filter: Streaming — remove">
+                <span class="mol-applied-filter-tag__leading-icon" aria-hidden="true">
+                  <!-- activity / streaming icon -->
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                  </svg>
+                </span>
+                <span class="mol-applied-filter-tag__label">Streaming</span>
+                <button class="mol-applied-filter-tag__dismiss" type="button" aria-label="Remove filter: Streaming">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6"  y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state body -->
+          <main class="view-sessions-list-empty__body" aria-label="Filters no-match empty state">
+            <div class="mol-empty-state" role="status">
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <!-- settings icon (xl, faint) -->
+                <svg class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </div>
+              <h2 class="mol-empty-state__heading type-h2">No matches</h2>
+              <p class="mol-empty-state__body type-body">No sessions match the active filters.</p>
+              <div class="mol-empty-state__cta">
+                <button class="atom-button atom-button--secondary atom-button--md" type="button">
+                  Clear filters
+                </button>
+              </div>
+            </div>
+          </main>
+
+          <!-- Tab bar -->
+          <nav class="view-sessions-list-empty__tab-bar" role="tablist" aria-label="Main navigation">
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="Tasks">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item is-selected" type="button" role="tab" aria-selected="true" aria-label="Chat">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="More options">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+          </nav>
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+        </div><!-- /viewport -->
+      </div><!-- /bezel -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         LIGHT PANE
+    ══════════════════════════════════════════════════════════════════ -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ── 06.1 NO PROJECTS ─────────────────────────────────────── -->
+      <span class="type-meta atom-section-label atom-section-label--strong">06.1 · NO PROJECTS</span>
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <header class="view-sessions-list-empty__plain-header" role="banner">
+            <h1 class="type-section-title">Sessions</h1>
+          </header>
+
+          <main class="view-sessions-list-empty__body" aria-label="No projects empty state">
+            <div class="mol-empty-state" role="status">
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+              </div>
+              <h2 class="mol-empty-state__heading type-h2">No projects yet</h2>
+              <p class="mol-empty-state__body type-body">Create one on desktop to see it here.</p>
+            </div>
+          </main>
+
+          <nav class="view-sessions-list-empty__tab-bar" role="tablist" aria-label="Main navigation">
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="Tasks">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item is-selected" type="button" role="tab" aria-selected="true" aria-label="Chat">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="More options">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+          </nav>
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <!-- ── 06.2 NO WORKSPACES ────────────────────────────────────── -->
+      <span class="type-meta atom-section-label atom-section-label--strong">06.2 · NO WORKSPACES</span>
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <header class="mol-project-chip-header mol-project-chip-header--single-project" role="banner">
+            <div class="mol-project-chip-header__row">
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" type="button" aria-label="Current project: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="l-06-2-search">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="l-06-2-search" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions"/>
+              </div>
+              <div class="mol-project-chip-header__filter">
+                <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md" type="button" aria-label="Filter sessions">
+                  <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4"  y1="6"  x2="20" y2="6"/>
+                    <line x1="4"  y1="12" x2="20" y2="12"/>
+                    <line x1="4"  y1="18" x2="20" y2="18"/>
+                    <circle cx="8"  cy="6"  r="2" fill="var(--surface-page)"/>
+                    <circle cx="16" cy="12" r="2" fill="var(--surface-page)"/>
+                    <circle cx="10" cy="18" r="2" fill="var(--surface-page)"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main class="view-sessions-list-empty__body" aria-label="No workspaces empty state">
+            <div class="mol-empty-state" role="status">
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                  <polyline points="2 17 12 22 22 17"/>
+                  <polyline points="2 12 12 17 22 12"/>
+                </svg>
+              </div>
+              <h2 class="mol-empty-state__heading type-h2">No workspaces in superset</h2>
+              <p class="mol-empty-state__body type-body">Create one on desktop.</p>
+            </div>
+          </main>
+
+          <nav class="view-sessions-list-empty__tab-bar" role="tablist" aria-label="Main navigation">
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="Tasks">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item is-selected" type="button" role="tab" aria-selected="true" aria-label="Chat">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="More options">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+          </nav>
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <!-- ── 06.3 NO SESSIONS ──────────────────────────────────────── -->
+      <span class="type-meta atom-section-label atom-section-label--strong">06.3 · NO SESSIONS</span>
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project" role="banner">
+            <div class="mol-project-chip-header__row">
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="l-06-3-search">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="l-06-3-search" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions"/>
+              </div>
+              <div class="mol-project-chip-header__filter">
+                <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md" type="button" aria-label="Filter sessions">
+                  <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4"  y1="6"  x2="20" y2="6"/>
+                    <line x1="4"  y1="12" x2="20" y2="12"/>
+                    <line x1="4"  y1="18" x2="20" y2="18"/>
+                    <circle cx="8"  cy="6"  r="2" fill="var(--surface-page)"/>
+                    <circle cx="16" cy="12" r="2" fill="var(--surface-page)"/>
+                    <circle cx="10" cy="18" r="2" fill="var(--surface-page)"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main class="view-sessions-list-empty__body" aria-label="No sessions empty state">
+            <div class="mol-empty-state" role="status">
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <h2 class="mol-empty-state__heading type-h2">Start your first chat in superset</h2>
+              <p class="mol-empty-state__body type-body">Tap '+' below to pick a workspace.</p>
+            </div>
+
+            <div class="view-sessions-list-empty__fab-wrap" aria-hidden="false">
+              <button class="atom-fab-base atom-fab-base--accent atom-fab-base--md" type="button" aria-label="New chat — pick a workspace">
+                <div class="atom-fab-base__icon" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5"  y1="12" x2="19" y2="12"/>
+                  </svg>
+                </div>
+              </button>
+            </div>
+          </main>
+
+          <nav class="view-sessions-list-empty__tab-bar" role="tablist" aria-label="Main navigation">
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="Tasks">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item is-selected" type="button" role="tab" aria-selected="true" aria-label="Chat">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="More options">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+          </nav>
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <!-- ── 06.4 SEARCH NO-MATCH ──────────────────────────────────── -->
+      <span class="type-meta atom-section-label atom-section-label--strong">06.4 · SEARCH NO-MATCH</span>
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project" role="banner">
+            <div class="mol-project-chip-header__row">
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row">
+              <div class="mol-project-chip-header__search-wrap atom-text-input--with-trailing-clear">
+                <label class="sr-only" for="l-06-4-search">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="l-06-4-search" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" value="zzzz" aria-label="Search sessions — current query: zzzz"/>
+                <button class="atom-text-input-clear" type="button" aria-label="Clear search">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6"  y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="mol-project-chip-header__filter">
+                <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md" type="button" aria-label="Filter sessions">
+                  <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4"  y1="6"  x2="20" y2="6"/>
+                    <line x1="4"  y1="12" x2="20" y2="12"/>
+                    <line x1="4"  y1="18" x2="20" y2="18"/>
+                    <circle cx="8"  cy="6"  r="2" fill="var(--surface-page)"/>
+                    <circle cx="16" cy="12" r="2" fill="var(--surface-page)"/>
+                    <circle cx="10" cy="18" r="2" fill="var(--surface-page)"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main class="view-sessions-list-empty__body" aria-label="Search no-match empty state">
+            <div class="mol-empty-state" role="status">
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <!-- search icon (xl, faint) -->
+                <svg class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="M21 21l-4.35-4.35"/>
+                </svg>
+              </div>
+              <h2 class="mol-empty-state__heading type-h2">No matches</h2>
+              <p class="mol-empty-state__body type-body">No sessions match "zzzz" in superset.</p>
+              <div class="mol-empty-state__cta">
+                <button class="atom-button atom-button--secondary atom-button--md" type="button">Clear search</button>
+              </div>
+            </div>
+          </main>
+
+          <nav class="view-sessions-list-empty__tab-bar" role="tablist" aria-label="Main navigation">
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="Tasks">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item is-selected" type="button" role="tab" aria-selected="true" aria-label="Chat">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="More options">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+          </nav>
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <!-- ── 06.5 FILTERS NO-MATCH ─────────────────────────────────── -->
+      <span class="type-meta atom-section-label atom-section-label--strong">06.5 · FILTERS NO-MATCH</span>
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5"  rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8"  rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project is-filtering" role="banner">
+            <div class="mol-project-chip-header__row">
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="l-06-5-search">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="l-06-5-search" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions"/>
+              </div>
+              <div class="mol-project-chip-header__filter view-sessions-list-empty__filter-wrap">
+                <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md" type="button" aria-label="Filter sessions — 2 active filters">
+                  <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4"  y1="6"  x2="20" y2="6"/>
+                    <line x1="4"  y1="12" x2="20" y2="12"/>
+                    <line x1="4"  y1="18" x2="20" y2="18"/>
+                    <circle cx="8"  cy="6"  r="2" fill="var(--surface-page)"/>
+                    <circle cx="16" cy="12" r="2" fill="var(--surface-page)"/>
+                    <circle cx="10" cy="18" r="2" fill="var(--surface-page)"/>
+                  </svg>
+                </button>
+                <span class="mol-project-chip-header__filter-badge atom-badge atom-badge--accent atom-badge--sm" aria-hidden="true">·2</span>
+              </div>
+            </div>
+          </header>
+
+          <!-- Applied filter tag row — inlined below header -->
+          <div class="view-sessions-list-empty__filter-tag-section" aria-label="Active filters">
+            <div class="mol-applied-filter-tag-row" role="list" aria-label="Active filter tags">
+              <div class="mol-applied-filter-tag" role="listitem" aria-label="Filter: main · desktop — remove">
+                <span class="mol-applied-filter-tag__leading-icon" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="6" y1="3" x2="6" y2="15"/>
+                    <circle cx="18" cy="6" r="3"/>
+                    <circle cx="6"  cy="18" r="3"/>
+                    <path d="M18 9a9 9 0 0 1-9 9"/>
+                  </svg>
+                </span>
+                <span class="mol-applied-filter-tag__label">main · desktop</span>
+                <button class="mol-applied-filter-tag__dismiss" type="button" aria-label="Remove filter: main · desktop">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6"  y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="mol-applied-filter-tag" role="listitem" aria-label="Filter: Streaming — remove">
+                <span class="mol-applied-filter-tag__leading-icon" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                  </svg>
+                </span>
+                <span class="mol-applied-filter-tag__label">Streaming</span>
+                <button class="mol-applied-filter-tag__dismiss" type="button" aria-label="Remove filter: Streaming">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6"  y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <main class="view-sessions-list-empty__body" aria-label="Filters no-match empty state">
+            <div class="mol-empty-state" role="status">
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <!-- settings icon (xl, faint) -->
+                <svg class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </div>
+              <h2 class="mol-empty-state__heading type-h2">No matches</h2>
+              <p class="mol-empty-state__body type-body">No sessions match the active filters.</p>
+              <div class="mol-empty-state__cta">
+                <button class="atom-button atom-button--secondary atom-button--md" type="button">Clear filters</button>
+              </div>
+            </div>
+          </main>
+
+          <nav class="view-sessions-list-empty__tab-bar" role="tablist" aria-label="Main navigation">
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="Tasks">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Tasks</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item is-selected" type="button" role="tab" aria-selected="true" aria-label="Chat">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">Chat</span>
+            </button>
+            <button class="mol-bottom-tab-bar-item" type="button" role="tab" aria-selected="false" aria-label="More options">
+              <div class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="mol-bottom-tab-bar-item__icon atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="mol-bottom-tab-bar-item__label type-meta">More</span>
+            </button>
+          </nav>
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+        </div>
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+</body>
+</html>
