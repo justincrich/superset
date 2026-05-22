@@ -30,7 +30,7 @@ This PRD was generated **without a live `Claude Agent Team` collaboration** (no 
   - Light: `ChatInterface`, `UserMessage`, `AssistantMessage`
   - Medium: `MessageList` (FlashList swap), `MessagePartsRenderer` (markdown swap), `PendingApprovalMessage`, `PendingQuestionMessage`
   - **Heavy: `ChatInputFooter`** (Tiptap, drag-drop, file picker on desktop)
-- **Designer's 2¢ baked into PRD:** bottom sheets > inline cards for pause prompts (UC-PAUSE-01/02/03); atomic streaming (NOT character-drip) for UC-RENDER-02; FlashList required for UC-RENDER-07; 44pt min hit targets in pause sheets; defer the warm-ember palette migration (keep mobile cool-neutral for mobile-chat v2).
+- **Designer's 2¢ baked into PRD:** bottom sheets > inline cards for pause prompts (UC-PAUSE-01/02/03); atomic streaming (NOT character-drip) for UC-RENDER-02; FlashList required for UC-RENDER-07; 44pt min hit targets in pause sheets. **Update 2026-05-22:** the warm-ember palette migration is no longer deferred — Path A is committed via [`14-token-migration-audit.md`](14-token-migration-audit.md) as Sprint 01 Phase 0.
 
 ## Phase 4 equivalent — Holdout scenarios (deferred)
 
@@ -42,7 +42,7 @@ These were flagged in the research artifact and remain open for `/kb-sprint-plan
 
 1. **JWT lifecycle** for mobile → relay: per-call mint via cloud tRPC, device-held longer-lived host token, or server-side proxy that hides the relay from mobile. Affects sprint sequencing for transport setup.
 2. **Live streaming transport**: SSE through relay (net-new), chunked HTTP through relay, or DurableStreams SSE (existing path). The "consider adding SSE to relay" idea from the team discussion lives here.
-3. **Color palette alignment**: keep mobile cool-neutral for mobile-chat v2 (current default) or align to desktop's warm ember palette. Whole-app change, needs design sign-off — flagged but not blocking mobile-chat v2.
+3. **Color palette alignment — RESOLVED 2026-05-22:** Path A committed — align mobile to desktop's warm ember palette. Whole-app change; executed via Sprint 01 Phase 0 per [`14-token-migration-audit.md`](14-token-migration-audit.md). Single PR `chat-mobile-token-migration` rewrites `apps/mobile/global.css` + `apps/mobile/lib/theme.ts`, amends `apps/mobile/design/manifest.json` `constraints.preserve_theme`, attaches visual regression evidence for all non-chat screens. Phase 0 closing gate (10 ACs) blocks pixel-perfect plan phase until passed.
 4. **Mobile-side Tiptap WebView trade-off**: `@10play/tentap-editor` is the path taken (per user direction "if desktop is using tiptap we should use tiptap"). WebView overhead is real (~30-50MB memory, occasional keyboard quirks). Monitor in mobile-chat v2 and consider plain `TextInput` fallback if perf becomes a problem on mid-range Android.
 
 ## Source artifact pointers

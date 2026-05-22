@@ -190,9 +190,11 @@ lib/
 
 ## Design tokens
 
-Mobile `apps/mobile/global.css` already provides all 20 semantic color tokens (`--color-background`, `--color-foreground`, `--color-muted`, `--color-muted-foreground`, `--color-card`, `--color-card-foreground`, `--color-popover`, `--color-popover-foreground`, `--color-primary`, `--color-primary-foreground`, `--color-secondary`, `--color-secondary-foreground`, `--color-accent`, `--color-accent-foreground`, `--color-destructive`, `--color-destructive-foreground`, `--color-border`, `--color-input`, `--color-ring`, `--radius`) under both `@variant light` and `@variant dark`. No new tokens required for mobile-chat v2.
+**Path A committed 2026-05-22 — see [`14-token-migration-audit.md`](../14-token-migration-audit.md) for the full migration scope.** Mobile migrates from React Native Reusables cool-neutral (HSL 240 hues) to the desktop ember warm palette as canonical, sourced from `designs/tokens/tokens.css` at the worktree root. Sprint 01 Phase 0 rewrites `apps/mobile/global.css` + `apps/mobile/lib/theme.ts`; ~120 new token keys are introduced (status palette, spacing role aliases, typography scale, motion durations, elevation, surface/text/border variants, mobile chrome geometry, domain chat tokens).
 
-Palette delta vs desktop: mobile is cool-neutral, desktop is warm-ember. Cross-app brand alignment deferred — flagged in 09-team-contributions.md as an open product decision.
+The pre-migration `global.css` exposed only 20 flat semantic color tokens (`--color-background`, `--color-foreground`, …, `--color-ring`, `--radius`) under `@variant light` and `@variant dark`. Post-migration retains the flat-name convention (Path A) for rn-reusables CLI compatibility, with values flipped to ember and the additional 120 keys layered in.
+
+Cross-app brand alignment (mobile ↔ desktop) is RESOLVED as part of Phase 0.
 
 ## Tailwind class translation rules (from design audit)
 
