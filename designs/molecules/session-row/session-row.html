@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-session-row — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-session-row — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       ================================================================ */
+
+    .mol-session-row {
+      display:        flex;
+      align-items:    center;
+      gap:            var(--space-3);
+      padding:        var(--space-3) var(--space-4);
+      min-height:     var(--touch-target-min);
+      background:     transparent;
+      border:         none;
+      width:          100%;
+      text-align:     left;
+      cursor:         pointer;
+      color:          var(--text-body);
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body);
+      position:       relative;
+      outline:        none;
+      text-decoration: none;
+      transition:     background-color var(--motion-fast) var(--motion-ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mol-session-row__leading {
+      flex-shrink: 0;
+      display:     flex;
+      align-items: center;
+    }
+
+    .mol-session-row__body {
+      flex:           1;
+      min-width:      0;   /* enables overflow truncation on long titles */
+      display:        flex;
+      flex-direction: column;
+      gap:            2px; /* structural: sub-token typographic leading — TOKEN_GAP */
+    }
+
+    .mol-session-row__title {
+      font-weight:   var(--font-weight-meta);
+      white-space:   nowrap;
+      overflow:      hidden;
+      text-overflow: ellipsis;
+      color:         var(--text-body);
+      line-height:   var(--line-height-snug);
+    }
+
+    .mol-session-row__meta {
+      white-space:   nowrap;
+      overflow:      hidden;
+      text-overflow: ellipsis;
+      /* color and typography via .type-meta */
+    }
+
+    .mol-session-row__trailing {
+      flex-shrink: 0;
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+    }
+
+    /* --- State modifiers ------------------------------------------- */
+    .mol-session-row:hover,
+    .mol-session-row.is-hover {
+      background: var(--surface-soft);
+    }
+
+    .mol-session-row:active,
+    .mol-session-row.is-active {
+      background: var(--surface-active);
+    }
+
+    .mol-session-row:focus-visible,
+    .mol-session-row.is-focus {
+      outline:    none;
+      box-shadow: inset 0 0 0 2px var(--border-focus);
+    }
+
+    .mol-session-row.is-selected {
+      background:   var(--surface-active);
+      border-left:  3px solid var(--accent-primary); /* structural: matches --domain-tool-rule-width */
+      padding-left: calc(var(--space-4) - 3px);      /* compensate for border width */
+    }
+
+    /* Long-press hint overlay */
+    .mol-session-row.is-pressed-long {
+      background: var(--surface-active);
+      transform:  scale(0.99);
+    }
+
+    .mol-session-row.is-pressed-long::after {
+      content:         "Hold to copy";
+      position:        absolute;
+      bottom:          calc(100% + var(--space-2));
+      left:            50%;
+      transform:       translateX(-50%);
+      background:      var(--surface-overlay);
+      color:           var(--text-muted);
+      font-family:     var(--font-mono);
+      font-size:       var(--font-size-meta);
+      letter-spacing:  var(--tracking-mono);
+      text-transform:  uppercase;
+      padding:         var(--space-1) var(--space-3);
+      border-radius:   var(--radius-subtle);
+      border:          1px solid var(--border-default);
+      white-space:     nowrap;
+      pointer-events:  none;
+      z-index:         10;
+    }
+
+    /* --- Variant: archived → faint title --------------------------- */
+    .mol-session-row--archived .mol-session-row__title {
+      color: var(--text-faint);
+    }
+
+    /* ================================================================
+       Faux sessions list — composition demo
+       ================================================================ */
+    .mol-sessions-list {
+      width:          100%;
+      max-width:      430px;
+      background:     var(--surface-page);
+      overflow:       hidden;
+      border-radius:  var(--radius-default);
+      border:         1px solid var(--border-subtle);
+    }
+
+    .mol-sessions-list__section-header {
+      display:          flex;
+      align-items:      center;
+      padding:          var(--space-2) var(--space-4);
+      background:       var(--surface-page);
+      position:         sticky;
+      top:              0;
+      z-index:          1;
+      gap:              var(--space-2);
+    }
+
+    /* Ensure session rows in the list fill full width */
+    .mol-sessions-list .mol-session-row {
+      border-radius: 0;
+    }
+
+    /* ================================================================
+       Preview layout helpers
+       ================================================================ */
+    .preview-section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+      margin:         0 0 var(--space-3);
+    }
+
+    .preview-row-group {
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      overflow:      hidden;
+      max-width:     430px;
+    }
+
+    .preview-row-group .mol-session-row + .mol-session-row {
+      border-top: none;
+    }
+
+    .preview-section {
+      margin-bottom: var(--space-8);
+    }
+
+    /* Divider between session rows in list composition */
+    .mol-sessions-list .atom-divider--horizontal {
+      margin-inline: var(--space-4);
+      width:         calc(100% - var(--space-8));
+    }
+
+    /* Indented row in list: divider pushed past leading icon */
+    .mol-sessions-list .row-divider-inset {
+      margin-left:  calc(var(--space-4) + 8px + var(--space-3)); /* 4px pad + 8px dot + 3px gap */
+      margin-right: 0;
+      width:        auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       HEADER
+  ============================================================ -->
+  <div class="preview-plate">
+    <p class="crumb">molecules / session-row</p>
+    <h1>mol-session-row</h1>
+  </div>
+
+  <!-- ============================================================
+       DARK PANE
+  ============================================================ -->
+  <div class="pegboard">
+    <div class="pane" data-theme="dark">
+      <span class="pane-label">Dark</span>
+
+      <!-- 1. VARIANT MATRIX -->
+      <div class="preview-section">
+        <p class="preview-section-title">1 — Variant matrix (5 status variants)</p>
+
+        <div class="preview-row-group">
+
+          <!-- live -->
+          <button
+            class="mol-session-row mol-session-row--live"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">superset · chat-mobile-plan</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- warning -->
+          <button
+            class="mol-session-row mol-session-row--warning"
+            aria-label="Open session: Apply unpaid plan check"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--warning atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Apply unpaid plan check</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">2m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- danger -->
+          <button
+            class="mol-session-row mol-session-row--danger"
+            aria-label="Open session: Update host-service JWT rotation"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--danger atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Update host-service JWT rotation</span>
+              <span class="mol-session-row__meta type-meta">host-service · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">1h</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- idle -->
+          <button
+            class="mol-session-row mol-session-row--idle"
+            aria-label="Open session: Reset onboarding state for QA build"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Reset onboarding state for QA build</span>
+              <span class="mol-session-row__meta type-meta">superset · chat-mobile-plan</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">yesterday</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- archived -->
+          <button
+            class="mol-session-row mol-session-row--archived"
+            aria-label="Open session: Add diff-viewer line numbers"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Add diff-viewer line numbers</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">3d</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- 2. STATE ROW — live variant × 6 states -->
+      <div class="preview-section">
+        <p class="preview-section-title">2 — State row (live variant × 6 states)</p>
+
+        <div class="preview-row-group">
+
+          <!-- default -->
+          <button
+            class="mol-session-row mol-session-row--live"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">default state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- hover -->
+          <button
+            class="mol-session-row mol-session-row--live is-hover"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">is-hover state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- active -->
+          <button
+            class="mol-session-row mol-session-row--live is-active"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">is-active state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- focus -->
+          <button
+            class="mol-session-row mol-session-row--live is-focus"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">is-focus state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- selected -->
+          <button
+            class="mol-session-row mol-session-row--live is-selected"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+            aria-current="page"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">is-selected state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- unread -->
+          <button
+            class="mol-session-row mol-session-row--live is-unread"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">is-unread state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <span class="atom-badge atom-badge--dot atom-badge--accent" aria-label="Unread updates"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- 3. COMPOSITION — faux sessions list -->
+      <div class="preview-section">
+        <p class="preview-section-title">3 — Composition (workspace section + 5 rows + truncation demo)</p>
+
+        <div class="mol-sessions-list" role="list" aria-label="Recent sessions">
+
+          <!-- Section header — superset workspace -->
+          <div class="mol-sessions-list__section-header" role="listitem">
+            <span
+              class="atom-section-label atom-section-label--sticky"
+              style="position: static; background: transparent; padding-block: 0;"
+            >superset</span>
+            <span class="atom-badge atom-badge--neutral">4</span>
+          </div>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <button
+            class="mol-session-row mol-session-row--live"
+            role="listitem"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">superset · chat-mobile-plan</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline row-divider-inset">
+
+          <button
+            class="mol-session-row mol-session-row--warning"
+            role="listitem"
+            aria-label="Open session: Apply unpaid plan check"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--warning atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Apply unpaid plan check</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">2m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline row-divider-inset">
+
+          <!-- Truncation demo row -->
+          <button
+            class="mol-session-row mol-session-row--idle"
+            role="listitem"
+            aria-label="Open session: This is a very long session title that should truncate gracefully with ellipsis at the available width"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">This is a very long session title that should truncate gracefully with ellipsis at the available width</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">3h</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline row-divider-inset">
+
+          <button
+            class="mol-session-row mol-session-row--idle is-selected"
+            role="listitem"
+            aria-label="Open session: Reset onboarding state for QA build"
+            aria-haspopup="menu"
+            aria-current="page"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Reset onboarding state for QA build</span>
+              <span class="mol-session-row__meta type-meta">superset · chat-mobile-plan</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">yesterday</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- Section header — host-service workspace -->
+          <div class="mol-sessions-list__section-header" role="listitem">
+            <span
+              class="atom-section-label atom-section-label--sticky"
+              style="position: static; background: transparent; padding-block: 0;"
+            >host-service</span>
+            <span class="atom-badge atom-badge--neutral">1</span>
+          </div>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <button
+            class="mol-session-row mol-session-row--archived"
+            role="listitem"
+            aria-label="Open session: Add diff-viewer line numbers"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Add diff-viewer line numbers</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">3d</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+        </div>
+      </div>
+
+    </div><!-- end dark pane -->
+
+    <!-- ============================================================
+         LIGHT PANE
+    ============================================================ -->
+    <div class="pane" data-theme="light">
+      <span class="pane-label">Light</span>
+
+      <!-- 1. VARIANT MATRIX -->
+      <div class="preview-section">
+        <p class="preview-section-title">1 — Variant matrix (5 status variants)</p>
+
+        <div class="preview-row-group">
+
+          <!-- live -->
+          <button
+            class="mol-session-row mol-session-row--live"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">superset · chat-mobile-plan</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- warning -->
+          <button
+            class="mol-session-row mol-session-row--warning"
+            aria-label="Open session: Apply unpaid plan check"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--warning atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Apply unpaid plan check</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">2m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- danger -->
+          <button
+            class="mol-session-row mol-session-row--danger"
+            aria-label="Open session: Update host-service JWT rotation"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--danger atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Update host-service JWT rotation</span>
+              <span class="mol-session-row__meta type-meta">host-service · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">1h</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- idle -->
+          <button
+            class="mol-session-row mol-session-row--idle"
+            aria-label="Open session: Reset onboarding state for QA build"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Reset onboarding state for QA build</span>
+              <span class="mol-session-row__meta type-meta">superset · chat-mobile-plan</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">yesterday</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- archived -->
+          <button
+            class="mol-session-row mol-session-row--archived"
+            aria-label="Open session: Add diff-viewer line numbers"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Add diff-viewer line numbers</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">3d</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- 2. STATE ROW — live variant × 6 states -->
+      <div class="preview-section">
+        <p class="preview-section-title">2 — State row (live variant × 6 states)</p>
+
+        <div class="preview-row-group">
+
+          <!-- default -->
+          <button
+            class="mol-session-row mol-session-row--live"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">default state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- hover -->
+          <button
+            class="mol-session-row mol-session-row--live is-hover"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">is-hover state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- active -->
+          <button
+            class="mol-session-row mol-session-row--live is-active"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">is-active state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- focus -->
+          <button
+            class="mol-session-row mol-session-row--live is-focus"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">is-focus state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- selected -->
+          <button
+            class="mol-session-row mol-session-row--live is-selected"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+            aria-current="page"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">is-selected state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- unread -->
+          <button
+            class="mol-session-row mol-session-row--live is-unread"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">is-unread state</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <span class="atom-badge atom-badge--dot atom-badge--accent" aria-label="Unread updates"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- 3. COMPOSITION — faux sessions list -->
+      <div class="preview-section">
+        <p class="preview-section-title">3 — Composition (workspace section + 5 rows + truncation demo)</p>
+
+        <div class="mol-sessions-list" role="list" aria-label="Recent sessions">
+
+          <!-- Section header — superset workspace -->
+          <div class="mol-sessions-list__section-header" role="listitem">
+            <span
+              class="atom-section-label atom-section-label--sticky"
+              style="position: static; background: transparent; padding-block: 0;"
+            >superset</span>
+            <span class="atom-badge atom-badge--neutral">4</span>
+          </div>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <button
+            class="mol-session-row mol-session-row--live"
+            role="listitem"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">superset · chat-mobile-plan</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline row-divider-inset">
+
+          <button
+            class="mol-session-row mol-session-row--warning"
+            role="listitem"
+            aria-label="Open session: Apply unpaid plan check"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--warning atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Apply unpaid plan check</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">2m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline row-divider-inset">
+
+          <!-- Truncation demo -->
+          <button
+            class="mol-session-row mol-session-row--idle"
+            role="listitem"
+            aria-label="Open session: This is a very long session title that should truncate gracefully with ellipsis at the available width"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">This is a very long session title that should truncate gracefully with ellipsis at the available width</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">3h</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline row-divider-inset">
+
+          <button
+            class="mol-session-row mol-session-row--idle is-selected"
+            role="listitem"
+            aria-label="Open session: Reset onboarding state for QA build"
+            aria-haspopup="menu"
+            aria-current="page"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Reset onboarding state for QA build</span>
+              <span class="mol-session-row__meta type-meta">superset · chat-mobile-plan</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">yesterday</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- Section header — host-service workspace -->
+          <div class="mol-sessions-list__section-header" role="listitem">
+            <span
+              class="atom-section-label atom-section-label--sticky"
+              style="position: static; background: transparent; padding-block: 0;"
+            >host-service</span>
+            <span class="atom-badge atom-badge--neutral">1</span>
+          </div>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <button
+            class="mol-session-row mol-session-row--archived"
+            role="listitem"
+            aria-label="Open session: Add diff-viewer line numbers"
+            aria-haspopup="menu"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Add diff-viewer line numbers</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">3d</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+        </div>
+      </div>
+
+    </div><!-- end light pane -->
+  </div><!-- end pegboard -->
+
+</body>
+</html>
