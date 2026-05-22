@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-code-block — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-code-block — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. max-height 320px is a structural geometry
+       constant (TOKEN_GAP documented in README.md).
+       ================================================================ */
+
+    /* ---- Container ------------------------------------------- */
+    figure.mol-code-block {
+      margin:        0;
+      background:    var(--surface-sunken);
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      overflow:      hidden;
+    }
+
+    figure.mol-code-block--bare {
+      border: none;
+    }
+
+    /* ---- Header ---------------------------------------------- */
+    .mol-code-block__head {
+      display:         flex;
+      align-items:     center;
+      justify-content: space-between;
+      padding:         var(--space-2) var(--space-3);
+      border-bottom:   1px solid var(--border-subtle);
+    }
+
+    /* Language label sits left — inherits atom-section-label sizing */
+    .mol-code-block__lang {
+      /* layout override: inline-flex so it sits on one line inside flex row */
+      display: inline-flex;
+      align-items: center;
+    }
+
+    /* Copy button — ghost xs with inline label */
+    .mol-code-block__copy {
+      /* Override atom-icon-button square constraint to allow label alongside icon */
+      width:   auto !important;
+      height:  28px;
+      padding-inline: var(--space-2);
+      gap:     var(--space-1);
+      display: inline-flex;
+      align-items: center;
+      border-radius: var(--radius-default);
+    }
+
+    /* Copied state: tint glyph live-green to signal success */
+    .mol-code-block__copy.is-copied .atom-icon-glyph {
+      color: var(--state-live-fg);
+    }
+
+    /* ---- Body ------------------------------------------------ */
+    .mol-code-block__body {
+      margin:     0;
+      padding:    var(--space-3) var(--space-4);
+      overflow-x: auto;
+      max-height: 320px;    /* TOKEN_GAP: structural 20-line budget — documented */
+      color:      var(--text-body);
+      white-space: pre;
+    }
+
+    /* Overflow state — vertical scroll engaged */
+    figure.mol-code-block.is-overflow .mol-code-block__body {
+      overflow-y: auto;
+    }
+
+    /* ---- Syntax highlight helpers (molecule-local, decorative) */
+    .mol-code-block__kw  { color: var(--accent-primary);     }  /* keywords */
+    .mol-code-block__str { color: var(--state-live-fg);      }  /* string literals */
+    .mol-code-block__fn  { color: var(--state-warning-fg);   }  /* function names */
+    .mol-code-block__cmt { color: var(--text-faint);         }  /* comments */
+
+    /* ---- Inline code helper ---------------------------------- */
+    /* Used for <code> spans inside prose paragraphs */
+    .mol-code-block__inline {
+      display:          inline;
+      padding:          var(--space-1) var(--space-2);
+      background:       var(--surface-sunken);
+      border:           1px solid var(--border-subtle);
+      border-radius:    var(--radius-subtle);
+      vertical-align:   baseline;
+    }
+
+    /* ================================================================
+       Preview layout helpers — not part of the molecule spec
+       ================================================================ */
+
+    .preview-section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-heading);
+      margin:         0 0 var(--space-3);
+    }
+
+    .preview-row {
+      display:   flex;
+      flex-wrap: wrap;
+      gap:       var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .preview-col {
+      flex:      1;
+      min-width: 260px;
+      max-width: 460px;
+    }
+
+    .preview-col-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin-bottom:  var(--space-2);
+    }
+
+    .preview-state-row {
+      display:   flex;
+      flex-wrap: wrap;
+      gap:       var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .preview-state-cell {
+      flex:      1;
+      min-width: 220px;
+      max-width: 380px;
+    }
+
+    .preview-state-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin-bottom:  var(--space-2);
+    }
+
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0;
+    }
+
+    /* Inline example prose container */
+    .prose-example {
+      max-width: 440px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">code-block</h1>
+    <p class="crumb">molecule · code fence with language label + Copy affordance + syntax-highlighted body</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT MATRIX: default + bare side-by-side ---- -->
+      <p class="preview-section-title">1 · variant matrix — default vs bare</p>
+
+      <div class="preview-row">
+        <!-- default variant -->
+        <div class="preview-col">
+          <p class="preview-col-label">mol-code-block--default</p>
+          <figure class="mol-code-block mol-code-block--default">
+            <header class="mol-code-block__head">
+              <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+              <button
+                class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+                aria-label="Copy code"
+                type="button"
+              >
+                <!-- copy icon -->
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="atom-section-label atom-section-label--faint">Copy</span>
+              </button>
+            </header>
+            <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+            <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">export const</span> billing =
+  <span class="mol-code-block__fn">router</span>({
+    <span class="mol-code-block__fn">getInvoice</span>: publicProcedure
+      .<span class="mol-code-block__fn">input</span>(z.<span class="mol-code-block__fn">string</span>())
+      .<span class="mol-code-block__fn">query</span>(({ input }) =&gt; db.invoice.<span class="mol-code-block__fn">find</span>(input)),
+  });</code></pre>
+          </figure>
+        </div>
+
+        <!-- bare variant -->
+        <div class="preview-col">
+          <p class="preview-col-label">mol-code-block--bare</p>
+          <figure class="mol-code-block mol-code-block--bare">
+            <header class="mol-code-block__head">
+              <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+              <button
+                class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+                aria-label="Copy code"
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="atom-section-label atom-section-label--faint">Copy</span>
+              </button>
+            </header>
+            <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+            <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">export const</span> billing =
+  <span class="mol-code-block__fn">router</span>({
+    <span class="mol-code-block__fn">getInvoice</span>: publicProcedure
+      .<span class="mol-code-block__fn">input</span>(z.<span class="mol-code-block__fn">string</span>())
+      .<span class="mol-code-block__fn">query</span>(({ input }) =&gt; db.invoice.<span class="mol-code-block__fn">find</span>(input)),
+  });</code></pre>
+          </figure>
+        </div>
+      </div><!-- /variant row -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. STATE ROW: default / is-copied / is-overflow ---- -->
+      <p class="preview-section-title">2 · states — default / is-copied / is-overflow</p>
+
+      <div class="preview-state-row">
+
+        <!-- STATE: default -->
+        <div class="preview-state-cell">
+          <p class="preview-state-label">default</p>
+          <figure class="mol-code-block mol-code-block--default">
+            <header class="mol-code-block__head">
+              <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+              <button
+                class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+                aria-label="Copy code"
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="atom-section-label atom-section-label--faint">Copy</span>
+              </button>
+            </header>
+            <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+            <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">const</span> x = <span class="mol-code-block__fn">fetchData</span>();</code></pre>
+          </figure>
+        </div>
+
+        <!-- STATE: is-copied -->
+        <div class="preview-state-cell">
+          <p class="preview-state-label">is-copied</p>
+          <figure class="mol-code-block mol-code-block--default">
+            <header class="mol-code-block__head">
+              <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+              <button
+                class="atom-icon-button atom-icon-button--ghost mol-code-block__copy is-copied"
+                aria-label="Copy code"
+                aria-live="polite"
+                type="button"
+              >
+                <!-- check icon — replaces copy icon in is-copied state -->
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span class="atom-section-label atom-section-label--faint">Copied</span>
+              </button>
+            </header>
+            <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+            <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">const</span> x = <span class="mol-code-block__fn">fetchData</span>();</code></pre>
+          </figure>
+        </div>
+
+        <!-- STATE: is-overflow (tall block, scrollbar visible) -->
+        <div class="preview-state-cell">
+          <p class="preview-state-label">is-overflow</p>
+          <figure class="mol-code-block mol-code-block--default is-overflow">
+            <header class="mol-code-block__head">
+              <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+              <button
+                class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+                aria-label="Copy code"
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="atom-section-label atom-section-label--faint">Copy</span>
+              </button>
+            </header>
+            <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+            <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">import</span> { z } <span class="mol-code-block__kw">from</span> <span class="mol-code-block__str">'zod'</span>
+<span class="mol-code-block__kw">import</span> { router, publicProcedure } <span class="mol-code-block__kw">from</span> <span class="mol-code-block__str">'../trpc'</span>
+<span class="mol-code-block__kw">import</span> { db } <span class="mol-code-block__kw">from</span> <span class="mol-code-block__str">'../db'</span>
+
+<span class="mol-code-block__cmt">// Billing router — exposes invoice queries</span>
+<span class="mol-code-block__kw">export const</span> billing = <span class="mol-code-block__fn">router</span>({
+  <span class="mol-code-block__fn">getInvoice</span>: publicProcedure
+    .<span class="mol-code-block__fn">input</span>(z.<span class="mol-code-block__fn">string</span>())
+    .<span class="mol-code-block__fn">query</span>(<span class="mol-code-block__kw">async</span> ({ input }) =&gt; {
+      <span class="mol-code-block__kw">return</span> db.invoice.<span class="mol-code-block__fn">findUnique</span>({
+        where: { id: input },
+      })
+    }),
+
+  <span class="mol-code-block__fn">listInvoices</span>: publicProcedure
+    .<span class="mol-code-block__fn">input</span>(
+      z.<span class="mol-code-block__fn">object</span>({
+        workspaceId: z.<span class="mol-code-block__fn">string</span>(),
+        limit:       z.<span class="mol-code-block__fn">number</span>().<span class="mol-code-block__fn">default</span>(20),
+        cursor:      z.<span class="mol-code-block__fn">string</span>().<span class="mol-code-block__fn">optional</span>(),
+      })
+    )
+    .<span class="mol-code-block__fn">query</span>(<span class="mol-code-block__kw">async</span> ({ input }) =&gt; {
+      <span class="mol-code-block__kw">const</span> items = <span class="mol-code-block__kw">await</span> db.invoice.<span class="mol-code-block__fn">findMany</span>({
+        where:   { workspaceId: input.workspaceId },
+        take:    input.limit + 1,
+        cursor:  input.cursor ? { id: input.cursor } : <span class="mol-code-block__kw">undefined</span>,
+        orderBy: { createdAt: <span class="mol-code-block__str">'desc'</span> },
+      })
+      <span class="mol-code-block__kw">return</span> { items, nextCursor: items[input.limit]?.id }
+    }),
+})</code></pre>
+          </figure>
+        </div>
+
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. REAL-CONTENT EXAMPLES ------------------------- -->
+      <p class="preview-section-title">3 · real-content examples</p>
+
+      <!-- Example A: TypeScript tRPC router (wireframe excerpt) -->
+      <p class="preview-col-label" style="margin-bottom: var(--space-3);">A · TypeScript — tRPC billing router</p>
+      <figure class="mol-code-block mol-code-block--default" style="max-width:520px; margin-bottom: var(--space-5);">
+        <header class="mol-code-block__head">
+          <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+          <button
+            class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+            aria-label="Copy code"
+            type="button"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="atom-section-label atom-section-label--faint">Copy</span>
+          </button>
+        </header>
+        <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+        <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">export const</span> billing =
+  <span class="mol-code-block__fn">router</span>({
+    <span class="mol-code-block__fn">getInvoice</span>: publicProcedure
+      .<span class="mol-code-block__fn">input</span>(z.<span class="mol-code-block__fn">string</span>())
+      .<span class="mol-code-block__fn">query</span>(({ input }) =&gt; db.invoice.<span class="mol-code-block__fn">find</span>(input)),
+  });</code></pre>
+      </figure>
+
+      <!-- Example B: JavaScript — client query call -->
+      <p class="preview-col-label" style="margin-bottom: var(--space-3);">B · JavaScript — client tRPC call</p>
+      <figure class="mol-code-block mol-code-block--default" style="max-width:520px; margin-bottom: var(--space-5);">
+        <header class="mol-code-block__head">
+          <span class="atom-section-label atom-section-label--faint mol-code-block__lang">javascript</span>
+          <button
+            class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+            aria-label="Copy code"
+            type="button"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="atom-section-label atom-section-label--faint">Copy</span>
+          </button>
+        </header>
+        <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+        <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">const</span> invoice = <span class="mol-code-block__kw">await</span> trpc.billing.getInvoice.<span class="mol-code-block__fn">query</span>(<span class="mol-code-block__str">'inv-123'</span>)
+
+console.<span class="mol-code-block__fn">log</span>(invoice.amount, invoice.status)</code></pre>
+      </figure>
+
+      <!-- Example C: Bash command -->
+      <p class="preview-col-label" style="margin-bottom: var(--space-3);">C · Bash — filtered test run</p>
+      <figure class="mol-code-block mol-code-block--default" style="max-width:520px; margin-bottom: var(--space-5);">
+        <header class="mol-code-block__head">
+          <span class="atom-section-label atom-section-label--faint mol-code-block__lang">bash</span>
+          <button
+            class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+            aria-label="Copy code"
+            type="button"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="atom-section-label atom-section-label--faint">Copy</span>
+          </button>
+        </header>
+        <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+        <pre class="mol-code-block__body type-code"><code>bun test --filter=<span class="mol-code-block__str">'**/relay/*'</span> --bail</code></pre>
+      </figure>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 4. INLINE CODE EXAMPLE --------------------------- -->
+      <p class="preview-section-title">4 · inline code — mol-code-block__inline in prose</p>
+
+      <div class="prose-example">
+        <p class="type-body" style="line-height: var(--line-height-normal);">
+          To run only the relay tests, use
+          <code class="type-code mol-code-block__inline">bun test --filter='**/relay/*' --bail</code>
+          in the root of the repository. You can also run
+          <code class="type-code mol-code-block__inline">npm run test</code>
+          if you prefer the npm alias. The
+          <code class="type-code mol-code-block__inline">--bail</code>
+          flag stops after the first failure, keeping output readable.
+        </p>
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT MATRIX: default + bare side-by-side ---- -->
+      <p class="preview-section-title">1 · variant matrix — default vs bare</p>
+
+      <div class="preview-row">
+        <!-- default variant -->
+        <div class="preview-col">
+          <p class="preview-col-label">mol-code-block--default</p>
+          <figure class="mol-code-block mol-code-block--default">
+            <header class="mol-code-block__head">
+              <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+              <button
+                class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+                aria-label="Copy code"
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="atom-section-label atom-section-label--faint">Copy</span>
+              </button>
+            </header>
+            <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+            <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">export const</span> billing =
+  <span class="mol-code-block__fn">router</span>({
+    <span class="mol-code-block__fn">getInvoice</span>: publicProcedure
+      .<span class="mol-code-block__fn">input</span>(z.<span class="mol-code-block__fn">string</span>())
+      .<span class="mol-code-block__fn">query</span>(({ input }) =&gt; db.invoice.<span class="mol-code-block__fn">find</span>(input)),
+  });</code></pre>
+          </figure>
+        </div>
+
+        <!-- bare variant -->
+        <div class="preview-col">
+          <p class="preview-col-label">mol-code-block--bare</p>
+          <figure class="mol-code-block mol-code-block--bare">
+            <header class="mol-code-block__head">
+              <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+              <button
+                class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+                aria-label="Copy code"
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="atom-section-label atom-section-label--faint">Copy</span>
+              </button>
+            </header>
+            <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+            <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">export const</span> billing =
+  <span class="mol-code-block__fn">router</span>({
+    <span class="mol-code-block__fn">getInvoice</span>: publicProcedure
+      .<span class="mol-code-block__fn">input</span>(z.<span class="mol-code-block__fn">string</span>())
+      .<span class="mol-code-block__fn">query</span>(({ input }) =&gt; db.invoice.<span class="mol-code-block__fn">find</span>(input)),
+  });</code></pre>
+          </figure>
+        </div>
+      </div><!-- /variant row light -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. STATE ROW: default / is-copied / is-overflow ---- -->
+      <p class="preview-section-title">2 · states — default / is-copied / is-overflow</p>
+
+      <div class="preview-state-row">
+
+        <!-- STATE: default -->
+        <div class="preview-state-cell">
+          <p class="preview-state-label">default</p>
+          <figure class="mol-code-block mol-code-block--default">
+            <header class="mol-code-block__head">
+              <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+              <button
+                class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+                aria-label="Copy code"
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="atom-section-label atom-section-label--faint">Copy</span>
+              </button>
+            </header>
+            <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+            <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">const</span> x = <span class="mol-code-block__fn">fetchData</span>();</code></pre>
+          </figure>
+        </div>
+
+        <!-- STATE: is-copied -->
+        <div class="preview-state-cell">
+          <p class="preview-state-label">is-copied</p>
+          <figure class="mol-code-block mol-code-block--default">
+            <header class="mol-code-block__head">
+              <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+              <button
+                class="atom-icon-button atom-icon-button--ghost mol-code-block__copy is-copied"
+                aria-label="Copy code"
+                aria-live="polite"
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span class="atom-section-label atom-section-label--faint">Copied</span>
+              </button>
+            </header>
+            <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+            <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">const</span> x = <span class="mol-code-block__fn">fetchData</span>();</code></pre>
+          </figure>
+        </div>
+
+        <!-- STATE: is-overflow -->
+        <div class="preview-state-cell">
+          <p class="preview-state-label">is-overflow</p>
+          <figure class="mol-code-block mol-code-block--default is-overflow">
+            <header class="mol-code-block__head">
+              <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+              <button
+                class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+                aria-label="Copy code"
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="atom-section-label atom-section-label--faint">Copy</span>
+              </button>
+            </header>
+            <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+            <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">import</span> { z } <span class="mol-code-block__kw">from</span> <span class="mol-code-block__str">'zod'</span>
+<span class="mol-code-block__kw">import</span> { router, publicProcedure } <span class="mol-code-block__kw">from</span> <span class="mol-code-block__str">'../trpc'</span>
+<span class="mol-code-block__kw">import</span> { db } <span class="mol-code-block__kw">from</span> <span class="mol-code-block__str">'../db'</span>
+
+<span class="mol-code-block__cmt">// Billing router — exposes invoice queries</span>
+<span class="mol-code-block__kw">export const</span> billing = <span class="mol-code-block__fn">router</span>({
+  <span class="mol-code-block__fn">getInvoice</span>: publicProcedure
+    .<span class="mol-code-block__fn">input</span>(z.<span class="mol-code-block__fn">string</span>())
+    .<span class="mol-code-block__fn">query</span>(<span class="mol-code-block__kw">async</span> ({ input }) =&gt; {
+      <span class="mol-code-block__kw">return</span> db.invoice.<span class="mol-code-block__fn">findUnique</span>({
+        where: { id: input },
+      })
+    }),
+
+  <span class="mol-code-block__fn">listInvoices</span>: publicProcedure
+    .<span class="mol-code-block__fn">input</span>(
+      z.<span class="mol-code-block__fn">object</span>({
+        workspaceId: z.<span class="mol-code-block__fn">string</span>(),
+        limit:       z.<span class="mol-code-block__fn">number</span>().<span class="mol-code-block__fn">default</span>(20),
+        cursor:      z.<span class="mol-code-block__fn">string</span>().<span class="mol-code-block__fn">optional</span>(),
+      })
+    )
+    .<span class="mol-code-block__fn">query</span>(<span class="mol-code-block__kw">async</span> ({ input }) =&gt; {
+      <span class="mol-code-block__kw">const</span> items = <span class="mol-code-block__kw">await</span> db.invoice.<span class="mol-code-block__fn">findMany</span>({
+        where:   { workspaceId: input.workspaceId },
+        take:    input.limit + 1,
+        cursor:  input.cursor ? { id: input.cursor } : <span class="mol-code-block__kw">undefined</span>,
+        orderBy: { createdAt: <span class="mol-code-block__str">'desc'</span> },
+      })
+      <span class="mol-code-block__kw">return</span> { items, nextCursor: items[input.limit]?.id }
+    }),
+})</code></pre>
+          </figure>
+        </div>
+
+      </div><!-- /state row light -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. REAL-CONTENT EXAMPLES ------------------------- -->
+      <p class="preview-section-title">3 · real-content examples</p>
+
+      <!-- Example A: TypeScript -->
+      <p class="preview-col-label" style="margin-bottom: var(--space-3);">A · TypeScript — tRPC billing router</p>
+      <figure class="mol-code-block mol-code-block--default" style="max-width:520px; margin-bottom: var(--space-5);">
+        <header class="mol-code-block__head">
+          <span class="atom-section-label atom-section-label--faint mol-code-block__lang">typescript</span>
+          <button
+            class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+            aria-label="Copy code"
+            type="button"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="atom-section-label atom-section-label--faint">Copy</span>
+          </button>
+        </header>
+        <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+        <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">export const</span> billing =
+  <span class="mol-code-block__fn">router</span>({
+    <span class="mol-code-block__fn">getInvoice</span>: publicProcedure
+      .<span class="mol-code-block__fn">input</span>(z.<span class="mol-code-block__fn">string</span>())
+      .<span class="mol-code-block__fn">query</span>(({ input }) =&gt; db.invoice.<span class="mol-code-block__fn">find</span>(input)),
+  });</code></pre>
+      </figure>
+
+      <!-- Example B: JavaScript -->
+      <p class="preview-col-label" style="margin-bottom: var(--space-3);">B · JavaScript — client tRPC call</p>
+      <figure class="mol-code-block mol-code-block--default" style="max-width:520px; margin-bottom: var(--space-5);">
+        <header class="mol-code-block__head">
+          <span class="atom-section-label atom-section-label--faint mol-code-block__lang">javascript</span>
+          <button
+            class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+            aria-label="Copy code"
+            type="button"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="atom-section-label atom-section-label--faint">Copy</span>
+          </button>
+        </header>
+        <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+        <pre class="mol-code-block__body type-code"><code><span class="mol-code-block__kw">const</span> invoice = <span class="mol-code-block__kw">await</span> trpc.billing.getInvoice.<span class="mol-code-block__fn">query</span>(<span class="mol-code-block__str">'inv-123'</span>)
+
+console.<span class="mol-code-block__fn">log</span>(invoice.amount, invoice.status)</code></pre>
+      </figure>
+
+      <!-- Example C: Bash -->
+      <p class="preview-col-label" style="margin-bottom: var(--space-3);">C · Bash — filtered test run</p>
+      <figure class="mol-code-block mol-code-block--default" style="max-width:520px; margin-bottom: var(--space-5);">
+        <header class="mol-code-block__head">
+          <span class="atom-section-label atom-section-label--faint mol-code-block__lang">bash</span>
+          <button
+            class="atom-icon-button atom-icon-button--ghost mol-code-block__copy"
+            aria-label="Copy code"
+            type="button"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span class="atom-section-label atom-section-label--faint">Copy</span>
+          </button>
+        </header>
+        <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+        <pre class="mol-code-block__body type-code"><code>bun test --filter=<span class="mol-code-block__str">'**/relay/*'</span> --bail</code></pre>
+      </figure>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 4. INLINE CODE EXAMPLE --------------------------- -->
+      <p class="preview-section-title">4 · inline code — mol-code-block__inline in prose</p>
+
+      <div class="prose-example">
+        <p class="type-body" style="line-height: var(--line-height-normal);">
+          To run only the relay tests, use
+          <code class="type-code mol-code-block__inline">bun test --filter='**/relay/*' --bail</code>
+          in the root of the repository. You can also run
+          <code class="type-code mol-code-block__inline">npm run test</code>
+          if you prefer the npm alias. The
+          <code class="type-code mol-code-block__inline">--bail</code>
+          flag stops after the first failure, keeping output readable.
+        </p>
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
