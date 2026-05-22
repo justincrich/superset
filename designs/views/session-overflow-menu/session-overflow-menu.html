@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>session-overflow-menu — UC-SESS-04 §A</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-session-overflow-menu — view-local layout glue only.
+       Composition purity:
+         ZERO .atom-* rules redefined here.
+         ZERO .mol-* rules redefined here.
+         ZERO hex literals.
+         ZERO raw font-size / font-weight / line-height values.
+         ZERO raw px in padding/margin/gap (1px structural borders
+         and --elevation-sheet box-shadow documented as exceptions).
+       Structural exceptions documented inline.
+    ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding:       var(--space-8) var(--space-4);
+      background:    var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- Viewport flex column --------------------------------- */
+    /*
+      The atom-device-bezel__viewport is already display:flex;
+      flex-direction:column. These view-local classes wire the
+      overlay slots without touching any atom or molecule rule.
+    */
+
+    /* Dimmed chat region — fills flex 1 behind the sheet overlay */
+    .view-session-overflow-menu__chat-behind {
+      flex:           1;
+      overflow:       hidden;
+      display:        flex;
+      flex-direction: column;
+      position:       relative;
+    }
+
+    /* The backdrop scrim sits atop the chat content */
+    .view-session-overflow-menu__chat-behind .atom-backdrop {
+      position: absolute;   /* structural: scrim anchored to chat region, not viewport */
+      z-index:  2;
+    }
+
+    /* Chat stub — header + message stubs visible through scrim */
+    .view-session-overflow-menu__chat-stub {
+      display:        flex;
+      flex-direction: column;
+      flex:           1;
+      position:       relative;
+      z-index:        1;    /* structural: below scrim overlay */
+    }
+
+    /* Message list body — padding and vertical spacing */
+    .view-session-overflow-menu__messages {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-5);
+      padding:        var(--space-4);
+      flex:           1;
+    }
+
+    .view-session-overflow-menu__assistant-body {
+      padding-inline: var(--space-1);
+    }
+
+    .view-session-overflow-menu__assistant-body p {
+      margin:      0;
+      line-height: var(--line-height-normal);
+      color:       var(--text-body);
+    }
+
+    /* ---- Sheet overlay ---------------------------------------- */
+    /*
+      Absolutely positioned inside the viewport so it overlaps
+      the dimmed chat from bottom up. Does NOT use position:fixed
+      because the viewport provides scroll isolation.
+    */
+    .view-session-overflow-menu__overlay {
+      position: absolute;
+      bottom:   0;
+      left:     0;
+      right:    0;
+      z-index:  10;
+    }
+
+    /* Sheet card surface */
+    .view-session-overflow-menu__sheet {
+      background:               var(--surface-overlay);
+      border-top-left-radius:   var(--radius-xl);
+      border-top-right-radius:  var(--radius-xl);
+      box-shadow:               var(--elevation-sheet);
+      display:                  flex;
+      flex-direction:           column;
+      padding:                  var(--space-2) 0 0;
+      /* safe area padding applied at bottom of cancel button section */
+    }
+
+    /* Handle row — centered drag indicator */
+    .view-session-overflow-menu__handle-row {
+      display:         flex;
+      justify-content: center;
+      padding-block:   var(--space-2);
+    }
+
+    /* Divider between action list and cancel button */
+    .view-session-overflow-menu__footer-divider {
+      margin: 0 var(--space-4);
+    }
+
+    /* Cancel button region — full-width, safe-area padding */
+    .view-session-overflow-menu__cancel-wrap {
+      padding:              var(--space-3) var(--space-4);
+      padding-block-end:    var(--safe-area-bottom, var(--space-4));
+    }
+
+    /* ---- Action row (view-specific inline pattern) ------------ */
+    /*
+      Rule of 2: this 3-row pattern appears only in this view.
+      Inlined here per the brief. Row composes:
+        atom-icon-glyph (leading icon) + .type-body label.
+      Each row is a full-width button with touch-target min-height,
+      gap var(--space-3), padding var(--space-3) var(--space-4).
+      Hover: var(--surface-soft).
+    */
+    .view-session-overflow-menu__action-row {
+      display:         flex;
+      align-items:     center;
+      gap:             var(--space-3);
+      padding:         var(--space-3) var(--space-4);
+      min-height:      var(--touch-target-min);
+      width:           100%;
+      background:      transparent;
+      border:          none;
+      outline:         none;
+      cursor:          pointer;
+      text-align:      left;
+      color:           var(--text-body);
+      transition:      background-color var(--motion-fast) var(--motion-ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .view-session-overflow-menu__action-row:hover,
+    .view-session-overflow-menu__action-row.is-hover {
+      background: var(--surface-soft);
+    }
+
+    .view-session-overflow-menu__action-row:active,
+    .view-session-overflow-menu__action-row.is-active {
+      background: var(--surface-active);
+    }
+
+    .view-session-overflow-menu__action-row:focus-visible,
+    .view-session-overflow-menu__action-row.is-focus {
+      outline:    none;
+      box-shadow: inset 0 0 0 2px var(--border-focus);
+    }
+
+    /* Destructive variant — red icon + label */
+    .view-session-overflow-menu__action-row--destructive {
+      color: var(--state-danger-fg);
+    }
+
+    .view-session-overflow-menu__action-row--destructive:hover,
+    .view-session-overflow-menu__action-row--destructive.is-hover {
+      background: color-mix(in oklch, var(--state-danger-bg, var(--surface-soft)) 60%, transparent 40%);
+    }
+
+    .view-session-overflow-menu__action-label {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body);
+      font-weight:    var(--font-weight-body);
+      line-height:    var(--line-height-normal);
+      letter-spacing: var(--tracking-normal);
+      /* color inherited from parent row */
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">session-overflow-menu</h1>
+    <p class="crumb">UC-SESS-04 §A · session overflow action sheet — rename · end · delete · cancel</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- Content area (flex: 1, position: relative for absolute overlay) -->
+          <div class="atom-device-bezel__content">
+
+            <!-- Dimmed chat view (below the sheet) -->
+            <div class="view-session-overflow-menu__chat-behind" aria-hidden="true">
+
+              <!-- Scrim backdrop over chat content -->
+              <div class="atom-backdrop atom-backdrop--scrim" aria-hidden="true"></div>
+
+              <!-- Chat stub content (visible through scrim) -->
+              <div class="view-session-overflow-menu__chat-stub">
+
+                <!-- App header: "Fix auth bug" / "superset · main" -->
+                <div class="mol-app-header" role="presentation">
+                  <div class="mol-app-header__back">
+                    <button
+                      class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm"
+                      type="button"
+                      tabindex="-1"
+                      aria-hidden="true"
+                    >
+                      <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="15 18 9 12 15 6"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="mol-app-header__title-wrap">
+                    <h1 class="mol-app-header__title type-label">Fix auth bug</h1>
+                    <p class="mol-app-header__subtitle type-meta" style="color: var(--text-muted);">superset · main</p>
+                  </div>
+                  <div class="mol-app-header__actions">
+                    <!-- ··· overflow trigger (shown as active/tapped) -->
+                    <button
+                      class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm is-active"
+                      type="button"
+                      tabindex="-1"
+                      aria-hidden="true"
+                    >
+                      <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="5"  r="1" fill="currentColor" stroke="none"/>
+                        <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>
+                        <circle cx="12" cy="19" r="1" fill="currentColor" stroke="none"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div><!-- /mol-app-header -->
+
+                <!-- Message stubs -->
+                <div class="view-session-overflow-menu__messages">
+
+                  <!-- User message stub -->
+                  <div class="mol-user-message-bubble" role="presentation">
+                    <button
+                      class="mol-user-message-bubble__bubble type-body"
+                      type="button"
+                      tabindex="-1"
+                      aria-hidden="true"
+                    >
+                      <p class="mol-user-message-bubble__text">The OAuth token refresh is failing silently after 1 hour.</p>
+                    </button>
+                    <div class="mol-user-message-bubble__meta">
+                      <span class="type-meta">9:38</span>
+                    </div>
+                  </div><!-- /mol-user-message-bubble -->
+
+                  <!-- Assistant head -->
+                  <div class="mol-assistant-message-head mol-assistant-message-head--idle" role="presentation">
+                    <span
+                      class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                      aria-hidden="true"
+                    >A</span>
+                    <span class="mol-assistant-message-head__label">Assistant</span>
+                    <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                    <span class="mol-assistant-message-head__time">9:39 AM</span>
+                  </div><!-- /mol-assistant-message-head -->
+
+                  <!-- Assistant body stub -->
+                  <div class="view-session-overflow-menu__assistant-body type-body" role="presentation">
+                    <p>I can see the issue — the token refresh handler catches errors but swallows them without re-throwing. Let me look at the interceptor…</p>
+                  </div>
+
+                </div><!-- /messages -->
+
+              </div><!-- /chat-stub -->
+            </div><!-- /chat-behind -->
+
+            <!-- Sheet overlay — positioned at bottom of content area -->
+            <div
+              class="view-session-overflow-menu__overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Session actions"
+            >
+
+              <!-- Sheet card -->
+              <div class="view-session-overflow-menu__sheet">
+
+                <!-- Drag handle -->
+                <div class="view-session-overflow-menu__handle-row" aria-hidden="true">
+                  <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--muted"></div>
+                </div>
+
+                <!-- Action rows list -->
+                <ul role="list" style="margin: 0; padding: 0; list-style: none;">
+
+                  <!-- Row 1: Rename session -->
+                  <li role="listitem">
+                    <button
+                      class="view-session-overflow-menu__action-row"
+                      type="button"
+                      aria-label="Rename session"
+                    >
+                      <!-- Pencil icon -->
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--md"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                      <span class="view-session-overflow-menu__action-label type-body">Rename session</span>
+                    </button>
+                  </li>
+
+                  <!-- Row 2: End session -->
+                  <li role="listitem">
+                    <button
+                      class="view-session-overflow-menu__action-row"
+                      type="button"
+                      aria-label="End session"
+                    >
+                      <!-- Square/stop icon -->
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--md"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      </svg>
+                      <span class="view-session-overflow-menu__action-label type-body">End session</span>
+                    </button>
+                  </li>
+
+                  <!-- Row 3: Delete session (destructive) -->
+                  <li role="listitem">
+                    <button
+                      class="view-session-overflow-menu__action-row view-session-overflow-menu__action-row--destructive"
+                      type="button"
+                      aria-label="Delete session"
+                    >
+                      <!-- Trash icon -->
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--md"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6"/>
+                        <path d="M14 11v6"/>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                      </svg>
+                      <span class="view-session-overflow-menu__action-label type-body">Delete session…</span>
+                    </button>
+                  </li>
+
+                </ul><!-- /action list -->
+
+                <!-- Divider before cancel -->
+                <hr class="atom-divider atom-divider--horizontal view-session-overflow-menu__footer-divider" aria-hidden="true">
+
+                <!-- Cancel button — full-width secondary -->
+                <div class="view-session-overflow-menu__cancel-wrap">
+                  <button
+                    class="atom-button atom-button--secondary atom-button--md"
+                    type="button"
+                    style="width: 100%;"
+                    aria-label="Cancel"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+              </div><!-- /sheet -->
+
+            </div><!-- /overlay -->
+
+          </div><!-- /atom-device-bezel__content -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- Content area -->
+          <div class="atom-device-bezel__content">
+
+            <!-- Dimmed chat view -->
+            <div class="view-session-overflow-menu__chat-behind" aria-hidden="true">
+              <div class="atom-backdrop atom-backdrop--scrim" aria-hidden="true"></div>
+
+              <div class="view-session-overflow-menu__chat-stub">
+
+                <!-- App header -->
+                <div class="mol-app-header" role="presentation">
+                  <div class="mol-app-header__back">
+                    <button
+                      class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm"
+                      type="button"
+                      tabindex="-1"
+                      aria-hidden="true"
+                    >
+                      <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="15 18 9 12 15 6"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="mol-app-header__title-wrap">
+                    <h1 class="mol-app-header__title type-label">Fix auth bug</h1>
+                    <p class="mol-app-header__subtitle type-meta" style="color: var(--text-muted);">superset · main</p>
+                  </div>
+                  <div class="mol-app-header__actions">
+                    <button
+                      class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm is-active"
+                      type="button"
+                      tabindex="-1"
+                      aria-hidden="true"
+                    >
+                      <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="5"  r="1" fill="currentColor" stroke="none"/>
+                        <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>
+                        <circle cx="12" cy="19" r="1" fill="currentColor" stroke="none"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div><!-- /mol-app-header -->
+
+                <!-- Message stubs -->
+                <div class="view-session-overflow-menu__messages">
+
+                  <div class="mol-user-message-bubble" role="presentation">
+                    <button
+                      class="mol-user-message-bubble__bubble type-body"
+                      type="button"
+                      tabindex="-1"
+                      aria-hidden="true"
+                    >
+                      <p class="mol-user-message-bubble__text">The OAuth token refresh is failing silently after 1 hour.</p>
+                    </button>
+                    <div class="mol-user-message-bubble__meta">
+                      <span class="type-meta">9:38</span>
+                    </div>
+                  </div>
+
+                  <div class="mol-assistant-message-head mol-assistant-message-head--idle" role="presentation">
+                    <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                    <span class="mol-assistant-message-head__label">Assistant</span>
+                    <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                    <span class="mol-assistant-message-head__time">9:39 AM</span>
+                  </div>
+
+                  <div class="view-session-overflow-menu__assistant-body type-body" role="presentation">
+                    <p>I can see the issue — the token refresh handler catches errors but swallows them without re-throwing. Let me look at the interceptor…</p>
+                  </div>
+
+                </div><!-- /messages -->
+
+              </div><!-- /chat-stub -->
+            </div><!-- /chat-behind -->
+
+            <!-- Sheet overlay -->
+            <div
+              class="view-session-overflow-menu__overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Session actions"
+            >
+
+              <div class="view-session-overflow-menu__sheet">
+
+                <div class="view-session-overflow-menu__handle-row" aria-hidden="true">
+                  <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--muted"></div>
+                </div>
+
+                <ul role="list" style="margin: 0; padding: 0; list-style: none;">
+
+                  <li role="listitem">
+                    <button
+                      class="view-session-overflow-menu__action-row"
+                      type="button"
+                      aria-label="Rename session"
+                    >
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--md"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                      <span class="view-session-overflow-menu__action-label type-body">Rename session</span>
+                    </button>
+                  </li>
+
+                  <li role="listitem">
+                    <button
+                      class="view-session-overflow-menu__action-row"
+                      type="button"
+                      aria-label="End session"
+                    >
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--md"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      </svg>
+                      <span class="view-session-overflow-menu__action-label type-body">End session</span>
+                    </button>
+                  </li>
+
+                  <li role="listitem">
+                    <button
+                      class="view-session-overflow-menu__action-row view-session-overflow-menu__action-row--destructive"
+                      type="button"
+                      aria-label="Delete session"
+                    >
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--md"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6"/>
+                        <path d="M14 11v6"/>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                      </svg>
+                      <span class="view-session-overflow-menu__action-label type-body">Delete session…</span>
+                    </button>
+                  </li>
+
+                </ul>
+
+                <hr class="atom-divider atom-divider--horizontal view-session-overflow-menu__footer-divider" aria-hidden="true">
+
+                <div class="view-session-overflow-menu__cancel-wrap">
+                  <button
+                    class="atom-button atom-button--secondary atom-button--md"
+                    type="button"
+                    style="width: 100%;"
+                    aria-label="Cancel"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+              </div><!-- /sheet -->
+
+            </div><!-- /overlay -->
+
+          </div><!-- /atom-device-bezel__content -->
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
