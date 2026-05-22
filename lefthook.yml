@@ -11,9 +11,9 @@
 #   - fallow-gate.sh gates agent git commit/push via PreToolUse
 #
 # Tools:
-#   - tsgo   : @typescript/native-preview (Go port of tsc, fast)
-#   - biome  : @biomejs/biome (Rust linter + formatter)
-#   - fallow : codebase intelligence (dead code, duplication, complexity)
+#   - tsgo/tsc : TypeScript typechecking via turbo (per-package)
+#   - biome    : @biomejs/biome (Rust linter + formatter)
+#   - fallow   : codebase intelligence (dead code, duplication, complexity)
 ####################################################################
 
 # No pre-commit hooks — human developers are not gated.
@@ -29,7 +29,7 @@ verify:
   parallel: true
   jobs:
     - name: typecheck
-      run: bunx tsgo --noEmit
+      run: bun run typecheck
 
     - name: biome
       run: bunx biome check .
