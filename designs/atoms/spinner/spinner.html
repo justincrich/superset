@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · spinner</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-spinner — token-governed loading indicator
+       Two kinds: circular (SVG border) + ascii (braille glyph)
+       Zero hex literals. 2px border = structural geometry exception.
+       CSS content @keyframes: design-spec preview only — production
+       uses React state cycling (AsciiSpinner.tsx, 80ms interval).
+       ============================================================ */
+
+    /* ---- sr-only utility ---------------------------------------- */
+    .sr-only {
+      position:    absolute;
+      width:       1px;
+      height:      1px;
+      padding:     0;
+      margin:      -1px;
+      overflow:    hidden;
+      clip:        rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    /* ==============================================================
+       CIRCULAR KIND
+       ============================================================== */
+
+    .atom-spinner--circular {
+      display:       inline-block;
+      flex-shrink:   0;
+      border-style:  solid;
+      border-width:  2px;                   /* structural geometry — SVG/stroke exception */
+      border-color:  currentColor;
+      border-top-color: transparent;
+      border-radius: var(--radius-round);
+      animation:     atom-spinner-circular var(--motion-cadence-pulse-medium) linear infinite;
+      color:         var(--text-muted);     /* default color */
+      /* default size = --sm */
+      width:  16px;
+      height: 16px;
+    }
+
+    @keyframes atom-spinner-circular {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ==============================================================
+       ASCII KIND
+       ============================================================== */
+
+    .atom-spinner--ascii {
+      display:     inline-block;
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+      font-size:   var(--font-size-label);  /* default = --sm equivalent */
+      line-height: 1;
+      color:       var(--text-muted);       /* default color */
+    }
+
+    .atom-spinner--ascii::before {
+      content:   '⠋';
+      animation: atom-spinner-ascii var(--motion-cadence-pulse-slow) steps(10, end) infinite;
+    }
+
+    @keyframes atom-spinner-ascii {
+      0%   { content: '⠋'; }
+      10%  { content: '⠙'; }
+      20%  { content: '⠹'; }
+      30%  { content: '⠸'; }
+      40%  { content: '⠼'; }
+      50%  { content: '⠴'; }
+      60%  { content: '⠦'; }
+      70%  { content: '⠧'; }
+      80%  { content: '⠇'; }
+      90%  { content: '⠏'; }
+      100% { content: '⠋'; }
+    }
+
+    /* ==============================================================
+       SIZE MODIFIERS — circular
+       ============================================================== */
+
+    .atom-spinner--circular.atom-spinner--xs { width: 12px; height: 12px; }
+    .atom-spinner--circular.atom-spinner--sm { width: 16px; height: 16px; }
+    .atom-spinner--circular.atom-spinner--md { width: 20px; height: 20px; }
+    .atom-spinner--circular.atom-spinner--lg { width: 24px; height: 24px; }
+    .atom-spinner--circular.atom-spinner--xl { width: 32px; height: 32px; }
+
+    /* ==============================================================
+       SIZE MODIFIERS — ascii (font-size matched to size class)
+       ============================================================== */
+
+    .atom-spinner--ascii.atom-spinner--xs { font-size: var(--font-size-meta);    }
+    .atom-spinner--ascii.atom-spinner--sm { font-size: var(--font-size-label);   }
+    .atom-spinner--ascii.atom-spinner--md { font-size: var(--font-size-body-sm); }
+    .atom-spinner--ascii.atom-spinner--lg { font-size: var(--font-size-body);    }
+    .atom-spinner--ascii.atom-spinner--xl { font-size: var(--font-size-title);   }
+
+    /* ==============================================================
+       COLOR MODIFIERS (both kinds — override currentColor)
+       ============================================================== */
+
+    .atom-spinner--muted   { color: var(--text-muted);       }
+    .atom-spinner--accent  { color: var(--accent-primary);   }
+    .atom-spinner--live    { color: var(--state-live-fg);    }
+    .atom-spinner--inverse { color: var(--text-on-inverse);  }
+
+    /* ==============================================================
+       STATE — is-paused
+       ============================================================== */
+
+    .atom-spinner--circular.is-paused,
+    .atom-spinner--ascii.is-paused::before {
+      animation-play-state: paused;
+    }
+
+    /* ==============================================================
+       REDUCED MOTION
+       ============================================================== */
+
+    @media (prefers-reduced-motion: reduce) {
+      .atom-spinner--circular {
+        animation: none;
+        /* Static arc: border-top transparent still shows the gap visually */
+      }
+      .atom-spinner--ascii::before {
+        animation: none;
+        content: '⠿'; /* static "full" braille block — non-animated fallback */
+      }
+    }
+
+    /* ==============================================================
+       PREVIEW LAYOUT HELPERS
+       ============================================================== */
+
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0;
+    }
+
+    /* Shared row layout */
+    .row {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-6);
+      flex-wrap:     wrap;
+      margin-bottom: var(--spacing-between);
+    }
+
+    /* Individual labeled spinner cell */
+    .spinner-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-2);
+    }
+    .spinner-cell .cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      white-space:    nowrap;
+    }
+
+    /* Composition rows */
+    .comp-row {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-3);
+      padding:       var(--space-3) var(--space-4);
+      background:    var(--surface-raised);
+      border-radius: var(--radius-default);
+      border:        1px solid var(--border-subtle);
+      margin-bottom: var(--space-3);
+    }
+    .comp-label {
+      font-family: var(--font-body);
+      font-size:   var(--font-size-body-sm);
+      font-weight: var(--font-weight-body);
+      color:       var(--text-body);
+      line-height: var(--line-height-normal);
+    }
+    .comp-meta {
+      font-family: var(--font-body);
+      font-size:   var(--font-size-meta);
+      font-weight: var(--font-weight-meta);
+      color:       var(--text-muted);
+      line-height: var(--line-height-normal);
+    }
+    .comp-section-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-2);
+    }
+
+    /* In-button spinner — button base */
+    .demo-btn {
+      display:       inline-flex;
+      align-items:   center;
+      justify-content: center;
+      gap:           var(--space-2);
+      padding:       var(--space-2) var(--space-4);
+      background:    var(--accent-primary);
+      color:         var(--accent-primary-fg);
+      border:        none;
+      border-radius: var(--radius-default);
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      font-weight:   var(--font-weight-label);
+      cursor:        pointer;
+      line-height:   var(--line-height-tight);
+    }
+    .demo-btn .atom-spinner--inverse {
+      /* spinner inside button inherits color from .demo-btn context */
+      color: var(--text-on-inverse);
+    }
+
+    /* Kind comparison sub-label */
+    .kind-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">spinner</h1>
+    <p class="crumb">atom · loading indicator — circular (SVG border) + ascii (braille glyph)</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ── 1. KIND COMPARISON ──────────────────────────────── -->
+      <div class="variant">
+        <h3>1 · kind comparison — circular vs ascii at md</h3>
+
+        <div class="row">
+          <!-- circular md muted -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">circular<br>--md</span>
+          </div>
+
+          <!-- ascii md muted -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--muted atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">ascii<br>--md</span>
+          </div>
+
+          <!-- paused circular for reference -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="false">
+              <span class="sr-only">Paused</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--md is-paused"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">circular<br>is-paused</span>
+          </div>
+
+          <!-- paused ascii for reference -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="false">
+              <span class="sr-only">Paused</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--muted atom-spinner--md is-paused"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">ascii<br>is-paused</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ── 2. SIZE MATRIX — circular ──────────────────────── -->
+      <div class="variant">
+        <h3>2 · size matrix — circular at 5 sizes</h3>
+
+        <div class="row" style="align-items: flex-end;">
+          <!-- xs -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--xs"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--xs<br>12px</span>
+          </div>
+          <!-- sm -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--sm"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--sm<br>16px</span>
+          </div>
+          <!-- md -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--md<br>20px</span>
+          </div>
+          <!-- lg -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--lg"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--lg<br>24px</span>
+          </div>
+          <!-- xl -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--xl"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--xl<br>32px</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ── 3. COLOR MATRIX ────────────────────────────────── -->
+      <div class="variant">
+        <h3>3 · color matrix — circular md (top) and ascii md (bottom)</h3>
+
+        <!-- circular color row -->
+        <p class="kind-label">circular · --md</p>
+        <div class="row">
+          <!-- muted -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--muted<br>text-muted</span>
+          </div>
+          <!-- accent -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--accent atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--accent<br>accent-primary</span>
+          </div>
+          <!-- live -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--live atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--live<br>state-live-fg</span>
+          </div>
+          <!-- inverse — on solid accent surface -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true"
+                 style="background: var(--accent-primary); padding: var(--space-2); border-radius: var(--radius-subtle);">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--inverse atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--inverse<br>text-on-inverse</span>
+          </div>
+        </div>
+
+        <!-- ascii color row -->
+        <p class="kind-label">ascii · --md</p>
+        <div class="row">
+          <!-- muted -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--muted atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--muted<br>text-muted</span>
+          </div>
+          <!-- accent -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--accent atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--accent<br>accent-primary</span>
+          </div>
+          <!-- live -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--live atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--live<br>state-live-fg</span>
+          </div>
+          <!-- inverse — on solid accent surface -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true"
+                 style="background: var(--accent-primary); padding: var(--space-2); border-radius: var(--radius-subtle);">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--inverse atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--inverse<br>text-on-inverse</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ── 4. COMPOSITION EXAMPLES ───────────────────────── -->
+      <div class="variant">
+        <h3>4 · composition examples</h3>
+
+        <!-- Loading-host-state mock -->
+        <p class="comp-section-label">loading host state — ascii spinner + connection text</p>
+        <div class="comp-row">
+          <div role="status" aria-live="polite" aria-busy="true">
+            <span class="sr-only">Connecting to macbook-pro</span>
+            <span class="atom-spinner atom-spinner--ascii atom-spinner--muted atom-spinner--sm"
+                  aria-hidden="true"></span>
+          </div>
+          <span class="comp-label">Connecting to macbook-pro...</span>
+        </div>
+
+        <!-- In-button loading -->
+        <p class="comp-section-label">in-button loading — circular spinner replacing label</p>
+        <div style="margin-bottom: var(--space-3);">
+          <button class="demo-btn" disabled aria-disabled="true">
+            <div role="status" aria-live="polite" aria-busy="true" style="display:contents;">
+              <span class="sr-only">Sending</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--inverse atom-spinner--sm"
+                    aria-hidden="true"></span>
+            </div>
+            <span>Sending</span>
+          </button>
+        </div>
+
+        <!-- Inline message-list loading -->
+        <p class="comp-section-label">inline message-list loading — ascii spinner + history text</p>
+        <div class="comp-row">
+          <div role="status" aria-live="polite" aria-busy="true">
+            <span class="sr-only">Loading history</span>
+            <span class="atom-spinner atom-spinner--ascii atom-spinner--muted atom-spinner--sm"
+                  aria-hidden="true"></span>
+          </div>
+          <span class="comp-meta">Loading history...</span>
+        </div>
+
+      </div><!-- /composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ── 1. KIND COMPARISON ──────────────────────────────── -->
+      <div class="variant">
+        <h3>1 · kind comparison — circular vs ascii at md</h3>
+
+        <div class="row">
+          <!-- circular md muted -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">circular<br>--md</span>
+          </div>
+
+          <!-- ascii md muted -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--muted atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">ascii<br>--md</span>
+          </div>
+
+          <!-- paused circular -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="false">
+              <span class="sr-only">Paused</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--md is-paused"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">circular<br>is-paused</span>
+          </div>
+
+          <!-- paused ascii -->
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="false">
+              <span class="sr-only">Paused</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--muted atom-spinner--md is-paused"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">ascii<br>is-paused</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ── 2. SIZE MATRIX — circular ──────────────────────── -->
+      <div class="variant">
+        <h3>2 · size matrix — circular at 5 sizes</h3>
+
+        <div class="row" style="align-items: flex-end;">
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--xs"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--xs<br>12px</span>
+          </div>
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--sm"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--sm<br>16px</span>
+          </div>
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--md<br>20px</span>
+          </div>
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--lg"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--lg<br>24px</span>
+          </div>
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--xl"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--xl<br>32px</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ── 3. COLOR MATRIX ────────────────────────────────── -->
+      <div class="variant">
+        <h3>3 · color matrix — circular md (top) and ascii md (bottom)</h3>
+
+        <p class="kind-label">circular · --md</p>
+        <div class="row">
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--muted atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--muted<br>text-muted</span>
+          </div>
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--accent atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--accent<br>accent-primary</span>
+          </div>
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--live atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--live<br>state-live-fg</span>
+          </div>
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true"
+                 style="background: var(--accent-primary); padding: var(--space-2); border-radius: var(--radius-subtle);">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--inverse atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--inverse<br>text-on-inverse</span>
+          </div>
+        </div>
+
+        <p class="kind-label">ascii · --md</p>
+        <div class="row">
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--muted atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--muted<br>text-muted</span>
+          </div>
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--accent atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--accent<br>accent-primary</span>
+          </div>
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--live atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--live<br>state-live-fg</span>
+          </div>
+          <div class="spinner-cell">
+            <div role="status" aria-live="polite" aria-busy="true"
+                 style="background: var(--accent-primary); padding: var(--space-2); border-radius: var(--radius-subtle);">
+              <span class="sr-only">Loading</span>
+              <span class="atom-spinner atom-spinner--ascii atom-spinner--inverse atom-spinner--md"
+                    aria-hidden="true"></span>
+            </div>
+            <span class="cell-label">--inverse<br>text-on-inverse</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ── 4. COMPOSITION EXAMPLES ───────────────────────── -->
+      <div class="variant">
+        <h3>4 · composition examples</h3>
+
+        <!-- Loading-host-state mock -->
+        <p class="comp-section-label">loading host state — ascii spinner + connection text</p>
+        <div class="comp-row">
+          <div role="status" aria-live="polite" aria-busy="true">
+            <span class="sr-only">Connecting to macbook-pro</span>
+            <span class="atom-spinner atom-spinner--ascii atom-spinner--muted atom-spinner--sm"
+                  aria-hidden="true"></span>
+          </div>
+          <span class="comp-label">Connecting to macbook-pro...</span>
+        </div>
+
+        <!-- In-button loading -->
+        <p class="comp-section-label">in-button loading — circular spinner replacing label</p>
+        <div style="margin-bottom: var(--space-3);">
+          <button class="demo-btn" disabled aria-disabled="true">
+            <div role="status" aria-live="polite" aria-busy="true" style="display:contents;">
+              <span class="sr-only">Sending</span>
+              <span class="atom-spinner atom-spinner--circular atom-spinner--inverse atom-spinner--sm"
+                    aria-hidden="true"></span>
+            </div>
+            <span>Sending</span>
+          </button>
+        </div>
+
+        <!-- Inline message-list loading -->
+        <p class="comp-section-label">inline message-list loading — ascii spinner + history text</p>
+        <div class="comp-row">
+          <div role="status" aria-live="polite" aria-busy="true">
+            <span class="sr-only">Loading history</span>
+            <span class="atom-spinner atom-spinner--ascii atom-spinner--muted atom-spinner--sm"
+                  aria-hidden="true"></span>
+          </div>
+          <span class="comp-meta">Loading history...</span>
+        </div>
+
+      </div><!-- /composition -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
