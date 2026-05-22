@@ -1,5 +1,6 @@
 "use client";
 
+import { ModelSelectorLogo } from "@superset/ui/ai-elements/model-selector";
 import { PromptInputButton } from "@superset/ui/ai-elements/prompt-input";
 import type { ThinkingLevel } from "@superset/ui/ai-elements/thinking-toggle";
 import {
@@ -31,6 +32,10 @@ import type {
 	ModelOption,
 	PermissionMode,
 } from "renderer/components/Chat/ChatInterface/types";
+import {
+	ANTHROPIC_LOGO_PROVIDER,
+	providerToLogo,
+} from "../../../../ModelPicker/utils/providerToLogo";
 
 interface ComposerSettingsMenuProps {
 	selectedModel: ModelOption | null;
@@ -111,17 +116,9 @@ export function ComposerSettingsMenu({
 	const brainIconColor =
 		thinkingLevel === "off" ? "text-muted-foreground" : "text-foreground";
 
-	// For the tooltip, we need to construct a model display name
-	// Try to match the provider logo pattern used in ModelPicker
-	const getProviderLogo = (provider: string) => {
-		// Using the same logic as ModelPicker's providerToLogo
-		if (provider === "claude" || provider === "anthropic") {
-			return <img alt="Claude" className="size-3" src={claudeIcon} />;
-		}
-		// For other providers, we'd need the ModelSelectorLogo component
-		// but for now, just show the provider name
-		return null;
-	};
+	const selectedLogo = selectedModel
+		? providerToLogo(selectedModel.provider)
+		: null;
 
 	const tooltipText = `Model: ${selectedModel?.name ?? "Model"} · Permission: ${activePermission.label} · Thinking: ${activeThinking.label}`;
 
@@ -138,7 +135,11 @@ export function ComposerSettingsMenu({
 								aria-label={ariaLabel}
 							>
 								<PermissionIcon className="size-3.5 text-foreground" />
-								{getProviderLogo(selectedModel?.provider ?? "")}
+								{selectedLogo === ANTHROPIC_LOGO_PROVIDER ? (
+									<img alt="Claude" className="size-3" src={claudeIcon} />
+								) : selectedLogo ? (
+									<ModelSelectorLogo provider={selectedLogo} />
+								) : null}
 								<span className="max-w-[180px] truncate">
 									{selectedModel?.name ?? "Model"}
 								</span>
@@ -159,7 +160,11 @@ export function ComposerSettingsMenu({
 					}}
 					className="flex items-center gap-2"
 				>
-					{getProviderLogo(selectedModel?.provider ?? "")}
+					{selectedLogo === ANTHROPIC_LOGO_PROVIDER ? (
+						<img alt="Claude" className="size-3" src={claudeIcon} />
+					) : selectedLogo ? (
+						<ModelSelectorLogo provider={selectedLogo} />
+					) : null}
 					<span className="truncate flex-1">
 						{selectedModel?.name ?? "Model"}
 					</span>
