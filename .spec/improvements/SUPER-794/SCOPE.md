@@ -117,7 +117,34 @@ Not required — no auth, secrets, tokens, or RBAC touched. All changes are with
 
 ## Scope amendments
 
-None.
+### Amendment 1 (2026-05-22) — explicit v1/v2 wiring contract
+
+Verification against the live worktree code confirmed both target files exist and AC-8 is satisfiable. The two `usePersistentWebview.ts` variants are NOT copy-paste compatible — the implementer must respect three concrete differences:
+
+**v1** — `apps/desktop/src/renderer/screens/main/components/WorkspaceView/ContentView/TabsContent/TabView/BrowserPane/hooks/usePersistentWebview/usePersistentWebview.ts`:
+
+- tRPC client is `electronTrpc` (React Query hook flavor). Subscription pattern is `electronTrpc.browser.onClosePane.useSubscription({ paneId }, { onData: (...) => ... })` — mount the hook in the component body alongside the existing `onNewWindow` / `onContextMenuAction` subscriptions (currently lines 118 and 133). No manual unsubscribe — the hook handles it.
+- **Must add the import** `import { requestPaneClose } from "renderer/stores/editor-state/editorCoordinator";` (currently absent — file only imports `electronTrpc` and `useTabsStore`). `onClosePane` handler body: `requestPaneClose(paneId)`. (`requestPaneClose` is the same function the existing `CLOSE_TERMINAL` hotkey handler uses at `workspace/$workspaceId/page.tsx:229`.)
+- `onReloadPane` handler body: `webviewRegistry.get(paneId)?.reload()`. The handler MUST go through `webviewRegistry` (the module-level singleton at line 9) — do NOT capture a `webview` variable from outer scope; the registry may have re-registered the webContentsId since the hook ran.
+
+**v2** — `apps/desktop/src/renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/usePaneRegistry/components/BrowserPane/hooks/usePersistentWebview/usePersistentWebview.ts`:
+
+- tRPC client is `electronTrpcClient` (vanilla, not the hook flavor). Subscription pattern is `const closePaneSub = electronTrpcClient.browser.onClosePane.subscribe({ paneId }, { onData: (...) => ... });` inside a `useEffect`. **Cleanup MUST call `closePaneSub.unsubscribe()`** (mirror the existing `newWindowSub.unsubscribe()` / `contextMenuSub.unsubscribe()` at lines 84-85). Putting both new subscriptions inside the same `useEffect` as the existing two is the cleanest path.
+- `onClosePane` handler body: `ctxRef.current.actions.close()` (the file already uses `ctxRef.current.actions.X` elsewhere; this is the v2 pane-action API).
+- `onReloadPane` handler body: `browserRuntimeRegistry.reload(paneId)` (already used by the file's local `reload` callback at line 98 — same call).
+
+**Shared (both variants):**
+
+- Both subscribe with `{ paneId }` filter. The tRPC router (`browser.ts`) MUST expose `onClosePane` / `onReloadPane` observables that emit per-`paneId` (the existing `onNewWindow` / `onContextMenuAction` observable shape is the template — copy that pattern, do not invent a new one).
+- The main-process emit format from `browser-manager.ts` is `this.emit("close-pane:${paneId}")` and `this.emit("reload-pane:${paneId}")` — the observable bridge in `browser.ts` must subscribe to these EventEmitter channels and forward as paneId-scoped tRPC observables. This is exactly how `new-window:${paneId}` is bridged today.
+- **No double-fire risk:** v1 lives at the `/workspace/$workspaceId` route, v2 at `/v2-workspace/$workspaceId`. The router gates which one mounts; at most one `usePersistentWebview` is mounted per `paneId` per session.
+
+**Pre-merge checklist for the implementer (both must be green):**
+
+- [ ] v1: pressing Cmd+W in a focused webview closes the pane and the window stays open (visible in the v1 workspace route).
+- [ ] v1: pressing Cmd+R in a focused webview reloads the webview only (the host app/title bar does not blink).
+- [ ] v2: same two checks performed on the v2-workspace route.
+- [ ] After webview navigation (changing `webContentsId`), repeat all four checks — listener re-attachment via `register()` must hold (AC-9).
 
 ## Deferred follow-ups
 
