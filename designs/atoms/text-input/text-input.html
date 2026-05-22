@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · text-input</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-text-input — token-governed single-line text field
+       Composition purity: only .atom-text-input* rules defined here.
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Zero raw px in padding/margin/gap (except explicit height
+       values 36px / 56px that have no token equivalent).
+       ============================================================ */
+
+    /* ---- Wrapper (hosts the input + icon slots) --------------- */
+    .atom-text-input-wrap {
+      position:    relative;
+      display:     flex;
+      align-items: center;
+      width:       100%;
+    }
+
+    /* ---- Base input reset ------------------------------------ */
+    .atom-text-input {
+      /* Layout */
+      display:     block;
+      width:       100%;
+      min-width:   0;
+
+      /* Shape */
+      border:        1px solid transparent;
+      border-radius: var(--radius-default);
+      outline:       none;
+
+      /* Typography — body scale; font-* properties come from .type-body */
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body);
+      font-weight:    var(--font-weight-body);
+      line-height:    var(--line-height-normal);
+      letter-spacing: var(--tracking-normal);
+      color:          var(--text-body);
+
+      /* Motion */
+      transition:
+        background-color var(--motion-fast) var(--motion-ease-out),
+        border-color     var(--motion-fast) var(--motion-ease-out),
+        box-shadow       var(--motion-fast) var(--motion-ease-out),
+        opacity          var(--motion-fast) var(--motion-ease-out);
+
+      /* Reset browser defaults */
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .atom-text-input::placeholder {
+      color: var(--text-faint);
+    }
+
+    /* ---- Sizes ----------------------------------------------- */
+    .atom-text-input--sm {
+      height:          36px;
+      padding-inline:  var(--space-3);
+      font-size:       var(--font-size-body-sm);
+    }
+
+    .atom-text-input--md {
+      height:          var(--touch-target-min); /* 44px */
+      padding-inline:  var(--space-4);
+    }
+
+    /* Default size is md — matches button atom pattern */
+    .atom-text-input:not(.atom-text-input--sm):not(.atom-text-input--lg) {
+      height:          var(--touch-target-min);
+      padding-inline:  var(--space-4);
+    }
+
+    .atom-text-input--lg {
+      height:          56px;
+      padding-inline:  var(--space-5);
+    }
+
+    /* ---- Variant: default ------------------------------------ */
+    .atom-text-input--default {
+      background-color: var(--surface-soft);
+      border-color:     var(--border-default);
+    }
+
+    /* ---- Variant: inset ------------------------------------- */
+    .atom-text-input--inset {
+      background-color: var(--surface-sunken);
+      border-color:     transparent;
+    }
+
+    /* ---- Variant: bare -------------------------------------- */
+    .atom-text-input--bare {
+      background-color: transparent;
+      border-color:     transparent;
+    }
+
+    /* ---- State: focus --------------------------------------- */
+    .atom-text-input:focus-visible,
+    .atom-text-input.is-focus {
+      border-color: var(--border-focus);
+      box-shadow:   0 0 0 2px var(--border-focus);
+      outline:      none;
+    }
+
+    /* Inset focus: no extra border — just the ring */
+    .atom-text-input--inset:focus-visible,
+    .atom-text-input--inset.is-focus {
+      border-color: var(--border-focus);
+      box-shadow:   0 0 0 2px var(--border-focus);
+    }
+
+    /* ---- State: error --------------------------------------- */
+    .atom-text-input.is-error {
+      border-color: var(--state-danger-fg);
+      box-shadow:   0 0 0 2px color-mix(in oklch, var(--state-danger-fg) 30%, transparent);
+    }
+
+    /* ---- State: disabled ------------------------------------ */
+    .atom-text-input:disabled,
+    .atom-text-input.is-disabled {
+      opacity:        0.5;
+      pointer-events: none;
+      cursor:         not-allowed;
+    }
+
+    /* ---- Loading state: spinner on wrapper ------------------ */
+    .atom-text-input-wrap.is-loading {
+      position: relative;
+    }
+    .atom-text-input-wrap.is-loading .atom-text-input {
+      padding-inline-end: var(--space-8); /* room for spinner */
+    }
+    .atom-text-input-wrap.is-loading::after {
+      content:          '';
+      position:         absolute;
+      right:            var(--space-3);
+      width:            14px;
+      height:           14px;
+      border-radius:    var(--radius-round);
+      border:           2px solid var(--text-muted);
+      border-top-color: transparent;
+      animation:        atom-input-spin var(--motion-slow) linear infinite;
+      pointer-events:   none;
+      flex-shrink:      0;
+    }
+
+    @keyframes atom-input-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ---- Leading icon slot ---------------------------------- */
+    .atom-text-input-wrap.atom-text-input--with-leading-icon {
+      position: relative;
+    }
+    .atom-text-input-wrap.atom-text-input--with-leading-icon .atom-text-input-icon {
+      position:    absolute;
+      left:        var(--space-3);
+      display:     flex;
+      align-items: center;
+      color:       var(--text-faint);
+      pointer-events: none;
+      flex-shrink: 0;
+    }
+    /* Shift input text right to clear icon */
+    .atom-text-input-wrap.atom-text-input--with-leading-icon .atom-text-input--sm {
+      padding-inline-start: var(--space-8);
+    }
+    .atom-text-input-wrap.atom-text-input--with-leading-icon .atom-text-input--md,
+    .atom-text-input-wrap.atom-text-input--with-leading-icon .atom-text-input:not(.atom-text-input--sm):not(.atom-text-input--lg) {
+      padding-inline-start: var(--space-8);
+    }
+    .atom-text-input-wrap.atom-text-input--with-leading-icon .atom-text-input--lg {
+      padding-inline-start: var(--space-8);
+    }
+
+    /* ---- Trailing clear button ------------------------------ */
+    .atom-text-input-wrap.atom-text-input--with-trailing-clear {
+      position: relative;
+    }
+    .atom-text-input-clear {
+      position:         absolute;
+      right:            var(--space-3);
+      display:          flex;
+      align-items:      center;
+      justify-content:  center;
+      background:       none;
+      border:           none;
+      padding:          var(--space-1);
+      cursor:           pointer;
+      color:            var(--text-muted);
+      border-radius:    var(--radius-subtle);
+      transition:
+        color      var(--motion-fast) var(--motion-ease-out),
+        background var(--motion-fast) var(--motion-ease-out);
+      line-height: 1;
+    }
+    .atom-text-input-clear:hover {
+      color:            var(--text-body);
+      background-color: var(--surface-active);
+    }
+    /* Shift input text left to clear button */
+    .atom-text-input-wrap.atom-text-input--with-trailing-clear .atom-text-input {
+      padding-inline-end: var(--space-8);
+    }
+
+    /* ---- Composition: field with label + helper text --------- */
+    .atom-text-input-field {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      width:          100%;
+    }
+    .atom-text-input-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-label);
+      font-weight:    var(--font-weight-label);
+      letter-spacing: var(--tracking-uppercase);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+    .atom-text-input-helper {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-body);
+      color:          var(--text-faint);
+      line-height:    var(--line-height-snug);
+    }
+    .atom-text-input-error-msg {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-body);
+      color:          var(--state-danger-fg);
+      line-height:    var(--line-height-snug);
+    }
+
+    /* ---- Preview layout helpers (local, not in _preview.css) - */
+    .section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-2);
+    }
+    .size-block {
+      margin-bottom: var(--spacing-section);
+    }
+    .size-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-2);
+    }
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-between);
+      align-items: start;
+    }
+    .matrix-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+    }
+    .matrix-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+    .state-row-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--spacing-between);
+      align-items: start;
+    }
+    .variant-block {
+      margin-bottom: var(--spacing-section);
+    }
+    .composition-block {
+      max-width: 360px;
+    }
+    /* inline SVG icon helper */
+    .icon-search {
+      width:  16px;
+      height: 16px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">text-input</h1>
+    <p class="crumb">atom · single-line text field · mobile-tuned 44pt</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ============================================
+           1. VARIANT × SIZE MATRIX  (3 variants × 3 sizes = 9 cells)
+           ============================================ -->
+      <div class="variant-block">
+        <p class="section-title">variant × size matrix</p>
+
+        <!-- default variant -->
+        <div class="size-block">
+          <p class="size-label">default variant</p>
+          <div class="matrix-grid">
+            <!-- default × sm -->
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">default · sm</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--default atom-text-input--sm type-body"
+                  type="text"
+                  placeholder="Rename session..."
+                  id="d-default-sm"
+                  aria-label="Rename session"
+                >
+              </div>
+            </div>
+            <!-- default × md -->
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">default · md</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--default atom-text-input--md type-body"
+                  type="text"
+                  placeholder="Search workspaces..."
+                  id="d-default-md"
+                  aria-label="Search workspaces"
+                >
+              </div>
+            </div>
+            <!-- default × lg -->
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">default · lg</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--default atom-text-input--lg type-body"
+                  type="text"
+                  placeholder="Untitled session"
+                  id="d-default-lg"
+                  aria-label="Session name"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- inset variant -->
+        <div class="size-block">
+          <p class="size-label">inset variant</p>
+          <div class="matrix-grid">
+            <!-- inset × sm -->
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">inset · sm</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--inset atom-text-input--sm type-body"
+                  type="text"
+                  placeholder="Rename session..."
+                  id="d-inset-sm"
+                  aria-label="Rename session"
+                >
+              </div>
+            </div>
+            <!-- inset × md -->
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">inset · md</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  type="text"
+                  placeholder="Search workspaces..."
+                  id="d-inset-md"
+                  aria-label="Search workspaces"
+                >
+              </div>
+            </div>
+            <!-- inset × lg -->
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">inset · lg</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--inset atom-text-input--lg type-body"
+                  type="text"
+                  placeholder="Untitled session"
+                  id="d-inset-lg"
+                  aria-label="Session name"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- bare variant -->
+        <div class="size-block">
+          <p class="size-label">bare variant</p>
+          <div class="matrix-grid">
+            <!-- bare × sm -->
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">bare · sm</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--bare atom-text-input--sm type-body"
+                  type="text"
+                  placeholder="Rename session..."
+                  id="d-bare-sm"
+                  aria-label="Rename session"
+                >
+              </div>
+            </div>
+            <!-- bare × md -->
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">bare · md</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--bare atom-text-input--md type-body"
+                  type="text"
+                  placeholder="Search workspaces..."
+                  id="d-bare-md"
+                  aria-label="Search workspaces"
+                >
+              </div>
+            </div>
+            <!-- bare × lg -->
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">bare · lg</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--bare atom-text-input--lg type-body"
+                  type="text"
+                  placeholder="Untitled session"
+                  id="d-bare-lg"
+                  aria-label="Session name"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /matrix -->
+
+      <!-- ============================================
+           2. STATE ROW — default·md in 6 states
+           ============================================ -->
+      <div class="variant-block">
+        <p class="section-title">state row — default · md</p>
+        <div class="state-row-grid">
+
+          <!-- default empty -->
+          <div class="state">
+            <span class="state-label">default · empty</span>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body"
+                type="text"
+                placeholder="Rename session..."
+                id="d-state-empty"
+                aria-label="Rename session"
+              >
+            </div>
+          </div>
+
+          <!-- is-typing -->
+          <div class="state">
+            <span class="state-label">is-typing</span>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-typing"
+                type="text"
+                value="Refactor relay tunnel reconnect"
+                id="d-state-typing"
+                aria-label="Rename session"
+              >
+            </div>
+          </div>
+
+          <!-- is-focus -->
+          <div class="state">
+            <span class="state-label">is-focus</span>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-focus"
+                type="text"
+                placeholder="Rename session..."
+                id="d-state-focus"
+                aria-label="Rename session"
+              >
+            </div>
+          </div>
+
+          <!-- is-error -->
+          <div class="state">
+            <span class="state-label">is-error</span>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-error"
+                type="text"
+                value="Refactor relay tunnel reconnect"
+                id="d-state-error"
+                aria-label="Rename session"
+                aria-invalid="true"
+                aria-describedby="d-state-error-msg"
+              >
+            </div>
+            <p id="d-state-error-msg" class="atom-text-input-error-msg" role="alert">Title is required</p>
+          </div>
+
+          <!-- is-disabled -->
+          <div class="state">
+            <span class="state-label">is-disabled</span>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-disabled"
+                type="text"
+                placeholder="Rename session..."
+                id="d-state-disabled"
+                aria-label="Rename session"
+                disabled
+              >
+            </div>
+          </div>
+
+          <!-- is-loading -->
+          <div class="state">
+            <span class="state-label">is-loading</span>
+            <div class="atom-text-input-wrap is-loading" aria-busy="true">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body"
+                type="text"
+                placeholder="Rename session..."
+                id="d-state-loading"
+                aria-label="Rename session"
+                readonly
+              >
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+      <!-- ============================================
+           3. WITH LEADING ICON
+           ============================================ -->
+      <div class="variant-block">
+        <p class="section-title">with leading icon</p>
+        <div class="state-row-grid">
+          <div class="state">
+            <span class="state-label">inset · md · search icon</span>
+            <div class="atom-text-input-wrap atom-text-input--with-leading-icon">
+              <span class="atom-text-input-icon" aria-hidden="true">
+                <svg class="icon-search" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M9.5 9.5L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <input
+                class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                type="search"
+                placeholder="Search sessions..."
+                id="d-leading-icon"
+                aria-label="Search sessions"
+              >
+            </div>
+          </div>
+          <div class="state">
+            <span class="state-label">inset · md · is-focus</span>
+            <div class="atom-text-input-wrap atom-text-input--with-leading-icon">
+              <span class="atom-text-input-icon" aria-hidden="true">
+                <svg class="icon-search" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M9.5 9.5L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <input
+                class="atom-text-input atom-text-input--inset atom-text-input--md type-body is-focus"
+                type="search"
+                placeholder="Search sessions..."
+                id="d-leading-icon-focus"
+                aria-label="Search sessions"
+              >
+            </div>
+          </div>
+        </div>
+      </div><!-- /leading icon -->
+
+      <!-- ============================================
+           4. WITH TRAILING CLEAR
+           ============================================ -->
+      <div class="variant-block">
+        <p class="section-title">with trailing clear</p>
+        <div class="state-row-grid">
+          <div class="state">
+            <span class="state-label">default · md · populated</span>
+            <div class="atom-text-input-wrap atom-text-input--with-trailing-clear">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-typing"
+                type="text"
+                value="Refactor relay"
+                id="d-trailing-clear"
+                aria-label="Session name"
+              >
+              <button
+                class="atom-text-input-clear"
+                type="button"
+                aria-label="Clear"
+              >&#215;</button>
+            </div>
+          </div>
+          <div class="state">
+            <span class="state-label">inset · md · populated</span>
+            <div class="atom-text-input-wrap atom-text-input--with-trailing-clear">
+              <input
+                class="atom-text-input atom-text-input--inset atom-text-input--md type-body is-typing"
+                type="text"
+                value="Refactor relay"
+                id="d-trailing-clear-inset"
+                aria-label="Session name"
+              >
+              <button
+                class="atom-text-input-clear"
+                type="button"
+                aria-label="Clear"
+              >&#215;</button>
+            </div>
+          </div>
+        </div>
+      </div><!-- /trailing clear -->
+
+      <!-- ============================================
+           5. COMPOSITION — rename session modal field
+           ============================================ -->
+      <div class="variant-block">
+        <p class="section-title">composition — rename session field</p>
+        <div class="composition-block">
+          <div class="atom-text-input-field">
+            <label class="atom-text-input-label" for="d-composition-rename">Session name</label>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-focus"
+                type="text"
+                value="Refactor relay tunnel reconnect"
+                id="d-composition-rename"
+              >
+            </div>
+            <p class="atom-text-input-helper">Shown in your session list and shared links.</p>
+          </div>
+        </div>
+      </div><!-- /composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ============================================
+           1. VARIANT × SIZE MATRIX  (3 × 3 = 9 cells)
+           ============================================ -->
+      <div class="variant-block">
+        <p class="section-title">variant × size matrix</p>
+
+        <!-- default variant -->
+        <div class="size-block">
+          <p class="size-label">default variant</p>
+          <div class="matrix-grid">
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">default · sm</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--default atom-text-input--sm type-body"
+                  type="text"
+                  placeholder="Rename session..."
+                  id="l-default-sm"
+                  aria-label="Rename session"
+                >
+              </div>
+            </div>
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">default · md</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--default atom-text-input--md type-body"
+                  type="text"
+                  placeholder="Search workspaces..."
+                  id="l-default-md"
+                  aria-label="Search workspaces"
+                >
+              </div>
+            </div>
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">default · lg</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--default atom-text-input--lg type-body"
+                  type="text"
+                  placeholder="Untitled session"
+                  id="l-default-lg"
+                  aria-label="Session name"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- inset variant -->
+        <div class="size-block">
+          <p class="size-label">inset variant</p>
+          <div class="matrix-grid">
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">inset · sm</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--inset atom-text-input--sm type-body"
+                  type="text"
+                  placeholder="Rename session..."
+                  id="l-inset-sm"
+                  aria-label="Rename session"
+                >
+              </div>
+            </div>
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">inset · md</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  type="text"
+                  placeholder="Search workspaces..."
+                  id="l-inset-md"
+                  aria-label="Search workspaces"
+                >
+              </div>
+            </div>
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">inset · lg</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--inset atom-text-input--lg type-body"
+                  type="text"
+                  placeholder="Untitled session"
+                  id="l-inset-lg"
+                  aria-label="Session name"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- bare variant -->
+        <div class="size-block">
+          <p class="size-label">bare variant</p>
+          <div class="matrix-grid">
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">bare · sm</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--bare atom-text-input--sm type-body"
+                  type="text"
+                  placeholder="Rename session..."
+                  id="l-bare-sm"
+                  aria-label="Rename session"
+                >
+              </div>
+            </div>
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">bare · md</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--bare atom-text-input--md type-body"
+                  type="text"
+                  placeholder="Search workspaces..."
+                  id="l-bare-md"
+                  aria-label="Search workspaces"
+                >
+              </div>
+            </div>
+            <div class="matrix-cell">
+              <span class="matrix-cell-label">bare · lg</span>
+              <div class="atom-text-input-wrap">
+                <input
+                  class="atom-text-input atom-text-input--bare atom-text-input--lg type-body"
+                  type="text"
+                  placeholder="Untitled session"
+                  id="l-bare-lg"
+                  aria-label="Session name"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /matrix light -->
+
+      <!-- ============================================
+           2. STATE ROW — default·md in 6 states
+           ============================================ -->
+      <div class="variant-block">
+        <p class="section-title">state row — default · md</p>
+        <div class="state-row-grid">
+
+          <div class="state">
+            <span class="state-label">default · empty</span>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body"
+                type="text"
+                placeholder="Rename session..."
+                id="l-state-empty"
+                aria-label="Rename session"
+              >
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">is-typing</span>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-typing"
+                type="text"
+                value="Refactor relay tunnel reconnect"
+                id="l-state-typing"
+                aria-label="Rename session"
+              >
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">is-focus</span>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-focus"
+                type="text"
+                placeholder="Rename session..."
+                id="l-state-focus"
+                aria-label="Rename session"
+              >
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">is-error</span>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-error"
+                type="text"
+                value="Refactor relay tunnel reconnect"
+                id="l-state-error"
+                aria-label="Rename session"
+                aria-invalid="true"
+                aria-describedby="l-state-error-msg"
+              >
+            </div>
+            <p id="l-state-error-msg" class="atom-text-input-error-msg" role="alert">Title is required</p>
+          </div>
+
+          <div class="state">
+            <span class="state-label">is-disabled</span>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-disabled"
+                type="text"
+                placeholder="Rename session..."
+                id="l-state-disabled"
+                aria-label="Rename session"
+                disabled
+              >
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">is-loading</span>
+            <div class="atom-text-input-wrap is-loading" aria-busy="true">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body"
+                type="text"
+                placeholder="Rename session..."
+                id="l-state-loading"
+                aria-label="Rename session"
+                readonly
+              >
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /state row light -->
+
+      <!-- ============================================
+           3. WITH LEADING ICON
+           ============================================ -->
+      <div class="variant-block">
+        <p class="section-title">with leading icon</p>
+        <div class="state-row-grid">
+          <div class="state">
+            <span class="state-label">inset · md · search icon</span>
+            <div class="atom-text-input-wrap atom-text-input--with-leading-icon">
+              <span class="atom-text-input-icon" aria-hidden="true">
+                <svg class="icon-search" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M9.5 9.5L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <input
+                class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                type="search"
+                placeholder="Search sessions..."
+                id="l-leading-icon"
+                aria-label="Search sessions"
+              >
+            </div>
+          </div>
+          <div class="state">
+            <span class="state-label">inset · md · is-focus</span>
+            <div class="atom-text-input-wrap atom-text-input--with-leading-icon">
+              <span class="atom-text-input-icon" aria-hidden="true">
+                <svg class="icon-search" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M9.5 9.5L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <input
+                class="atom-text-input atom-text-input--inset atom-text-input--md type-body is-focus"
+                type="search"
+                placeholder="Search sessions..."
+                id="l-leading-icon-focus"
+                aria-label="Search sessions"
+              >
+            </div>
+          </div>
+        </div>
+      </div><!-- /leading icon light -->
+
+      <!-- ============================================
+           4. WITH TRAILING CLEAR
+           ============================================ -->
+      <div class="variant-block">
+        <p class="section-title">with trailing clear</p>
+        <div class="state-row-grid">
+          <div class="state">
+            <span class="state-label">default · md · populated</span>
+            <div class="atom-text-input-wrap atom-text-input--with-trailing-clear">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-typing"
+                type="text"
+                value="Refactor relay"
+                id="l-trailing-clear"
+                aria-label="Session name"
+              >
+              <button
+                class="atom-text-input-clear"
+                type="button"
+                aria-label="Clear"
+              >&#215;</button>
+            </div>
+          </div>
+          <div class="state">
+            <span class="state-label">inset · md · populated</span>
+            <div class="atom-text-input-wrap atom-text-input--with-trailing-clear">
+              <input
+                class="atom-text-input atom-text-input--inset atom-text-input--md type-body is-typing"
+                type="text"
+                value="Refactor relay"
+                id="l-trailing-clear-inset"
+                aria-label="Session name"
+              >
+              <button
+                class="atom-text-input-clear"
+                type="button"
+                aria-label="Clear"
+              >&#215;</button>
+            </div>
+          </div>
+        </div>
+      </div><!-- /trailing clear light -->
+
+      <!-- ============================================
+           5. COMPOSITION — rename session modal field
+           ============================================ -->
+      <div class="variant-block">
+        <p class="section-title">composition — rename session field</p>
+        <div class="composition-block">
+          <div class="atom-text-input-field">
+            <label class="atom-text-input-label" for="l-composition-rename">Session name</label>
+            <div class="atom-text-input-wrap">
+              <input
+                class="atom-text-input atom-text-input--default atom-text-input--md type-body is-focus"
+                type="text"
+                value="Refactor relay tunnel reconnect"
+                id="l-composition-rename"
+              >
+            </div>
+            <p class="atom-text-input-helper">Shown in your session list and shared links.</p>
+          </div>
+        </div>
+      </div><!-- /composition light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+  <!-- ============================================================
+       Token Recipe Footer
+       ============================================================ -->
+  <footer class="recipe-footer">
+    <h2>token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Applies to</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>background</td><td>var(--surface-soft)</td><td>default variant</td></tr>
+        <tr><td>background</td><td>var(--surface-sunken)</td><td>inset variant</td></tr>
+        <tr><td>background</td><td>transparent</td><td>bare variant</td></tr>
+        <tr><td>border</td><td>1px solid var(--border-default)</td><td>default variant</td></tr>
+        <tr><td>border-radius</td><td>var(--radius-default)</td><td>all variants</td></tr>
+        <tr><td>color</td><td>var(--text-body)</td><td>input value text</td></tr>
+        <tr><td>::placeholder color</td><td>var(--text-faint)</td><td>placeholder</td></tr>
+        <tr><td>height (md)</td><td>var(--touch-target-min)</td><td>md size</td></tr>
+        <tr><td>height (sm)</td><td>36px</td><td>sm size</td></tr>
+        <tr><td>height (lg)</td><td>56px</td><td>lg size</td></tr>
+        <tr><td>padding-inline (sm)</td><td>var(--space-3)</td><td>sm size</td></tr>
+        <tr><td>padding-inline (md)</td><td>var(--space-4)</td><td>md size</td></tr>
+        <tr><td>padding-inline (lg)</td><td>var(--space-5)</td><td>lg size</td></tr>
+        <tr><td>focus ring</td><td>0 0 0 2px var(--border-focus)</td><td>:focus-visible / .is-focus</td></tr>
+        <tr><td>error ring</td><td>0 0 0 2px color-mix(in oklch, var(--state-danger-fg) 30%, transparent)</td><td>.is-error</td></tr>
+        <tr><td>error border</td><td>var(--state-danger-fg)</td><td>.is-error</td></tr>
+        <tr><td>disabled opacity</td><td>0.5</td><td>:disabled / .is-disabled</td></tr>
+        <tr><td>icon color</td><td>var(--text-faint)</td><td>leading icon</td></tr>
+        <tr><td>clear button color</td><td>var(--text-muted)</td><td>trailing clear</td></tr>
+        <tr><td>spinner color</td><td>var(--text-muted)</td><td>.is-loading ::after</td></tr>
+        <tr><td>transition</td><td>var(--motion-fast) var(--motion-ease-out)</td><td>all interactive properties</td></tr>
+        <tr><td>font</td><td>via .type-body — var(--font-body) / var(--font-size-body)</td><td>md + lg sizes</td></tr>
+        <tr><td>font (sm)</td><td>var(--font-size-body-sm)</td><td>sm size override</td></tr>
+        <tr><td>label tracking</td><td>var(--tracking-uppercase)</td><td>.atom-text-input-label</td></tr>
+        <tr><td>error/helper font-size</td><td>var(--font-size-meta)</td><td>helper + error text</td></tr>
+      </tbody>
+    </table>
+  </footer>
+
+</body>
+</html>
