@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>chat-view-scroll-back — UC-RENDER-07 §A</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-local layout glue — ONLY .view-chat-view-scroll-back__* rules.
+       Never redefines .atom-* or .mol-* classes.
+       ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding: var(--space-8) var(--space-4);
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    /* Full-width pane — device centered inside */
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- View viewport layout --------------------------------- */
+
+    /* Thread scroll region — flex:1, scrollable, relative for FAB anchor */
+    .view-chat-view-scroll-back__thread {
+      flex:           1;
+      overflow-y:     auto;
+      padding:        var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-5);
+      position:       relative; /* FAB absolute anchor */
+    }
+
+    /* Date separator row: label + hairline rule extending right */
+    .view-chat-view-scroll-back__date-sep {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-3);
+    }
+
+    /* The hairline rule that extends after the date label */
+    .view-chat-view-scroll-back__date-rule {
+      flex:             1;
+      height:           0;
+      border:           none;
+      border-top:       1px solid var(--border-subtle);
+      margin:           0;
+      padding:          0;
+    }
+
+    /* Assistant message wrapper: head + body stacked */
+    .view-chat-view-scroll-back__assistant {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    /* Assistant prose body */
+    .view-chat-view-scroll-back__body {
+      /* inline with type-body */
+    }
+
+    .view-chat-view-scroll-back__body p {
+      margin:      0 0 var(--space-3);
+      line-height: var(--line-height-normal);
+    }
+
+    .view-chat-view-scroll-back__body p:last-child {
+      margin-bottom: 0;
+    }
+
+    .view-chat-view-scroll-back__body code {
+      background:    var(--surface-sunken);
+      padding:       var(--space-half) var(--space-1);
+      border-radius: var(--radius-subtle);
+      color:         var(--accent-primary);
+    }
+
+    /* Composer footer */
+    .view-chat-view-scroll-back__composer {
+      border-top:        1px solid var(--border-subtle);
+      display:           flex;
+      flex-direction:    column;
+      gap:               var(--space-2);
+      padding-block-end: var(--safe-area-bottom);
+      background:        var(--surface-page);
+      flex-shrink:       0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">chat-view-scroll-back</h1>
+    <p class="crumb">UC-RENDER-07 §A · scroll-back FAB visible — user scrolled up in thread</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- App Header -->
+          <header class="mol-app-header" role="banner">
+            <div class="mol-app-header__back">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Back to sessions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mol-app-header__title-wrap">
+              <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+              <p class="mol-app-header__subtitle type-meta">superset · main</p>
+            </div>
+
+            <div class="mol-app-header__actions">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Session actions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </header><!-- /mol-app-header -->
+
+          <!-- Thread scroll region — scrolled UP, older messages visible -->
+          <main
+            class="view-chat-view-scroll-back__thread"
+            role="log"
+            aria-label="Chat thread"
+            aria-live="polite"
+          >
+            <!-- Scroll fade top — visible because user has scrolled down from top -->
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page" aria-hidden="true"></div>
+
+            <!-- ── Earlier context: 8:45 AM turn ─────────────────── -->
+
+            <!-- User message — 8:45 AM -->
+            <div class="mol-user-message-bubble" role="article" aria-label="Your message, sent at 8:45 AM">
+              <button
+                class="mol-user-message-bubble__bubble type-body"
+                type="button"
+                aria-label="Long press to copy message"
+              >
+                <p class="mol-user-message-bubble__text">Can you refactor billing to use tRPC?</p>
+              </button>
+              <div class="mol-user-message-bubble__meta" aria-label="Sent at 8:45 AM">
+                <span class="type-meta">8:45 AM</span>
+              </div>
+            </div><!-- /mol-user-message-bubble -->
+
+            <!-- Assistant reply — 8:46 AM (idle, turn complete) -->
+            <article class="view-chat-view-scroll-back__assistant" aria-label="Assistant message, 8:46 AM">
+
+              <div class="mol-assistant-message-head mol-assistant-message-head--idle">
+                <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                <span class="mol-assistant-message-head__label atom-section-label atom-section-label--strong">Assistant</span>
+                <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint" aria-hidden="true">·</span>
+                <span class="mol-assistant-message-head__time atom-section-label">8:46 AM</span>
+              </div>
+
+              <div class="view-chat-view-scroll-back__body type-body" aria-label="Assistant response">
+                <p>Sure, I'll start by extracting the router into <code class="type-code">packages/trpc/src/routers/billing.ts</code> and wiring it into the root appRouter…</p>
+              </div>
+
+            </article>
+
+            <!-- ── Date separator — AUG 12, 2025 ─────────────────── -->
+            <div
+              class="view-chat-view-scroll-back__date-sep"
+              role="separator"
+              aria-label="August 12, 2025"
+            >
+              <span class="atom-section-label atom-section-label--faint">Aug 12, 2025</span>
+              <hr class="view-chat-view-scroll-back__date-rule" aria-hidden="true">
+            </div>
+
+            <!-- ── Later context: 9:30 AM turn ───────────────────── -->
+
+            <!-- User message — 9:30 AM -->
+            <div class="mol-user-message-bubble" role="article" aria-label="Your message, sent at 9:30 AM">
+              <button
+                class="mol-user-message-bubble__bubble type-body"
+                type="button"
+                aria-label="Long press to copy message"
+              >
+                <p class="mol-user-message-bubble__text">Let's pick this up where we left off</p>
+              </button>
+              <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:30 AM">
+                <span class="type-meta">9:30 AM</span>
+              </div>
+            </div><!-- /mol-user-message-bubble -->
+
+            <!-- Assistant reply — 9:31 AM (idle, turn complete) -->
+            <article class="view-chat-view-scroll-back__assistant" aria-label="Assistant message, 9:31 AM">
+
+              <div class="mol-assistant-message-head mol-assistant-message-head--idle">
+                <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                <span class="mol-assistant-message-head__label atom-section-label atom-section-label--strong">Assistant</span>
+                <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint" aria-hidden="true">·</span>
+                <span class="mol-assistant-message-head__time atom-section-label">9:31 AM</span>
+              </div>
+
+              <div class="view-chat-view-scroll-back__body type-body" aria-label="Assistant response">
+                <p>Continuing from yesterday — I had drafted the router structure but didn't migrate the procedures yet. I'll pick up by converting the <code class="type-code">createInvoice</code> REST handler next…</p>
+              </div>
+
+            </article>
+
+            <!-- ── Scroll-back FAB — absolute, bottom-right of thread, above composer -->
+            <!-- mol-scroll-back-button: idle variant (chevron-down, no badge) -->
+            <!-- is-entering state: opacity:1 (faded in from is-hidden as user scrolled up) -->
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--idle
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="Scroll to latest message"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <!-- lucide: chevron-down -->
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            <!-- Scroll fade bottom — visible because content continues below -->
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+
+          </main><!-- /role=log -->
+
+          <!-- Composer footer — idle state (no streaming turn active) -->
+          <footer class="view-chat-view-scroll-back__composer" aria-label="Message composer">
+
+            <!-- mol-composer-toolbar -->
+            <div class="mol-composer-toolbar" role="toolbar" aria-label="Composer options">
+              <!-- Model trigger -->
+              <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Model: Sonnet 4.6"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/>
+                    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                  </svg>
+                  Sonnet 4.6
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Thinking level trigger -->
+              <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Thinking: low"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                  </svg>
+                  Thinking: low
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Permission trigger -->
+              <div class="mol-composer-toolbar__trigger" data-trigger="permission">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Permission: default"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  Permission: default
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Right-fade for overflow -->
+              <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+            </div><!-- /mol-composer-toolbar -->
+
+            <!-- mol-composer-row — idle variant (no active turn, send disabled) -->
+            <form class="mol-composer-row mol-composer-row--idle" aria-label="Compose message">
+              <label class="sr-only" for="composer-input-dark">Message</label>
+              <textarea
+                id="composer-input-dark"
+                class="mol-composer-row__input atom-textarea atom-textarea--composer type-body"
+                placeholder="Type a message…"
+                rows="1"
+                aria-label="Message input"
+              ></textarea>
+              <button
+                type="submit"
+                class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                aria-label="Send message"
+                aria-disabled="true"
+                disabled
+              >
+                <!-- paper-plane send icon -->
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M22 2L11 13"/>
+                  <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+                </svg>
+              </button>
+            </form><!-- /mol-composer-row -->
+
+          </footer><!-- /view-chat-view-scroll-back__composer -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- App Header -->
+          <header class="mol-app-header" role="banner">
+            <div class="mol-app-header__back">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Back to sessions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mol-app-header__title-wrap">
+              <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+              <p class="mol-app-header__subtitle type-meta">superset · main</p>
+            </div>
+
+            <div class="mol-app-header__actions">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Session actions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </header><!-- /mol-app-header -->
+
+          <!-- Thread scroll region — scrolled UP, older messages visible -->
+          <main
+            class="view-chat-view-scroll-back__thread"
+            role="log"
+            aria-label="Chat thread"
+            aria-live="polite"
+          >
+            <!-- Scroll fade top — visible because user has scrolled down from top -->
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page" aria-hidden="true"></div>
+
+            <!-- ── Earlier context: 8:45 AM turn ─────────────────── -->
+
+            <!-- User message — 8:45 AM -->
+            <div class="mol-user-message-bubble" role="article" aria-label="Your message, sent at 8:45 AM">
+              <button
+                class="mol-user-message-bubble__bubble type-body"
+                type="button"
+                aria-label="Long press to copy message"
+              >
+                <p class="mol-user-message-bubble__text">Can you refactor billing to use tRPC?</p>
+              </button>
+              <div class="mol-user-message-bubble__meta" aria-label="Sent at 8:45 AM">
+                <span class="type-meta">8:45 AM</span>
+              </div>
+            </div><!-- /mol-user-message-bubble -->
+
+            <!-- Assistant reply — 8:46 AM (idle, turn complete) -->
+            <article class="view-chat-view-scroll-back__assistant" aria-label="Assistant message, 8:46 AM">
+
+              <div class="mol-assistant-message-head mol-assistant-message-head--idle">
+                <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                <span class="mol-assistant-message-head__label atom-section-label atom-section-label--strong">Assistant</span>
+                <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint" aria-hidden="true">·</span>
+                <span class="mol-assistant-message-head__time atom-section-label">8:46 AM</span>
+              </div>
+
+              <div class="view-chat-view-scroll-back__body type-body" aria-label="Assistant response">
+                <p>Sure, I'll start by extracting the router into <code class="type-code">packages/trpc/src/routers/billing.ts</code> and wiring it into the root appRouter…</p>
+              </div>
+
+            </article>
+
+            <!-- ── Date separator — AUG 12, 2025 ─────────────────── -->
+            <div
+              class="view-chat-view-scroll-back__date-sep"
+              role="separator"
+              aria-label="August 12, 2025"
+            >
+              <span class="atom-section-label atom-section-label--faint">Aug 12, 2025</span>
+              <hr class="view-chat-view-scroll-back__date-rule" aria-hidden="true">
+            </div>
+
+            <!-- ── Later context: 9:30 AM turn ───────────────────── -->
+
+            <!-- User message — 9:30 AM -->
+            <div class="mol-user-message-bubble" role="article" aria-label="Your message, sent at 9:30 AM">
+              <button
+                class="mol-user-message-bubble__bubble type-body"
+                type="button"
+                aria-label="Long press to copy message"
+              >
+                <p class="mol-user-message-bubble__text">Let's pick this up where we left off</p>
+              </button>
+              <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:30 AM">
+                <span class="type-meta">9:30 AM</span>
+              </div>
+            </div><!-- /mol-user-message-bubble -->
+
+            <!-- Assistant reply — 9:31 AM (idle, turn complete) -->
+            <article class="view-chat-view-scroll-back__assistant" aria-label="Assistant message, 9:31 AM">
+
+              <div class="mol-assistant-message-head mol-assistant-message-head--idle">
+                <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                <span class="mol-assistant-message-head__label atom-section-label atom-section-label--strong">Assistant</span>
+                <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint" aria-hidden="true">·</span>
+                <span class="mol-assistant-message-head__time atom-section-label">9:31 AM</span>
+              </div>
+
+              <div class="view-chat-view-scroll-back__body type-body" aria-label="Assistant response">
+                <p>Continuing from yesterday — I had drafted the router structure but didn't migrate the procedures yet. I'll pick up by converting the <code class="type-code">createInvoice</code> REST handler next…</p>
+              </div>
+
+            </article>
+
+            <!-- ── Scroll-back FAB — absolute, bottom-right of thread, above composer -->
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--idle
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="Scroll to latest message"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            <!-- Scroll fade bottom -->
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+
+          </main><!-- /role=log -->
+
+          <!-- Composer footer — idle state -->
+          <footer class="view-chat-view-scroll-back__composer" aria-label="Message composer">
+
+            <!-- mol-composer-toolbar -->
+            <div class="mol-composer-toolbar" role="toolbar" aria-label="Composer options">
+              <div class="mol-composer-toolbar__trigger" data-trigger="model">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Model: Sonnet 4.6"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/>
+                    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                  </svg>
+                  Sonnet 4.6
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="mol-composer-toolbar__trigger" data-trigger="thinking">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Thinking: low"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                  </svg>
+                  Thinking: low
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="mol-composer-toolbar__trigger" data-trigger="permission">
+                <button
+                  class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon"
+                  type="button"
+                  aria-label="Permission: default"
+                  aria-haspopup="dialog"
+                >
+                  <svg class="atom-pill__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  Permission: default
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="margin-left: var(--space-1); flex-shrink: 0;" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="mol-composer-toolbar__scroll-fade" aria-hidden="true"></div>
+            </div><!-- /mol-composer-toolbar -->
+
+            <!-- mol-composer-row — idle variant -->
+            <form class="mol-composer-row mol-composer-row--idle" aria-label="Compose message">
+              <label class="sr-only" for="composer-input-light">Message</label>
+              <textarea
+                id="composer-input-light"
+                class="mol-composer-row__input atom-textarea atom-textarea--composer type-body"
+                placeholder="Type a message…"
+                rows="1"
+                aria-label="Message input"
+              ></textarea>
+              <button
+                type="submit"
+                class="atom-icon-button atom-icon-button--primary atom-icon-button--md atom-icon-button--pill mol-composer-row__action"
+                aria-label="Send message"
+                aria-disabled="true"
+                disabled
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M22 2L11 13"/>
+                  <path d="M22 2L15 22 11 13 2 9l20-7z"/>
+                </svg>
+              </button>
+            </form><!-- /mol-composer-row -->
+
+          </footer><!-- /view-chat-view-scroll-back__composer -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
