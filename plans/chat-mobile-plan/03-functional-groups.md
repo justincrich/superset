@@ -1,7 +1,7 @@
 ---
 stability: FEATURE_SPEC
 last_validated: 2026-05-22
-prd_version: 2.0.0
+prd_version: 2.0.1
 ---
 
 # Mobile Chat v2 — Functional Groups

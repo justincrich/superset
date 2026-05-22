@@ -1,7 +1,7 @@
 ---
 stability: FEATURE_SPEC
-last_validated: 2026-05-21
-prd_version: 1.1.0
+last_validated: 2026-05-22
+prd_version: 2.0.1
 functional_group: PAUSE
 ---
 
@@ -24,6 +24,36 @@ The three primary pause states use **different containers chosen per interaction
 
 When the agent invokes a tool that requires approval, the session pauses and the mobile app renders a `PendingApprovalCard` inline in the message stream at the position where the desktop `PendingApprovalMessage` would appear. The card shows the tool name, a short description, and a preview of the tool arguments. Simultaneously, a sticky `PendingApprovalFooter` slides up to sit above the chat input — containing **Approve**, **Decline**, and **Always-allow-category** buttons at 44pt height for thumb reach. When multiple approvals are pending in the same session, the footer shows a "1 of N" indicator and acts on the most recent unresolved request first. The user can scroll up to read context above the pending approval without losing access to the footer buttons.
 
+### Wireframes
+
+#### A. PendingApprovalCard inline + PendingApprovalFooter sticky
+
+```
+┌──────────────────────────────────────┐
+│  ← Sessions   Fix auth bug    ···    │
+├──────────────────────────────────────┤
+│  [prior messages]                    │
+│                                      │
+│ ┌──────────────────────────────────┐ │
+│ │ ⌖ Tool approval required        │ │  ← PendingApprovalCard inline
+│ │ bash · run_tests.sh              │ │     ← mirrors desktop
+│ │ ─────────────────────────────── │ │       PendingApprovalMessage
+│ │ $ bun test --filter billing      │ │  ← args preview
+│ └──────────────────────────────────┘ │
+│                                      │
+├──────────────────────────────────────┤  ← sticky footer slides up
+│  1 of 1  ┌────────┐┌──────┐┌──────┐ │
+│          │Approve ││Decline││Always│ │  ← ≥44pt height, thumb-docked
+│          └────────┘└──────┘└──────┘ │     Always = Always-allow-category
+├──────────────────────────────────────┤
+│ ┌────────────────────────────────┐   │
+│ │  (composer hidden during pause)│   │
+│ └────────────────────────────────┘   │
+└──────────────────────────────────────┘
+```
+
+Caption: `PendingApprovalCard` appears inline in the message stream at the position the desktop `PendingApprovalMessage` would render. `PendingApprovalFooter` docks above the composer with three ≥44pt buttons at thumb height. The composer is suppressed while the approval is active. The "1 of N" indicator appears when multiple approvals are queued.
+
 **Acceptance Criteria:**
 - ☐ User can see a `PendingApprovalCard` rendered inline in the message stream when the agent pauses on a tool requiring approval
 - ☐ User can see the tool name, a short description, and a preview of the tool arguments inside the inline card
@@ -45,6 +75,37 @@ When the agent invokes a tool that requires approval, the session pauses and the
 
 When the agent invokes the `ask_user` tool, a `@gorhom/bottom-sheet` opens containing the question text, an optional horizontal-scroll row of suggested-answer pills (if the agent supplied them), and a multiline `BottomSheetTextInput` for freeform answers. The user can tap a pill to pre-populate the input, edit freely, and submit via a Send button. The response goes to `chat.respondToQuestion`. The keyboard reveals smoothly because `@gorhom/bottom-sheet`'s `BottomSheetTextInput` handles keyboard avoidance natively on both iOS and Android — the decisive factor in choosing a sheet over an inline pattern for this state.
 
+### Wireframes
+
+#### A. ask_user bottom sheet with pills + keyboard raised
+
+```
+┌──────────────────────────────────────┐
+│  [dimmed chat view]                  │
+│                                      │
+│ ┌──────────────────────────────────┐ │
+│ │                ────              │ │  ← drag handle
+│ │ Which approach should I use?     │ │  ← question text (prominent)
+│ │                                  │ │
+│ │ ┌──────┐ ┌───────────┐ ┌──────┐ │ │  ← suggested-answer pills
+│ │ │ tRPC │ │ REST API  │ │ Both │ │ │     horizontal scroll row
+│ │ └──────┘ └───────────┘ └──────┘ │ │
+│ │                                  │ │
+│ │ ┌──────────────────────────────┐ │ │
+│ │ │  Type your answer…           │ │ │  ← BottomSheetTextInput
+│ │ └──────────────────────────────┘ │ │
+│ │                     ┌──────────┐ │ │
+│ │                     │  Send ▶  │ │ │  ← Send button
+│ │                     └──────────┘ │ │
+│ └──────────────────────────────────┘ │
+│ ┌──────────────────────────────────┐ │
+│ │  [keyboard]                      │ │  ← keyboard panel raised
+│ └──────────────────────────────────┘ │
+└──────────────────────────────────────┘
+```
+
+Caption: `@gorhom/bottom-sheet` with `BottomSheetTextInput` handles keyboard avoidance natively. Suggested-answer pills are a horizontal-scroll row; tapping a pill pre-populates the input. The sheet lifts above the keyboard.
+
 **Acceptance Criteria:**
 - ☐ User can see a bottom sheet open automatically when the agent calls `ask_user` and the session pauses
 - ☐ User can see the question text rendered prominently at the top of the sheet
@@ -62,6 +123,41 @@ When the agent invokes the `ask_user` tool, a `@gorhom/bottom-sheet` opens conta
 **Container: Full-screen modal pushed as an expo-router route.**
 
 When the agent submits a plan, the mobile app pushes a new screen via expo-router at `(authenticated)/chat/[sessionId]/plan-review/[planId]`, presented as a full-screen modal (`presentation: 'modal'` in the route options). The screen renders the plan markdown with the UC-RENDER-03 markdown renderer in a full-height scroll view. Approve / Reject buttons dock at the bottom of the screen above the safe area. An expandable "Add feedback" section between the markdown and the buttons reveals a `TextInput` for freeform feedback. Approve accepts the plan with optional empty feedback; Reject requires non-empty feedback before enabling. Response goes to `chat.respondToPlan`.
+
+### Wireframes
+
+#### A. Plan review — full-screen modal with scrollable body + docked actions
+
+```
+┌──────────────────────────────────────┐
+│  ✕   Review Plan                     │  ← modal header; ✕ = dismiss
+├──────────────────────────────────────┤      without responding
+│                                      │
+│  ## Billing Refactor Plan            │  ← plan markdown via UC-RENDER-03
+│                                      │
+│  ### Phase 1: Extract router         │
+│  Move `billing.ts` to a dedicated    │
+│  tRPC router file under              │
+│  `packages/trpc/src/routers/`.       │
+│                                      │
+│  ### Phase 2: Add procedures         │
+│  Define `getInvoice`, `listInvoices` │
+│  …                                   │
+│  [scrollable — plan continues]       │
+│                                      │
+├──────────────────────────────────────┤
+│  ▼ Add feedback (optional)           │  ← expandable feedback section
+│  ┌──────────────────────────────┐    │
+│  │  (empty — feedback hidden)   │    │  ← TextInput on expand
+│  └──────────────────────────────┘    │
+├──────────────────────────────────────┤
+│  ┌─────────────────┐ ┌─────────────┐ │
+│  │    Reject       │ │   Approve   │ │  ← docked above safe area
+│  └─────────────────┘ └─────────────┘ │  ← Reject ← --color-destructive
+└──────────────────────────────────────┘  ← Reject disabled until feedback non-empty
+```
+
+Caption: Full-screen modal pushed via expo-router at `(authenticated)/chat/[sessionId]/plan-review/[planId]`. The plan body scrolls independently; Approve/Reject are always docked at the bottom above the safe area. Reject is destructive-styled and disabled until the "Add feedback" field has content.
 
 **Acceptance Criteria:**
 - ☐ User can see a full-screen modal screen presented when the agent submits a plan via the submit_plan tool
@@ -87,6 +183,32 @@ When a session has any active pause (tool approval, `ask_user`, or plan approval
 - For plan approval pauses: re-pushes the modal route from UC-PAUSE-03
 
 The indicator hides automatically when the pause is resolved or the relevant card returns to view.
+
+### Wireframes
+
+#### A. PendingActionIndicator — floating pill with active pause off-screen
+
+```
+┌──────────────────────────────────────┐
+│  ← Sessions   Fix auth bug    ···    │
+├──────────────────────────────────────┤
+│  [user has scrolled up; approval     │
+│   card is off-screen below]          │
+│                                      │
+│  Aug 12 — earlier messages here      │
+│                                      │
+│                                      │
+│               ┌──────────────────┐   │
+│               │ ⌖ 1 pending — ↓ │   │  ← PendingActionIndicator pill
+│               └──────────────────┘   │     Reanimated FadeIn, above composer
+├──────────────────────────────────────┤
+│ ┌────────────────────────────────┐   │
+│ │  (composer suppressed)         │   │
+│ └────────────────────────────────┘   │
+└──────────────────────────────────────┘
+```
+
+Caption: Floating pill appears with Reanimated `FadeIn` when the user has scrolled away from an active pause card or dismissed a sheet/modal without responding. Tapping it scrolls back to the inline card (UC-PAUSE-01 §A) or re-opens the relevant sheet/route (UC-PAUSE-02/03).
 
 **Acceptance Criteria:**
 - ☐ User can see a floating "Tap to respond" pill near the chat input when a session has a pending pause and the relevant card is not currently in view
