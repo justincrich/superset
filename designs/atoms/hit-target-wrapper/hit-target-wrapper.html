@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · hit-target-wrapper</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-hit-target-wrapper — invisible 44pt tap-zone expander
+       Zero hex literals. --touch-target-min not a literal 44px.
+       --debug modifier is preview-only; never ship to production.
+       ============================================================ */
+
+    /* ---- Base ------------------------------------------------- */
+    .atom-hit-target-wrapper {
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      min-width:       var(--touch-target-min);
+      min-height:      var(--touch-target-min);
+      background:      transparent;
+      border:          none;
+      padding:         0;
+      cursor:          pointer;
+      /* No transition needed: wrapper is invisible by default */
+    }
+
+    /* ---- Shape: square (default — no modifier needed) --------- */
+    /* square is the implied default; no extra class required */
+
+    /* ---- Shape: circle ---------------------------------------- */
+    .atom-hit-target-wrapper--circle {
+      border-radius: var(--radius-round);
+    }
+
+    /* ---- State: hover ----------------------------------------- */
+    .atom-hit-target-wrapper:hover,
+    .atom-hit-target-wrapper.is-hover {
+      background: color-mix(in oklch, var(--text-body) 8%, transparent);
+    }
+
+    /* ---- State: focus ----------------------------------------- */
+    .atom-hit-target-wrapper:focus-visible,
+    .atom-hit-target-wrapper.is-focus {
+      outline:    none;
+      box-shadow: 0 0 0 2px var(--border-focus);
+    }
+
+    /* ---- Debug modifier (PREVIEW ONLY — strip before shipping) - */
+    .atom-hit-target-wrapper--debug {
+      outline:        1px dashed var(--state-warning-fg);
+      outline-offset: -1px;
+    }
+    /* When debug + focus coexist, focus ring wins over outline */
+    .atom-hit-target-wrapper--debug:focus-visible,
+    .atom-hit-target-wrapper--debug.is-focus {
+      outline:    none;
+      box-shadow: 0 0 0 2px var(--border-focus);
+    }
+
+    /* ============================================================
+       Preview layout helpers
+       ============================================================ */
+
+    /* Section heading within a pane */
+    .section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-3);
+    }
+
+    /* Row of items with labels */
+    .demo-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-8);
+      flex-wrap:   wrap;
+      margin-bottom: var(--space-6);
+    }
+
+    /* Individual demo cell */
+    .demo-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-2);
+    }
+    .demo-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+      max-width:      120px;
+      line-height:    var(--line-height-snug);
+    }
+    .demo-label strong {
+      color:       var(--state-danger-fg);
+      font-weight: var(--font-weight-meta);
+    }
+    .demo-label em {
+      color:       var(--state-success-fg);
+      font-style:  normal;
+      font-weight: var(--font-weight-meta);
+    }
+
+    /* Bad example — the raw glyph with no wrapper */
+    .bad-glyph {
+      display:     inline-flex;
+      align-items: center;
+      justify-content: center;
+      /* Visually identical 14px glyph — but cursor: pointer to show intent */
+      cursor:      pointer;
+      color:       var(--text-body);
+      /* Debug: show the 14×14 actual hit zone */
+      outline:     1px dashed var(--state-danger-fg);
+      outline-offset: 2px;
+    }
+
+    /* Divider */
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0;
+    }
+
+    /* ---- Composition helpers ---------------------------------- */
+    .comp-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-2);
+    }
+
+    /* Toast mockup */
+    .comp-toast {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-3);
+      padding:       var(--space-3) var(--space-4);
+      background:    var(--surface-raised);
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow:    var(--elevation-raised);
+      max-width:     320px;
+      margin-bottom: var(--space-3);
+    }
+    .comp-toast__icon {
+      color:      var(--state-success-fg);
+      flex-shrink: 0;
+    }
+    .comp-toast__message {
+      flex:        1;
+      font-family: var(--font-body);
+      font-size:   var(--font-size-body-sm);
+      color:       var(--text-body);
+    }
+
+    /* Picker mockup */
+    .comp-picker {
+      display:       inline-flex;
+      align-items:   center;
+      gap:           var(--space-2);
+      padding:       var(--space-2) var(--space-3);
+      background:    var(--surface-soft);
+      border:        1px solid var(--border-default);
+      border-radius: var(--radius-pill);
+      margin-bottom: var(--space-3);
+    }
+    .comp-picker__label {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-label);
+      font-weight:    var(--font-weight-label);
+      color:          var(--text-body);
+      letter-spacing: var(--tracking-snug);
+    }
+
+    /* Session row mockup */
+    .comp-session-row {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-3);
+      padding:       var(--space-3) var(--space-4);
+      background:    var(--surface-raised);
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      max-width:     360px;
+      margin-bottom: var(--space-3);
+    }
+    .comp-session-row__title {
+      flex:        1;
+      font-family: var(--font-body);
+      font-size:   var(--font-size-body-sm);
+      color:       var(--text-body);
+    }
+    .comp-session-row__meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* Side-by-side pair for composition comparisons */
+    .comp-pair {
+      display:   flex;
+      gap:       var(--space-8);
+      flex-wrap: wrap;
+      align-items: flex-start;
+      margin-bottom: var(--space-6);
+    }
+    .comp-pair__item {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+    .comp-pair__tag {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">hit-target-wrapper</h1>
+    <p class="crumb">atom · invisible 44pt tap-zone expander — WCAG 2.5.5</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, light pane second
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ========================================================
+         DARK PANE
+         ======================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. WITHOUT vs WITH WRAPPER (BAD vs GOOD) ---------- -->
+      <div class="variant">
+        <h3>1 · without wrapper (bad) vs with wrapper (good)</h3>
+
+        <div class="demo-row">
+          <!-- BAD: raw glyph, no wrapper -->
+          <div class="demo-cell">
+            <!-- The dashed red outline shows the actual 14×14 hit zone -->
+            <span class="bad-glyph" role="img" aria-label="(non-interactive example)">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </span>
+            <span class="demo-label"><strong>BAD</strong><br>14×14 hit zone<br>fails WCAG 2.5.5</span>
+          </div>
+
+          <!-- GOOD: same glyph inside hit-target-wrapper --circle --debug -->
+          <div class="demo-cell">
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug"
+              aria-label="Dismiss notification"
+              type="button"
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+            <span class="demo-label"><em>GOOD</em><br>44×44 hit zone<br>meets WCAG 2.5.5</span>
+          </div>
+        </div>
+      </div><!-- /section 1 -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. SHAPE COMPARISON: square vs circle ------------- -->
+      <div class="variant">
+        <h3>2 · shape comparison — square vs circle (--debug on both)</h3>
+
+        <div class="demo-row">
+          <!-- square (default) -->
+          <div class="demo-cell">
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--debug"
+              aria-label="Reorder row"
+              type="button"
+            >
+              <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9"  cy="5"  r="1.5" fill="currentColor"/>
+                <circle cx="9"  cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="9"  cy="19" r="1.5" fill="currentColor"/>
+                <circle cx="15" cy="5"  r="1.5" fill="currentColor"/>
+                <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="15" cy="19" r="1.5" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="demo-label">square<br>(default)<br>no radius</span>
+          </div>
+
+          <!-- circle -->
+          <div class="demo-cell">
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug"
+              aria-label="Dismiss"
+              type="button"
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+            <span class="demo-label">circle<br>--circle<br>radius-round</span>
+          </div>
+        </div>
+      </div><!-- /section 2 -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. STATE ROW -------------------------------------- -->
+      <div class="variant">
+        <h3>3 · state row — --circle, all states (--debug visible)</h3>
+
+        <div class="state-grid">
+          <!-- default -->
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug"
+              aria-label="Dismiss"
+              type="button"
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- hover -->
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug is-hover"
+              aria-label="Dismiss"
+              type="button"
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- focus -->
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug is-focus"
+              aria-label="Dismiss"
+              type="button"
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div><!-- /section 3 -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 4. COMPOSITION EXAMPLES -------------------------- -->
+      <div class="variant">
+        <h3>4 · composition examples</h3>
+
+        <!-- 4a: Dismissible toast -->
+        <p class="comp-label">4a · dismissible toast — 14px ✕ inside --circle</p>
+
+        <div class="comp-pair">
+          <!-- visual only (debug off) -->
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">visual only</span>
+            <div class="comp-toast">
+              <svg class="comp-toast__icon" aria-hidden="true" width="16" height="16"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span class="comp-toast__message">Changes saved successfully</span>
+              <button
+                class="atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                aria-label="Dismiss notification"
+                type="button"
+              >
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- with debug outline -->
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">with --debug</span>
+            <div class="comp-toast">
+              <svg class="comp-toast__icon" aria-hidden="true" width="16" height="16"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span class="comp-toast__message">Changes saved successfully</span>
+              <button
+                class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug"
+                aria-label="Dismiss notification"
+                type="button"
+              >
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4b: Picker chevron-down -->
+        <p class="comp-label">4b · picker chevron-down — 16px inside --square</p>
+
+        <div class="comp-pair">
+          <!-- visual only -->
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">visual only</span>
+            <div class="comp-picker">
+              <span class="comp-picker__label">claude-opus-4</span>
+              <button
+                class="atom-hit-target-wrapper"
+                aria-label="Open model picker"
+                type="button"
+              >
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- with debug -->
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">with --debug</span>
+            <div class="comp-picker">
+              <span class="comp-picker__label">claude-opus-4</span>
+              <button
+                class="atom-hit-target-wrapper atom-hit-target-wrapper--debug"
+                aria-label="Open model picker"
+                type="button"
+              >
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4c: Session row drag handle -->
+        <p class="comp-label">4c · session row drag-handle — 10px ⋮⋮ inside --square</p>
+
+        <div class="comp-pair">
+          <!-- visual only -->
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">visual only</span>
+            <div class="comp-session-row">
+              <button
+                class="atom-hit-target-wrapper"
+                aria-label="Drag to reorder"
+                type="button"
+              >
+                <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9"  cy="5"  r="1.5" fill="currentColor"/>
+                  <circle cx="9"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="9"  cy="19" r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="5"  r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="19" r="1.5" fill="currentColor"/>
+                </svg>
+              </button>
+              <span class="comp-session-row__title">Refactor relay tunnel</span>
+              <span class="comp-session-row__meta">2h ago</span>
+            </div>
+          </div>
+
+          <!-- with debug -->
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">with --debug</span>
+            <div class="comp-session-row">
+              <button
+                class="atom-hit-target-wrapper atom-hit-target-wrapper--debug"
+                aria-label="Drag to reorder"
+                type="button"
+              >
+                <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9"  cy="5"  r="1.5" fill="currentColor"/>
+                  <circle cx="9"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="9"  cy="19" r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="5"  r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="19" r="1.5" fill="currentColor"/>
+                </svg>
+              </button>
+              <span class="comp-session-row__title">Refactor relay tunnel</span>
+              <span class="comp-session-row__meta">2h ago</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /section 4 -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ========================================================
+         LIGHT PANE
+         ======================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. WITHOUT vs WITH WRAPPER (BAD vs GOOD) ---------- -->
+      <div class="variant">
+        <h3>1 · without wrapper (bad) vs with wrapper (good)</h3>
+
+        <div class="demo-row">
+          <!-- BAD -->
+          <div class="demo-cell">
+            <span class="bad-glyph" role="img" aria-label="(non-interactive example)">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </span>
+            <span class="demo-label"><strong>BAD</strong><br>14×14 hit zone<br>fails WCAG 2.5.5</span>
+          </div>
+
+          <!-- GOOD -->
+          <div class="demo-cell">
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug"
+              aria-label="Dismiss notification"
+              type="button"
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+            <span class="demo-label"><em>GOOD</em><br>44×44 hit zone<br>meets WCAG 2.5.5</span>
+          </div>
+        </div>
+      </div><!-- /section 1 light -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. SHAPE COMPARISON ------------------------------ -->
+      <div class="variant">
+        <h3>2 · shape comparison — square vs circle (--debug on both)</h3>
+
+        <div class="demo-row">
+          <div class="demo-cell">
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--debug"
+              aria-label="Reorder row"
+              type="button"
+            >
+              <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9"  cy="5"  r="1.5" fill="currentColor"/>
+                <circle cx="9"  cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="9"  cy="19" r="1.5" fill="currentColor"/>
+                <circle cx="15" cy="5"  r="1.5" fill="currentColor"/>
+                <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="15" cy="19" r="1.5" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="demo-label">square<br>(default)<br>no radius</span>
+          </div>
+
+          <div class="demo-cell">
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug"
+              aria-label="Dismiss"
+              type="button"
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+            <span class="demo-label">circle<br>--circle<br>radius-round</span>
+          </div>
+        </div>
+      </div><!-- /section 2 light -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. STATE ROW ------------------------------------- -->
+      <div class="variant">
+        <h3>3 · state row — --circle, all states (--debug visible)</h3>
+
+        <div class="state-grid">
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug"
+              aria-label="Dismiss"
+              type="button"
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug is-hover"
+              aria-label="Dismiss"
+              type="button"
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug is-focus"
+              aria-label="Dismiss"
+              type="button"
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div><!-- /section 3 light -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 4. COMPOSITION EXAMPLES -------------------------- -->
+      <div class="variant">
+        <h3>4 · composition examples</h3>
+
+        <!-- 4a: Dismissible toast -->
+        <p class="comp-label">4a · dismissible toast — 14px ✕ inside --circle</p>
+
+        <div class="comp-pair">
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">visual only</span>
+            <div class="comp-toast">
+              <svg class="comp-toast__icon" aria-hidden="true" width="16" height="16"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span class="comp-toast__message">Changes saved successfully</span>
+              <button
+                class="atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                aria-label="Dismiss notification"
+                type="button"
+              >
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">with --debug</span>
+            <div class="comp-toast">
+              <svg class="comp-toast__icon" aria-hidden="true" width="16" height="16"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span class="comp-toast__message">Changes saved successfully</span>
+              <button
+                class="atom-hit-target-wrapper atom-hit-target-wrapper--circle atom-hit-target-wrapper--debug"
+                aria-label="Dismiss notification"
+                type="button"
+              >
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4b: Picker chevron-down -->
+        <p class="comp-label">4b · picker chevron-down — 16px inside --square</p>
+
+        <div class="comp-pair">
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">visual only</span>
+            <div class="comp-picker">
+              <span class="comp-picker__label">claude-opus-4</span>
+              <button
+                class="atom-hit-target-wrapper"
+                aria-label="Open model picker"
+                type="button"
+              >
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">with --debug</span>
+            <div class="comp-picker">
+              <span class="comp-picker__label">claude-opus-4</span>
+              <button
+                class="atom-hit-target-wrapper atom-hit-target-wrapper--debug"
+                aria-label="Open model picker"
+                type="button"
+              >
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4c: Session row drag handle -->
+        <p class="comp-label">4c · session row drag-handle — 10px ⋮⋮ inside --square</p>
+
+        <div class="comp-pair">
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">visual only</span>
+            <div class="comp-session-row">
+              <button
+                class="atom-hit-target-wrapper"
+                aria-label="Drag to reorder"
+                type="button"
+              >
+                <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9"  cy="5"  r="1.5" fill="currentColor"/>
+                  <circle cx="9"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="9"  cy="19" r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="5"  r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="19" r="1.5" fill="currentColor"/>
+                </svg>
+              </button>
+              <span class="comp-session-row__title">Refactor relay tunnel</span>
+              <span class="comp-session-row__meta">2h ago</span>
+            </div>
+          </div>
+
+          <div class="comp-pair__item">
+            <span class="comp-pair__tag">with --debug</span>
+            <div class="comp-session-row">
+              <button
+                class="atom-hit-target-wrapper atom-hit-target-wrapper--debug"
+                aria-label="Drag to reorder"
+                type="button"
+              >
+                <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9"  cy="5"  r="1.5" fill="currentColor"/>
+                  <circle cx="9"  cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="9"  cy="19" r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="5"  r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="15" cy="19" r="1.5" fill="currentColor"/>
+                </svg>
+              </button>
+              <span class="comp-session-row__title">Refactor relay tunnel</span>
+              <span class="comp-session-row__meta">2h ago</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /section 4 light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>

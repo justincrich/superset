@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · home-indicator</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-home-indicator — iOS home indicator pill + sheet handle
+
+       Two variants share a single BEM block:
+         --ios           → 134×5, viewport bottom
+         --sheet-handle  → 36×5, sheet header centred
+
+       Two color modifiers:
+         --default → --text-body (full visibility)
+         --muted   → --text-faint (receding on overlays)
+
+       States applied via class:
+         is-active   → scale(1.05) + forced --text-body bg
+         is-disabled → opacity 0.3
+
+       Zero hex. Tokens only.
+       ============================================================ */
+
+    .atom-home-indicator {
+      background:    var(--text-body);
+      border-radius: var(--radius-pill);
+      flex-shrink:   0;
+      transition:    transform var(--motion-fast) var(--motion-ease-out),
+                     background var(--motion-fast) var(--motion-ease-out),
+                     opacity var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Variant: iOS home indicator ------------------------------ */
+    .atom-home-indicator--ios {
+      width:  var(--home-indicator-width);   /* 134px */
+      height: var(--home-indicator-height);  /* 5px */
+    }
+
+    /* ---- Variant: sheet handle ------------------------------------ */
+    .atom-home-indicator--sheet-handle {
+      width:  var(--sheet-handle-width);    /* 36px */
+      height: var(--sheet-handle-height);   /* 5px */
+      margin: var(--space-2) auto;          /* centred, padded top+bottom on sheet header */
+    }
+
+    /* ---- Color modifiers ------------------------------------------ */
+    /* --default is implicit (inherits background: var(--text-body) from block) */
+    .atom-home-indicator--muted {
+      background: var(--text-faint);
+    }
+
+    /* ---- States --------------------------------------------------- */
+    .atom-home-indicator.is-active {
+      transform:  scale(1.05);
+      background: var(--text-body); /* force visible during drag even if muted */
+    }
+
+    .atom-home-indicator.is-disabled {
+      opacity: 0.3;
+    }
+
+    /* ============================================================
+       Preview-only helpers — not part of the atom API
+       ============================================================ */
+
+    /* Row layout for variant / modifier comparisons */
+    .indicator-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-8);
+      flex-wrap:   wrap;
+    }
+
+    /* Labelled cell */
+    .indicator-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-3);
+    }
+
+    .indicator-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+    }
+
+    /* ---- iOS viewport mock ---------------------------------------- */
+    /* A compact iPhone viewport (not full device-bezel) to show --ios
+       in natural bottom-of-screen context */
+    .ios-viewport-mock {
+      width:          var(--viewport-width);   /* 430px */
+      height:         360px;                   /* cropped — just enough to show bottom chrome */
+      border-radius:  var(--radius-xl);
+      background:     var(--surface-page);
+      border:         1px solid var(--border-subtle);
+      overflow:       hidden;
+      position:       relative;
+      display:        flex;
+      flex-direction: column;
+      box-shadow:     var(--elevation-raised);
+    }
+
+    .ios-viewport-mock__content {
+      flex:    1;
+      padding: var(--space-4);
+      overflow: hidden;
+    }
+
+    .ios-viewport-mock__bottom-bar {
+      display:         flex;
+      justify-content: center;
+      align-items:     flex-end;
+      padding-bottom:  var(--space-2);   /* Apple HIG bottom clearance — hardware exception */
+      flex-shrink:     0;
+      height:          var(--safe-area-bottom);
+    }
+
+    /* ---- Session list items inside ios-viewport-mock -------------- */
+    .mock-session-list {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+    }
+
+    .mock-session-row {
+      padding:        var(--space-3) var(--space-4);
+      background:     var(--surface-raised);
+      border-radius:  var(--radius-default);
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+    }
+
+    .mock-session-row__title {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-label);
+      color:          var(--text-body);
+      letter-spacing: var(--tracking-snug);
+    }
+
+    .mock-session-row__meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* ---- Bottom-sheet mock ---------------------------------------- */
+    .bottom-sheet-mock {
+      width:          var(--viewport-width);   /* 430px */
+      background:     var(--surface-overlay);
+      border-radius:  var(--radius-xl) var(--radius-xl) 0 0;
+      border:         1px solid var(--border-subtle);
+      box-shadow:     var(--elevation-sheet);
+      overflow:       hidden;
+    }
+
+    .bottom-sheet-mock__handle-region {
+      display:         flex;
+      justify-content: center;
+      padding-top:     var(--space-2);
+    }
+
+    .bottom-sheet-mock__title {
+      padding:        var(--space-4) var(--space-4) var(--space-2);
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-title);
+      font-weight:    var(--font-weight-title);
+      color:          var(--text-heading);
+      letter-spacing: var(--tracking-snug);
+    }
+
+    .bottom-sheet-mock__rows {
+      padding:        0 var(--space-4) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+    }
+
+    .mock-host-row {
+      display:        flex;
+      align-items:    center;
+      gap:            var(--space-3);
+      padding:        var(--space-3) var(--space-4);
+      border-radius:  var(--radius-default);
+      background:     var(--surface-raised);
+    }
+
+    .mock-host-row__dot {
+      width:         8px;
+      height:        8px;
+      border-radius: var(--radius-round);
+      flex-shrink:   0;
+    }
+
+    .mock-host-row__dot--live   { background: var(--state-live-dot); }
+    .mock-host-row__dot--muted  { background: var(--state-neutral-dot); }
+
+    .mock-host-row__label {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      color:          var(--text-body);
+      letter-spacing: var(--tracking-snug);
+    }
+
+    /* ---- Pull-to-dismiss demonstration mock ----------------------- */
+    /* Shows handle in is-active state with drag-direction arrow above */
+    .pull-demo-mock {
+      width:          var(--viewport-width);   /* 430px */
+      background:     var(--surface-overlay);
+      border-radius:  var(--radius-xl) var(--radius-xl) 0 0;
+      border:         1px solid var(--border-subtle);
+      box-shadow:     var(--elevation-sheet);
+      overflow:       hidden;
+    }
+
+    .pull-demo-mock__handle-region {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      padding-top:    var(--space-3);
+      gap:            var(--space-2);
+    }
+
+    /* Motion arrow — indicates upward swipe direction */
+    .drag-arrow {
+      display:       flex;
+      flex-direction: column;
+      align-items:   center;
+      gap:           2px;  /* structural: tight arrow stack */
+    }
+
+    .drag-arrow__line {
+      width:         1px;
+      height:        12px;
+      background:    var(--text-muted);
+    }
+
+    .drag-arrow__head {
+      width:         0;
+      height:        0;
+      border-left:   4px solid transparent;
+      border-right:  4px solid transparent;
+      border-bottom: 6px solid var(--text-muted);
+    }
+
+    .drag-arrow__label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin-top:     var(--space-1);
+    }
+
+    .pull-demo-mock__content {
+      padding: var(--space-4);
+    }
+
+    .mock-placeholder-text {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+      padding:        var(--space-4);
+    }
+
+    /* Scale mocks down so they fit comfortably inside pane widths */
+    .pane .ios-viewport-mock,
+    .pane .bottom-sheet-mock,
+    .pane .pull-demo-mock {
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="preview-plate">
+    <div class="crumb">atoms / home-indicator</div>
+    <h1>home-indicator</h1>
+  </div>
+
+  <div class="pegboard">
+
+    <!-- ============================================================
+         DARK THEME PANE
+         ============================================================ -->
+    <div class="pane" data-theme="dark">
+      <span class="pane-label">dark theme</span>
+
+      <!-- ---- 1. VARIANT COMPARISON -------------------------------- -->
+      <div class="variant">
+        <h3>1 · variant comparison — default state</h3>
+        <div class="indicator-row">
+
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--ios atom-home-indicator--default"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--ios (134×5)</span>
+          </div>
+
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--sheet-handle (36×5)</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- 2. COLOR MODIFIER COMPARISON ------------------------- -->
+      <div class="variant">
+        <h3>2 · color modifiers — --default vs --muted</h3>
+        <div class="indicator-row">
+
+          <!-- iOS: default vs muted -->
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--ios atom-home-indicator--default"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--ios --default</span>
+          </div>
+
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--ios atom-home-indicator--muted"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--ios --muted</span>
+          </div>
+
+          <!-- Sheet handle: default vs muted -->
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--sheet-handle --default</span>
+          </div>
+
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--muted"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--sheet-handle --muted</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- 3. STATE ROW ----------------------------------------- -->
+      <!-- Sheet-handle variant only; is-active and is-disabled are most
+           meaningful on the interactive drag affordance form. -->
+      <div class="variant">
+        <h3>3 · states — --sheet-handle</h3>
+        <div class="state-grid" style="max-width: 600px;">
+
+          <div class="state">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default"
+                 aria-hidden="true"></div>
+            <span class="state-label">default</span>
+          </div>
+
+          <div class="state">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default is-active"
+                 aria-hidden="true"></div>
+            <span class="state-label">is-active (drag in progress)</span>
+          </div>
+
+          <div class="state">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default is-disabled"
+                 aria-hidden="true"></div>
+            <span class="state-label">is-disabled</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- 4. COMPOSITION EXAMPLES ------------------------------ -->
+      <div class="variant">
+        <h3>4 · composition examples</h3>
+
+        <!-- A: iOS indicator at bottom of viewport mock with session list -->
+        <div style="margin-bottom: var(--space-8);">
+          <div class="indicator-label" style="margin-bottom: var(--space-3);">
+            A · iOS home indicator — viewport bottom with session list
+          </div>
+          <div class="ios-viewport-mock" aria-hidden="true">
+            <div class="ios-viewport-mock__content">
+              <div class="mock-session-list">
+                <div class="mock-session-row">
+                  <span class="mock-session-row__title">superset-monorepo</span>
+                  <span class="mock-session-row__meta">Streaming · just now</span>
+                </div>
+                <div class="mock-session-row">
+                  <span class="mock-session-row__title">relay-client reconnect logic</span>
+                  <span class="mock-session-row__meta">Completed · 2 min ago</span>
+                </div>
+                <div class="mock-session-row">
+                  <span class="mock-session-row__title">fix onboarding GitHub auth</span>
+                  <span class="mock-session-row__meta">Completed · 18 min ago</span>
+                </div>
+                <div class="mock-session-row">
+                  <span class="mock-session-row__title">bump version 1.11.0</span>
+                  <span class="mock-session-row__meta">Completed · 1 hr ago</span>
+                </div>
+              </div>
+            </div>
+            <div class="ios-viewport-mock__bottom-bar">
+              <div class="atom-home-indicator atom-home-indicator--ios atom-home-indicator--default"
+                   aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B: Sheet handle at top of bottom-sheet mock with host-picker rows -->
+        <div style="margin-bottom: var(--space-8);">
+          <div class="indicator-label" style="margin-bottom: var(--space-3);">
+            B · sheet handle — bottom-sheet header with host-picker rows
+          </div>
+          <div class="bottom-sheet-mock" role="dialog" aria-label="Select workspace" aria-hidden="true">
+            <div class="bottom-sheet-mock__handle-region">
+              <div role="button" aria-label="Drag to dismiss">
+                <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--muted"
+                     aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bottom-sheet-mock__title">Select workspace</div>
+            <div class="bottom-sheet-mock__rows">
+              <div class="mock-host-row">
+                <div class="mock-host-row__dot mock-host-row__dot--live"></div>
+                <span class="mock-host-row__label">superset-monorepo · local</span>
+              </div>
+              <div class="mock-host-row">
+                <div class="mock-host-row__dot mock-host-row__dot--muted"></div>
+                <span class="mock-host-row__label">relay-client · remote</span>
+              </div>
+              <div class="mock-host-row">
+                <div class="mock-host-row__dot mock-host-row__dot--muted"></div>
+                <span class="mock-host-row__label">onboarding-fix · local</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- C: Pull-to-dismiss gesture — handle in is-active with motion arrow -->
+        <div>
+          <div class="indicator-label" style="margin-bottom: var(--space-3);">
+            C · pull-to-dismiss — is-active state with drag direction arrow
+          </div>
+          <div class="pull-demo-mock" role="dialog" aria-label="Select workspace" aria-hidden="true">
+            <div class="pull-demo-mock__handle-region">
+              <!-- Motion arrow indicating swipe-up to dismiss direction -->
+              <div class="drag-arrow" aria-hidden="true">
+                <div class="drag-arrow__head"></div>
+                <div class="drag-arrow__line"></div>
+              </div>
+              <div class="drag-arrow__label">swipe to dismiss</div>
+              <div role="button" aria-label="Drag to dismiss">
+                <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default is-active"
+                     aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="pull-demo-mock__content">
+              <div class="mock-placeholder-text">sheet content</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /composition examples -->
+
+    </div><!-- /pane dark -->
+
+    <!-- ============================================================
+         LIGHT THEME PANE
+         ============================================================ -->
+    <div class="pane" data-theme="light">
+      <span class="pane-label">light theme</span>
+
+      <!-- ---- 1. VARIANT COMPARISON -------------------------------- -->
+      <div class="variant">
+        <h3>1 · variant comparison — default state</h3>
+        <div class="indicator-row">
+
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--ios atom-home-indicator--default"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--ios (134×5)</span>
+          </div>
+
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--sheet-handle (36×5)</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- 2. COLOR MODIFIER COMPARISON ------------------------- -->
+      <div class="variant">
+        <h3>2 · color modifiers — --default vs --muted</h3>
+        <div class="indicator-row">
+
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--ios atom-home-indicator--default"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--ios --default</span>
+          </div>
+
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--ios atom-home-indicator--muted"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--ios --muted</span>
+          </div>
+
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--sheet-handle --default</span>
+          </div>
+
+          <div class="indicator-cell">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--muted"
+                 aria-hidden="true"></div>
+            <span class="indicator-label">--sheet-handle --muted</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- 3. STATE ROW ----------------------------------------- -->
+      <div class="variant">
+        <h3>3 · states — --sheet-handle</h3>
+        <div class="state-grid" style="max-width: 600px;">
+
+          <div class="state">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default"
+                 aria-hidden="true"></div>
+            <span class="state-label">default</span>
+          </div>
+
+          <div class="state">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default is-active"
+                 aria-hidden="true"></div>
+            <span class="state-label">is-active (drag in progress)</span>
+          </div>
+
+          <div class="state">
+            <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default is-disabled"
+                 aria-hidden="true"></div>
+            <span class="state-label">is-disabled</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- 4. COMPOSITION EXAMPLES ------------------------------ -->
+      <div class="variant">
+        <h3>4 · composition examples</h3>
+
+        <!-- A: iOS indicator at bottom of viewport mock with session list -->
+        <div style="margin-bottom: var(--space-8);">
+          <div class="indicator-label" style="margin-bottom: var(--space-3);">
+            A · iOS home indicator — viewport bottom with session list
+          </div>
+          <div class="ios-viewport-mock" aria-hidden="true">
+            <div class="ios-viewport-mock__content">
+              <div class="mock-session-list">
+                <div class="mock-session-row">
+                  <span class="mock-session-row__title">superset-monorepo</span>
+                  <span class="mock-session-row__meta">Streaming · just now</span>
+                </div>
+                <div class="mock-session-row">
+                  <span class="mock-session-row__title">relay-client reconnect logic</span>
+                  <span class="mock-session-row__meta">Completed · 2 min ago</span>
+                </div>
+                <div class="mock-session-row">
+                  <span class="mock-session-row__title">fix onboarding GitHub auth</span>
+                  <span class="mock-session-row__meta">Completed · 18 min ago</span>
+                </div>
+                <div class="mock-session-row">
+                  <span class="mock-session-row__title">bump version 1.11.0</span>
+                  <span class="mock-session-row__meta">Completed · 1 hr ago</span>
+                </div>
+              </div>
+            </div>
+            <div class="ios-viewport-mock__bottom-bar">
+              <div class="atom-home-indicator atom-home-indicator--ios atom-home-indicator--default"
+                   aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B: Sheet handle at top of bottom-sheet mock with host-picker rows -->
+        <div style="margin-bottom: var(--space-8);">
+          <div class="indicator-label" style="margin-bottom: var(--space-3);">
+            B · sheet handle — bottom-sheet header with host-picker rows
+          </div>
+          <div class="bottom-sheet-mock" role="dialog" aria-label="Select workspace" aria-hidden="true">
+            <div class="bottom-sheet-mock__handle-region">
+              <div role="button" aria-label="Drag to dismiss">
+                <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--muted"
+                     aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bottom-sheet-mock__title">Select workspace</div>
+            <div class="bottom-sheet-mock__rows">
+              <div class="mock-host-row">
+                <div class="mock-host-row__dot mock-host-row__dot--live"></div>
+                <span class="mock-host-row__label">superset-monorepo · local</span>
+              </div>
+              <div class="mock-host-row">
+                <div class="mock-host-row__dot mock-host-row__dot--muted"></div>
+                <span class="mock-host-row__label">relay-client · remote</span>
+              </div>
+              <div class="mock-host-row">
+                <div class="mock-host-row__dot mock-host-row__dot--muted"></div>
+                <span class="mock-host-row__label">onboarding-fix · local</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- C: Pull-to-dismiss gesture — handle in is-active with motion arrow -->
+        <div>
+          <div class="indicator-label" style="margin-bottom: var(--space-3);">
+            C · pull-to-dismiss — is-active state with drag direction arrow
+          </div>
+          <div class="pull-demo-mock" role="dialog" aria-label="Select workspace" aria-hidden="true">
+            <div class="pull-demo-mock__handle-region">
+              <div class="drag-arrow" aria-hidden="true">
+                <div class="drag-arrow__head"></div>
+                <div class="drag-arrow__line"></div>
+              </div>
+              <div class="drag-arrow__label">swipe to dismiss</div>
+              <div role="button" aria-label="Drag to dismiss">
+                <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--default is-active"
+                     aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="pull-demo-mock__content">
+              <div class="mock-placeholder-text">sheet content</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /composition examples -->
+
+    </div><!-- /pane light -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
