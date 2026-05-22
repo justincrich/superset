@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>settings-permission-denied-banner — UC-PLATF-01 §B</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-local layout glue — ONLY .view-settings-permission-denied-banner__* rules.
+       Never redefines .atom-* or .mol-* classes.
+       ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding: var(--space-8) var(--space-4);
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    /* Full-width pane — device centered inside */
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- View viewport layout --------------------------------- */
+    /* The viewport inside atom-device-bezel is a flex column.
+       These classes wire up the flex slots without touching any
+       atom or molecule rule. */
+
+    /* Settings scroll region — fills space below header */
+    .view-settings-permission-denied-banner__body {
+      flex:           1;
+      overflow-y:     auto;
+      display:        flex;
+      flex-direction: column;
+    }
+
+    /* Banner container — var(--space-4) margin on all sides */
+    .view-settings-permission-denied-banner__banner-wrap {
+      padding: var(--space-4);
+      flex-shrink: 0;
+    }
+
+    /* Settings section — list of rows, no additional padding needed;
+       rows carry their own horizontal padding */
+    .view-settings-permission-denied-banner__rows {
+      display:        flex;
+      flex-direction: column;
+      flex-shrink:    0;
+    }
+
+    /* Individual settings row — 44pt minimum height per brief */
+    .view-settings-permission-denied-banner__row {
+      display:         flex;
+      align-items:     center;
+      gap:             var(--space-3);
+      padding:         0 var(--space-4);
+      min-height:      44px; /* structural geometry: 44pt iOS minimum touch target */
+      background:      transparent;
+      text-decoration: none;
+      color:           var(--text-body);
+      cursor:          pointer;
+      border:          none;
+      width:           100%;
+      text-align:      left;
+      outline:         none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .view-settings-permission-denied-banner__row:hover,
+    .view-settings-permission-denied-banner__row.is-hover {
+      background: var(--surface-soft);
+    }
+
+    .view-settings-permission-denied-banner__row:active,
+    .view-settings-permission-denied-banner__row.is-active {
+      background: var(--surface-active);
+    }
+
+    .view-settings-permission-denied-banner__row:focus-visible,
+    .view-settings-permission-denied-banner__row.is-focus {
+      outline:    none;
+      box-shadow: inset 0 0 0 2px var(--border-focus);
+    }
+
+    /* Row label — flex 1 so it fills the space between leading + trailing */
+    .view-settings-permission-denied-banner__row-label {
+      flex:    1;
+      min-width: 0;
+    }
+
+    /* Value text (e.g. "Dark" next to Theme, version number) —
+       sits before the trailing chevron */
+    .view-settings-permission-denied-banner__row-value {
+      flex-shrink: 0;
+    }
+
+    /* Destructive row — Sign out uses danger text color */
+    .view-settings-permission-denied-banner__row--destructive
+    .view-settings-permission-denied-banner__row-label {
+      color: var(--state-danger-fg);
+    }
+
+    /* No-action row (Version) — not interactive, no hover */
+    .view-settings-permission-denied-banner__row--static {
+      cursor: default;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">settings-permission-denied-banner</h1>
+    <p class="crumb">UC-PLATF-01 §B · settings screen with notifications-denied banner</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars (inline SVG — structural geometry) -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- App Header (mol-app-header --simple) — Back arrow + Settings title -->
+          <header class="mol-app-header" role="banner">
+            <div class="mol-app-header__back">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Back"
+              >
+                <!-- chevron-left -->
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mol-app-header__title-wrap">
+              <h1 class="mol-app-header__title type-title">Settings</h1>
+            </div>
+
+            <!-- No trailing actions on Settings header — empty spacer for balance -->
+            <div class="mol-app-header__actions" style="width: var(--touch-target-min);" aria-hidden="true"></div>
+          </header><!-- /mol-app-header -->
+
+          <!-- Settings scroll region -->
+          <main
+            class="view-settings-permission-denied-banner__body"
+            role="main"
+            aria-label="Settings"
+          >
+
+            <!-- ── Banner: mol-banner --permission-denied --stacked ── -->
+            <div class="view-settings-permission-denied-banner__banner-wrap">
+              <aside
+                class="mol-banner mol-banner--permission-denied mol-banner--stacked"
+                role="status"
+                aria-live="polite"
+                aria-label="Notifications are disabled"
+              >
+                <!-- Top accent rule — warning color -->
+                <span
+                  class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"
+                ></span>
+
+                <!-- Header row: bell icon + heading -->
+                <div class="mol-banner__row">
+                  <!-- bell icon -->
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                  </svg>
+                  <span class="mol-banner__text type-body-sm">
+                    <strong>Notifications are disabled</strong>
+                  </span>
+                </div>
+
+                <!-- Body explainer -->
+                <p class="mol-banner__body type-body-sm">
+                  You'll miss turn updates and pause prompts while backgrounded.
+                </p>
+
+                <!-- CTA: secondary button "Open Settings →" -->
+                <div class="mol-banner__cta">
+                  <button
+                    class="atom-button atom-button--secondary atom-button--sm"
+                    type="button"
+                    aria-label="Open iOS notification settings"
+                  >Open Settings →</button>
+                </div>
+              </aside>
+            </div><!-- /banner-wrap -->
+
+            <!-- ── Settings rows ─────────────────────────────────── -->
+            <div
+              class="view-settings-permission-denied-banner__rows"
+              role="list"
+              aria-label="Settings options"
+            >
+
+              <!-- Row 1: Theme · Dark -->
+              <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              <button
+                class="view-settings-permission-denied-banner__row"
+                type="button"
+                role="listitem"
+                aria-label="Theme: Dark"
+              >
+                <!-- Leading icon: sun (moon for dark theme) -->
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+
+                <span class="view-settings-permission-denied-banner__row-label type-body">Theme</span>
+
+                <!-- Value -->
+                <span
+                  class="view-settings-permission-denied-banner__row-value type-body"
+                  style="color: var(--text-muted);"
+                >Dark</span>
+
+                <!-- Trailing chevron -->
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+
+              <!-- Row 2: Sign out (destructive) -->
+              <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              <button
+                class="view-settings-permission-denied-banner__row view-settings-permission-denied-banner__row--destructive"
+                type="button"
+                role="listitem"
+                aria-label="Sign out of your account"
+              >
+                <!-- Leading icon: log-out -->
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+
+                <span class="view-settings-permission-denied-banner__row-label type-body">Sign out</span>
+              </button>
+
+              <!-- Row 3: About -->
+              <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              <button
+                class="view-settings-permission-denied-banner__row"
+                type="button"
+                role="listitem"
+                aria-label="About Superset"
+              >
+                <!-- Leading icon: info -->
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+
+                <span class="view-settings-permission-denied-banner__row-label type-body">About</span>
+
+                <!-- Trailing chevron -->
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+
+              <!-- Row 4: Version 1.0.0 (static — no chevron, no interaction) -->
+              <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              <div
+                class="view-settings-permission-denied-banner__row view-settings-permission-denied-banner__row--static"
+                role="listitem"
+                aria-label="App version 1.0.0"
+              >
+                <!-- Leading icon: code (</>) -->
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="16 18 22 12 16 6"/>
+                  <polyline points="8 6 2 12 8 18"/>
+                </svg>
+
+                <span class="view-settings-permission-denied-banner__row-label type-body">Version</span>
+
+                <!-- Static value — no chevron -->
+                <span
+                  class="view-settings-permission-denied-banner__row-value type-body"
+                  style="color: var(--text-muted);"
+                >1.0.0</span>
+              </div>
+              <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+
+            </div><!-- /rows -->
+
+          </main><!-- /settings scroll region -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- App Header -->
+          <header class="mol-app-header" role="banner">
+            <div class="mol-app-header__back">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Back"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mol-app-header__title-wrap">
+              <h1 class="mol-app-header__title type-title">Settings</h1>
+            </div>
+
+            <div class="mol-app-header__actions" style="width: var(--touch-target-min);" aria-hidden="true"></div>
+          </header><!-- /mol-app-header -->
+
+          <!-- Settings scroll region -->
+          <main
+            class="view-settings-permission-denied-banner__body"
+            role="main"
+            aria-label="Settings"
+          >
+
+            <!-- Banner -->
+            <div class="view-settings-permission-denied-banner__banner-wrap">
+              <aside
+                class="mol-banner mol-banner--permission-denied mol-banner--stacked"
+                role="status"
+                aria-live="polite"
+                aria-label="Notifications are disabled"
+              >
+                <span
+                  class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"
+                ></span>
+
+                <div class="mol-banner__row">
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                  </svg>
+                  <span class="mol-banner__text type-body-sm">
+                    <strong>Notifications are disabled</strong>
+                  </span>
+                </div>
+
+                <p class="mol-banner__body type-body-sm">
+                  You'll miss turn updates and pause prompts while backgrounded.
+                </p>
+
+                <div class="mol-banner__cta">
+                  <button
+                    class="atom-button atom-button--secondary atom-button--sm"
+                    type="button"
+                    aria-label="Open iOS notification settings"
+                  >Open Settings →</button>
+                </div>
+              </aside>
+            </div><!-- /banner-wrap -->
+
+            <!-- Settings rows -->
+            <div
+              class="view-settings-permission-denied-banner__rows"
+              role="list"
+              aria-label="Settings options"
+            >
+
+              <!-- Row 1: Theme · Dark -->
+              <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              <button
+                class="view-settings-permission-denied-banner__row"
+                type="button"
+                role="listitem"
+                aria-label="Theme: Dark"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+
+                <span class="view-settings-permission-denied-banner__row-label type-body">Theme</span>
+
+                <span
+                  class="view-settings-permission-denied-banner__row-value type-body"
+                  style="color: var(--text-muted);"
+                >Dark</span>
+
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+
+              <!-- Row 2: Sign out (destructive) -->
+              <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              <button
+                class="view-settings-permission-denied-banner__row view-settings-permission-denied-banner__row--destructive"
+                type="button"
+                role="listitem"
+                aria-label="Sign out of your account"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+
+                <span class="view-settings-permission-denied-banner__row-label type-body">Sign out</span>
+              </button>
+
+              <!-- Row 3: About -->
+              <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              <button
+                class="view-settings-permission-denied-banner__row"
+                type="button"
+                role="listitem"
+                aria-label="About Superset"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+
+                <span class="view-settings-permission-denied-banner__row-label type-body">About</span>
+
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+
+              <!-- Row 4: Version 1.0.0 (static) -->
+              <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+              <div
+                class="view-settings-permission-denied-banner__row view-settings-permission-denied-banner__row--static"
+                role="listitem"
+                aria-label="App version 1.0.0"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="16 18 22 12 16 6"/>
+                  <polyline points="8 6 2 12 8 18"/>
+                </svg>
+
+                <span class="view-settings-permission-denied-banner__row-label type-body">Version</span>
+
+                <span
+                  class="view-settings-permission-denied-banner__row-value type-body"
+                  style="color: var(--text-muted);"
+                >1.0.0</span>
+              </div>
+              <hr class="atom-divider atom-divider--horizontal atom-divider--hairline" aria-hidden="true">
+
+            </div><!-- /rows -->
+
+          </main><!-- /settings scroll region -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
