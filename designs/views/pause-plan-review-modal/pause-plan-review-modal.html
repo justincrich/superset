@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pause-plan-review-modal — UC-PAUSE-03 §A</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-local layout glue — ONLY .view-pause-plan-review-modal__*
+       Never redefines .atom-* or .mol-* classes.
+       ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding: var(--space-8) var(--space-4);
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- Modal full-screen layout -------------------------------- */
+    /*
+     * The plan-review-modal owns the entire viewport.
+     * It is a flex column filling atom-device-bezel__viewport:
+     *   – mol-modal-header (sticky, flex-shrink: 0)
+     *   – __body (flex: 1, overflow-y: auto, scrollable plan content)
+     *   – __feedback-section (flex-shrink: 0)
+     *   – __footer (flex-shrink: 0, docked above safe area)
+     */
+
+    .view-pause-plan-review-modal {
+      display:        flex;
+      flex-direction: column;
+      height:         100%;
+      background:     var(--surface-page);
+      overflow:       hidden;
+    }
+
+    /* ---- Scrollable plan body ------------------------------------ */
+    .view-pause-plan-review-modal__body {
+      flex:           1;
+      overflow-y:     auto;
+      padding:        var(--space-5) var(--space-4);
+      position:       relative; /* scroll-fade anchor */
+      overscroll-behavior: contain;
+    }
+
+    /* Plan heading styles — rendered inside the scrollable body */
+    .view-pause-plan-review-modal__plan-h2 {
+      margin:      0 0 var(--space-4);
+      line-height: var(--line-height-snug);
+    }
+
+    .view-pause-plan-review-modal__plan-h3 {
+      margin:      var(--space-5) 0 var(--space-2);
+      line-height: var(--line-height-snug);
+    }
+
+    .view-pause-plan-review-modal__plan-p {
+      margin:      0 0 var(--space-3);
+      line-height: var(--line-height-normal);
+    }
+
+    .view-pause-plan-review-modal__plan-p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Scrollable continuation hint */
+    .view-pause-plan-review-modal__scroll-hint {
+      display:        flex;
+      align-items:    center;
+      gap:            var(--space-2);
+      margin-top:     var(--space-4);
+      padding:        var(--space-3) var(--space-4);
+      background:     var(--surface-sunken);
+      border-radius:  var(--radius-default);
+      border:         1px solid var(--border-subtle);
+    }
+
+    /* ---- Expandable feedback section ----------------------------- */
+    .view-pause-plan-review-modal__feedback-section {
+      flex-shrink:  0;
+      border-top:   1px solid var(--border-subtle);
+      background:   var(--surface-page);
+    }
+
+    /* <details> element — uses mol-collapsed-block for styling the summary */
+    .view-pause-plan-review-modal__feedback-details {
+      /* No custom layout — mol-collapsed-block handles it */
+    }
+
+    .view-pause-plan-review-modal__feedback-open-body {
+      padding:        var(--space-3) var(--space-4);
+      background:     var(--surface-page);
+      border-top:     1px solid var(--border-subtle);
+    }
+
+    /* ---- Docked footer ------------------------------------------- */
+    .view-pause-plan-review-modal__footer {
+      flex-shrink:      0;
+      display:          flex;
+      flex-direction:   column;
+      gap:              var(--space-2);
+      padding:          var(--space-3) var(--space-4);
+      padding-block-end: calc(var(--space-3) + var(--safe-area-bottom));
+      background:       var(--surface-overlay);
+      border-top:       1px solid var(--border-subtle);
+    }
+
+    .view-pause-plan-review-modal__footer-row {
+      display: flex;
+      gap:     var(--space-3);
+    }
+
+    .view-pause-plan-review-modal__footer-row .atom-button {
+      flex: 1;
+    }
+
+    .view-pause-plan-review-modal__reject-hint {
+      text-align: center;
+      color:      var(--text-faint);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">pause-plan-review-modal</h1>
+    <p class="crumb">UC-PAUSE-03 §A · full-screen plan review modal</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- Full-screen modal — owns entire viewport content area -->
+          <div
+            class="view-pause-plan-review-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="plan-review-title-dark"
+          >
+
+            <!-- Modal header — mol-modal-header --default -->
+            <header class="mol-modal-header" role="banner">
+              <!-- Close button — left slot -->
+              <button
+                class="mol-modal-header__close atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Close plan review"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+
+              <!-- Title — centered -->
+              <h1
+                id="plan-review-title-dark"
+                class="mol-modal-header__title type-title"
+              >Review Plan</h1>
+
+              <!-- Spacer balances close button width for centered title -->
+              <div class="mol-modal-header__spacer" aria-hidden="true"></div>
+            </header><!-- /mol-modal-header -->
+
+            <!-- Scrollable plan body -->
+            <main
+              class="view-pause-plan-review-modal__body"
+              aria-label="Plan content"
+              tabindex="0"
+            >
+              <!-- Scroll fade top -->
+              <div
+                class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden"
+                aria-hidden="true"
+              ></div>
+
+              <!-- Plan markdown content -->
+
+              <h2 class="view-pause-plan-review-modal__plan-h2 type-h2">Billing Refactor Plan</h2>
+
+              <h3 class="view-pause-plan-review-modal__plan-h3 type-title">Phase 1: Extract router</h3>
+              <p class="view-pause-plan-review-modal__plan-p type-body">
+                Move <code class="type-code">billing.ts</code> to a dedicated tRPC router file under
+                <code class="type-code">packages/trpc/src/routers/</code>. The current inline routes
+                mix REST handlers with the data layer; extracting them gives us reusable Zod input
+                schemas for both client and server validation.
+              </p>
+
+              <h3 class="view-pause-plan-review-modal__plan-h3 type-title">Phase 2: Add procedures</h3>
+              <p class="view-pause-plan-review-modal__plan-p type-body">
+                Define <code class="type-code">getInvoice</code>,
+                <code class="type-code">listInvoices</code>, and
+                <code class="type-code">updateInvoice</code> procedures with strict Zod input schemas.
+                Procedures will reuse the existing <code class="type-code">db.invoice.*</code> helpers
+                but with type-safe wrappers.
+              </p>
+
+              <h3 class="view-pause-plan-review-modal__plan-h3 type-title">Phase 3: Migrate REST callsites</h3>
+              <p class="view-pause-plan-review-modal__plan-p type-body">
+                Update the REST callsites in <code class="type-code">apps/web/src/billing/*</code> to
+                use <code class="type-code">trpc.billing.*.useMutation()</code> and
+                <code class="type-code">useQuery()</code> hooks. This removes the manual
+                fetch&nbsp;+&nbsp;JSON parsing layer.
+              </p>
+
+              <h3 class="view-pause-plan-review-modal__plan-h3 type-title">Phase 4: Update tests</h3>
+              <p class="view-pause-plan-review-modal__plan-p type-body">
+                Migrate tests in <code class="type-code">apps/web/test/billing.test.ts</code> to mock
+                the tRPC procedures via <code class="type-code">createMockTRPCContext</code>.
+              </p>
+
+              <!-- Scroll continuation hint -->
+              <div class="view-pause-plan-review-modal__scroll-hint" aria-label="Plan continues below">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                <span class="type-meta">scrollable — plan continues with phases 5–8…</span>
+              </div>
+
+              <!-- Scroll fade bottom -->
+              <div
+                class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page"
+                aria-hidden="true"
+              ></div>
+            </main><!-- /scrollable body -->
+
+            <!-- Expandable feedback section -->
+            <div
+              class="view-pause-plan-review-modal__feedback-section"
+              aria-label="Optional feedback"
+            >
+              <details
+                class="mol-collapsed-block view-pause-plan-review-modal__feedback-details"
+                id="feedback-section-dark"
+              >
+                <summary class="mol-collapsed-block__summary">
+                  <!-- Chevron icon -->
+                  <svg
+                    class="mol-collapsed-block__chevron atom-icon-glyph atom-icon-glyph--sm"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                  <span class="mol-collapsed-block__label type-body-sm">Add feedback (optional)</span>
+                </summary>
+
+                <!-- Feedback input — shown when details open -->
+                <div class="view-pause-plan-review-modal__feedback-open-body">
+                  <div class="atom-text-input-field">
+                    <label
+                      class="atom-text-input-label"
+                      for="feedback-input-dark"
+                    >Your feedback</label>
+                    <input
+                      id="feedback-input-dark"
+                      class="atom-text-input atom-text-input--default atom-text-input--md"
+                      type="text"
+                      placeholder="e.g. Skip phase 3 for now…"
+                      aria-label="Enter feedback to guide the agent"
+                    />
+                    <p class="atom-text-input-helper">Feedback is sent to the agent when you reject the plan.</p>
+                  </div>
+                </div>
+              </details>
+            </div><!-- /feedback-section -->
+
+            <!-- Docked footer — Reject + Approve -->
+            <footer
+              class="view-pause-plan-review-modal__footer"
+              aria-label="Plan actions"
+            >
+              <div class="view-pause-plan-review-modal__footer-row">
+                <!-- Reject — disabled (no feedback entered) -->
+                <button
+                  class="atom-button atom-button--destructive atom-button--md is-disabled"
+                  type="button"
+                  disabled
+                  aria-label="Reject plan — enter feedback to enable"
+                  aria-disabled="true"
+                >
+                  Reject
+                </button>
+
+                <!-- Approve -->
+                <button
+                  class="atom-button atom-button--primary atom-button--md"
+                  type="button"
+                  aria-label="Approve plan and resume agent"
+                >
+                  Approve
+                </button>
+              </div>
+
+              <!-- Helper text explaining why Reject is disabled -->
+              <p
+                class="view-pause-plan-review-modal__reject-hint type-meta"
+                aria-live="polite"
+              >Enter feedback to enable Reject</p>
+            </footer><!-- /footer -->
+
+          </div><!-- /view-pause-plan-review-modal -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /viewport -->
+      </div><!-- /atom-device-bezel -->
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- Full-screen modal — owns entire viewport content area -->
+          <div
+            class="view-pause-plan-review-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="plan-review-title-light"
+          >
+
+            <!-- Modal header -->
+            <header class="mol-modal-header" role="banner">
+              <button
+                class="mol-modal-header__close atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Close plan review"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+
+              <h1
+                id="plan-review-title-light"
+                class="mol-modal-header__title type-title"
+              >Review Plan</h1>
+
+              <div class="mol-modal-header__spacer" aria-hidden="true"></div>
+            </header><!-- /mol-modal-header -->
+
+            <!-- Scrollable plan body -->
+            <main
+              class="view-pause-plan-review-modal__body"
+              aria-label="Plan content"
+              tabindex="0"
+            >
+              <!-- Scroll fade top -->
+              <div
+                class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden"
+                aria-hidden="true"
+              ></div>
+
+              <h2 class="view-pause-plan-review-modal__plan-h2 type-h2">Billing Refactor Plan</h2>
+
+              <h3 class="view-pause-plan-review-modal__plan-h3 type-title">Phase 1: Extract router</h3>
+              <p class="view-pause-plan-review-modal__plan-p type-body">
+                Move <code class="type-code">billing.ts</code> to a dedicated tRPC router file under
+                <code class="type-code">packages/trpc/src/routers/</code>. The current inline routes
+                mix REST handlers with the data layer; extracting them gives us reusable Zod input
+                schemas for both client and server validation.
+              </p>
+
+              <h3 class="view-pause-plan-review-modal__plan-h3 type-title">Phase 2: Add procedures</h3>
+              <p class="view-pause-plan-review-modal__plan-p type-body">
+                Define <code class="type-code">getInvoice</code>,
+                <code class="type-code">listInvoices</code>, and
+                <code class="type-code">updateInvoice</code> procedures with strict Zod input schemas.
+                Procedures will reuse the existing <code class="type-code">db.invoice.*</code> helpers
+                but with type-safe wrappers.
+              </p>
+
+              <h3 class="view-pause-plan-review-modal__plan-h3 type-title">Phase 3: Migrate REST callsites</h3>
+              <p class="view-pause-plan-review-modal__plan-p type-body">
+                Update the REST callsites in <code class="type-code">apps/web/src/billing/*</code> to
+                use <code class="type-code">trpc.billing.*.useMutation()</code> and
+                <code class="type-code">useQuery()</code> hooks. This removes the manual
+                fetch&nbsp;+&nbsp;JSON parsing layer.
+              </p>
+
+              <h3 class="view-pause-plan-review-modal__plan-h3 type-title">Phase 4: Update tests</h3>
+              <p class="view-pause-plan-review-modal__plan-p type-body">
+                Migrate tests in <code class="type-code">apps/web/test/billing.test.ts</code> to mock
+                the tRPC procedures via <code class="type-code">createMockTRPCContext</code>.
+              </p>
+
+              <!-- Scroll continuation hint -->
+              <div class="view-pause-plan-review-modal__scroll-hint" aria-label="Plan continues below">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                <span class="type-meta">scrollable — plan continues with phases 5–8…</span>
+              </div>
+
+              <!-- Scroll fade bottom -->
+              <div
+                class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page"
+                aria-hidden="true"
+              ></div>
+            </main><!-- /scrollable body -->
+
+            <!-- Expandable feedback section -->
+            <div
+              class="view-pause-plan-review-modal__feedback-section"
+              aria-label="Optional feedback"
+            >
+              <details
+                class="mol-collapsed-block view-pause-plan-review-modal__feedback-details"
+                id="feedback-section-light"
+              >
+                <summary class="mol-collapsed-block__summary">
+                  <svg
+                    class="mol-collapsed-block__chevron atom-icon-glyph atom-icon-glyph--sm"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                  <span class="mol-collapsed-block__label type-body-sm">Add feedback (optional)</span>
+                </summary>
+
+                <div class="view-pause-plan-review-modal__feedback-open-body">
+                  <div class="atom-text-input-field">
+                    <label
+                      class="atom-text-input-label"
+                      for="feedback-input-light"
+                    >Your feedback</label>
+                    <input
+                      id="feedback-input-light"
+                      class="atom-text-input atom-text-input--default atom-text-input--md"
+                      type="text"
+                      placeholder="e.g. Skip phase 3 for now…"
+                      aria-label="Enter feedback to guide the agent"
+                    />
+                    <p class="atom-text-input-helper">Feedback is sent to the agent when you reject the plan.</p>
+                  </div>
+                </div>
+              </details>
+            </div><!-- /feedback-section -->
+
+            <!-- Docked footer -->
+            <footer
+              class="view-pause-plan-review-modal__footer"
+              aria-label="Plan actions"
+            >
+              <div class="view-pause-plan-review-modal__footer-row">
+                <!-- Reject — disabled (no feedback entered) -->
+                <button
+                  class="atom-button atom-button--destructive atom-button--md is-disabled"
+                  type="button"
+                  disabled
+                  aria-label="Reject plan — enter feedback to enable"
+                  aria-disabled="true"
+                >
+                  Reject
+                </button>
+
+                <!-- Approve -->
+                <button
+                  class="atom-button atom-button--primary atom-button--md"
+                  type="button"
+                  aria-label="Approve plan and resume agent"
+                >
+                  Approve
+                </button>
+              </div>
+
+              <p
+                class="view-pause-plan-review-modal__reject-hint type-meta"
+                aria-live="polite"
+              >Enter feedback to enable Reject</p>
+            </footer><!-- /footer -->
+
+          </div><!-- /view-pause-plan-review-modal -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /viewport -->
+      </div><!-- /atom-device-bezel -->
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>

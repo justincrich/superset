@@ -41,7 +41,7 @@
 |---|------|---------------|----------|
 | 11 | `pause-approval-inline` | UC-PAUSE-01 §A | PendingApprovalCard inline + sticky PendingApprovalFooter with Approve/Decline/Always |
 | 12 | `pause-ask-user-sheet` | UC-PAUSE-02 §A | bottom sheet w/ question + suggested-answer pills + BottomSheetTextInput + keyboard panel |
-| 13 | `pause-plan-review` | UC-PAUSE-03 §A | full-screen modal: header + scrollable markdown + expandable feedback + docked Approve/Reject |
+| 13 | `pause-plan-review-modal` | UC-PAUSE-03 §A | full-screen modal: mol-modal-header + scrollable markdown + mol-collapsed-block feedback + docked Approve/Reject — **SHIPPED** |
 | 14 | `pause-action-pill` | UC-PAUSE-04 §A | floating pending-action pill above composer when pause is off-screen |
 
 ## Composition rules
