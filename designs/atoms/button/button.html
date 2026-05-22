@@ -1,0 +1,1875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · button</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-button — token-governed button atom
+       Composition purity: only .atom-button rules defined here.
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Zero raw px in padding/margin/gap.
+       ============================================================ */
+
+    /* ---- Base reset ------------------------------------------ */
+    .atom-button {
+      /* Layout */
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      gap:             var(--space-2);
+      white-space:     nowrap;
+      flex-shrink:     0;
+
+      /* Shape */
+      border:        none;
+      border-radius: var(--radius-default);
+      outline:       none;
+      cursor:        pointer;
+
+      /* Typography — label scale */
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-label);
+      font-weight:    var(--font-weight-label);
+      letter-spacing: var(--tracking-mono);
+      line-height:    var(--line-height-snug);
+      text-decoration: none;
+
+      /* Motion */
+      transition:
+        background-color var(--motion-fast) var(--motion-ease-out),
+        color            var(--motion-fast) var(--motion-ease-out),
+        box-shadow       var(--motion-fast) var(--motion-ease-out),
+        opacity          var(--motion-fast) var(--motion-ease-out),
+        transform        var(--motion-fast) var(--motion-ease-out),
+        border-color     var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Sizes --------------------------------------------- */
+    .atom-button--sm {
+      height:          36px;
+      padding-inline:  var(--space-3);
+    }
+
+    .atom-button--md {
+      height:          var(--touch-target-min); /* 44px */
+      padding-inline:  var(--space-4);
+    }
+
+    /* Default size is md */
+    .atom-button:not(.atom-button--sm):not(.atom-button--lg) {
+      height:          var(--touch-target-min);
+      padding-inline:  var(--space-4);
+    }
+
+    .atom-button--lg {
+      height:          56px;
+      padding-inline:  var(--space-6);
+      border-radius:   var(--radius-lg);
+    }
+
+    /* ---- Variant: primary (ember brand) -------------------- */
+    .atom-button--primary {
+      background-color: var(--accent-primary);
+      color:            var(--accent-primary-fg);
+    }
+    .atom-button--primary:hover,
+    .atom-button--primary.is-hover {
+      background-color: var(--accent-primary-hover);
+    }
+    .atom-button--primary:active,
+    .atom-button--primary.is-active {
+      background-color: var(--accent-primary-pressed);
+      transform: scale(0.98);
+    }
+    .atom-button--primary:focus-visible,
+    .atom-button--primary.is-focus {
+      background-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .atom-button--primary:disabled,
+    .atom-button--primary.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: neutral (high-contrast neutral CTA) ------- */
+    .atom-button--neutral {
+      background-color: var(--surface-inverse);
+      color:            var(--text-on-inverse);
+    }
+    .atom-button--neutral:hover,
+    .atom-button--neutral.is-hover {
+      background-color: color-mix(in oklch, var(--surface-inverse) 85%, transparent 15%);
+    }
+    .atom-button--neutral:active,
+    .atom-button--neutral.is-active {
+      background-color: color-mix(in oklch, var(--surface-inverse) 70%, transparent 30%);
+      transform: scale(0.98);
+    }
+    .atom-button--neutral:focus-visible,
+    .atom-button--neutral.is-focus {
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .atom-button--neutral:disabled,
+    .atom-button--neutral.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: secondary --------------------------------- */
+    .atom-button--secondary {
+      background-color: var(--surface-soft);
+      color:            var(--text-body);
+    }
+    .atom-button--secondary:hover,
+    .atom-button--secondary.is-hover {
+      background-color: var(--surface-active);
+    }
+    .atom-button--secondary:active,
+    .atom-button--secondary.is-active {
+      background-color: var(--surface-active);
+      transform: scale(0.98);
+    }
+    .atom-button--secondary:focus-visible,
+    .atom-button--secondary.is-focus {
+      background-color: var(--surface-soft);
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .atom-button--secondary:disabled,
+    .atom-button--secondary.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: ghost ------------------------------------ */
+    .atom-button--ghost {
+      background-color: transparent;
+      color:            var(--text-body);
+    }
+    .atom-button--ghost:hover,
+    .atom-button--ghost.is-hover {
+      background-color: var(--surface-soft);
+    }
+    .atom-button--ghost:active,
+    .atom-button--ghost.is-active {
+      background-color: var(--surface-active);
+      transform: scale(0.98);
+    }
+    .atom-button--ghost:focus-visible,
+    .atom-button--ghost.is-focus {
+      background-color: transparent;
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .atom-button--ghost:disabled,
+    .atom-button--ghost.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: outline ---------------------------------- */
+    .atom-button--outline {
+      background-color: transparent;
+      color:            var(--text-body);
+      border:           1px solid var(--border-default);
+    }
+    .atom-button--outline:hover,
+    .atom-button--outline.is-hover {
+      background-color: var(--surface-soft);
+    }
+    .atom-button--outline:active,
+    .atom-button--outline.is-active {
+      background-color: var(--surface-active);
+      transform: scale(0.98);
+    }
+    .atom-button--outline:focus-visible,
+    .atom-button--outline.is-focus {
+      background-color: transparent;
+      box-shadow: 0 0 0 3px var(--border-focus);
+    }
+    .atom-button--outline:disabled,
+    .atom-button--outline.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: destructive ------------------------------ */
+    .atom-button--destructive {
+      background-color: var(--state-danger-fg);
+      color:            var(--accent-primary-fg);
+    }
+    .atom-button--destructive:hover,
+    .atom-button--destructive.is-hover {
+      background-color: color-mix(in oklch, var(--state-danger-fg) 85%, black 15%);
+    }
+    .atom-button--destructive:active,
+    .atom-button--destructive.is-active {
+      background-color: color-mix(in oklch, var(--state-danger-fg) 70%, black 30%);
+      transform: scale(0.98);
+    }
+    .atom-button--destructive:focus-visible,
+    .atom-button--destructive.is-focus {
+      background-color: var(--state-danger-fg);
+      box-shadow: 0 0 0 3px color-mix(in oklch, var(--state-danger-fg) 50%, transparent 50%);
+    }
+    .atom-button--destructive:disabled,
+    .atom-button--destructive.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Variant: link ------------------------------------- */
+    .atom-button--link {
+      background-color: transparent;
+      color:            var(--text-link);
+      text-underline-offset: var(--space-1);
+    }
+    .atom-button--link:hover,
+    .atom-button--link.is-hover {
+      text-decoration: underline;
+    }
+    .atom-button--link:active,
+    .atom-button--link.is-active {
+      text-decoration: underline;
+      opacity: 0.75;
+    }
+    .atom-button--link:focus-visible,
+    .atom-button--link.is-focus {
+      box-shadow: 0 0 0 3px var(--border-focus);
+      border-radius: var(--radius-subtle);
+    }
+    .atom-button--link:disabled,
+    .atom-button--link.is-disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* ---- Loading state (cross-variant) --------------------- */
+    .atom-button.is-loading {
+      pointer-events: none;
+      position: relative;
+      color: transparent; /* hide label text */
+    }
+    .atom-button.is-loading::after {
+      content: '';
+      position: absolute;
+      width:  var(--space-4);
+      height: var(--space-4);
+      border-radius: var(--radius-round);
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      animation: atom-button-spin var(--motion-slow) linear infinite;
+      /* inherit color from variant so spinner matches fg */
+      color: inherit;
+    }
+    /* Restore visible color for spinner (currentColor needs it) */
+    .atom-button--primary.is-loading::after    { border-color: var(--accent-primary-fg); border-top-color: transparent; }
+    .atom-button--neutral.is-loading::after    { border-color: var(--text-on-inverse); border-top-color: transparent; }
+    .atom-button--secondary.is-loading::after  { border-color: var(--text-body); border-top-color: transparent; }
+    .atom-button--ghost.is-loading::after      { border-color: var(--text-body); border-top-color: transparent; }
+    .atom-button--outline.is-loading::after    { border-color: var(--text-body); border-top-color: transparent; }
+    .atom-button--destructive.is-loading::after { border-color: var(--accent-primary-fg); border-top-color: transparent; }
+    .atom-button--link.is-loading::after       { border-color: var(--text-link); border-top-color: transparent; }
+
+    @keyframes atom-button-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ---- Preview layout helpers ---------------------------- */
+    .variant-group {
+      margin-bottom: var(--spacing-section);
+    }
+    .variant-group-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      margin: 0 0 var(--space-2);
+      text-transform: uppercase;
+    }
+    .size-row {
+      margin-bottom: var(--spacing-between);
+    }
+    .size-row-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-2);
+    }
+    .recipe-footer {
+      padding: var(--spacing-section) var(--spacing-between);
+      border-top: 1px solid var(--border-subtle);
+    }
+    .recipe-footer h2 {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-heading);
+      letter-spacing: var(--tracking-tight);
+      color:          var(--text-heading);
+      margin: 0 0 var(--spacing-between);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">button</h1>
+    <p class="crumb">atom · single-purpose action affordance</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- PRIMARY ---------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">primary</p>
+
+        <!-- sm -->
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>primary · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--primary atom-button--sm">Send</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--primary atom-button--sm is-hover">Send</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--primary atom-button--sm is-active">Send</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--primary atom-button--sm is-focus">Send</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--primary atom-button--sm is-disabled" aria-disabled="true">Send</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--primary atom-button--sm is-loading" aria-busy="true">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- md -->
+        <div class="size-row">
+          <p class="size-row-label">md · 44px (mobile default)</p>
+          <div class="variant">
+            <h3>primary · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--primary atom-button--md">Send</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--primary atom-button--md is-hover">Approve</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--primary atom-button--md is-active">Approve</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--primary atom-button--md is-focus">Approve</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--primary atom-button--md is-disabled" aria-disabled="true">Approve</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--primary atom-button--md is-loading" aria-busy="true">Approve</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- lg -->
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>primary · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--primary atom-button--lg">Always allow</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--primary atom-button--lg is-hover">Always allow</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--primary atom-button--lg is-active">Always allow</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--primary atom-button--lg is-focus">Always allow</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--primary atom-button--lg is-disabled" aria-disabled="true">Always allow</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--primary atom-button--lg is-loading" aria-busy="true">Always allow</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /primary -->
+
+      <!-- ---- NEUTRAL ---------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">neutral</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>neutral · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--neutral atom-button--sm">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--neutral atom-button--sm is-hover">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--neutral atom-button--sm is-active">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--neutral atom-button--sm is-focus">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--neutral atom-button--sm is-disabled" aria-disabled="true">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--neutral atom-button--sm is-loading" aria-busy="true">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>neutral · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--neutral atom-button--md">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--neutral atom-button--md is-hover">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--neutral atom-button--md is-active">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--neutral atom-button--md is-focus">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--neutral atom-button--md is-disabled" aria-disabled="true">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--neutral atom-button--md is-loading" aria-busy="true">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>neutral · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--neutral atom-button--lg">Add feedback</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--neutral atom-button--lg is-hover">Add feedback</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--neutral atom-button--lg is-active">Add feedback</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--neutral atom-button--lg is-focus">Add feedback</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--neutral atom-button--lg is-disabled" aria-disabled="true">Add feedback</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--neutral atom-button--lg is-loading" aria-busy="true">Add feedback</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /neutral -->
+
+      <!-- ---- SECONDARY -------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">secondary</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>secondary · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--secondary atom-button--sm">Rename</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--secondary atom-button--sm is-hover">Rename</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--secondary atom-button--sm is-active">Rename</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--secondary atom-button--sm is-focus">Rename</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--secondary atom-button--sm is-disabled" aria-disabled="true">Rename</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--secondary atom-button--sm is-loading" aria-busy="true">Rename</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>secondary · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--secondary atom-button--md">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--secondary atom-button--md is-hover">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--secondary atom-button--md is-active">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--secondary atom-button--md is-focus">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--secondary atom-button--md is-disabled" aria-disabled="true">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--secondary atom-button--md is-loading" aria-busy="true">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>secondary · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--secondary atom-button--lg">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--secondary atom-button--lg is-hover">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--secondary atom-button--lg is-active">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--secondary atom-button--lg is-focus">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--secondary atom-button--lg is-disabled" aria-disabled="true">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--secondary atom-button--lg is-loading" aria-busy="true">Open in editor</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /secondary -->
+
+      <!-- ---- GHOST ------------------------------------------ -->
+      <div class="variant-group">
+        <p class="variant-group-title">ghost</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>ghost · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--ghost atom-button--sm">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--ghost atom-button--sm is-hover">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--ghost atom-button--sm is-active">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--ghost atom-button--sm is-focus">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--ghost atom-button--sm is-disabled" aria-disabled="true">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--ghost atom-button--sm is-loading" aria-busy="true">Stop</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>ghost · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--ghost atom-button--md">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--ghost atom-button--md is-hover">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--ghost atom-button--md is-active">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--ghost atom-button--md is-focus">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--ghost atom-button--md is-disabled" aria-disabled="true">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--ghost atom-button--md is-loading" aria-busy="true">Stop</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>ghost · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--ghost atom-button--lg">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--ghost atom-button--lg is-hover">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--ghost atom-button--lg is-active">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--ghost atom-button--lg is-focus">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--ghost atom-button--lg is-disabled" aria-disabled="true">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--ghost atom-button--lg is-loading" aria-busy="true">Stop</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /ghost -->
+
+      <!-- ---- OUTLINE ---------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">outline</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>outline · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--outline atom-button--sm">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--outline atom-button--sm is-hover">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--outline atom-button--sm is-active">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--outline atom-button--sm is-focus">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--outline atom-button--sm is-disabled" aria-disabled="true">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--outline atom-button--sm is-loading" aria-busy="true">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>outline · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--outline atom-button--md">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--outline atom-button--md is-hover">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--outline atom-button--md is-active">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--outline atom-button--md is-focus">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--outline atom-button--md is-disabled" aria-disabled="true">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--outline atom-button--md is-loading" aria-busy="true">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>outline · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--outline atom-button--lg">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--outline atom-button--lg is-hover">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--outline atom-button--lg is-active">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--outline atom-button--lg is-focus">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--outline atom-button--lg is-disabled" aria-disabled="true">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--outline atom-button--lg is-loading" aria-busy="true">Re-enable in Settings</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /outline -->
+
+      <!-- ---- DESTRUCTIVE ------------------------------------ -->
+      <div class="variant-group">
+        <p class="variant-group-title">destructive</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>destructive · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--destructive atom-button--sm">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--destructive atom-button--sm is-hover">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--destructive atom-button--sm is-active">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--destructive atom-button--sm is-focus">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--destructive atom-button--sm is-disabled" aria-disabled="true">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--destructive atom-button--sm is-loading" aria-busy="true">Delete session</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>destructive · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--destructive atom-button--md">Decline</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--destructive atom-button--md is-hover">Decline</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--destructive atom-button--md is-active">Decline</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--destructive atom-button--md is-focus">Decline</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--destructive atom-button--md is-disabled" aria-disabled="true">Decline</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--destructive atom-button--md is-loading" aria-busy="true">Decline</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>destructive · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--destructive atom-button--lg">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--destructive atom-button--lg is-hover">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--destructive atom-button--lg is-active">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--destructive atom-button--lg is-focus">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--destructive atom-button--lg is-disabled" aria-disabled="true">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--destructive atom-button--lg is-loading" aria-busy="true">Delete session</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /destructive -->
+
+      <!-- ---- LINK ------------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">link</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>link · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--link atom-button--sm">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--link atom-button--sm is-hover">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--link atom-button--sm is-active">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--link atom-button--sm is-focus">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--link atom-button--sm is-disabled" aria-disabled="true">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--link atom-button--sm is-loading" aria-busy="true">Open in editor</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>link · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--link atom-button--md">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--link atom-button--md is-hover">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--link atom-button--md is-active">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--link atom-button--md is-focus">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--link atom-button--md is-disabled" aria-disabled="true">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--link atom-button--md is-loading" aria-busy="true">Open in editor</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>link · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--link atom-button--lg">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--link atom-button--lg is-hover">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--link atom-button--lg is-active">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--link atom-button--lg is-focus">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--link atom-button--lg is-disabled" aria-disabled="true">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--link atom-button--lg is-loading" aria-busy="true">Re-enable in Settings</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /link -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- PRIMARY ---------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">primary</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>primary · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--primary atom-button--sm">Send</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--primary atom-button--sm is-hover">Send</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--primary atom-button--sm is-active">Send</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--primary atom-button--sm is-focus">Send</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--primary atom-button--sm is-disabled" aria-disabled="true">Send</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--primary atom-button--sm is-loading" aria-busy="true">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>primary · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--primary atom-button--md">Approve</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--primary atom-button--md is-hover">Approve</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--primary atom-button--md is-active">Approve</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--primary atom-button--md is-focus">Approve</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--primary atom-button--md is-disabled" aria-disabled="true">Approve</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--primary atom-button--md is-loading" aria-busy="true">Approve</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>primary · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--primary atom-button--lg">Always allow</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--primary atom-button--lg is-hover">Always allow</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--primary atom-button--lg is-active">Always allow</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--primary atom-button--lg is-focus">Always allow</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--primary atom-button--lg is-disabled" aria-disabled="true">Always allow</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--primary atom-button--lg is-loading" aria-busy="true">Always allow</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /primary light -->
+
+      <!-- ---- NEUTRAL ---------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">neutral</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>neutral · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--neutral atom-button--sm">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--neutral atom-button--sm is-hover">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--neutral atom-button--sm is-active">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--neutral atom-button--sm is-focus">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--neutral atom-button--sm is-disabled" aria-disabled="true">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--neutral atom-button--sm is-loading" aria-busy="true">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>neutral · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--neutral atom-button--md">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--neutral atom-button--md is-hover">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--neutral atom-button--md is-active">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--neutral atom-button--md is-focus">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--neutral atom-button--md is-disabled" aria-disabled="true">Save</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--neutral atom-button--md is-loading" aria-busy="true">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>neutral · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--neutral atom-button--lg">Add feedback</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--neutral atom-button--lg is-hover">Add feedback</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--neutral atom-button--lg is-active">Add feedback</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--neutral atom-button--lg is-focus">Add feedback</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--neutral atom-button--lg is-disabled" aria-disabled="true">Add feedback</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--neutral atom-button--lg is-loading" aria-busy="true">Add feedback</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /neutral light -->
+
+      <!-- ---- SECONDARY -------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">secondary</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>secondary · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--secondary atom-button--sm">Rename</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--secondary atom-button--sm is-hover">Rename</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--secondary atom-button--sm is-active">Rename</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--secondary atom-button--sm is-focus">Rename</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--secondary atom-button--sm is-disabled" aria-disabled="true">Rename</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--secondary atom-button--sm is-loading" aria-busy="true">Rename</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>secondary · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--secondary atom-button--md">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--secondary atom-button--md is-hover">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--secondary atom-button--md is-active">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--secondary atom-button--md is-focus">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--secondary atom-button--md is-disabled" aria-disabled="true">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--secondary atom-button--md is-loading" aria-busy="true">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>secondary · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--secondary atom-button--lg">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--secondary atom-button--lg is-hover">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--secondary atom-button--lg is-active">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--secondary atom-button--lg is-focus">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--secondary atom-button--lg is-disabled" aria-disabled="true">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--secondary atom-button--lg is-loading" aria-busy="true">Open in editor</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /secondary light -->
+
+      <!-- ---- GHOST ------------------------------------------ -->
+      <div class="variant-group">
+        <p class="variant-group-title">ghost</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>ghost · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--ghost atom-button--sm">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--ghost atom-button--sm is-hover">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--ghost atom-button--sm is-active">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--ghost atom-button--sm is-focus">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--ghost atom-button--sm is-disabled" aria-disabled="true">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--ghost atom-button--sm is-loading" aria-busy="true">Stop</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>ghost · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--ghost atom-button--md">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--ghost atom-button--md is-hover">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--ghost atom-button--md is-active">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--ghost atom-button--md is-focus">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--ghost atom-button--md is-disabled" aria-disabled="true">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--ghost atom-button--md is-loading" aria-busy="true">Stop</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>ghost · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--ghost atom-button--lg">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--ghost atom-button--lg is-hover">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--ghost atom-button--lg is-active">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--ghost atom-button--lg is-focus">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--ghost atom-button--lg is-disabled" aria-disabled="true">Stop</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--ghost atom-button--lg is-loading" aria-busy="true">Stop</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /ghost light -->
+
+      <!-- ---- OUTLINE ---------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">outline</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>outline · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--outline atom-button--sm">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--outline atom-button--sm is-hover">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--outline atom-button--sm is-active">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--outline atom-button--sm is-focus">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--outline atom-button--sm is-disabled" aria-disabled="true">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--outline atom-button--sm is-loading" aria-busy="true">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>outline · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--outline atom-button--md">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--outline atom-button--md is-hover">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--outline atom-button--md is-active">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--outline atom-button--md is-focus">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--outline atom-button--md is-disabled" aria-disabled="true">Cancel</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--outline atom-button--md is-loading" aria-busy="true">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>outline · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--outline atom-button--lg">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--outline atom-button--lg is-hover">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--outline atom-button--lg is-active">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--outline atom-button--lg is-focus">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--outline atom-button--lg is-disabled" aria-disabled="true">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--outline atom-button--lg is-loading" aria-busy="true">Re-enable in Settings</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /outline light -->
+
+      <!-- ---- DESTRUCTIVE ------------------------------------ -->
+      <div class="variant-group">
+        <p class="variant-group-title">destructive</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>destructive · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--destructive atom-button--sm">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--destructive atom-button--sm is-hover">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--destructive atom-button--sm is-active">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--destructive atom-button--sm is-focus">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--destructive atom-button--sm is-disabled" aria-disabled="true">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--destructive atom-button--sm is-loading" aria-busy="true">Delete session</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>destructive · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--destructive atom-button--md">Decline</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--destructive atom-button--md is-hover">Decline</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--destructive atom-button--md is-active">Decline</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--destructive atom-button--md is-focus">Decline</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--destructive atom-button--md is-disabled" aria-disabled="true">Decline</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--destructive atom-button--md is-loading" aria-busy="true">Decline</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>destructive · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--destructive atom-button--lg">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--destructive atom-button--lg is-hover">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--destructive atom-button--lg is-active">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--destructive atom-button--lg is-focus">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--destructive atom-button--lg is-disabled" aria-disabled="true">Delete session</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--destructive atom-button--lg is-loading" aria-busy="true">Delete session</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /destructive light -->
+
+      <!-- ---- LINK ------------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">link</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 36px</p>
+          <div class="variant">
+            <h3>link · sm</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--link atom-button--sm">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--link atom-button--sm is-hover">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--link atom-button--sm is-active">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--link atom-button--sm is-focus">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--link atom-button--sm is-disabled" aria-disabled="true">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--link atom-button--sm is-loading" aria-busy="true">Open in editor</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 44px</p>
+          <div class="variant">
+            <h3>link · md</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--link atom-button--md">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--link atom-button--md is-hover">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--link atom-button--md is-active">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--link atom-button--md is-focus">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--link atom-button--md is-disabled" aria-disabled="true">Open in editor</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--link atom-button--md is-loading" aria-busy="true">Open in editor</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 56px</p>
+          <div class="variant">
+            <h3>link · lg</h3>
+            <div class="state-grid">
+              <div class="state">
+                <span class="state-label">default</span>
+                <button class="atom-button atom-button--link atom-button--lg">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">hover</span>
+                <button class="atom-button atom-button--link atom-button--lg is-hover">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">active</span>
+                <button class="atom-button atom-button--link atom-button--lg is-active">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">focus</span>
+                <button class="atom-button atom-button--link atom-button--lg is-focus">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">disabled</span>
+                <button class="atom-button atom-button--link atom-button--lg is-disabled" aria-disabled="true">Re-enable in Settings</button>
+              </div>
+              <div class="state">
+                <span class="state-label">loading</span>
+                <button class="atom-button atom-button--link atom-button--lg is-loading" aria-busy="true">Re-enable in Settings</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /link light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Recipe footer — token → property mapping
+       ============================================================ -->
+  <footer class="recipe-footer">
+    <h2>Token Recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Variant · Property</th>
+          <th>Token</th>
+          <th>Resolved value (dark)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>base · font-family</td><td>var(--font-body)</td><td>Geist, system-ui</td></tr>
+        <tr><td>base · font-size</td><td>var(--font-size-label)</td><td>12px</td></tr>
+        <tr><td>base · font-weight</td><td>var(--font-weight-label)</td><td>500</td></tr>
+        <tr><td>base · letter-spacing</td><td>var(--tracking-mono)</td><td>0.02em</td></tr>
+        <tr><td>base · line-height</td><td>var(--line-height-snug)</td><td>1.3</td></tr>
+        <tr><td>base · border-radius (md/sm)</td><td>var(--radius-default)</td><td>~8px</td></tr>
+        <tr><td>base · border-radius (lg)</td><td>var(--radius-lg)</td><td>0.625rem</td></tr>
+        <tr><td>base · gap</td><td>var(--space-2)</td><td>8px</td></tr>
+        <tr><td>base · transition duration</td><td>var(--motion-fast)</td><td>120ms</td></tr>
+        <tr><td>base · transition easing</td><td>var(--motion-ease-out)</td><td>cubic-bezier(0.16,1,0.3,1)</td></tr>
+        <tr><td>sm · height</td><td>36px (no token — below touch target floor)</td><td>36px</td></tr>
+        <tr><td>sm · padding-inline</td><td>var(--space-3)</td><td>12px</td></tr>
+        <tr><td>md · height</td><td>var(--touch-target-min)</td><td>44px</td></tr>
+        <tr><td>md · padding-inline</td><td>var(--space-4)</td><td>16px</td></tr>
+        <tr><td>lg · height</td><td>56px (no token — above spacing scale max needed)</td><td>56px</td></tr>
+        <tr><td>lg · padding-inline</td><td>var(--space-6)</td><td>24px</td></tr>
+        <tr><td>primary · background</td><td>var(--accent-primary)</td><td>#e07850 (ember)</td></tr>
+        <tr><td>primary · background:hover</td><td>var(--accent-primary-hover)</td><td>color-mix(ember+white 20%)</td></tr>
+        <tr><td>primary · background:active</td><td>var(--accent-primary-pressed)</td><td>color-mix(ember+black 30%)</td></tr>
+        <tr><td>primary · color</td><td>var(--accent-primary-fg)</td><td>#151110 (dark surface)</td></tr>
+        <tr><td>neutral · background</td><td>var(--surface-inverse)</td><td>#eae8e6 (off-white)</td></tr>
+        <tr><td>neutral · background:hover</td><td>color-mix(surface-inverse 85%, transparent)</td><td>—</td></tr>
+        <tr><td>neutral · color</td><td>var(--text-on-inverse)</td><td>#151110 (dark surface)</td></tr>
+        <tr><td>secondary · background</td><td>var(--surface-soft)</td><td>#2a2827</td></tr>
+        <tr><td>secondary · background:hover</td><td>var(--surface-active)</td><td>#252220</td></tr>
+        <tr><td>secondary · color</td><td>var(--text-body)</td><td>#eae8e6</td></tr>
+        <tr><td>ghost · background</td><td>transparent</td><td>—</td></tr>
+        <tr><td>ghost · background:hover</td><td>var(--surface-soft)</td><td>#2a2827</td></tr>
+        <tr><td>ghost · color</td><td>var(--text-body)</td><td>#eae8e6</td></tr>
+        <tr><td>outline · background</td><td>transparent</td><td>—</td></tr>
+        <tr><td>outline · border-color</td><td>var(--border-default)</td><td>#2a2827</td></tr>
+        <tr><td>outline · background:hover</td><td>var(--surface-soft)</td><td>#2a2827</td></tr>
+        <tr><td>outline · color</td><td>var(--text-body)</td><td>#eae8e6</td></tr>
+        <tr><td>destructive · background</td><td>var(--state-danger-fg)</td><td>#cc4444</td></tr>
+        <tr><td>destructive · background:hover</td><td>color-mix(danger-fg 85%, black)</td><td>—</td></tr>
+        <tr><td>destructive · color</td><td>var(--accent-primary-fg)</td><td>#151110</td></tr>
+        <tr><td>destructive · focus ring</td><td>color-mix(danger-fg 50%, transparent)</td><td>—</td></tr>
+        <tr><td>link · color</td><td>var(--text-link)</td><td>#e07850 (ember)</td></tr>
+        <tr><td>all · focus box-shadow</td><td>0 0 0 3px var(--border-focus)</td><td>3px ring #3a3837</td></tr>
+        <tr><td>loading · spinner border</td><td>variant fg token</td><td>matches variant text color</td></tr>
+        <tr><td>loading · spinner duration</td><td>var(--motion-slow)</td><td>360ms</td></tr>
+      </tbody>
+    </table>
+  </footer>
+
+</body>
+</html>
