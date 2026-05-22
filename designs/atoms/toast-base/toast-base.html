@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · toast-base</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-toast-base — token-governed notification toast
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Permitted structural geometry: 3px rule width (reuses
+       var(--domain-tool-rule-width)), 8px translateY enter offset,
+       14px/16px icon sizes (no token exists at these stops).
+       Z-index: 200 (above overlay layer 100, below modal).
+       ============================================================
+
+       TOKEN_GAP: --state-info-fg := var(--accent-primary) (reason: token
+       set has no dedicated --state-info-fg; info variant uses the ember
+       brand accent as the nearest semantic equivalent, consistent with
+       how the desktop ThemedToaster colours info toasts).
+
+       TOKEN_GAP: --state-info-bg := transparent (reason: no --state-info-bg
+       token exists; info variant uses plain --surface-overlay background
+       without a tint — matches desktop behaviour for generic notifications).
+       ============================================================ */
+
+    /* ---- sr-only ------------------------------------------------ */
+    .sr-only {
+      position:    absolute;
+      width:       1px;
+      height:      1px;
+      padding:     0;
+      margin:      -1px;
+      overflow:    hidden;
+      clip:        rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    /* ============================================================
+       BASE LAYOUT — shared by both shapes
+       ============================================================ */
+    .atom-toast-base {
+      position:         relative;
+      display:          inline-flex;
+      align-items:      flex-start;
+      gap:              var(--space-2);
+      background:       var(--surface-overlay);
+      border:           1px solid var(--border-default);
+      border-radius:    var(--radius-default);
+      box-shadow:       var(--elevation-overlay);
+      max-width:        400px;
+      width:            max-content;
+      overflow:         hidden;           /* clips the rule stripe */
+      z-index:          200;
+
+      /* Motion — default = fully visible */
+      opacity:          1;
+      transform:        translateY(0);
+      transition:
+        opacity   var(--motion-medium) var(--motion-ease-out),
+        transform var(--motion-medium) var(--motion-ease-out);
+    }
+
+    /* ---- Left rule stripe --------------------------------------- */
+    .atom-toast-base__rule {
+      position:     absolute;
+      left:         0;
+      top:          0;
+      bottom:       0;
+      width:        var(--domain-tool-rule-width); /* 3px — structural, reuses domain token */
+      flex-shrink:  0;
+    }
+
+    /* ---- Icon --------------------------------------------------- */
+    .atom-toast-base__icon {
+      display:     flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width:       16px;
+      height:      16px;             /* structural geometry — no token at 16px icon stop */
+      /* margin-left accounts for the 3px rule stripe */
+      margin-left: calc(var(--domain-tool-rule-width) + var(--space-3));
+      margin-top:  var(--space-3);
+    }
+
+    .atom-toast-base__icon svg {
+      width:  100%;
+      height: 100%;
+    }
+
+    /* ---- Content column ---------------------------------------- */
+    .atom-toast-base__content {
+      flex:           1;
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+      padding:        var(--space-3) 0;
+      min-width:      0;
+    }
+
+    /* ---- Title (stacked only) ----------------------------------- */
+    .atom-toast-base__title {
+      /* .type-label base: --font-size-label, --font-weight-label, --text-muted */
+      /* Override color to body for higher contrast in a toast heading */
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-label);
+      font-weight:    var(--font-weight-label);
+      line-height:    var(--line-height-snug);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-body);
+      white-space:    nowrap;
+      overflow:       hidden;
+      text-overflow:  ellipsis;
+    }
+
+    /* ---- Body text ---------------------------------------------- */
+    .atom-toast-base__body {
+      /* .type-body-sm */
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-body);
+      line-height:    var(--line-height-normal);
+      letter-spacing: var(--tracking-normal);
+      color:          var(--text-body);
+    }
+
+    /* ---- Actions row -------------------------------------------- */
+    .atom-toast-base__actions {
+      display:        flex;
+      align-items:    center;
+      gap:            var(--space-2);
+      flex-shrink:    0;
+      padding:        var(--space-3) var(--space-3) var(--space-3) 0;
+      align-self:     flex-start;
+    }
+
+    /* ---- Action text button ------------------------------------- */
+    .atom-toast-base__action {
+      display:        inline-flex;
+      align-items:    center;
+      min-height:     var(--touch-target-min);
+      padding:        0 var(--space-2);
+      background:     transparent;
+      border:         none;
+      cursor:         pointer;
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-label);
+      line-height:    var(--line-height-normal);
+      letter-spacing: var(--tracking-normal);
+      color:          var(--accent-primary);
+      border-radius:  var(--radius-subtle);
+      transition:     opacity var(--motion-fast) var(--motion-ease-out);
+      white-space:    nowrap;
+    }
+    .atom-toast-base__action:hover {
+      opacity: 0.8;
+    }
+    .atom-toast-base__action:active {
+      opacity: 0.6;
+    }
+
+    /* ---- Dismiss button ----------------------------------------- */
+    .atom-toast-base__dismiss {
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      min-width:       var(--touch-target-min);
+      min-height:      var(--touch-target-min);
+      background:      transparent;
+      border:          none;
+      cursor:          pointer;
+      color:           var(--text-muted);
+      border-radius:   var(--radius-subtle);
+      transition:      color var(--motion-fast) var(--motion-ease-out);
+      flex-shrink:     0;
+    }
+    .atom-toast-base__dismiss:hover {
+      color: var(--text-body);
+    }
+    .atom-toast-base__dismiss svg {
+      width:  14px;                    /* structural geometry */
+      height: 14px;
+    }
+
+    /* ============================================================
+       SHAPE: --inline (default)
+       Single row, compact, dismiss hidden unless --dismissible
+       ============================================================ */
+    .atom-toast-base--inline {
+      align-items: center;
+      padding:     0;                  /* padding lives on icon/content/actions */
+    }
+
+    .atom-toast-base--inline .atom-toast-base__icon {
+      margin-top: 0;
+      /* vertically centered — handled by parent align-items: center */
+      align-self: center;
+    }
+
+    .atom-toast-base--inline .atom-toast-base__content {
+      padding:    var(--space-3) 0;
+      gap:        0;
+    }
+
+    .atom-toast-base--inline .atom-toast-base__actions {
+      align-self: center;
+      padding:    0 var(--space-3) 0 0;
+    }
+
+    /* In --inline, dismiss is hidden by default */
+    .atom-toast-base--inline .atom-toast-base__dismiss {
+      display: none;
+    }
+    /* Show dismiss when --dismissible modifier added */
+    .atom-toast-base--inline.atom-toast-base--dismissible .atom-toast-base__dismiss {
+      display: flex;
+    }
+
+    /* ============================================================
+       SHAPE: --stacked
+       Vertical layout — icon + title on first row, body below,
+       actions below body. Dismiss always visible top-right.
+       ============================================================ */
+    .atom-toast-base--stacked {
+      flex-direction: column;
+      padding:        0;
+    }
+
+    .atom-toast-base--stacked .atom-toast-base__icon {
+      margin-top: var(--space-3);
+    }
+
+    /* Stacked header row: icon + title side by side */
+    .atom-toast-base--stacked .atom-toast-base__header {
+      display:        flex;
+      align-items:    center;
+      gap:            var(--space-2);
+      padding:        var(--space-3) var(--space-3) 0 calc(var(--domain-tool-rule-width) + var(--space-3));
+    }
+
+    .atom-toast-base--stacked .atom-toast-base__header .atom-toast-base__icon {
+      margin-left: 0;
+      margin-top:  0;
+      width:       14px;            /* structural geometry — 14px in header row */
+      height:      14px;
+    }
+
+    .atom-toast-base--stacked .atom-toast-base__content {
+      padding: var(--space-1) var(--space-3) 0 calc(var(--domain-tool-rule-width) + var(--space-3));
+    }
+
+    /* In --stacked, dismiss always shown, floated top-right */
+    .atom-toast-base--stacked .atom-toast-base__dismiss {
+      display:  flex;
+      position: absolute;
+      top:      0;
+      right:    0;
+    }
+
+    .atom-toast-base--stacked .atom-toast-base__actions {
+      padding:  var(--space-2) var(--space-3) var(--space-3) calc(var(--domain-tool-rule-width) + var(--space-3));
+    }
+
+    /* ============================================================
+       VARIANT colors — left rule + icon color
+       ============================================================ */
+
+    /* --- info (default) ----------------------------------------- */
+    .atom-toast-base--info .atom-toast-base__rule {
+      background: var(--accent-primary);
+    }
+    .atom-toast-base--info .atom-toast-base__icon {
+      color: var(--accent-primary);
+    }
+
+    /* --- success ------------------------------------------------- */
+    .atom-toast-base--success .atom-toast-base__rule {
+      background: var(--state-success-fg);
+    }
+    .atom-toast-base--success .atom-toast-base__icon {
+      color: var(--state-success-fg);
+    }
+
+    /* --- warning ------------------------------------------------- */
+    .atom-toast-base--warning .atom-toast-base__rule {
+      background: var(--state-warning-fg);
+    }
+    .atom-toast-base--warning .atom-toast-base__icon {
+      color: var(--state-warning-fg);
+    }
+
+    /* --- danger -------------------------------------------------- */
+    .atom-toast-base--danger .atom-toast-base__rule {
+      background: var(--state-danger-fg);
+    }
+    .atom-toast-base--danger .atom-toast-base__icon {
+      color: var(--state-danger-fg);
+    }
+
+    /* --- loading — no rule, spinner replaces icon ---------------- */
+    .atom-toast-base--loading .atom-toast-base__rule {
+      background: transparent;
+    }
+    .atom-toast-base--loading .atom-toast-base__icon {
+      color: var(--text-muted);
+    }
+
+    /* ============================================================
+       ANIMATION STATES
+       ============================================================ */
+
+    .atom-toast-base.is-entering {
+      opacity:   0;
+      transform: translateY(8px);    /* structural geometry — 8px slide-up */
+    }
+
+    .atom-toast-base.is-exiting {
+      opacity:   0;
+      transform: translateY(0);      /* fades out in-place, no upward motion */
+    }
+
+    /* ============================================================
+       SPINNER — inline circular (reuses atom-spinner pattern)
+       Used inside __icon for the --loading variant.
+       2px border-width = structural geometry exception.
+       ============================================================ */
+    .toast-spinner {
+      display:          inline-block;
+      flex-shrink:      0;
+      width:            14px;              /* structural geometry */
+      height:           14px;
+      border-style:     solid;
+      border-width:     2px;              /* structural — SVG stroke equivalent */
+      border-color:     currentColor;
+      border-top-color: transparent;
+      border-radius:    var(--radius-round);
+      animation:        toast-spin var(--motion-cadence-pulse-medium) linear infinite;
+    }
+
+    @keyframes toast-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ============================================================
+       PREVIEW LAYOUT HELPERS (not part of the atom)
+       ============================================================ */
+
+    /* Toast column — vertical stack of toast items */
+    .toast-col {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+      align-items:    flex-start;
+    }
+
+    /* Toast row — horizontal strip (state row) */
+    .toast-state-strip {
+      display:     flex;
+      flex-wrap:   wrap;
+      align-items: flex-start;
+      gap:         var(--space-6);
+    }
+
+    .toast-state-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    /* Section label within the pane */
+    .toast-section-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom:  var(--space-2);
+    }
+
+    /* Composition: iPhone mock background (sessions list stub) */
+    .mock-sessions-list {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+      padding:        var(--space-4);
+    }
+
+    .mock-session-row {
+      display:          flex;
+      align-items:      center;
+      gap:              var(--space-3);
+      padding:          var(--space-3) var(--space-4);
+      background:       var(--surface-raised);
+      border-radius:    var(--radius-default);
+      border:           1px solid var(--border-subtle);
+    }
+
+    .mock-session-avatar {
+      width:            var(--space-6);
+      height:           var(--space-6);
+      border-radius:    var(--radius-round);
+      background:       var(--surface-active);
+      flex-shrink:      0;
+    }
+
+    .mock-session-text {
+      flex:             1;
+      font-family:      var(--font-body);
+      font-size:        var(--font-size-body-sm);
+      color:            var(--text-body);
+      overflow:         hidden;
+      text-overflow:    ellipsis;
+      white-space:      nowrap;
+    }
+
+    .mock-session-meta {
+      font-family:      var(--font-mono);
+      font-size:        var(--font-size-meta);
+      color:            var(--text-muted);
+    }
+
+    /* Toast overlay region — positioned top-right of the viewport */
+    .toast-overlay-region {
+      position:         absolute;
+      top:              calc(var(--safe-area-top) + var(--space-3));
+      right:            var(--space-3);
+      left:             var(--space-3);
+      display:          flex;
+      flex-direction:   column;
+      gap:              var(--space-2);
+      align-items:      stretch;
+      z-index:          200;
+      pointer-events:   none;
+    }
+
+    .toast-overlay-region .atom-toast-base {
+      pointer-events: all;
+      max-width:      100%;
+      width:          100%;
+    }
+
+    /* Dynamic island stub for composition frame */
+    .mock-dynamic-island {
+      position:       absolute;
+      top:            var(--dynamic-island-top);
+      left:           50%;
+      transform:      translateX(-50%);
+      width:          var(--dynamic-island-width);
+      height:         var(--dynamic-island-height);
+      background:     var(--_neutral-0, #050505);
+      border-radius:  var(--radius-pill);
+      z-index:        300;
+    }
+
+    .recipe-footer {
+      padding:    var(--spacing-section) var(--spacing-between);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .recipe-footer h2 {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-heading);
+      letter-spacing: var(--tracking-tight);
+      color:          var(--text-heading);
+      margin:         0 0 var(--spacing-between);
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">toast-base</h1>
+    <p class="crumb">atom · notification toast — 5 variants · 2 shapes · 3 states</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ==========================================================
+         DARK PANE
+         ========================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ========================================================
+           1. VARIANT MATRIX — INLINE shape (5 variants)
+           ======================================================== -->
+      <div class="variant">
+        <h3>variant matrix — inline shape</h3>
+        <div class="toast-col">
+
+          <!-- info (default) -->
+          <div class="toast-state-cell">
+            <span class="state-label">info (default)</span>
+            <div class="atom-toast-base atom-toast-base--info atom-toast-base--inline"
+                 role="status"
+                 aria-live="polite"
+                 aria-label="Notification: Update available. Restart to install.">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <!-- info circle icon -->
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <rect x="7.25" y="7" width="1.5" height="4.5" rx="0.75" fill="currentColor"/>
+                  <circle cx="8" cy="4.75" r="0.875" fill="currentColor"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Update available. Restart to install.</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Restart</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- success -->
+          <div class="toast-state-cell">
+            <span class="state-label">success</span>
+            <div class="atom-toast-base atom-toast-base--success atom-toast-base--inline"
+                 role="status"
+                 aria-live="polite"
+                 aria-label="Success: Session renamed to Refactor relay tunnel reconnect">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <!-- check circle icon -->
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Session renamed to "Refactor relay tunnel reconnect".</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- warning -->
+          <div class="toast-state-cell">
+            <span class="state-label">warning</span>
+            <div class="atom-toast-base atom-toast-base--warning atom-toast-base--inline"
+                 role="status"
+                 aria-live="polite"
+                 aria-label="Warning: Host reconnecting in 3s...">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <!-- triangle warning icon -->
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M8 2.5L14 13H2L8 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                  <rect x="7.25" y="6.5" width="1.5" height="3.5" rx="0.75" fill="currentColor"/>
+                  <circle cx="8" cy="11.25" r="0.75" fill="currentColor"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Host reconnecting in 3s...</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- danger -->
+          <div class="toast-state-cell">
+            <span class="state-label">danger</span>
+            <div class="atom-toast-base atom-toast-base--danger atom-toast-base--inline atom-toast-base--dismissible"
+                 role="alert"
+                 aria-live="assertive"
+                 aria-label="Error: Failed to send. Host unreachable.">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <!-- x circle icon -->
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Failed to send. Host unreachable.</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Retry</button>
+                <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                  <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- loading -->
+          <div class="toast-state-cell">
+            <span class="state-label">loading</span>
+            <div class="atom-toast-base atom-toast-base--loading atom-toast-base--inline"
+                 role="status"
+                 aria-live="polite"
+                 aria-label="Connecting to macbook-pro...">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <span class="toast-spinner" aria-hidden="true"></span>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Connecting to macbook-pro...</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix inline dark -->
+
+      <!-- ========================================================
+           2. VARIANT MATRIX — STACKED shape (3 variants)
+           ======================================================== -->
+      <div class="variant">
+        <h3>variant matrix — stacked shape</h3>
+        <div class="toast-col">
+
+          <!-- success stacked -->
+          <div class="toast-state-cell">
+            <span class="state-label">success — stacked</span>
+            <div class="atom-toast-base atom-toast-base--success atom-toast-base--stacked"
+                 role="status"
+                 aria-live="polite"
+                 aria-label="Session created. New session Untitled in superset chat-mobile-plan.">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <div class="atom-toast-base__header">
+                <span class="atom-toast-base__icon" aria-hidden="true">
+                  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="atom-toast-base__title">Session created</span>
+              </div>
+              <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">New session "Untitled" in superset · chat-mobile-plan</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Open</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- danger stacked -->
+          <div class="toast-state-cell">
+            <span class="state-label">danger — stacked</span>
+            <div class="atom-toast-base atom-toast-base--danger atom-toast-base--stacked"
+                 role="alert"
+                 aria-live="assertive"
+                 aria-label="Error: Plan upgrade required. This action requires Pro plan.">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <div class="atom-toast-base__header">
+                <span class="atom-toast-base__icon" aria-hidden="true">
+                  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                <span class="atom-toast-base__title">Plan upgrade required</span>
+              </div>
+              <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">This action requires Pro plan.</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Upgrade</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- warning stacked -->
+          <div class="toast-state-cell">
+            <span class="state-label">warning — stacked</span>
+            <div class="atom-toast-base atom-toast-base--warning atom-toast-base--stacked"
+                 role="status"
+                 aria-live="polite"
+                 aria-label="Warning: Host offline. Reconnecting automatically.">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <div class="atom-toast-base__header">
+                <span class="atom-toast-base__icon" aria-hidden="true">
+                  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M8 2.5L14 13H2L8 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                    <rect x="7.25" y="6.5" width="1.5" height="3.5" rx="0.75" fill="currentColor"/>
+                    <circle cx="8" cy="11.25" r="0.75" fill="currentColor"/>
+                  </svg>
+                </span>
+                <span class="atom-toast-base__title">Host offline</span>
+              </div>
+              <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Reconnecting automatically...</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Retry now</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix stacked dark -->
+
+      <!-- ========================================================
+           3. STATE ROW — inline success in is-entering, default, is-exiting
+           ======================================================== -->
+      <div class="variant">
+        <h3>states — inline success (mid-animation snapshot)</h3>
+        <div class="toast-state-strip">
+
+          <!-- is-entering -->
+          <div class="toast-state-cell">
+            <span class="state-label">is-entering</span>
+            <div class="atom-toast-base atom-toast-base--success atom-toast-base--inline is-entering"
+                 role="status"
+                 aria-live="polite"
+                 style="opacity: 0.35; transform: translateY(6px);">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Session renamed.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- default (fully visible) -->
+          <div class="toast-state-cell">
+            <span class="state-label">default (visible)</span>
+            <div class="atom-toast-base atom-toast-base--success atom-toast-base--inline"
+                 role="status"
+                 aria-live="polite">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Session renamed.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- is-exiting -->
+          <div class="toast-state-cell">
+            <span class="state-label">is-exiting</span>
+            <div class="atom-toast-base atom-toast-base--success atom-toast-base--inline is-exiting"
+                 role="status"
+                 aria-live="polite"
+                 style="opacity: 0.15;">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Session renamed.</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /states dark -->
+
+      <!-- ========================================================
+           4. COMPOSITION — stacked toast list above sessions mock
+           ======================================================== -->
+      <div class="variant">
+        <h3>composition — toast stack above sessions list (dark · mobile viewport)</h3>
+        <div class="state">
+          <span class="state-label">3-toast queue · typical top-of-viewport positioning</span>
+
+          <div style="margin-top: var(--space-4); display: flex; justify-content: center;">
+            <!-- iPhone device frame -->
+            <div class="device-frame">
+              <div class="device-viewport">
+                <!-- Dynamic island stub -->
+                <div class="mock-dynamic-island" aria-hidden="true"></div>
+
+                <!-- Sessions list background (mock) -->
+                <div class="mock-sessions-list" style="padding-top: calc(var(--safe-area-top) + var(--space-4));">
+                  <div class="mock-session-row">
+                    <div class="mock-session-avatar"></div>
+                    <span class="mock-session-text">How to deploy a Next.js app to Vercel</span>
+                    <span class="mock-session-meta">2h</span>
+                  </div>
+                  <div class="mock-session-row">
+                    <div class="mock-session-avatar"></div>
+                    <span class="mock-session-text">Refactor relay tunnel reconnect logic</span>
+                    <span class="mock-session-meta">4h</span>
+                  </div>
+                  <div class="mock-session-row">
+                    <div class="mock-session-avatar"></div>
+                    <span class="mock-session-text">Debug dispatch_failed on host restart</span>
+                    <span class="mock-session-meta">1d</span>
+                  </div>
+                  <div class="mock-session-row">
+                    <div class="mock-session-avatar"></div>
+                    <span class="mock-session-text">Mobile chat sprint — atom inventory</span>
+                    <span class="mock-session-meta">1d</span>
+                  </div>
+                  <div class="mock-session-row">
+                    <div class="mock-session-avatar"></div>
+                    <span class="mock-session-text">Set up Expo + TailwindCSS integration</span>
+                    <span class="mock-session-meta">2d</span>
+                  </div>
+                </div>
+
+                <!-- Toast overlay region — positioned over the sessions list -->
+                <div class="toast-overlay-region"
+                     aria-label="Notifications"
+                     aria-relevant="additions removals">
+
+                  <!-- toast 1: danger inline — "Failed to send" -->
+                  <div class="atom-toast-base atom-toast-base--danger atom-toast-base--inline atom-toast-base--dismissible"
+                       role="alert"
+                       aria-live="assertive">
+                    <span class="atom-toast-base__rule" aria-hidden="true"></span>
+                    <span class="atom-toast-base__icon" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                      </svg>
+                    </span>
+                    <div class="atom-toast-base__content">
+                      <span class="atom-toast-base__body">Failed to send. Host unreachable.</span>
+                    </div>
+                    <div class="atom-toast-base__actions">
+                      <button class="atom-toast-base__action" type="button">Retry</button>
+                      <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- toast 2: warning stacked — "Host offline" -->
+                  <div class="atom-toast-base atom-toast-base--warning atom-toast-base--stacked"
+                       role="status"
+                       aria-live="polite">
+                    <span class="atom-toast-base__rule" aria-hidden="true"></span>
+                    <div class="atom-toast-base__header">
+                      <span class="atom-toast-base__icon" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <path d="M8 2.5L14 13H2L8 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                          <rect x="7.25" y="6.5" width="1.5" height="3.5" rx="0.75" fill="currentColor"/>
+                          <circle cx="8" cy="11.25" r="0.75" fill="currentColor"/>
+                        </svg>
+                      </span>
+                      <span class="atom-toast-base__title">Host offline</span>
+                    </div>
+                    <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                      <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                      </svg>
+                    </button>
+                    <div class="atom-toast-base__content">
+                      <span class="atom-toast-base__body">Reconnecting automatically...</span>
+                    </div>
+                    <div class="atom-toast-base__actions">
+                      <button class="atom-toast-base__action" type="button">Retry now</button>
+                    </div>
+                  </div>
+
+                  <!-- toast 3: success inline — "Session renamed" -->
+                  <div class="atom-toast-base atom-toast-base--success atom-toast-base--inline"
+                       role="status"
+                       aria-live="polite">
+                    <span class="atom-toast-base__rule" aria-hidden="true"></span>
+                    <span class="atom-toast-base__icon" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </span>
+                    <div class="atom-toast-base__content">
+                      <span class="atom-toast-base__body">Session renamed.</span>
+                    </div>
+                  </div>
+
+                </div><!-- /toast-overlay-region -->
+
+              </div><!-- /device-viewport -->
+            </div><!-- /device-frame -->
+          </div>
+        </div>
+      </div><!-- /composition dark -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ==========================================================
+         LIGHT PANE
+         ========================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ========================================================
+           1. VARIANT MATRIX — INLINE shape (5 variants)
+           ======================================================== -->
+      <div class="variant">
+        <h3>variant matrix — inline shape</h3>
+        <div class="toast-col">
+
+          <!-- info -->
+          <div class="toast-state-cell">
+            <span class="state-label">info (default)</span>
+            <div class="atom-toast-base atom-toast-base--info atom-toast-base--inline"
+                 role="status"
+                 aria-live="polite"
+                 aria-label="Notification: Update available. Restart to install.">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <rect x="7.25" y="7" width="1.5" height="4.5" rx="0.75" fill="currentColor"/>
+                  <circle cx="8" cy="4.75" r="0.875" fill="currentColor"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Update available. Restart to install.</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Restart</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- success -->
+          <div class="toast-state-cell">
+            <span class="state-label">success</span>
+            <div class="atom-toast-base atom-toast-base--success atom-toast-base--inline"
+                 role="status"
+                 aria-live="polite">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Session renamed to "Refactor relay tunnel reconnect".</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- warning -->
+          <div class="toast-state-cell">
+            <span class="state-label">warning</span>
+            <div class="atom-toast-base atom-toast-base--warning atom-toast-base--inline"
+                 role="status"
+                 aria-live="polite">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M8 2.5L14 13H2L8 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                  <rect x="7.25" y="6.5" width="1.5" height="3.5" rx="0.75" fill="currentColor"/>
+                  <circle cx="8" cy="11.25" r="0.75" fill="currentColor"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Host reconnecting in 3s...</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- danger -->
+          <div class="toast-state-cell">
+            <span class="state-label">danger</span>
+            <div class="atom-toast-base atom-toast-base--danger atom-toast-base--inline atom-toast-base--dismissible"
+                 role="alert"
+                 aria-live="assertive">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Failed to send. Host unreachable.</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Retry</button>
+                <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                  <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- loading -->
+          <div class="toast-state-cell">
+            <span class="state-label">loading</span>
+            <div class="atom-toast-base atom-toast-base--loading atom-toast-base--inline"
+                 role="status"
+                 aria-live="polite">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <span class="toast-spinner" aria-hidden="true"></span>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Connecting to macbook-pro...</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix inline light -->
+
+      <!-- ========================================================
+           2. VARIANT MATRIX — STACKED shape (3 variants)
+           ======================================================== -->
+      <div class="variant">
+        <h3>variant matrix — stacked shape</h3>
+        <div class="toast-col">
+
+          <!-- success stacked -->
+          <div class="toast-state-cell">
+            <span class="state-label">success — stacked</span>
+            <div class="atom-toast-base atom-toast-base--success atom-toast-base--stacked"
+                 role="status"
+                 aria-live="polite">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <div class="atom-toast-base__header">
+                <span class="atom-toast-base__icon" aria-hidden="true">
+                  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="atom-toast-base__title">Session created</span>
+              </div>
+              <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">New session "Untitled" in superset · chat-mobile-plan</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Open</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- danger stacked -->
+          <div class="toast-state-cell">
+            <span class="state-label">danger — stacked</span>
+            <div class="atom-toast-base atom-toast-base--danger atom-toast-base--stacked"
+                 role="alert"
+                 aria-live="assertive">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <div class="atom-toast-base__header">
+                <span class="atom-toast-base__icon" aria-hidden="true">
+                  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                <span class="atom-toast-base__title">Plan upgrade required</span>
+              </div>
+              <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">This action requires Pro plan.</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Upgrade</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- warning stacked -->
+          <div class="toast-state-cell">
+            <span class="state-label">warning — stacked</span>
+            <div class="atom-toast-base atom-toast-base--warning atom-toast-base--stacked"
+                 role="status"
+                 aria-live="polite">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <div class="atom-toast-base__header">
+                <span class="atom-toast-base__icon" aria-hidden="true">
+                  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M8 2.5L14 13H2L8 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                    <rect x="7.25" y="6.5" width="1.5" height="3.5" rx="0.75" fill="currentColor"/>
+                    <circle cx="8" cy="11.25" r="0.75" fill="currentColor"/>
+                  </svg>
+                </span>
+                <span class="atom-toast-base__title">Host offline</span>
+              </div>
+              <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Reconnecting automatically...</span>
+              </div>
+              <div class="atom-toast-base__actions">
+                <button class="atom-toast-base__action" type="button">Retry now</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix stacked light -->
+
+      <!-- ========================================================
+           3. STATE ROW — inline success in is-entering, default, is-exiting
+           ======================================================== -->
+      <div class="variant">
+        <h3>states — inline success (mid-animation snapshot)</h3>
+        <div class="toast-state-strip">
+
+          <!-- is-entering -->
+          <div class="toast-state-cell">
+            <span class="state-label">is-entering</span>
+            <div class="atom-toast-base atom-toast-base--success atom-toast-base--inline is-entering"
+                 role="status"
+                 aria-live="polite"
+                 style="opacity: 0.35; transform: translateY(6px);">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Session renamed.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- default -->
+          <div class="toast-state-cell">
+            <span class="state-label">default (visible)</span>
+            <div class="atom-toast-base atom-toast-base--success atom-toast-base--inline"
+                 role="status"
+                 aria-live="polite">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Session renamed.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- is-exiting -->
+          <div class="toast-state-cell">
+            <span class="state-label">is-exiting</span>
+            <div class="atom-toast-base atom-toast-base--success atom-toast-base--inline is-exiting"
+                 role="status"
+                 aria-live="polite"
+                 style="opacity: 0.15;">
+              <span class="atom-toast-base__rule" aria-hidden="true"></span>
+              <span class="atom-toast-base__icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <div class="atom-toast-base__content">
+                <span class="atom-toast-base__body">Session renamed.</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /states light -->
+
+      <!-- ========================================================
+           4. COMPOSITION — stacked toast list above sessions mock
+           ======================================================== -->
+      <div class="variant">
+        <h3>composition — toast stack above sessions list (light · mobile viewport)</h3>
+        <div class="state">
+          <span class="state-label">3-toast queue · typical top-of-viewport positioning</span>
+
+          <div style="margin-top: var(--space-4); display: flex; justify-content: center;">
+            <div class="device-frame">
+              <div class="device-viewport">
+                <div class="mock-dynamic-island" aria-hidden="true"></div>
+
+                <div class="mock-sessions-list" style="padding-top: calc(var(--safe-area-top) + var(--space-4));">
+                  <div class="mock-session-row">
+                    <div class="mock-session-avatar"></div>
+                    <span class="mock-session-text">How to deploy a Next.js app to Vercel</span>
+                    <span class="mock-session-meta">2h</span>
+                  </div>
+                  <div class="mock-session-row">
+                    <div class="mock-session-avatar"></div>
+                    <span class="mock-session-text">Refactor relay tunnel reconnect logic</span>
+                    <span class="mock-session-meta">4h</span>
+                  </div>
+                  <div class="mock-session-row">
+                    <div class="mock-session-avatar"></div>
+                    <span class="mock-session-text">Debug dispatch_failed on host restart</span>
+                    <span class="mock-session-meta">1d</span>
+                  </div>
+                  <div class="mock-session-row">
+                    <div class="mock-session-avatar"></div>
+                    <span class="mock-session-text">Mobile chat sprint — atom inventory</span>
+                    <span class="mock-session-meta">1d</span>
+                  </div>
+                  <div class="mock-session-row">
+                    <div class="mock-session-avatar"></div>
+                    <span class="mock-session-text">Set up Expo + TailwindCSS integration</span>
+                    <span class="mock-session-meta">2d</span>
+                  </div>
+                </div>
+
+                <div class="toast-overlay-region"
+                     aria-label="Notifications"
+                     aria-relevant="additions removals">
+
+                  <!-- toast 1: danger inline -->
+                  <div class="atom-toast-base atom-toast-base--danger atom-toast-base--inline atom-toast-base--dismissible"
+                       role="alert"
+                       aria-live="assertive">
+                    <span class="atom-toast-base__rule" aria-hidden="true"></span>
+                    <span class="atom-toast-base__icon" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                      </svg>
+                    </span>
+                    <div class="atom-toast-base__content">
+                      <span class="atom-toast-base__body">Failed to send. Host unreachable.</span>
+                    </div>
+                    <div class="atom-toast-base__actions">
+                      <button class="atom-toast-base__action" type="button">Retry</button>
+                      <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- toast 2: warning stacked -->
+                  <div class="atom-toast-base atom-toast-base--warning atom-toast-base--stacked"
+                       role="status"
+                       aria-live="polite">
+                    <span class="atom-toast-base__rule" aria-hidden="true"></span>
+                    <div class="atom-toast-base__header">
+                      <span class="atom-toast-base__icon" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <path d="M8 2.5L14 13H2L8 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                          <rect x="7.25" y="6.5" width="1.5" height="3.5" rx="0.75" fill="currentColor"/>
+                          <circle cx="8" cy="11.25" r="0.75" fill="currentColor"/>
+                        </svg>
+                      </span>
+                      <span class="atom-toast-base__title">Host offline</span>
+                    </div>
+                    <button class="atom-toast-base__dismiss" type="button" aria-label="Dismiss notification">
+                      <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                      </svg>
+                    </button>
+                    <div class="atom-toast-base__content">
+                      <span class="atom-toast-base__body">Reconnecting automatically...</span>
+                    </div>
+                    <div class="atom-toast-base__actions">
+                      <button class="atom-toast-base__action" type="button">Retry now</button>
+                    </div>
+                  </div>
+
+                  <!-- toast 3: success inline -->
+                  <div class="atom-toast-base atom-toast-base--success atom-toast-base--inline"
+                       role="status"
+                       aria-live="polite">
+                    <span class="atom-toast-base__rule" aria-hidden="true"></span>
+                    <span class="atom-toast-base__icon" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M5 8.5l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </span>
+                    <div class="atom-toast-base__content">
+                      <span class="atom-toast-base__body">Session renamed.</span>
+                    </div>
+                  </div>
+
+                </div><!-- /toast-overlay-region -->
+
+              </div><!-- /device-viewport -->
+            </div><!-- /device-frame -->
+          </div>
+        </div>
+      </div><!-- /composition light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe table
+       ============================================================ -->
+  <footer class="recipe-footer">
+    <h2>token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>property</th>
+          <th>element / variant</th>
+          <th>token / value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>background</td><td>root — all variants</td><td>var(--surface-overlay)</td></tr>
+        <tr><td>border</td><td>root — all variants</td><td>1px solid var(--border-default)</td></tr>
+        <tr><td>border-radius</td><td>root — all variants</td><td>var(--radius-default)</td></tr>
+        <tr><td>box-shadow</td><td>root — all variants</td><td>var(--elevation-overlay)</td></tr>
+        <tr><td>gap (inline row)</td><td>root — inline</td><td>var(--space-2)</td></tr>
+        <tr><td>padding (icon, inline)</td><td>__icon — inline</td><td>margin-top: 0 (centered by flex)</td></tr>
+        <tr><td>padding (content)</td><td>__content</td><td>var(--space-3) 0</td></tr>
+        <tr><td>gap (content column)</td><td>__content</td><td>var(--space-1)</td></tr>
+        <tr><td>padding (actions)</td><td>__actions</td><td>var(--space-3) var(--space-3) var(--space-3) 0</td></tr>
+        <tr><td>gap (actions)</td><td>__actions</td><td>var(--space-2)</td></tr>
+        <tr><td>rule width</td><td>__rule — structural</td><td>var(--domain-tool-rule-width) = 3px</td></tr>
+        <tr><td>rule color — info</td><td>__rule</td><td>var(--accent-primary)</td></tr>
+        <tr><td>rule color — success</td><td>__rule</td><td>var(--state-success-fg)</td></tr>
+        <tr><td>rule color — warning</td><td>__rule</td><td>var(--state-warning-fg)</td></tr>
+        <tr><td>rule color — danger</td><td>__rule</td><td>var(--state-danger-fg)</td></tr>
+        <tr><td>rule color — loading</td><td>__rule</td><td>transparent</td></tr>
+        <tr><td>icon color — info</td><td>__icon</td><td>var(--accent-primary)</td></tr>
+        <tr><td>icon color — success</td><td>__icon</td><td>var(--state-success-fg)</td></tr>
+        <tr><td>icon color — warning</td><td>__icon</td><td>var(--state-warning-fg)</td></tr>
+        <tr><td>icon color — danger</td><td>__icon</td><td>var(--state-danger-fg)</td></tr>
+        <tr><td>icon color — loading</td><td>__icon (spinner)</td><td>var(--text-muted)</td></tr>
+        <tr><td>icon size — inline</td><td>__icon — structural</td><td>16 × 16px (geometry literal)</td></tr>
+        <tr><td>icon size — stacked header</td><td>__icon — structural</td><td>14 × 14px (geometry literal)</td></tr>
+        <tr><td>body font-family</td><td>__body</td><td>var(--font-body)</td></tr>
+        <tr><td>body font-size</td><td>__body</td><td>var(--font-size-body-sm) [.type-body-sm]</td></tr>
+        <tr><td>body font-weight</td><td>__body</td><td>var(--font-weight-body) [.type-body-sm]</td></tr>
+        <tr><td>body color</td><td>__body</td><td>var(--text-body)</td></tr>
+        <tr><td>body line-height</td><td>__body</td><td>var(--line-height-normal)</td></tr>
+        <tr><td>title font-family</td><td>__title — stacked</td><td>var(--font-mono) [.type-label]</td></tr>
+        <tr><td>title font-size</td><td>__title — stacked</td><td>var(--font-size-label) [.type-label]</td></tr>
+        <tr><td>title font-weight</td><td>__title — stacked</td><td>var(--font-weight-label) [.type-label]</td></tr>
+        <tr><td>title color</td><td>__title — stacked</td><td>var(--text-body) [override of .type-label default]</td></tr>
+        <tr><td>action color</td><td>__action</td><td>var(--accent-primary)</td></tr>
+        <tr><td>action font-size</td><td>__action</td><td>var(--font-size-body-sm)</td></tr>
+        <tr><td>action font-weight</td><td>__action</td><td>var(--font-weight-label)</td></tr>
+        <tr><td>action min-height</td><td>__action</td><td>var(--touch-target-min) = 44px</td></tr>
+        <tr><td>dismiss color</td><td>__dismiss</td><td>var(--text-muted)</td></tr>
+        <tr><td>dismiss hover color</td><td>__dismiss:hover</td><td>var(--text-body)</td></tr>
+        <tr><td>dismiss min size</td><td>__dismiss</td><td>var(--touch-target-min) × var(--touch-target-min)</td></tr>
+        <tr><td>dismiss icon size</td><td>__dismiss svg — structural</td><td>14 × 14px (geometry literal)</td></tr>
+        <tr><td>transition</td><td>root</td><td>opacity var(--motion-medium) var(--motion-ease-out), transform var(--motion-medium) var(--motion-ease-out)</td></tr>
+        <tr><td>is-entering opacity</td><td>root</td><td>0</td></tr>
+        <tr><td>is-entering transform</td><td>root — structural</td><td>translateY(8px)</td></tr>
+        <tr><td>is-exiting opacity</td><td>root</td><td>0</td></tr>
+        <tr><td>spinner border-width</td><td>.toast-spinner — structural</td><td>2px (SVG stroke exception)</td></tr>
+        <tr><td>spinner animation</td><td>.toast-spinner</td><td>var(--motion-cadence-pulse-medium) linear infinite</td></tr>
+        <tr><td>z-index</td><td>root — structural</td><td>200 (layout literal)</td></tr>
+        <tr><td>TOKEN_GAP: --state-info-fg</td><td>__rule, __icon — info variant</td><td>resolved to var(--accent-primary) — no info-specific token</td></tr>
+        <tr><td>TOKEN_GAP: --state-info-bg</td><td>root — info variant</td><td>resolved to transparent — no info-bg token; uses plain --surface-overlay</td></tr>
+      </tbody>
+    </table>
+  </footer>
+
+</body>
+</html>
