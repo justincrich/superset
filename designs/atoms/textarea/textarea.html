@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · textarea</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-textarea — token-governed multi-line input atom
+       Composition purity: only .atom-textarea rules defined here.
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Zero raw px in padding/margin/gap.
+       ============================================================ */
+
+    /* ---- Base reset ------------------------------------------ */
+    .atom-textarea {
+      /* Layout */
+      display:  block;
+      width:    100%;
+
+      /* Sizing — auto-grow within bounds */
+      min-height:   var(--composer-min-height);  /* 44px — WCAG touch target */
+      max-height:   var(--composer-max-height);  /* 180px — then internal scroll */
+      overflow-y:   hidden;
+      resize:       none;
+
+      /* Typography — body scale (matches .type-body) */
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body);
+      font-weight:    var(--font-weight-body);
+      line-height:    var(--line-height-normal);
+      letter-spacing: var(--tracking-normal);
+      color:          var(--text-body);
+
+      /* Spacing */
+      padding: var(--spacing-internal);
+
+      /* Shape */
+      border-radius: var(--radius-default);
+      outline:       none;
+      box-shadow:    none;
+
+      /* Motion */
+      transition:
+        border-color var(--motion-fast) var(--motion-ease-out),
+        box-shadow   var(--motion-fast) var(--motion-ease-out),
+        opacity      var(--motion-fast) var(--motion-ease-out);
+
+      /* Mobile UX */
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .atom-textarea::placeholder {
+      color: var(--text-faint);
+    }
+
+    /* ---- Variant: default ------------------------------------ */
+    .atom-textarea--default {
+      background-color: var(--surface-soft);
+      border:           1px solid var(--border-default);
+    }
+
+    /* ---- Variant: composer ----------------------------------- */
+    .atom-textarea--composer {
+      background-color: var(--surface-sunken);
+      border:           1px solid var(--border-subtle);
+    }
+
+    /* ---- Variant: inset -------------------------------------- */
+    .atom-textarea--inset {
+      background-color: var(--surface-page);
+      border:           1px solid var(--border-default);
+    }
+
+    /* ---- State: focus (cross-variant) ----------------------- */
+    .atom-textarea:focus,
+    .atom-textarea.is-focus {
+      box-shadow: 0 0 0 2px var(--border-focus);
+    }
+
+    /* ---- State: error --------------------------------------- */
+    .atom-textarea.is-error {
+      border-color: var(--state-danger-fg);
+      box-shadow:   none;
+    }
+    .atom-textarea.is-error:focus,
+    .atom-textarea.is-error.is-focus {
+      border-color: var(--state-danger-fg);
+      box-shadow:   0 0 0 2px color-mix(in oklch, var(--state-danger-fg) 40%, transparent 60%);
+    }
+
+    /* ---- State: disabled ------------------------------------ */
+    .atom-textarea:disabled,
+    .atom-textarea.is-disabled {
+      opacity:        0.5;
+      pointer-events: none;
+      cursor:         not-allowed;
+    }
+
+    /* ---- State: autogrow-cap -------------------------------- */
+    /* Applied in static previews only to demonstrate capped scroll.
+       In production the native textarea overflow handles this automatically. */
+    .atom-textarea.is-autogrow-cap {
+      overflow-y: auto;
+    }
+
+    /* ---- Preview-local helpers ------------------------------ */
+
+    /* Row label above each section */
+    .section-head {
+      margin: 0 0 var(--space-3);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+    }
+
+    /* Variant matrix — 3 variants × 2 states side-by-side */
+    .matrix-grid {
+      display:               grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:                   var(--spacing-between);
+      margin-bottom:         var(--spacing-section);
+    }
+
+    /* State row — 6 state columns for composer variant */
+    .state-row-grid {
+      display:               grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:                   var(--spacing-between);
+      margin-bottom:         var(--spacing-section);
+    }
+
+    /* Individual cell */
+    .cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--spacing-micro);
+    }
+
+    /* Helper text beneath textarea (error state) */
+    .field-helper {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--state-danger-fg);
+      margin-top:     var(--spacing-micro);
+    }
+
+    /* ---- Composer composition mock -------------------------- */
+    .composer-mock {
+      width:         var(--viewport-width);
+      max-width:     100%;
+      margin:        0 auto var(--spacing-section);
+    }
+
+    .composer-footer {
+      background:    var(--surface-page);
+      border-top:    1px solid var(--border-subtle);
+      padding:       var(--space-2) var(--space-3) var(--space-3);
+    }
+
+    .composer-input-wrap {
+      background:    var(--surface-sunken);
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      padding:       var(--spacing-internal);
+    }
+
+    .composer-textarea {
+      /* Reuse base atom styles directly — no wrapper variant needed */
+      display:        block;
+      width:          100%;
+      min-height:     var(--composer-min-height);
+      max-height:     var(--composer-max-height);
+      overflow-y:     hidden;
+      resize:         none;
+      background:     transparent;
+      border:         none;
+      outline:        none;
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body);
+      font-weight:    var(--font-weight-body);
+      line-height:    var(--line-height-normal);
+      letter-spacing: var(--tracking-normal);
+      color:          var(--text-body);
+      padding:        0;
+    }
+    .composer-textarea::placeholder {
+      color: var(--text-faint);
+    }
+
+    .composer-toolbar {
+      display:         flex;
+      align-items:     center;
+      gap:             var(--space-2);
+      margin-top:      var(--space-2);
+      flex-wrap:       wrap;
+    }
+
+    .composer-pill {
+      display:         inline-flex;
+      align-items:     center;
+      gap:             var(--space-1);
+      height:          28px;
+      padding-inline:  var(--space-2);
+      background:      var(--surface-raised);
+      border:          1px solid var(--border-default);
+      border-radius:   var(--radius-pill);
+      font-family:     var(--font-mono);
+      font-size:       var(--font-size-meta);
+      font-weight:     var(--font-weight-meta);
+      letter-spacing:  var(--tracking-mono);
+      color:           var(--text-body);
+      cursor:          pointer;
+      flex-shrink:     0;
+    }
+
+    .composer-pill-icon {
+      width:  14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .composer-spacer {
+      flex: 1;
+    }
+
+    .composer-send {
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      width:           var(--touch-target-min);
+      height:          var(--touch-target-min);
+      border-radius:   var(--radius-round);
+      background:      var(--accent-primary);
+      border:          none;
+      outline:         none;
+      cursor:          pointer;
+      flex-shrink:     0;
+      color:           var(--accent-primary-fg);
+    }
+    .composer-send.is-disabled {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+    .composer-send svg {
+      width:  18px;
+      height: 18px;
+    }
+
+    /* Recipe footer */
+    .recipe-footer {
+      padding:     var(--spacing-section) var(--spacing-between);
+      border-top:  1px solid var(--border-subtle);
+    }
+    .recipe-footer h2 {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-heading);
+      letter-spacing: var(--tracking-tight);
+      color:          var(--text-heading);
+      margin:         0 0 var(--spacing-between);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">textarea</h1>
+    <p class="crumb">atom · multi-line auto-grow input</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT MATRIX -------------------------------- -->
+      <!-- 3 variants × 2 states (empty + 3-line populated) = 6 cells -->
+
+      <p class="section-head">variant matrix — empty state</p>
+      <div class="matrix-grid">
+
+        <!-- default · empty -->
+        <div class="state">
+          <span class="state-label">default · empty</span>
+          <textarea
+            class="atom-textarea atom-textarea--default"
+            placeholder="Ask to make changes, @mention files, run /commands"
+            aria-label="Message"
+            rows="1"
+          ></textarea>
+        </div>
+
+        <!-- composer · empty -->
+        <div class="state">
+          <span class="state-label">composer · empty</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer"
+            placeholder="Ask to make changes, @mention files, run /commands"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="1"
+          ></textarea>
+        </div>
+
+        <!-- inset · empty -->
+        <div class="state">
+          <span class="state-label">inset · empty</span>
+          <textarea
+            class="atom-textarea atom-textarea--inset"
+            placeholder="Ask to make changes, @mention files, run /commands"
+            aria-label="Message"
+            rows="1"
+          ></textarea>
+        </div>
+      </div>
+
+      <p class="section-head">variant matrix — populated (3 lines)</p>
+      <div class="matrix-grid">
+
+        <!-- default · populated -->
+        <div class="state">
+          <span class="state-label">default · typing</span>
+          <textarea
+            class="atom-textarea atom-textarea--default"
+            aria-label="Message"
+            rows="3"
+          >Refactor the relay tunnel reconnect loop
+@apps/relay/src/tunnel-client.ts
+Run /tests after</textarea>
+        </div>
+
+        <!-- composer · populated -->
+        <div class="state">
+          <span class="state-label">composer · typing</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="3"
+          >Refactor the relay tunnel reconnect loop
+@apps/relay/src/tunnel-client.ts
+Run /tests after</textarea>
+        </div>
+
+        <!-- inset · populated -->
+        <div class="state">
+          <span class="state-label">inset · typing</span>
+          <textarea
+            class="atom-textarea atom-textarea--inset"
+            aria-label="Message"
+            rows="3"
+          >Refactor the relay tunnel reconnect loop
+@apps/relay/src/tunnel-client.ts
+Run /tests after</textarea>
+        </div>
+      </div>
+
+      <!-- ---- 2. STATE ROW — composer variant, all 6 states --- -->
+      <p class="section-head">state row — composer variant</p>
+      <div class="state-row-grid">
+
+        <!-- default empty -->
+        <div class="cell">
+          <span class="state-label">default · empty</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer"
+            placeholder="Ask to make changes, @mention files, run /commands"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="1"
+          ></textarea>
+        </div>
+
+        <!-- typing -->
+        <div class="cell">
+          <span class="state-label">typing</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer is-typing"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="2"
+          >Refactor the relay tunnel reconnect loop—I'll preserve the inner try/catch</textarea>
+        </div>
+
+        <!-- focus -->
+        <div class="cell">
+          <span class="state-label">focus</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer is-focus"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="2"
+          >Refactor the relay tunnel reconnect loop—I'll preserve the inner try/catch</textarea>
+        </div>
+
+        <!-- error -->
+        <div class="cell">
+          <span class="state-label">error</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer is-error"
+            aria-label="Message"
+            aria-multiline="true"
+            aria-invalid="true"
+            aria-describedby="ta-err-dark"
+            rows="2"
+          >Refactor the relay tunnel reconnect loop—I'll preserve the inner try/catch. Also look at every other file in the entire repository and write a comprehensive summary of every function, every variable name, and every comment while also converting each file to TypeScript with full type coverage and adding unit tests covering all edge cases plus integration tests and performance benchmarks.</textarea>
+          <span class="field-helper" id="ta-err-dark">Message exceeds 4000 characters</span>
+        </div>
+
+        <!-- disabled -->
+        <div class="cell">
+          <span class="state-label">disabled</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer is-disabled"
+            aria-label="Message"
+            aria-multiline="true"
+            disabled
+            rows="1"
+          >Host offline — Send disabled</textarea>
+        </div>
+
+        <!-- autogrow-cap -->
+        <div class="cell">
+          <span class="state-label">autogrow-cap</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer is-autogrow-cap"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="8"
+          >Line 1: Update the relay backoff schedule
+Line 2: Preserve the inner try/catch on connect
+Line 3: Log err.code and err.message before sleep
+Line 4: Cap the backoff at 30s exponential
+Line 5: Add ±20% jitter to prevent thundering-herd
+Line 6: Run /tests against the new unit fixtures
+Line 7: Then update the CHANGELOG entry
+Line 8: Finally open a PR with the description below</textarea>
+        </div>
+
+      </div><!-- /state-row-grid -->
+
+      <!-- ---- 3. COMPOSER COMPOSITION MOCK -------------------- -->
+      <p class="section-head">composer composition — chat input footer</p>
+      <div class="composer-mock">
+        <div class="composer-footer">
+          <div class="composer-input-wrap">
+            <!-- The textarea inside the composer frame — borderless/transparent,
+                 sizing and border delegated to the wrapping surface -->
+            <textarea
+              class="composer-textarea"
+              placeholder="Ask to make changes, @mention files, run /commands"
+              aria-label="Message"
+              aria-multiline="true"
+              rows="1"
+            ></textarea>
+            <!-- Toolbar pills below the text field -->
+            <div class="composer-toolbar">
+              <!-- Attachment -->
+              <button class="composer-pill" aria-label="Attach file">
+                <svg class="composer-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                </svg>
+              </button>
+              <!-- Model picker -->
+              <button class="composer-pill" aria-label="Model: sonnet-4.6">
+                <svg class="composer-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3c-1 3-3 5-6 6 3 1 5 3 6 6 1-3 3-5 6-6-3-1-5-3-6-6z"/>
+                </svg>
+                <span>sonnet-4.6</span>
+                <svg class="composer-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width: 10px; height: 10px;">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+              <!-- Thinking mode -->
+              <button class="composer-pill" aria-label="Thinking: medium">
+                <svg class="composer-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 2a9 9 0 0 1 9 9 8.5 8.5 0 0 1-1.3 4.5L21 22l-6-2a9 9 0 1 1-3-18z"/>
+                </svg>
+                <span>med</span>
+              </button>
+              <div class="composer-spacer"></div>
+              <!-- Send button (disabled — empty input) -->
+              <button class="composer-send is-disabled" aria-label="Send message" aria-disabled="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div><!-- /composer-mock dark -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT MATRIX -------------------------------- -->
+      <p class="section-head">variant matrix — empty state</p>
+      <div class="matrix-grid">
+
+        <div class="state">
+          <span class="state-label">default · empty</span>
+          <textarea
+            class="atom-textarea atom-textarea--default"
+            placeholder="Ask to make changes, @mention files, run /commands"
+            aria-label="Message"
+            rows="1"
+          ></textarea>
+        </div>
+
+        <div class="state">
+          <span class="state-label">composer · empty</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer"
+            placeholder="Ask to make changes, @mention files, run /commands"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="1"
+          ></textarea>
+        </div>
+
+        <div class="state">
+          <span class="state-label">inset · empty</span>
+          <textarea
+            class="atom-textarea atom-textarea--inset"
+            placeholder="Ask to make changes, @mention files, run /commands"
+            aria-label="Message"
+            rows="1"
+          ></textarea>
+        </div>
+      </div>
+
+      <p class="section-head">variant matrix — populated (3 lines)</p>
+      <div class="matrix-grid">
+
+        <div class="state">
+          <span class="state-label">default · typing</span>
+          <textarea
+            class="atom-textarea atom-textarea--default"
+            aria-label="Message"
+            rows="3"
+          >Refactor the relay tunnel reconnect loop
+@apps/relay/src/tunnel-client.ts
+Run /tests after</textarea>
+        </div>
+
+        <div class="state">
+          <span class="state-label">composer · typing</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="3"
+          >Refactor the relay tunnel reconnect loop
+@apps/relay/src/tunnel-client.ts
+Run /tests after</textarea>
+        </div>
+
+        <div class="state">
+          <span class="state-label">inset · typing</span>
+          <textarea
+            class="atom-textarea atom-textarea--inset"
+            aria-label="Message"
+            rows="3"
+          >Refactor the relay tunnel reconnect loop
+@apps/relay/src/tunnel-client.ts
+Run /tests after</textarea>
+        </div>
+      </div>
+
+      <!-- ---- 2. STATE ROW — composer variant, all 6 states --- -->
+      <p class="section-head">state row — composer variant</p>
+      <div class="state-row-grid">
+
+        <div class="cell">
+          <span class="state-label">default · empty</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer"
+            placeholder="Ask to make changes, @mention files, run /commands"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="1"
+          ></textarea>
+        </div>
+
+        <div class="cell">
+          <span class="state-label">typing</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer is-typing"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="2"
+          >Refactor the relay tunnel reconnect loop—I'll preserve the inner try/catch</textarea>
+        </div>
+
+        <div class="cell">
+          <span class="state-label">focus</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer is-focus"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="2"
+          >Refactor the relay tunnel reconnect loop—I'll preserve the inner try/catch</textarea>
+        </div>
+
+        <div class="cell">
+          <span class="state-label">error</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer is-error"
+            aria-label="Message"
+            aria-multiline="true"
+            aria-invalid="true"
+            aria-describedby="ta-err-light"
+            rows="2"
+          >Refactor the relay tunnel reconnect loop—I'll preserve the inner try/catch. Also look at every other file in the entire repository and write a comprehensive summary of every function, every variable name, and every comment while also converting each file to TypeScript with full type coverage and adding unit tests covering all edge cases plus integration tests and performance benchmarks.</textarea>
+          <span class="field-helper" id="ta-err-light">Message exceeds 4000 characters</span>
+        </div>
+
+        <div class="cell">
+          <span class="state-label">disabled</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer is-disabled"
+            aria-label="Message"
+            aria-multiline="true"
+            disabled
+            rows="1"
+          >Host offline — Send disabled</textarea>
+        </div>
+
+        <div class="cell">
+          <span class="state-label">autogrow-cap</span>
+          <textarea
+            class="atom-textarea atom-textarea--composer is-autogrow-cap"
+            aria-label="Message"
+            aria-multiline="true"
+            rows="8"
+          >Line 1: Update the relay backoff schedule
+Line 2: Preserve the inner try/catch on connect
+Line 3: Log err.code and err.message before sleep
+Line 4: Cap the backoff at 30s exponential
+Line 5: Add ±20% jitter to prevent thundering-herd
+Line 6: Run /tests against the new unit fixtures
+Line 7: Then update the CHANGELOG entry
+Line 8: Finally open a PR with the description below</textarea>
+        </div>
+
+      </div><!-- /state-row-grid -->
+
+      <!-- ---- 3. COMPOSER COMPOSITION MOCK -------------------- -->
+      <p class="section-head">composer composition — chat input footer</p>
+      <div class="composer-mock">
+        <div class="composer-footer">
+          <div class="composer-input-wrap">
+            <textarea
+              class="composer-textarea"
+              placeholder="Ask to make changes, @mention files, run /commands"
+              aria-label="Message"
+              aria-multiline="true"
+              rows="1"
+            ></textarea>
+            <div class="composer-toolbar">
+              <button class="composer-pill" aria-label="Attach file">
+                <svg class="composer-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                </svg>
+              </button>
+              <button class="composer-pill" aria-label="Model: sonnet-4.6">
+                <svg class="composer-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3c-1 3-3 5-6 6 3 1 5 3 6 6 1-3 3-5 6-6-3-1-5-3-6-6z"/>
+                </svg>
+                <span>sonnet-4.6</span>
+                <svg class="composer-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width: 10px; height: 10px;">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+              <button class="composer-pill" aria-label="Thinking: medium">
+                <svg class="composer-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 2a9 9 0 0 1 9 9 8.5 8.5 0 0 1-1.3 4.5L21 22l-6-2a9 9 0 1 1-3-18z"/>
+                </svg>
+                <span>med</span>
+              </button>
+              <div class="composer-spacer"></div>
+              <button class="composer-send is-disabled" aria-label="Send message" aria-disabled="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div><!-- /composer-mock light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+  <!-- ============================================================
+       Token recipe table
+       ============================================================ -->
+  <div class="recipe-footer">
+    <h2>Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Resolved (dark)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>font-family</td><td>var(--font-body)</td><td>Geist, system-ui, sans-serif</td></tr>
+        <tr><td>font-size</td><td>var(--font-size-body)</td><td>15px</td></tr>
+        <tr><td>font-weight</td><td>var(--font-weight-body)</td><td>400</td></tr>
+        <tr><td>line-height</td><td>var(--line-height-normal)</td><td>1.5</td></tr>
+        <tr><td>letter-spacing</td><td>var(--tracking-normal)</td><td>0</td></tr>
+        <tr><td>color</td><td>var(--text-body)</td><td>--_neutral-fg-0 (#eae8e6)</td></tr>
+        <tr><td>::placeholder color</td><td>var(--text-faint)</td><td>--_neutral-fg-1 (#a8a5a3)</td></tr>
+        <tr><td>padding</td><td>var(--spacing-internal)</td><td>12px</td></tr>
+        <tr><td>border-radius</td><td>var(--radius-default)</td><td>8px</td></tr>
+        <tr><td>min-height</td><td>var(--composer-min-height) → var(--touch-target-min)</td><td>44px</td></tr>
+        <tr><td>max-height</td><td>var(--composer-max-height)</td><td>180px</td></tr>
+        <tr><td>--default bg</td><td>var(--surface-soft)</td><td>--_neutral-4 (#2a2827)</td></tr>
+        <tr><td>--default border</td><td>1px solid var(--border-default)</td><td>--_neutral-4 (#2a2827)</td></tr>
+        <tr><td>--composer bg</td><td>var(--surface-sunken)</td><td>--_neutral-1 (#1a1716)</td></tr>
+        <tr><td>--composer border</td><td>1px solid var(--border-subtle)</td><td>--_neutral-4 (#2a2827)</td></tr>
+        <tr><td>--inset bg</td><td>var(--surface-page)</td><td>--_neutral-0 (#151110)</td></tr>
+        <tr><td>--inset border</td><td>1px solid var(--border-default)</td><td>--_neutral-4 (#2a2827)</td></tr>
+        <tr><td>focus ring</td><td>0 0 0 2px var(--border-focus)</td><td>--_neutral-5 (#3a3837)</td></tr>
+        <tr><td>error border</td><td>1px solid var(--state-danger-fg)</td><td>--_red (#cc4444)</td></tr>
+        <tr><td>error ring</td><td>0 0 0 2px color-mix(…var(--state-danger-fg) 40%)</td><td>rgba(204,68,68,0.4)</td></tr>
+        <tr><td>disabled opacity</td><td>0.5</td><td>—</td></tr>
+        <tr><td>transition timing</td><td>var(--motion-fast) var(--motion-ease-out)</td><td>120ms cubic-bezier(0.16,1,0.3,1)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
