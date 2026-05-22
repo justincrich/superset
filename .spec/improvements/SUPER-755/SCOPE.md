@@ -86,9 +86,10 @@ The three pills rendering side-by-side in `PromptInputTools` are replaced by a s
 
 - [ ] **AC-1**: The single trigger button replaces the three pills in BOTH v1 and v2 `ChatComposerControls.tsx` (visible content: `[ShieldIcon for active permission mode][ProviderLogo][ModelName][BrainIcon — dimmed when thinkingLevel === 'off', full opacity otherwise]`)
 - [ ] **AC-2**: Trigger height matches `PILL_BUTTON_CLASS` (`h-[23px]`); model name truncates with `max-w-[180px]`; NO ChevronDown (aria-expanded covers a11y)
-- [ ] **AC-3**: ShieldIcon variant reflects active permission mode (Auto / Semi-auto / Manual) — match the icon set used inside `PermissionModePicker`
-- [ ] **AC-4**: BrainIcon is ALWAYS rendered in the trigger; `opacity-40` when `thinkingLevel === 'off'`, `opacity-100` otherwise — no presence/absence layout shift
-- [ ] **AC-5**: Trigger has `aria-label` describing the consolidated control (e.g., "Chat settings: model, permission, thinking") and standard keyboard activation
+- [ ] **AC-3**: ShieldIcon variant reflects active permission mode (Auto / Semi-auto / Manual) — match the icon set used inside `PermissionModePicker`. Always at `text-foreground` (no dimming — permission mode is never "off"; one of three modes is always active). Manual mode MAY use a safety-signal accent (e.g., `text-amber-500`) at implementer's discretion based on visual review.
+- [ ] **AC-4**: BrainIcon is ALWAYS rendered in the trigger. State communicated via **semantic color, NOT opacity** (which would read as disabled — see scope amendment §1): `text-muted-foreground` when `thinkingLevel === 'off'`, `text-foreground` otherwise. Same size, same icon weight — only color changes. No layout shift.
+- [ ] **AC-5**: Trigger has `aria-label` describing the consolidated control (dynamic — e.g., "Chat settings: model Claude 3.5 Sonnet, permission Auto, thinking Off") and standard keyboard activation. `cursor-pointer` always; NEVER `cursor-not-allowed` — the trigger is always interactive regardless of thinking state.
+- [ ] **AC-5b**: Trigger has a `Tooltip` (existing `packages/ui` primitive) that surfaces the full current configuration on hover (e.g., "Model: Claude 3.5 Sonnet · Permission: Auto · Thinking: Off"). This reinforces that the inline icons are status indicators, not disabled affordances. Tooltip uses the existing `Tooltip`/`TooltipProvider` primitives — do NOT introduce a custom tooltip implementation.
 
 #### Menu structure
 
@@ -197,7 +198,17 @@ Rejected: ticket explicitly says "collapse these into a single consolidated menu
 
 ## Scope amendments
 
-(empty — populated during implementation if the contract genuinely needs to change)
+### §1 — BrainIcon "off" state must not use `opacity-40` (2026-05-22, post-binding)
+
+**Trigger**: Human review flagged that the original AC-4 used `opacity-40` for `thinkingLevel === 'off'`, which is the established disabled-element visual language. The trigger is always clickable and thinking is fully user-toggleable, so the dimmed-icon-but-clickable-button combination produces a confusing affordance — the user may interpret "dimmed brain icon" as "thinking is disabled by some other config, not by me."
+
+**Decision**: Replace opacity-based state with semantic-color-based state. `text-muted-foreground` (off) → `text-foreground` (on). Same size, same icon. Pair with a hover Tooltip on the trigger surfacing the full current configuration so the icons are unambiguously status indicators, not affordances. Permission ShieldIcon stays at `text-foreground` always (permission mode is never "off") with optional Manual-mode accent color.
+
+**Affected ACs**: AC-3 (revised), AC-4 (revised), AC-5 (cursor clarification appended), AC-5b (new — Tooltip).
+
+**Authority**: User (Justin Rich) raised this concern in the kb-improvement-plan decision phase; applied via `frontend-design:frontend-design` skill consultation.
+
+**Net effect on scope**: No new files; no LOC delta beyond ~5 lines for the Tooltip wrapping. Implementer reuses existing `packages/ui` Tooltip primitives.
 
 ## Deferred follow-ups
 
