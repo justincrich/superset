@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>delete-session-dialog — UC-SESS-05 §A</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-local layout glue — ONLY .view-delete-session-dialog__* rules.
+       Never redefines .atom-* or .mol-* classes.
+       ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding: var(--space-8) var(--space-4);
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- Viewport composition --------------------------------- */
+    /*
+     * The viewport is a position:relative container that holds:
+     *   – a dimmed chat-stub (scrollable thread, non-interactive)
+     *   – atom-backdrop --scrim (absolute, covers the stub)
+     *   – the dialog card (absolute, centered via flex on the backdrop)
+     *
+     * We use the viewport itself as a flex column for the chat stub,
+     * then absolutely-position the scrim + dialog layer on top.
+     */
+
+    /* Faux chat thread behind the dialog — dims under backdrop */
+    .view-delete-session-dialog__chat-stub {
+      position:       absolute;
+      inset:          0;
+      display:        flex;
+      flex-direction: column;
+      overflow:       hidden;
+    }
+
+    /* App header stub */
+    .view-delete-session-dialog__stub-header {
+      flex-shrink:    0;
+      height:         var(--status-bar-height);
+      display:        flex;
+      align-items:    center;
+      padding:        0 var(--space-4);
+      border-bottom:  1px solid var(--border-subtle);
+    }
+
+    /* Faux message rows */
+    .view-delete-session-dialog__stub-messages {
+      flex:           1;
+      padding:        var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-4);
+    }
+
+    .view-delete-session-dialog__stub-msg {
+      height:    var(--space-8);
+      border-radius: var(--radius-default);
+      background: var(--surface-raised);
+      opacity:   0.6;
+    }
+
+    .view-delete-session-dialog__stub-msg--short {
+      width: 55%;
+    }
+
+    .view-delete-session-dialog__stub-msg--medium {
+      width: 75%;
+    }
+
+    .view-delete-session-dialog__stub-msg--long {
+      width: 88%;
+    }
+
+    .view-delete-session-dialog__stub-msg--user {
+      align-self: flex-end;
+      width:      60%;
+    }
+
+    /* ---- Dialog overlay layer --------------------------------- */
+    /*
+     * atom-backdrop --scrim sits at z-index: 100 (from atom definition).
+     * We override position to absolute so it's clipped to the viewport,
+     * not fixed to the browser window.
+     * The dialog card is centred inside the backdrop via flexbox.
+     */
+    .view-delete-session-dialog__overlay {
+      position:        absolute;
+      inset:           0;
+      z-index:         100;
+      background:      rgba(0, 0, 0, 0.55); /* matches atom-backdrop--scrim */
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      padding:         var(--space-6);
+    }
+
+    /* ---- Dialog card ------------------------------------------ */
+    .view-delete-session-dialog__card {
+      width:            100%;
+      max-width:        280px;
+      background:       var(--surface-overlay);
+      border-radius:    var(--radius-xl);
+      box-shadow:       var(--elevation-modal);
+      padding:          var(--space-5);
+      display:          flex;
+      flex-direction:   column;
+      gap:              var(--space-4);
+    }
+
+    /* Title + body text block */
+    .view-delete-session-dialog__text {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    /* Title uses type-title — no margin override needed */
+    .view-delete-session-dialog__title {
+      margin: 0;
+    }
+
+    /* Body copy — no margin override needed */
+    .view-delete-session-dialog__body {
+      margin: 0;
+    }
+
+    /* Button row — equal-width Cancel + Delete */
+    .view-delete-session-dialog__actions {
+      display: flex;
+      gap:     var(--space-3);
+    }
+
+    .view-delete-session-dialog__actions .atom-button {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">delete-session-dialog</h1>
+    <p class="crumb">UC-SESS-05 §A · delete confirmation dialog</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- Viewport content — position:relative anchor for overlay -->
+          <div class="atom-device-bezel__content" style="position: relative;">
+
+            <!-- Dimmed chat-view stub behind the dialog -->
+            <div
+              class="view-delete-session-dialog__chat-stub"
+              aria-hidden="true"
+            >
+              <!-- Faux app header -->
+              <div class="view-delete-session-dialog__stub-header">
+                <span class="type-label" style="opacity: 0.5;">Fix auth bug</span>
+              </div>
+              <!-- Faux message rows -->
+              <div class="view-delete-session-dialog__stub-messages">
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--medium"></div>
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--user"></div>
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--long"></div>
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--short"></div>
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--user" style="width: 45%;"></div>
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--medium"></div>
+              </div>
+            </div><!-- /chat-stub -->
+
+            <!-- Scrim + centered dialog -->
+            <div
+              class="view-delete-session-dialog__overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-dialog-title-dark"
+            >
+              <div class="view-delete-session-dialog__card">
+
+                <!-- Title + body -->
+                <div class="view-delete-session-dialog__text">
+                  <h2
+                    id="delete-dialog-title-dark"
+                    class="type-title view-delete-session-dialog__title"
+                  >Delete "Fix auth bug"?</h2>
+                  <p class="type-body view-delete-session-dialog__body">
+                    This will permanently delete all messages in this session.
+                  </p>
+                </div>
+
+                <!-- Button row -->
+                <div class="view-delete-session-dialog__actions">
+                  <button
+                    type="button"
+                    class="atom-button atom-button--secondary atom-button--md"
+                  >Cancel</button>
+                  <button
+                    type="button"
+                    class="atom-button atom-button--destructive atom-button--md"
+                  >Delete</button>
+                </div>
+
+              </div><!-- /card -->
+            </div><!-- /overlay -->
+
+          </div><!-- /atom-device-bezel__content -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /viewport -->
+      </div><!-- /device-bezel -->
+    </section><!-- /dark pane -->
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- Viewport content — position:relative anchor for overlay -->
+          <div class="atom-device-bezel__content" style="position: relative;">
+
+            <!-- Dimmed chat-view stub behind the dialog -->
+            <div
+              class="view-delete-session-dialog__chat-stub"
+              aria-hidden="true"
+            >
+              <!-- Faux app header -->
+              <div class="view-delete-session-dialog__stub-header">
+                <span class="type-label" style="opacity: 0.5;">Fix auth bug</span>
+              </div>
+              <!-- Faux message rows -->
+              <div class="view-delete-session-dialog__stub-messages">
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--medium"></div>
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--user"></div>
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--long"></div>
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--short"></div>
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--user" style="width: 45%;"></div>
+                <div class="view-delete-session-dialog__stub-msg view-delete-session-dialog__stub-msg--medium"></div>
+              </div>
+            </div><!-- /chat-stub -->
+
+            <!-- Scrim + centered dialog -->
+            <div
+              class="view-delete-session-dialog__overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-dialog-title-light"
+            >
+              <div class="view-delete-session-dialog__card">
+
+                <!-- Title + body -->
+                <div class="view-delete-session-dialog__text">
+                  <h2
+                    id="delete-dialog-title-light"
+                    class="type-title view-delete-session-dialog__title"
+                  >Delete "Fix auth bug"?</h2>
+                  <p class="type-body view-delete-session-dialog__body">
+                    This will permanently delete all messages in this session.
+                  </p>
+                </div>
+
+                <!-- Button row -->
+                <div class="view-delete-session-dialog__actions">
+                  <button
+                    type="button"
+                    class="atom-button atom-button--secondary atom-button--md"
+                  >Cancel</button>
+                  <button
+                    type="button"
+                    class="atom-button atom-button--destructive atom-button--md"
+                  >Delete</button>
+                </div>
+
+              </div><!-- /card -->
+            </div><!-- /overlay -->
+
+          </div><!-- /atom-device-bezel__content -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /viewport -->
+      </div><!-- /device-bezel -->
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
