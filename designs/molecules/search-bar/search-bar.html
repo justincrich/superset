@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>molecule · search-bar</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-search-bar — molecule-local glue
+       Composition purity: no atom rule redefinition.
+       Zero hex literals. Zero raw px in padding/margin/gap.
+       Only layout glue + molecule-specific structure lives here.
+       ================================================================ */
+
+    /* ---- Screen-reader-only utility (local helper — not in atoms) */
+    .sr-only {
+      position:    absolute;
+      width:       1px;
+      height:      1px;
+      padding:     0;
+      margin:      -1px;
+      overflow:    hidden;
+      clip:        rect(0 0 0 0);
+      white-space: nowrap;
+      border:      0;
+    }
+
+    /* ---- Form shell ------------------------------------------ */
+    .mol-search-bar {
+      width:          100%;
+      padding:        var(--space-2) var(--space-4);
+      /* No background/border: the input itself provides the surface */
+    }
+
+    /* ---- Wrap: positions leading icon + clear button above input */
+    .mol-search-bar__wrap {
+      position:    relative;
+      display:     flex;
+      align-items: center;
+      width:       100%;
+    }
+
+    /* ---- Leading icon slot ------------------------------------ */
+    .mol-search-bar__leading {
+      position:       absolute;
+      left:           var(--space-3);
+      display:        flex;
+      align-items:    center;
+      pointer-events: none;
+      z-index:        1;
+    }
+
+    /* ---- Clear button ----------------------------------------- */
+    .mol-search-bar__clear {
+      position: absolute;
+      right:    var(--space-2);
+      display:  none; /* hidden until is-typing */
+    }
+
+    /* Show clear when value is present */
+    .mol-search-bar.is-typing .mol-search-bar__clear {
+      display: inline-flex;
+    }
+
+    /* ---- Error helper text ------------------------------------ */
+    .mol-search-bar__error-msg {
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-meta);
+      font-weight:   var(--font-weight-body);
+      color:         var(--state-danger-fg);
+      line-height:   var(--line-height-snug);
+      padding:       var(--space-1) 0 0 var(--space-4);
+      margin:        0;
+      min-height:    0;
+    }
+
+    /* ---- Variant: compact (sheet header) ---------------------- */
+    .mol-search-bar--compact {
+      padding-block: var(--space-1);
+    }
+
+    /* ---- Variant: ghost (command palette) --------------------- */
+    /* atom-text-input--bare handles the transparent/no-border;
+       ghost variant removes the form padding since the palette
+       provides its own internal spacing. */
+    .mol-search-bar--ghost {
+      padding: 0;
+    }
+
+    /* ---- is-loading: hide clear, spinner from atom-text-input-wrap */
+    .mol-search-bar.is-loading .mol-search-bar__clear {
+      display: none !important;
+    }
+
+    /* ---- is-no-matches: error ring applied to input via is-error */
+    /* (orchestrator adds is-error to <input> and fills __error-msg) */
+
+
+    /* ================================================================
+       Preview layout helpers (not shipped — local to this file)
+       ================================================================ */
+
+    .preview-section {
+      margin-bottom: var(--spacing-section);
+    }
+
+    .preview-section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-4);
+    }
+
+    .preview-row {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-4);
+    }
+
+    .preview-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    .preview-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    /* Faux sheet header context for compact variant */
+    .faux-sheet-header {
+      background:    var(--surface-raised);
+      border-bottom: 1px solid var(--border-subtle);
+      padding:       var(--space-3) var(--space-4);
+      border-radius: var(--radius-default) var(--radius-default) 0 0;
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-3);
+    }
+
+    .faux-sheet-header-title {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-label);
+      color:          var(--text-body);
+      flex:           1;
+    }
+
+    .faux-sheet-wrap {
+      border:        1px solid var(--border-default);
+      border-radius: var(--radius-default);
+      overflow:      hidden;
+    }
+
+    /* Faux command palette context for ghost variant */
+    .faux-palette {
+      background:    var(--surface-overlay);
+      border:        1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      overflow:      hidden;
+      box-shadow:    var(--elevation-modal);
+    }
+
+    .faux-palette-top {
+      border-bottom: 1px solid var(--border-subtle);
+      padding:       var(--space-1) var(--space-2);
+      display:       flex;
+      align-items:   center;
+    }
+
+    .faux-palette-body {
+      padding:        var(--space-2) 0;
+    }
+
+    .faux-palette-option {
+      padding:     var(--space-3) var(--space-4);
+      font-family: var(--font-body);
+      font-size:   var(--font-size-body-sm);
+      color:       var(--text-body);
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-3);
+    }
+
+    .faux-palette-option--active {
+      background: var(--surface-active);
+    }
+
+    .faux-palette-option-icon {
+      color:       var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    /* Faux session list rows for composition example */
+    .faux-session-list {
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      overflow:      hidden;
+    }
+
+    .faux-session-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-3);
+      padding:     var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border-subtle);
+      cursor:      pointer;
+      transition:  background var(--motion-fast) var(--motion-ease-out);
+    }
+
+    .faux-session-row:last-child {
+      border-bottom: none;
+    }
+
+    .faux-session-row:hover {
+      background: var(--surface-soft);
+    }
+
+    .faux-session-row--archived {
+      opacity: 0.55;
+    }
+
+    .faux-session-dot {
+      width:         8px;
+      height:        8px;
+      border-radius: var(--radius-round);
+      flex-shrink:   0;
+    }
+
+    .faux-session-dot--live   { background: var(--state-live-fg); }
+    .faux-session-dot--idle   { background: var(--text-faint); }
+
+    .faux-session-body {
+      flex:   1;
+      min-width: 0;
+    }
+
+    .faux-session-title {
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      font-weight:   var(--font-weight-label);
+      color:         var(--text-body);
+      white-space:   nowrap;
+      overflow:      hidden;
+      text-overflow: ellipsis;
+    }
+
+    .faux-session-meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    .faux-session-match {
+      background:    color-mix(in oklch, var(--accent-primary) 22%, transparent);
+      border-radius: var(--radius-subtle);
+      padding:       0 var(--space-1);
+    }
+
+    .faux-section-ws {
+      padding:        var(--space-2) var(--space-4);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+      background:     var(--surface-soft);
+    }
+
+    .composition-block {
+      max-width: 360px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">search-bar</h1>
+    <p class="crumb">molecule · session search · UC-NAV-07</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+
+    <!-- ============================================================
+         DARK PANE
+         ============================================================ -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ============================================
+           1. VARIANT MATRIX — 4 configurations
+           ============================================ -->
+      <div class="preview-section">
+        <p class="preview-section-title">variant matrix</p>
+
+        <div class="preview-row">
+
+          <!-- default · empty -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">default · empty</span>
+            <form class="mol-search-bar mol-search-bar--default" role="search">
+              <label class="mol-search-bar__label sr-only" for="d-search-empty">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input
+                  id="d-search-empty"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  placeholder="Search sessions across workspaces"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  aria-label="Search sessions across workspaces"
+                />
+                <button
+                  type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search"
+                  tabindex="-1"
+                >
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p id="d-search-empty-error" class="mol-search-bar__error-msg"
+                 role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <!-- default · typing (value present, clear visible) -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">default · typing · "reconnect"</span>
+            <form class="mol-search-bar mol-search-bar--default is-typing" role="search">
+              <label class="mol-search-bar__label sr-only" for="d-search-typing">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input
+                  id="d-search-typing"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  value="reconnect"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                />
+                <button
+                  type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search"
+                >
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p id="d-search-typing-error" class="mol-search-bar__error-msg"
+                 role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <!-- compact · inside faux sheet header -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">compact · sheet header</span>
+            <div class="faux-sheet-wrap">
+              <div class="faux-sheet-header">
+                <span class="faux-sheet-header-title">Filter Workspaces</span>
+              </div>
+              <form class="mol-search-bar mol-search-bar--compact" role="search">
+                <label class="mol-search-bar__label sr-only" for="d-search-compact">Search sessions</label>
+                <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                  <span class="mol-search-bar__leading" aria-hidden="true">
+                    <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <circle cx="11" cy="11" r="7"/>
+                      <path d="M16.5 16.5L21 21"/>
+                    </svg>
+                  </span>
+                  <input
+                    id="d-search-compact"
+                    type="search"
+                    class="atom-text-input atom-text-input--inset atom-text-input--sm type-body"
+                    placeholder="Filter by name…"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                  />
+                  <button
+                    type="button"
+                    class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                    aria-label="Clear search"
+                    tabindex="-1"
+                  >
+                    <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+                <p id="d-search-compact-error" class="mol-search-bar__error-msg"
+                   role="status" aria-live="polite"></p>
+              </form>
+            </div>
+          </div>
+
+          <!-- ghost · inside faux command palette -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">ghost · command palette</span>
+            <div class="faux-palette">
+              <div class="faux-palette-top">
+                <form class="mol-search-bar mol-search-bar--ghost is-typing" role="search" style="flex:1">
+                  <label class="mol-search-bar__label sr-only" for="d-search-ghost">Command palette search</label>
+                  <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                    <span class="mol-search-bar__leading" aria-hidden="true">
+                      <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                           viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                           stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                           aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="M16.5 16.5L21 21"/>
+                      </svg>
+                    </span>
+                    <input
+                      id="d-search-ghost"
+                      type="search"
+                      class="atom-text-input atom-text-input--bare atom-text-input--md type-body"
+                      value="relay"
+                      autocomplete="off"
+                      autocorrect="off"
+                      autocapitalize="off"
+                      spellcheck="false"
+                    />
+                    <button
+                      type="button"
+                      class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                      aria-label="Clear search"
+                    >
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                           viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                           aria-hidden="true">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <p id="d-search-ghost-error" class="mol-search-bar__error-msg"
+                     role="status" aria-live="polite"></p>
+                </form>
+              </div>
+              <div class="faux-palette-body">
+                <div class="faux-palette-option faux-palette-option--active">
+                  <svg class="faux-palette-option-icon atom-icon-glyph atom-icon-glyph--sm"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" aria-hidden="true">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  <span>Refactor <strong>relay</strong> tunnel reconnect</span>
+                </div>
+                <div class="faux-palette-option">
+                  <svg class="faux-palette-option-icon atom-icon-glyph atom-icon-glyph--sm"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" aria-hidden="true">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  <span>Debug <strong>relay</strong>-client.ts flush bug</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /preview-row -->
+      </div><!-- /variant matrix -->
+
+
+      <!-- ============================================
+           2. STATE ROW — default variant, 5 states
+           ============================================ -->
+      <div class="preview-section">
+        <p class="preview-section-title">state row — default · md</p>
+
+        <div class="preview-row">
+
+          <!-- empty (default) -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">empty · default</span>
+            <form class="mol-search-bar mol-search-bar--default" role="search">
+              <label class="mol-search-bar__label sr-only" for="d-state-empty">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input
+                  id="d-state-empty"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  placeholder="Search sessions across workspaces"
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                />
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search" tabindex="-1">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <!-- is-typing -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">is-typing · clear visible</span>
+            <form class="mol-search-bar mol-search-bar--default is-typing" role="search">
+              <label class="mol-search-bar__label sr-only" for="d-state-typing">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input
+                  id="d-state-typing"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  value="reconnect"
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                />
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <!-- is-focus -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">is-focus · focus ring</span>
+            <form class="mol-search-bar mol-search-bar--default" role="search">
+              <label class="mol-search-bar__label sr-only" for="d-state-focus">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input
+                  id="d-state-focus"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body is-focus"
+                  placeholder="Search sessions across workspaces"
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                />
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search" tabindex="-1">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <!-- is-no-matches -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">is-no-matches · error state</span>
+            <form class="mol-search-bar mol-search-bar--default is-typing is-no-matches" role="search">
+              <label class="mol-search-bar__label sr-only" for="d-state-no-matches">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input
+                  id="d-state-no-matches"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body is-error"
+                  value="reconnect"
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                  aria-invalid="true"
+                  aria-describedby="d-state-no-matches-error"
+                />
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p id="d-state-no-matches-error" class="mol-search-bar__error-msg"
+                 role="status" aria-live="polite">No sessions match "reconnect"</p>
+            </form>
+          </div>
+
+          <!-- is-loading -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">is-loading · spinner</span>
+            <form class="mol-search-bar mol-search-bar--default is-typing is-loading" role="search">
+              <label class="mol-search-bar__label sr-only" for="d-state-loading">Search sessions</label>
+              <!-- atom-text-input-wrap.is-loading renders the spinner via ::after -->
+              <div class="mol-search-bar__wrap atom-text-input-wrap is-loading atom-text-input--with-leading-icon"
+                   aria-busy="true">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input
+                  id="d-state-loading"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  value="reconnect"
+                  readonly
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                />
+                <!-- clear hidden via .is-loading rule -->
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search" tabindex="-1">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+        </div><!-- /preview-row -->
+      </div><!-- /state row -->
+
+
+      <!-- ============================================
+           3. COMPOSITION — above faux session list
+           ============================================ -->
+      <div class="preview-section">
+        <p class="preview-section-title">composition — search active, "reconnect"</p>
+        <div class="composition-block">
+
+          <!-- Search bar above the list -->
+          <form class="mol-search-bar mol-search-bar--default is-typing" role="search">
+            <label class="mol-search-bar__label sr-only" for="d-comp-search">Search sessions</label>
+            <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+              <span class="mol-search-bar__leading" aria-hidden="true">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"/>
+                  <path d="M16.5 16.5L21 21"/>
+                </svg>
+              </span>
+              <input
+                id="d-comp-search"
+                type="search"
+                class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                value="reconnect"
+                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+              />
+              <button type="button"
+                class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                aria-label="Clear search">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+          </form>
+
+          <!-- Faux session list with matching results -->
+          <div class="faux-session-list" role="list" aria-label="Search results">
+
+            <!-- Workspace section label -->
+            <div class="faux-section-ws">superset · chat-mobile-plan · 2 matches</div>
+
+            <!-- Result 1: live session with match highlight -->
+            <div class="faux-session-row" role="listitem">
+              <span class="faux-session-dot faux-session-dot--live" aria-hidden="true"></span>
+              <div class="faux-session-body">
+                <div class="faux-session-title">
+                  Relay tunnel <span class="faux-session-match">reconnect</span> failure — debug
+                </div>
+                <div class="faux-session-meta">streaming · 3m ago</div>
+              </div>
+            </div>
+
+            <!-- Result 2: archived session (faded) with match highlight -->
+            <div class="faux-session-row faux-session-row--archived" role="listitem"
+                 aria-label="Archived session">
+              <span class="faux-session-dot faux-session-dot--idle" aria-hidden="true"></span>
+              <div class="faux-session-body">
+                <div class="faux-session-title">
+                  MCP server auto-<span class="faux-session-match">reconnect</span> on drop
+                </div>
+                <div class="faux-session-meta">archived · 14d ago</div>
+              </div>
+            </div>
+
+          </div><!-- /faux-session-list -->
+
+        </div><!-- /composition-block -->
+      </div><!-- /composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ============================================================
+         LIGHT PANE
+         ============================================================ -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ============================================
+           1. VARIANT MATRIX — 4 configurations
+           ============================================ -->
+      <div class="preview-section">
+        <p class="preview-section-title">variant matrix</p>
+
+        <div class="preview-row">
+
+          <!-- default · empty -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">default · empty</span>
+            <form class="mol-search-bar mol-search-bar--default" role="search">
+              <label class="mol-search-bar__label sr-only" for="l-search-empty">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input
+                  id="l-search-empty"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  placeholder="Search sessions across workspaces"
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                  aria-label="Search sessions across workspaces"
+                />
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search" tabindex="-1">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <!-- default · typing -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">default · typing · "reconnect"</span>
+            <form class="mol-search-bar mol-search-bar--default is-typing" role="search">
+              <label class="mol-search-bar__label sr-only" for="l-search-typing">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input
+                  id="l-search-typing"
+                  type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  value="reconnect"
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                />
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <!-- compact · sheet header -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">compact · sheet header</span>
+            <div class="faux-sheet-wrap">
+              <div class="faux-sheet-header">
+                <span class="faux-sheet-header-title">Filter Workspaces</span>
+              </div>
+              <form class="mol-search-bar mol-search-bar--compact" role="search">
+                <label class="mol-search-bar__label sr-only" for="l-search-compact">Search sessions</label>
+                <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                  <span class="mol-search-bar__leading" aria-hidden="true">
+                    <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <circle cx="11" cy="11" r="7"/>
+                      <path d="M16.5 16.5L21 21"/>
+                    </svg>
+                  </span>
+                  <input
+                    id="l-search-compact"
+                    type="search"
+                    class="atom-text-input atom-text-input--inset atom-text-input--sm type-body"
+                    placeholder="Filter by name…"
+                    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                  />
+                  <button type="button"
+                    class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                    aria-label="Clear search" tabindex="-1">
+                    <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+                <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+              </form>
+            </div>
+          </div>
+
+          <!-- ghost · command palette -->
+          <div class="preview-cell">
+            <span class="preview-cell-label">ghost · command palette</span>
+            <div class="faux-palette">
+              <div class="faux-palette-top">
+                <form class="mol-search-bar mol-search-bar--ghost is-typing" role="search" style="flex:1">
+                  <label class="mol-search-bar__label sr-only" for="l-search-ghost">Command palette search</label>
+                  <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                    <span class="mol-search-bar__leading" aria-hidden="true">
+                      <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                           viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                           stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                           aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="M16.5 16.5L21 21"/>
+                      </svg>
+                    </span>
+                    <input
+                      id="l-search-ghost"
+                      type="search"
+                      class="atom-text-input atom-text-input--bare atom-text-input--md type-body"
+                      value="relay"
+                      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                    />
+                    <button type="button"
+                      class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                      aria-label="Clear search">
+                      <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                           viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                           aria-hidden="true">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+                </form>
+              </div>
+              <div class="faux-palette-body">
+                <div class="faux-palette-option faux-palette-option--active">
+                  <svg class="faux-palette-option-icon atom-icon-glyph atom-icon-glyph--sm"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" aria-hidden="true">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  <span>Refactor <strong>relay</strong> tunnel reconnect</span>
+                </div>
+                <div class="faux-palette-option">
+                  <svg class="faux-palette-option-icon atom-icon-glyph atom-icon-glyph--sm"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" aria-hidden="true">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  <span>Debug <strong>relay</strong>-client.ts flush bug</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /preview-row -->
+      </div><!-- /variant matrix light -->
+
+
+      <!-- ============================================
+           2. STATE ROW — default variant, 5 states
+           ============================================ -->
+      <div class="preview-section">
+        <p class="preview-section-title">state row — default · md</p>
+
+        <div class="preview-row">
+
+          <div class="preview-cell">
+            <span class="preview-cell-label">empty · default</span>
+            <form class="mol-search-bar mol-search-bar--default" role="search">
+              <label class="mol-search-bar__label sr-only" for="l-state-empty">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input id="l-state-empty" type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  placeholder="Search sessions across workspaces"
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search" tabindex="-1">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div class="preview-cell">
+            <span class="preview-cell-label">is-typing · clear visible</span>
+            <form class="mol-search-bar mol-search-bar--default is-typing" role="search">
+              <label class="mol-search-bar__label sr-only" for="l-state-typing">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input id="l-state-typing" type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  value="reconnect"
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div class="preview-cell">
+            <span class="preview-cell-label">is-focus · focus ring</span>
+            <form class="mol-search-bar mol-search-bar--default" role="search">
+              <label class="mol-search-bar__label sr-only" for="l-state-focus">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input id="l-state-focus" type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body is-focus"
+                  placeholder="Search sessions across workspaces"
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search" tabindex="-1">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div class="preview-cell">
+            <span class="preview-cell-label">is-no-matches · error state</span>
+            <form class="mol-search-bar mol-search-bar--default is-typing is-no-matches" role="search">
+              <label class="mol-search-bar__label sr-only" for="l-state-no-matches">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input id="l-state-no-matches" type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body is-error"
+                  value="reconnect"
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                  aria-invalid="true"
+                  aria-describedby="l-state-no-matches-error"/>
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p id="l-state-no-matches-error" class="mol-search-bar__error-msg"
+                 role="status" aria-live="polite">No sessions match "reconnect"</p>
+            </form>
+          </div>
+
+          <div class="preview-cell">
+            <span class="preview-cell-label">is-loading · spinner</span>
+            <form class="mol-search-bar mol-search-bar--default is-typing is-loading" role="search">
+              <label class="mol-search-bar__label sr-only" for="l-state-loading">Search sessions</label>
+              <div class="mol-search-bar__wrap atom-text-input-wrap is-loading atom-text-input--with-leading-icon"
+                   aria-busy="true">
+                <span class="mol-search-bar__leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="M16.5 16.5L21 21"/>
+                  </svg>
+                </span>
+                <input id="l-state-loading" type="search"
+                  class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                  value="reconnect" readonly
+                  autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+                <button type="button"
+                  class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                  aria-label="Clear search" tabindex="-1">
+                  <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+
+        </div><!-- /preview-row -->
+      </div><!-- /state row light -->
+
+
+      <!-- ============================================
+           3. COMPOSITION — above faux session list
+           ============================================ -->
+      <div class="preview-section">
+        <p class="preview-section-title">composition — search active, "reconnect"</p>
+        <div class="composition-block">
+
+          <form class="mol-search-bar mol-search-bar--default is-typing" role="search">
+            <label class="mol-search-bar__label sr-only" for="l-comp-search">Search sessions</label>
+            <div class="mol-search-bar__wrap atom-text-input--with-leading-icon atom-text-input--with-trailing-clear">
+              <span class="mol-search-bar__leading" aria-hidden="true">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"/>
+                  <path d="M16.5 16.5L21 21"/>
+                </svg>
+              </span>
+              <input id="l-comp-search" type="search"
+                class="atom-text-input atom-text-input--inset atom-text-input--md type-body"
+                value="reconnect"
+                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+              <button type="button"
+                class="mol-search-bar__clear atom-hit-target-wrapper atom-hit-target-wrapper--circle"
+                aria-label="Clear search">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <p class="mol-search-bar__error-msg" role="status" aria-live="polite"></p>
+          </form>
+
+          <div class="faux-session-list" role="list" aria-label="Search results">
+            <div class="faux-section-ws">superset · chat-mobile-plan · 2 matches</div>
+            <div class="faux-session-row" role="listitem">
+              <span class="faux-session-dot faux-session-dot--live" aria-hidden="true"></span>
+              <div class="faux-session-body">
+                <div class="faux-session-title">
+                  Relay tunnel <span class="faux-session-match">reconnect</span> failure — debug
+                </div>
+                <div class="faux-session-meta">streaming · 3m ago</div>
+              </div>
+            </div>
+            <div class="faux-session-row faux-session-row--archived" role="listitem"
+                 aria-label="Archived session">
+              <span class="faux-session-dot faux-session-dot--idle" aria-hidden="true"></span>
+              <div class="faux-session-body">
+                <div class="faux-session-title">
+                  MCP server auto-<span class="faux-session-match">reconnect</span> on drop
+                </div>
+                <div class="faux-session-meta">archived · 14d ago</div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /composition-block -->
+      </div><!-- /composition light -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token Recipe Footer
+       ============================================================ -->
+  <footer class="recipe-footer">
+    <h2>token recipe · mol-search-bar</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Applies to</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>form padding (block)</td><td>var(--space-2)</td><td>.mol-search-bar</td></tr>
+        <tr><td>form padding (inline)</td><td>var(--space-4)</td><td>.mol-search-bar</td></tr>
+        <tr><td>compact padding (block)</td><td>var(--space-1)</td><td>.mol-search-bar--compact</td></tr>
+        <tr><td>ghost padding</td><td>0</td><td>.mol-search-bar--ghost</td></tr>
+        <tr><td>input background (default)</td><td>var(--surface-sunken)</td><td>atom-text-input--inset</td></tr>
+        <tr><td>input background (ghost)</td><td>transparent</td><td>atom-text-input--bare</td></tr>
+        <tr><td>leading icon left</td><td>var(--space-3)</td><td>.mol-search-bar__leading</td></tr>
+        <tr><td>leading icon color</td><td>var(--text-muted)</td><td>atom-icon-glyph--muted</td></tr>
+        <tr><td>clear button right</td><td>var(--space-2)</td><td>.mol-search-bar__clear</td></tr>
+        <tr><td>clear hidden / visible</td><td>display: none / inline-flex</td><td>.is-typing</td></tr>
+        <tr><td>clear hidden (loading)</td><td>display: none</td><td>.is-loading</td></tr>
+        <tr><td>touch target</td><td>var(--touch-target-min)</td><td>atom-hit-target-wrapper</td></tr>
+        <tr><td>input height (md)</td><td>var(--touch-target-min)</td><td>atom-text-input--md</td></tr>
+        <tr><td>input height (sm)</td><td>36px</td><td>atom-text-input--sm</td></tr>
+        <tr><td>focus ring</td><td>0 0 0 2px var(--border-focus)</td><td>atom-text-input.is-focus</td></tr>
+        <tr><td>error ring</td><td>0 0 0 2px color-mix(…state-danger-fg 30%, transparent)</td><td>atom-text-input.is-error</td></tr>
+        <tr><td>error text color</td><td>var(--state-danger-fg)</td><td>.mol-search-bar__error-msg</td></tr>
+        <tr><td>error text size</td><td>var(--font-size-meta)</td><td>.mol-search-bar__error-msg</td></tr>
+        <tr><td>error text padding</td><td>var(--space-1) 0 0 var(--space-4)</td><td>.mol-search-bar__error-msg</td></tr>
+        <tr><td>spinner (loading)</td><td>atom-text-input-wrap.is-loading::after</td><td>is-loading state</td></tr>
+        <tr><td>motion</td><td>var(--motion-fast) var(--motion-ease-out)</td><td>all interactive transitions</td></tr>
+        <tr><td>search glyph size</td><td>16×16px (atom-icon-glyph--sm)</td><td>leading icon</td></tr>
+        <tr><td>clear glyph size</td><td>12×12px (atom-icon-glyph--xs)</td><td>clear button icon</td></tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top: var(--spacing-section)">atoms used</h2>
+    <table class="recipe">
+      <thead>
+        <tr><th>Atom</th><th>Modifier classes</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>atom-text-input</td><td>--inset --md (default); --inset --sm (compact); --bare --md (ghost)</td><td>Base search input field</td></tr>
+        <tr><td>atom-text-input-wrap modifier</td><td>atom-text-input--with-leading-icon</td><td>Reserves left padding gutter for search glyph</td></tr>
+        <tr><td>atom-text-input-wrap modifier</td><td>atom-text-input--with-trailing-clear</td><td>Reserves right padding gutter for clear button</td></tr>
+        <tr><td>atom-text-input-wrap modifier</td><td>.is-loading</td><td>Renders trailing spinner in is-loading state</td></tr>
+        <tr><td>atom-icon-glyph</td><td>--sm --muted</td><td>Leading search magnifier (16×16)</td></tr>
+        <tr><td>atom-icon-glyph</td><td>--xs --muted</td><td>Clear ✕ glyph inside hit-target (12×12)</td></tr>
+        <tr><td>atom-hit-target-wrapper</td><td>--circle</td><td>44pt circular tap zone for clear button</td></tr>
+      </tbody>
+    </table>
+  </footer>
+
+</body>
+</html>
