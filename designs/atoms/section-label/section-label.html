@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · section-label</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-section-label — token-governed mono uppercase label atom
+       Block-level section marker: sticky headers, meta rows, toolbar
+       group labels, stickered rows, code block labels.
+       Composition purity: only .atom-section-label rules defined here.
+       Zero hex literals. Structural constant 1px allowed.
+       All padding via var(--space-*).
+       ============================================================ */
+
+    /* ---- Base ------------------------------------------------ */
+    .atom-section-label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      font-weight: var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      line-height: var(--line-height-tight);
+      color: var(--text-muted);
+    }
+
+    /* ---- Color variants -------------------------------------- */
+    /* muted is the default — no extra class required */
+    .atom-section-label--faint  { color: var(--text-faint);  }
+    .atom-section-label--strong { color: var(--text-body);   }
+
+    /* ---- Sticky modifier ------------------------------------- */
+    .atom-section-label--sticky {
+      position: sticky;
+      top: 0;
+      background: var(--surface-page);
+      padding-block: var(--space-2);
+      z-index: 1;
+    }
+
+    /* ---- Inline modifier ------------------------------------- */
+    .atom-section-label--inline {
+      display: inline;
+      padding-inline: var(--space-2);
+    }
+
+    /* ---- With-rule modifier ---------------------------------- */
+    .atom-section-label--with-rule {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .atom-section-label--with-rule::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* ============================================================
+       Preview layout helpers — not part of the atom spec
+       ============================================================ */
+
+    .section-title {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-body-sm);
+      font-weight: var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color: var(--text-heading);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-4);
+    }
+
+    .demo-label {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-2);
+    }
+
+    .demo-row {
+      margin-bottom: var(--space-8);
+    }
+
+    /* Variant row — horizontal flex of all 3 color variants */
+    .variant-row {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    /* Sticky scroll demo container */
+    .sticky-scroll-demo {
+      height: 200px;
+      overflow-y: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      background: var(--surface-page);
+    }
+
+    .sticky-scroll-inner {
+      padding: 0 var(--space-4) var(--space-4);
+    }
+
+    /* Faux session row — used inside sticky scroll demo */
+    .session-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .session-row:last-child {
+      border-bottom: none;
+    }
+    .session-row__dot {
+      width: var(--space-2);
+      height: var(--space-2);
+      border-radius: var(--radius-round);
+      flex-shrink: 0;
+    }
+    .session-row__dot--live    { background: var(--state-live-dot); }
+    .session-row__dot--paused  { background: var(--state-neutral-dot); }
+    .session-row__title {
+      font-family: var(--font-body);
+      font-size: var(--font-size-body-sm);
+      font-weight: var(--font-weight-body);
+      color: var(--text-body);
+      line-height: var(--line-height-snug);
+      flex: 1;
+    }
+    .session-row__meta {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* Inline meta row — wraps inline segment labels */
+    .meta-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+    .meta-sep {
+      padding-inline: var(--space-1);
+      color: var(--text-faint);
+    }
+
+    /* Workspace section header composition */
+    .ws-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: var(--space-2);
+    }
+    .ws-header__count {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      font-weight: var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color: var(--text-faint);
+      min-width: var(--space-6);
+      text-align: right;
+    }
+
+    /* Faux code block */
+    .code-block {
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      overflow: hidden;
+    }
+    .code-block__header {
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .code-block__body {
+      padding: var(--space-3);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-code);
+      color: var(--text-body);
+      line-height: var(--line-height-normal);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* Empty-state caption container */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-8) var(--space-4);
+      gap: var(--space-3);
+    }
+    .empty-state__icon {
+      width: var(--space-8);
+      height: var(--space-8);
+      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius-round);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">section-label</h1>
+    <p class="crumb">atom · mono uppercase block label — section headers, meta rows, toolbar groups, code labels</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT ROW ---------------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">color variants</h3>
+
+        <div class="demo-row">
+          <p class="demo-label">muted (default)</p>
+          <h2 class="atom-section-label">SUPERSET · CHAT-MOBILE-PLAN</h2>
+        </div>
+
+        <div class="demo-row">
+          <p class="demo-label">faint</p>
+          <h2 class="atom-section-label atom-section-label--faint">12 SESSIONS · 2 HOSTS</h2>
+        </div>
+
+        <div class="demo-row">
+          <p class="demo-label">strong</p>
+          <h2 class="atom-section-label atom-section-label--strong">PROJECT · BRANCH</h2>
+        </div>
+      </div>
+
+      <!-- ---- 2. MODIFIER SHOWCASE ----------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">modifiers</h3>
+
+        <!-- sticky — simulated in a scroll container -->
+        <div class="demo-row">
+          <p class="demo-label">sticky — scrollable sessions list with sticky section header</p>
+          <div class="sticky-scroll-demo" role="list" aria-label="Sessions list">
+            <div class="sticky-scroll-inner">
+              <h2 class="atom-section-label atom-section-label--sticky">SUPERSET · CHAT-MOBILE-PLAN</h2>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--live" aria-hidden="true"></span>
+                <span class="session-row__title">Refactor relay tunnel reconnect logic</span>
+                <span class="session-row__meta">0:42</span>
+              </div>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+                <span class="session-row__title">Reset onboarding state for QA build</span>
+                <span class="session-row__meta">2:18</span>
+              </div>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+                <span class="session-row__title">Fix dynamic island height mismatch</span>
+                <span class="session-row__meta">5:07</span>
+              </div>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+                <span class="session-row__title">Token audit: remove hex literals from pill</span>
+                <span class="session-row__meta">1:03</span>
+              </div>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+                <span class="session-row__title">Add streaming-cursor atom preview</span>
+                <span class="session-row__meta">0:55</span>
+              </div>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+                <span class="session-row__title">Compose bottom sheet safe-area fix</span>
+                <span class="session-row__meta">3:21</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- with-rule — extends hairline to fill remaining space -->
+        <div class="demo-row">
+          <p class="demo-label">with-rule — streaming section separator</p>
+          <h2 class="atom-section-label atom-section-label--with-rule">STREAMING</h2>
+        </div>
+
+        <!-- inline — segments inside a meta row -->
+        <div class="demo-row">
+          <p class="demo-label">inline — meta segment row</p>
+          <div class="meta-row" role="group" aria-label="Session metadata">
+            <span class="atom-section-label atom-section-label--inline">SONNET 4.6</span>
+            <span class="meta-sep" aria-hidden="true">·</span>
+            <span class="atom-section-label atom-section-label--inline">MEDIUM</span>
+            <span class="meta-sep" aria-hidden="true">·</span>
+            <span class="atom-section-label atom-section-label--inline">0:24</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 3. COMPOSITION EXAMPLES -------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">composition examples</h3>
+
+        <!-- Workspace section header -->
+        <div class="demo-row">
+          <p class="demo-label">workspace section header — sticky label with count and hairline</p>
+          <div class="ws-header" role="group" aria-label="Project section header">
+            <h2 class="atom-section-label">SUPERSET · CHAT-MOBILE-PLAN</h2>
+            <span class="ws-header__count" aria-label="12 sessions">12</span>
+          </div>
+          <div class="session-row" role="listitem">
+            <span class="session-row__dot session-row__dot--live" aria-hidden="true"></span>
+            <span class="session-row__title">Refactor relay tunnel reconnect logic</span>
+            <span class="session-row__meta">0:42</span>
+          </div>
+          <div class="session-row" role="listitem">
+            <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+            <span class="session-row__title">Reset onboarding state for QA build</span>
+            <span class="session-row__meta">2:18</span>
+          </div>
+        </div>
+
+        <!-- Code block label -->
+        <div class="demo-row">
+          <p class="demo-label">code block label — inline-strong above faux code block</p>
+          <div class="code-block">
+            <div class="code-block__header">
+              <span class="atom-section-label atom-section-label--strong atom-section-label--inline">TYPESCRIPT</span>
+            </div>
+            <div class="code-block__body" aria-label="Code block">
+              <span style="color: var(--text-muted);">const</span> relay = <span style="color: var(--accent-primary);">await</span> createRelay({<br>
+              &nbsp;&nbsp;host: <span style="color: var(--state-live-fg);">'chat.superset.sh'</span>,<br>
+              &nbsp;&nbsp;port: <span style="color: var(--state-warning-fg);">8443</span>,<br>
+              });
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty-state caption -->
+        <div class="demo-row">
+          <p class="demo-label">empty-state caption — centered muted</p>
+          <div class="empty-state" role="status" aria-live="polite">
+            <div class="empty-state__icon" aria-hidden="true"></div>
+            <h2 class="atom-section-label" style="text-align: center;">NO SESSIONS YET</h2>
+          </div>
+        </div>
+
+      </div>
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT ROW ---------------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">color variants</h3>
+
+        <div class="demo-row">
+          <p class="demo-label">muted (default)</p>
+          <h2 class="atom-section-label">SUPERSET · CHAT-MOBILE-PLAN</h2>
+        </div>
+
+        <div class="demo-row">
+          <p class="demo-label">faint</p>
+          <h2 class="atom-section-label atom-section-label--faint">12 SESSIONS · 2 HOSTS</h2>
+        </div>
+
+        <div class="demo-row">
+          <p class="demo-label">strong</p>
+          <h2 class="atom-section-label atom-section-label--strong">PROJECT · BRANCH</h2>
+        </div>
+      </div>
+
+      <!-- ---- 2. MODIFIER SHOWCASE ----------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">modifiers</h3>
+
+        <!-- sticky -->
+        <div class="demo-row">
+          <p class="demo-label">sticky — scrollable sessions list with sticky section header</p>
+          <div class="sticky-scroll-demo" role="list" aria-label="Sessions list">
+            <div class="sticky-scroll-inner">
+              <h2 class="atom-section-label atom-section-label--sticky">SUPERSET · CHAT-MOBILE-PLAN</h2>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--live" aria-hidden="true"></span>
+                <span class="session-row__title">Refactor relay tunnel reconnect logic</span>
+                <span class="session-row__meta">0:42</span>
+              </div>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+                <span class="session-row__title">Reset onboarding state for QA build</span>
+                <span class="session-row__meta">2:18</span>
+              </div>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+                <span class="session-row__title">Fix dynamic island height mismatch</span>
+                <span class="session-row__meta">5:07</span>
+              </div>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+                <span class="session-row__title">Token audit: remove hex literals from pill</span>
+                <span class="session-row__meta">1:03</span>
+              </div>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+                <span class="session-row__title">Add streaming-cursor atom preview</span>
+                <span class="session-row__meta">0:55</span>
+              </div>
+              <div class="session-row" role="listitem">
+                <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+                <span class="session-row__title">Compose bottom sheet safe-area fix</span>
+                <span class="session-row__meta">3:21</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- with-rule -->
+        <div class="demo-row">
+          <p class="demo-label">with-rule — streaming section separator</p>
+          <h2 class="atom-section-label atom-section-label--with-rule">STREAMING</h2>
+        </div>
+
+        <!-- inline -->
+        <div class="demo-row">
+          <p class="demo-label">inline — meta segment row</p>
+          <div class="meta-row" role="group" aria-label="Session metadata">
+            <span class="atom-section-label atom-section-label--inline">SONNET 4.6</span>
+            <span class="meta-sep" aria-hidden="true">·</span>
+            <span class="atom-section-label atom-section-label--inline">MEDIUM</span>
+            <span class="meta-sep" aria-hidden="true">·</span>
+            <span class="atom-section-label atom-section-label--inline">0:24</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 3. COMPOSITION EXAMPLES -------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">composition examples</h3>
+
+        <!-- Workspace section header -->
+        <div class="demo-row">
+          <p class="demo-label">workspace section header — sticky label with count and hairline</p>
+          <div class="ws-header" role="group" aria-label="Project section header">
+            <h2 class="atom-section-label">SUPERSET · CHAT-MOBILE-PLAN</h2>
+            <span class="ws-header__count" aria-label="12 sessions">12</span>
+          </div>
+          <div class="session-row" role="listitem">
+            <span class="session-row__dot session-row__dot--live" aria-hidden="true"></span>
+            <span class="session-row__title">Refactor relay tunnel reconnect logic</span>
+            <span class="session-row__meta">0:42</span>
+          </div>
+          <div class="session-row" role="listitem">
+            <span class="session-row__dot session-row__dot--paused" aria-hidden="true"></span>
+            <span class="session-row__title">Reset onboarding state for QA build</span>
+            <span class="session-row__meta">2:18</span>
+          </div>
+        </div>
+
+        <!-- Code block label -->
+        <div class="demo-row">
+          <p class="demo-label">code block label — inline-strong above faux code block</p>
+          <div class="code-block">
+            <div class="code-block__header">
+              <span class="atom-section-label atom-section-label--strong atom-section-label--inline">TYPESCRIPT</span>
+            </div>
+            <div class="code-block__body" aria-label="Code block">
+              <span style="color: var(--text-muted);">const</span> relay = <span style="color: var(--accent-primary);">await</span> createRelay({<br>
+              &nbsp;&nbsp;host: <span style="color: var(--state-live-fg);">'chat.superset.sh'</span>,<br>
+              &nbsp;&nbsp;port: <span style="color: var(--state-warning-fg);">8443</span>,<br>
+              });
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty-state caption -->
+        <div class="demo-row">
+          <p class="demo-label">empty-state caption — centered muted</p>
+          <div class="empty-state" role="status" aria-live="polite">
+            <div class="empty-state__icon" aria-hidden="true"></div>
+            <h2 class="atom-section-label" style="text-align: center;">NO SESSIONS YET</h2>
+          </div>
+        </div>
+
+      </div>
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe footer
+       ============================================================ -->
+  <div style="padding: var(--spacing-section) var(--spacing-between);">
+    <h2 class="section-title" style="margin-bottom: var(--space-4);">Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Dark resolves to</th>
+          <th>Light resolves to</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>font-family</td>
+          <td>--font-mono</td>
+          <td colspan="2">Geist Mono, ui-monospace, SF Mono, monospace</td>
+        </tr>
+        <tr>
+          <td>font-size</td>
+          <td>--font-size-meta</td>
+          <td colspan="2">11px</td>
+        </tr>
+        <tr>
+          <td>font-weight</td>
+          <td>--font-weight-meta</td>
+          <td colspan="2">500</td>
+        </tr>
+        <tr>
+          <td>letter-spacing</td>
+          <td>--tracking-uppercase</td>
+          <td colspan="2">0.06em</td>
+        </tr>
+        <tr>
+          <td>line-height</td>
+          <td>--line-height-tight</td>
+          <td colspan="2">1.15</td>
+        </tr>
+        <tr>
+          <td>color (muted, default)</td>
+          <td>--text-muted</td>
+          <td>--_neutral-fg-1 (#a8a5a3)</td>
+          <td>--_neutral-fg-1 (oklch 0.556 0 0)</td>
+        </tr>
+        <tr>
+          <td>color (faint)</td>
+          <td>--text-faint</td>
+          <td>--_neutral-fg-1 (#a8a5a3)</td>
+          <td>--_neutral-fg-1 (oklch 0.556 0 0)</td>
+        </tr>
+        <tr>
+          <td>color (strong)</td>
+          <td>--text-body</td>
+          <td>--_neutral-fg-0 (#eae8e6)</td>
+          <td>--_neutral-fg-0 (oklch 0.145 0 0)</td>
+        </tr>
+        <tr>
+          <td>sticky background</td>
+          <td>--surface-page</td>
+          <td>--_neutral-0 (#151110)</td>
+          <td>--_neutral-0 (oklch 1 0 0)</td>
+        </tr>
+        <tr>
+          <td>sticky padding-block</td>
+          <td>--space-2</td>
+          <td colspan="2">8px</td>
+        </tr>
+        <tr>
+          <td>inline padding-inline</td>
+          <td>--space-2</td>
+          <td colspan="2">8px</td>
+        </tr>
+        <tr>
+          <td>with-rule gap</td>
+          <td>--space-3</td>
+          <td colspan="2">12px</td>
+        </tr>
+        <tr>
+          <td>with-rule hairline color</td>
+          <td>--border-subtle</td>
+          <td>--_neutral-4 (#2a2827)</td>
+          <td>--_neutral-border (oklch 0.922 0 0)</td>
+        </tr>
+        <tr>
+          <td>with-rule thickness (structural)</td>
+          <td>— (constant)</td>
+          <td colspan="2">1px</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
