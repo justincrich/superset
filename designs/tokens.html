@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Superset Design Tokens — Primitives Index</title>
+  <link rel="stylesheet" href="./typography/fonts.css">
+  <link rel="stylesheet" href="./tokens/tokens.css">
+  <link rel="stylesheet" href="./typography/type-modules.css">
+  <style>
+    /* --------------------------------------------------------
+       Page chrome — indexes both themes stacked vertically.
+       Uses only design tokens — zero raw hex / px values.
+    -------------------------------------------------------- */
+    :root,
+    [data-theme="dark"],
+    [data-theme="light"] {
+      /* Sub-scale tokens for hairline padding — supplemental to tokens.css */
+      --spacing-hairline: 1px;  /* border-width / code-inline padding */
+      --spacing-nano:     2px;  /* tightest inline padding */
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-body);
+    }
+
+    /* index-shell: pinned dark so outer chrome inherits dark semantic tokens */
+    .index-shell {
+      background: var(--surface-page);
+      color: var(--text-body);
+      min-height: 100vh;
+    }
+
+    /* Page header (outside theme sections) */
+    .page-header {
+      background: var(--surface-sunken);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: var(--space-6) var(--space-8);
+    }
+    .page-header h1 {
+      margin: 0 0 var(--space-2) 0;
+      font-family: var(--font-body);
+      font-size: var(--font-size-page-title);
+      font-weight: var(--font-weight-heading);
+      letter-spacing: var(--tracking-tight);
+      color: var(--text-heading);
+    }
+    .page-header p {
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+    }
+
+    /* Theme wrapper — full-width stacked panes */
+    .theme-pane {
+      width: 100%;
+      padding: var(--space-8);
+    }
+
+    .theme-pane[data-theme="dark"] {
+      background: var(--surface-page);
+      color: var(--text-body);
+    }
+    .theme-pane[data-theme="light"] {
+      background: var(--surface-page);
+      color: var(--text-body);
+    }
+
+    /* Theme badge */
+    .theme-label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-6);
+      padding: var(--spacing-micro) var(--spacing-internal);
+      background: var(--accent-primary-subtle);
+      border: 1px solid var(--accent-primary);
+      border-radius: var(--radius-pill);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      font-weight: var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color: var(--accent-primary);
+    }
+    .theme-label-dot {
+      width: var(--space-2);
+      height: var(--space-2);
+      border-radius: var(--radius-round);
+      background: var(--accent-primary);
+    }
+
+    /* Section structure */
+    .section {
+      margin-bottom: var(--space-12);
+    }
+    .section-title {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      font-weight: var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 0 0 var(--space-4) 0;
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .section-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: var(--space-12) 0;
+    }
+
+    /* ========================================================
+       1. TYPOGRAPHY
+    ======================================================== */
+    .type-demo-stack {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .type-demo-row {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-6);
+    }
+    .type-demo-tag {
+      flex-shrink: 0;
+      width: 80px;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+    .type-demo-sample {
+      flex: 1;
+    }
+
+    /* ========================================================
+       2. SURFACE SWATCHES
+    ======================================================== */
+    .swatch-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .swatch-color {
+      width: 96px;
+      height: 56px;
+      border-radius: var(--radius-default);
+      border: 1px solid var(--border-subtle);
+    }
+    .swatch-name {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* ========================================================
+       3. TEXT COLOR SAMPLES
+    ======================================================== */
+    .text-sample-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .text-sample-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+    }
+    .text-sample-label {
+      flex-shrink: 0;
+      width: 130px;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+    .text-sample-value {
+      font-family: var(--font-body);
+      font-size: var(--font-size-body);
+    }
+
+    /* ========================================================
+       4. BORDER SAMPLES
+    ======================================================== */
+    .border-sample-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .border-sample-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+    }
+    .border-sample-label {
+      flex-shrink: 0;
+      width: 150px;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+    .border-sample-box {
+      width: 180px;
+      height: 40px;
+      border-radius: var(--radius-default);
+      background: var(--surface-soft);
+    }
+    .border-default-box   { border: 1px solid var(--border-default); }
+    .border-subtle-box    { border: 1px solid var(--border-subtle); }
+    .border-strong-box    { border: 2px solid var(--border-strong); }
+    .border-focus-box     { border: 2px solid var(--border-focus); outline: none; box-shadow: 0 0 0 3px var(--accent-primary-subtle); }
+    .border-disabled-box  { border: 1px solid var(--border-disabled); opacity: 0.5; }
+
+    /* ========================================================
+       5. ACCENT SWATCHES
+    ======================================================== */
+    .accent-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+    .accent-swatch {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .accent-color-block {
+      width: 120px;
+      height: 64px;
+      border-radius: var(--radius-default);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+    }
+    .accent-primary-block {
+      background: var(--accent-primary);
+      color: var(--accent-primary-fg);
+    }
+    .accent-subtle-block {
+      background: var(--accent-primary-subtle);
+      color: var(--accent-primary);
+      border: 1px solid var(--accent-primary);
+    }
+    .accent-secondary-block {
+      background: var(--state-live-fg);
+      color: var(--surface-page);
+    }
+    .accent-secondary-subtle-block {
+      background: var(--state-live-bg);
+      color: var(--state-live-fg);
+      border: 1px solid var(--state-live-fg);
+    }
+
+    /* ========================================================
+       6. STATE DOT + FG/BG COMBOS
+    ======================================================== */
+    .state-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+    }
+    .state-card {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      padding: var(--spacing-internal);
+      border-radius: var(--radius-default);
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      min-width: 150px;
+    }
+    .state-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      font-weight: var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+    }
+    .state-dot {
+      width: var(--space-2);
+      height: var(--space-2);
+      border-radius: var(--radius-round);
+      flex-shrink: 0;
+    }
+    .state-dot-live    { background: var(--state-live-dot); box-shadow: 0 0 6px var(--state-live-dot); }
+    .state-dot-warning { background: var(--state-warning-dot); }
+    .state-dot-danger  { background: var(--state-danger-dot); }
+    .state-dot-success { background: var(--state-success-dot); }
+    .state-dot-neutral { background: var(--state-neutral-dot); }
+
+    .state-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--spacing-nano) var(--spacing-micro);
+      border-radius: var(--radius-subtle);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      font-weight: var(--font-weight-meta);
+    }
+    .state-badge-live    { background: var(--state-live-bg);    color: var(--state-live-fg); }
+    .state-badge-warning { background: var(--state-warning-bg); color: var(--state-warning-fg); }
+    .state-badge-danger  { background: var(--state-danger-bg);  color: var(--state-danger-fg); }
+    .state-badge-success { background: var(--state-success-bg); color: var(--state-success-fg); }
+    .state-badge-neutral { background: var(--surface-soft);     color: var(--state-neutral-dot); }
+
+    /* ========================================================
+       7. SPACING BARS
+    ======================================================== */
+    .spacing-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .spacing-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+    .spacing-label {
+      flex-shrink: 0;
+      width: 140px;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+    .spacing-bar {
+      height: 12px;
+      background: var(--accent-primary);
+      border-radius: var(--radius-subtle);
+      opacity: 0.8;
+    }
+
+    /* ========================================================
+       8. RADIUS DEMOS
+    ======================================================== */
+    .radius-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-6);
+      align-items: flex-end;
+    }
+    .radius-demo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .radius-box {
+      width: 64px;
+      height: 64px;
+      background: var(--surface-soft);
+      border: 1px solid var(--border-default);
+    }
+    .radius-label {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-align: center;
+    }
+
+    /* ========================================================
+       9. ELEVATION CARDS
+    ======================================================== */
+    .elevation-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-8);
+      align-items: flex-start;
+    }
+    .elevation-card {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      padding: var(--spacing-internal);
+      background: var(--surface-raised);
+      border-radius: var(--radius-default);
+      min-width: 160px;
+    }
+    .elevation-card-label {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+    .elevation-card-name {
+      font-family: var(--font-body);
+      font-size: var(--font-size-title);
+      font-weight: var(--font-weight-title);
+      color: var(--text-heading);
+    }
+    .elevation-flat-card    { box-shadow: var(--elevation-flat); }
+    .elevation-raised-card  { box-shadow: var(--elevation-raised); }
+    .elevation-overlay-card { box-shadow: var(--elevation-overlay); }
+    .elevation-modal-card   { box-shadow: var(--elevation-modal); }
+    .elevation-sheet-card   { box-shadow: var(--elevation-sheet); }
+
+    /* ========================================================
+       10. MOTION DOTS
+    ======================================================== */
+    .motion-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-8);
+      align-items: center;
+    }
+    .motion-demo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .motion-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-round);
+      background: var(--accent-primary);
+    }
+    .motion-dot-fast {
+      animation: motion-pulse var(--motion-fast) var(--motion-ease-in-out) infinite alternate;
+    }
+    .motion-dot-medium {
+      animation: motion-pulse var(--motion-medium) var(--motion-ease-in-out) infinite alternate;
+    }
+    .motion-dot-slow {
+      animation: motion-pulse var(--motion-slow) var(--motion-ease-in-out) infinite alternate;
+    }
+    @keyframes motion-pulse {
+      from { opacity: 1; transform: scale(1); }
+      to   { opacity: 0.2; transform: scale(0.7); }
+    }
+    .motion-label {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-align: center;
+    }
+
+    /* ========================================================
+       11. MOBILE CHROME — iPhone 16 Pro Max
+    ======================================================== */
+    .mobile-chrome-section {
+      display: flex;
+      justify-content: center;
+      padding: var(--space-8) 0;
+    }
+
+    /* Device shell uses device tokens directly */
+    .iphone-frame {
+      width: var(--device-width);
+      height: var(--device-height);
+      border-radius: var(--device-radius);
+      background: var(--device-bg);
+      padding: var(--device-bezel);
+      position: relative;
+      flex-shrink: 0;
+      box-shadow:
+        0 0 0 0.5px rgba(255, 255, 255, 0.08),
+        0 30px 80px rgba(0, 0, 0, 0.55),
+        0 12px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .iphone-viewport {
+      width: var(--viewport-width);
+      height: var(--viewport-height);
+      background: var(--surface-page);
+      border-radius: var(--viewport-radius);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dynamic-island {
+      position: absolute;
+      top: var(--dynamic-island-top);
+      left: 50%;
+      transform: translateX(-50%);
+      width: var(--dynamic-island-width);
+      height: var(--dynamic-island-height);
+      background: #000;
+      border-radius: var(--radius-pill);
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+    }
+    .dynamic-island-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: var(--radius-round);
+      background: var(--state-live-dot);
+      box-shadow: 0 0 8px var(--state-live-dot);
+      animation: island-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes island-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .dynamic-island-label {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+    }
+
+    .iphone-status-bar {
+      height: var(--status-bar-height);
+      padding: var(--space-5) var(--space-8) 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 20;
+    }
+    .status-time {
+      font-family: var(--font-body);
+      font-size: var(--font-size-label);
+      font-weight: var(--font-weight-heading);
+      color: var(--text-body);
+    }
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .status-icon {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-body);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* Viewport content preview */
+    .iphone-content {
+      flex: 1;
+      padding: var(--spacing-internal) var(--spacing-between);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-internal);
+      overflow: hidden;
+    }
+    .iphone-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: var(--spacing-internal);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .iphone-nav-title {
+      font-family: var(--font-body);
+      font-size: var(--font-size-title);
+      font-weight: var(--font-weight-heading);
+      color: var(--text-heading);
+    }
+    .iphone-nav-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      padding: 2px var(--spacing-micro);
+      background: var(--state-live-bg);
+      border-radius: var(--radius-pill);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--state-live-fg);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+    }
+    .iphone-nav-badge-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: var(--radius-round);
+      background: var(--state-live-dot);
+    }
+
+    /* Chat messages */
+    .chat-message {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+      padding: var(--spacing-internal);
+      border-radius: var(--radius-default);
+    }
+    .chat-message-user {
+      background: var(--accent-primary-subtle);
+      align-self: flex-end;
+      max-width: 75%;
+      border: 1px solid var(--accent-primary);
+    }
+    .chat-message-assistant {
+      background: var(--surface-raised);
+      align-self: flex-start;
+      max-width: 85%;
+      border: 1px solid var(--border-subtle);
+    }
+    .chat-message-text {
+      font-family: var(--font-body);
+      font-size: var(--font-size-body-sm);
+      color: var(--text-body);
+      line-height: var(--line-height-normal);
+    }
+    .chat-message-meta {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* Composer bar */
+    .iphone-composer {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-internal);
+      padding: var(--spacing-internal);
+      background: var(--surface-soft);
+      border-top: 1px solid var(--border-subtle);
+      min-height: var(--touch-target-min);
+      flex-shrink: 0;
+    }
+    .composer-input {
+      flex: 1;
+      background: var(--surface-raised);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-pill);
+      padding: var(--space-2) var(--spacing-internal);
+      font-family: var(--font-body);
+      font-size: var(--font-size-body-sm);
+      color: var(--text-muted);
+    }
+    .composer-send {
+      width: var(--touch-target-min);
+      height: var(--touch-target-min);
+      border-radius: var(--radius-round);
+      background: var(--accent-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-label);
+      color: var(--accent-primary-fg);
+      flex-shrink: 0;
+    }
+
+    /* Home indicator */
+    .iphone-home-indicator {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: var(--space-3) 0;
+      flex-shrink: 0;
+    }
+    .home-indicator-bar {
+      width: var(--home-indicator-width);
+      height: var(--home-indicator-height);
+      background: var(--text-muted);
+      border-radius: var(--radius-pill);
+      opacity: 0.4;
+    }
+
+    /* Device annotation */
+    .device-annotations {
+      margin-top: var(--space-6);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .annotation-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .annotation-key {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      flex-shrink: 0;
+      width: 220px;
+    }
+    .annotation-value {
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--accent-primary);
+      letter-spacing: var(--tracking-mono);
+    }
+  </style>
+</head>
+<body>
+<div data-theme="dark" class="index-shell">
+
+  <header class="page-header">
+    <h1>Superset Design Tokens — Primitives Index</h1>
+    <p>Ember warm palette · Geist + Geist Mono · iPhone 16 Pro Max · Dark + Light</p>
+  </header>
+
+  <main>
+
+  <!-- ======================================================
+       DARK THEME — stacked full-width pane
+  ====================================================== -->
+  <section class="theme-pane" data-theme="dark">
+
+    <div class="theme-label">
+      <span class="theme-label-dot"></span>
+      Dark theme (default)
+    </div>
+
+    <!-- 1. TYPOGRAPHY -->
+    <div class="section">
+      <h2 class="section-title">01 Typography</h2>
+      <div class="type-demo-stack">
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-h1</span>
+          <div class="type-demo-sample">
+            <span class="type-h1">Mobile Chat v2</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-h2</span>
+          <div class="type-demo-sample">
+            <span class="type-h2">Refactor relay tunnel reconnect</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-title</span>
+          <div class="type-demo-sample">
+            <span class="type-title">Workspace: superset-monorepo</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-body</span>
+          <div class="type-demo-sample">
+            <span class="type-body">The relay client maintains a persistent WebSocket connection to the Superset cloud relay. When the connection drops, the reconnect backoff ramps from 250 ms to 30 s with jitter applied.</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-meta</span>
+          <div class="type-demo-sample">
+            <span class="type-meta">Sonnet 4.6 · Thinking: medium · 2 min ago</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-label</span>
+          <div class="type-demo-sample">
+            <span class="type-label">dispatch_failed · skipped_offline</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-code</span>
+          <div class="type-demo-sample">
+            <span class="type-code">git checkout main &amp;&amp; bun install</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 2. SURFACE -->
+    <div class="section">
+      <h2 class="section-title">02 Surface</h2>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-page);"></div>
+          <span class="swatch-name">--surface-page</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-soft);"></div>
+          <span class="swatch-name">--surface-soft</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-sunken);"></div>
+          <span class="swatch-name">--surface-sunken</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-raised);"></div>
+          <span class="swatch-name">--surface-raised</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-overlay);"></div>
+          <span class="swatch-name">--surface-overlay</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-sidebar);"></div>
+          <span class="swatch-name">--surface-sidebar</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-active);"></div>
+          <span class="swatch-name">--surface-active</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-inverse);"></div>
+          <span class="swatch-name">--surface-inverse</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 3. TEXT -->
+    <div class="section">
+      <h2 class="section-title">03 Text</h2>
+      <div class="text-sample-list">
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-heading</span>
+          <span class="text-sample-value" style="color: var(--text-heading); font-weight: var(--font-weight-heading);">Refactor relay tunnel reconnect</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-body</span>
+          <span class="text-sample-value" style="color: var(--text-body);">The connection is authenticated via ECDSA token exchange.</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-muted</span>
+          <span class="text-sample-value" style="color: var(--text-muted);">Last updated 3 minutes ago</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-faint</span>
+          <span class="text-sample-value" style="color: var(--text-faint); font-size: var(--font-size-meta);">DISPATCH_FAILED · SKIPPED_OFFLINE</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-inverse</span>
+          <span class="text-sample-value" style="color: var(--text-inverse); background: var(--surface-inverse); padding: var(--spacing-nano) var(--space-2); border-radius: var(--radius-subtle);">On inverted bg</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-link</span>
+          <span class="text-sample-value" style="color: var(--text-link); text-decoration: underline;">relay-client.ts · line 142</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-disabled</span>
+          <span class="text-sample-value" style="color: var(--text-disabled); opacity: 0.5;">Unavailable in offline mode</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 4. BORDER -->
+    <div class="section">
+      <h2 class="section-title">04 Border</h2>
+      <div class="border-sample-list">
+        <div class="border-sample-row">
+          <span class="border-sample-label">--border-default</span>
+          <div class="border-sample-box border-default-box"></div>
+        </div>
+        <div class="border-sample-row">
+          <span class="border-sample-label">--border-subtle</span>
+          <div class="border-sample-box border-subtle-box"></div>
+        </div>
+        <div class="border-sample-row">
+          <span class="border-sample-label">--border-strong</span>
+          <div class="border-sample-box border-strong-box"></div>
+        </div>
+        <div class="border-sample-row">
+          <span class="border-sample-label">--border-focus</span>
+          <div class="border-sample-box border-focus-box"></div>
+        </div>
+        <div class="border-sample-row">
+          <span class="border-sample-label">--border-disabled</span>
+          <div class="border-sample-box border-disabled-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 5. ACCENT -->
+    <div class="section">
+      <h2 class="section-title">05 Accent</h2>
+      <div class="accent-grid">
+        <div class="accent-swatch">
+          <div class="accent-color-block accent-primary-block">Ember</div>
+          <span class="swatch-name">--accent-primary</span>
+        </div>
+        <div class="accent-swatch">
+          <div class="accent-color-block accent-subtle-block">Subtle</div>
+          <span class="swatch-name">--accent-primary-subtle</span>
+        </div>
+        <div class="accent-swatch">
+          <div class="accent-color-block accent-secondary-block">Mint</div>
+          <span class="swatch-name">--state-live-fg</span>
+        </div>
+        <div class="accent-swatch">
+          <div class="accent-color-block accent-secondary-subtle-block">Live bg</div>
+          <span class="swatch-name">--state-live-bg</span>
+        </div>
+        <div class="accent-swatch">
+          <div class="accent-color-block" style="background: var(--accent-highlight-match); color: var(--accent-primary); border: 1px solid var(--accent-primary);">Search</div>
+          <span class="swatch-name">--accent-highlight-match</span>
+        </div>
+        <div class="accent-swatch">
+          <div class="accent-color-block" style="background: var(--accent-highlight-active); color: var(--accent-primary-fg);">Active</div>
+          <span class="swatch-name">--accent-highlight-active</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 6. STATE -->
+    <div class="section">
+      <h2 class="section-title">06 State</h2>
+      <div class="state-grid">
+        <div class="state-card">
+          <div class="state-header">
+            <span class="state-dot state-dot-live"></span>
+            Live
+          </div>
+          <span class="state-badge state-badge-live">Streaming</span>
+          <span style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-muted);">relay connected</span>
+        </div>
+        <div class="state-card">
+          <div class="state-header">
+            <span class="state-dot state-dot-warning"></span>
+            Warning
+          </div>
+          <span class="state-badge state-badge-warning">Pending</span>
+          <span style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-muted);">approval required</span>
+        </div>
+        <div class="state-card">
+          <div class="state-header">
+            <span class="state-dot state-dot-danger"></span>
+            Danger
+          </div>
+          <span class="state-badge state-badge-danger">Failed</span>
+          <span style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-muted);">dispatch_failed</span>
+        </div>
+        <div class="state-card">
+          <div class="state-header">
+            <span class="state-dot state-dot-success"></span>
+            Success
+          </div>
+          <span class="state-badge state-badge-success">Complete</span>
+          <span style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-muted);">task approved</span>
+        </div>
+        <div class="state-card">
+          <div class="state-header">
+            <span class="state-dot state-dot-neutral"></span>
+            Neutral
+          </div>
+          <span class="state-badge state-badge-neutral">Paused</span>
+          <span style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-muted);">skipped_offline</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 7. SPACING -->
+    <div class="section">
+      <h2 class="section-title">07 Spacing</h2>
+      <div class="spacing-list">
+        <div class="spacing-row">
+          <span class="spacing-label">--spacing-micro (4px)</span>
+          <div class="spacing-bar" style="width: var(--space-1);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--space-2 (8px)</span>
+          <div class="spacing-bar" style="width: var(--space-2);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--spacing-internal (12px)</span>
+          <div class="spacing-bar" style="width: var(--space-3);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--spacing-between (16px)</span>
+          <div class="spacing-bar" style="width: var(--space-4);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--space-6 (24px)</span>
+          <div class="spacing-bar" style="width: var(--space-6);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--spacing-section (32px)</span>
+          <div class="spacing-bar" style="width: var(--space-8);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--space-12 (48px)</span>
+          <div class="spacing-bar" style="width: var(--space-12);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--space-16 (64px)</span>
+          <div class="spacing-bar" style="width: var(--space-16);"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 8. RADIUS -->
+    <div class="section">
+      <h2 class="section-title">08 Radius</h2>
+      <div class="radius-grid">
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: 0;"></div>
+          <span class="radius-label">0 (none)</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-subtle);"></div>
+          <span class="radius-label">--radius-subtle</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-default);"></div>
+          <span class="radius-label">--radius-default</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-lg);"></div>
+          <span class="radius-label">--radius-lg</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-xl);"></div>
+          <span class="radius-label">--radius-xl</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-pill); width: 96px; height: 40px;"></div>
+          <span class="radius-label">--radius-pill</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-round);"></div>
+          <span class="radius-label">--radius-round</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 9. ELEVATION -->
+    <div class="section">
+      <h2 class="section-title">09 Elevation</h2>
+      <div class="elevation-row">
+        <div class="elevation-card elevation-flat-card">
+          <span class="elevation-card-label">--elevation-flat</span>
+          <span class="elevation-card-name">Flat</span>
+        </div>
+        <div class="elevation-card elevation-raised-card">
+          <span class="elevation-card-label">--elevation-raised</span>
+          <span class="elevation-card-name">Raised card</span>
+        </div>
+        <div class="elevation-card elevation-overlay-card">
+          <span class="elevation-card-label">--elevation-overlay</span>
+          <span class="elevation-card-name">Popover</span>
+        </div>
+        <div class="elevation-card elevation-modal-card">
+          <span class="elevation-card-label">--elevation-modal</span>
+          <span class="elevation-card-name">Modal</span>
+        </div>
+        <div class="elevation-card elevation-sheet-card">
+          <span class="elevation-card-label">--elevation-sheet</span>
+          <span class="elevation-card-name">Bottom sheet</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 10. MOTION -->
+    <div class="section">
+      <h2 class="section-title">10 Motion</h2>
+      <div class="motion-grid">
+        <div class="motion-demo">
+          <div class="motion-dot motion-dot-fast"></div>
+          <span class="motion-label">--motion-fast<br>120ms</span>
+        </div>
+        <div class="motion-demo">
+          <div class="motion-dot motion-dot-medium"></div>
+          <span class="motion-label">--motion-medium<br>220ms</span>
+        </div>
+        <div class="motion-demo">
+          <div class="motion-dot motion-dot-slow"></div>
+          <span class="motion-label">--motion-slow<br>360ms</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 11. MOBILE CHROME -->
+    <div class="section">
+      <h2 class="section-title">11 Mobile Chrome — iPhone 16 Pro Max</h2>
+      <div class="mobile-chrome-section">
+        <div>
+          <div class="iphone-frame">
+            <div class="iphone-viewport">
+              <!-- Dynamic Island -->
+              <div class="dynamic-island">
+                <span class="dynamic-island-dot"></span>
+                <span class="dynamic-island-label">Live</span>
+              </div>
+
+              <!-- Status Bar -->
+              <div class="iphone-status-bar">
+                <span class="status-time">9:41</span>
+                <div class="status-icons">
+                  <span class="status-icon">●●●</span>
+                  <span class="status-icon">WiFi</span>
+                  <span class="status-icon">⬛</span>
+                </div>
+              </div>
+
+              <!-- Nav Bar -->
+              <div class="iphone-content">
+                <div class="iphone-nav-bar">
+                  <span class="iphone-nav-title">superset-monorepo</span>
+                  <span class="iphone-nav-badge">
+                    <span class="iphone-nav-badge-dot"></span>
+                    Streaming
+                  </span>
+                </div>
+
+                <!-- Chat messages -->
+                <div class="chat-message chat-message-user">
+                  <span class="chat-message-text">Refactor the relay tunnel reconnect logic with exponential backoff and jitter</span>
+                  <span class="chat-message-meta">You · just now</span>
+                </div>
+                <div class="chat-message chat-message-assistant">
+                  <span class="chat-message-text">I'll update <code style="font-family: var(--font-mono); font-size: var(--font-size-meta); background: var(--surface-soft); padding: var(--spacing-hairline) var(--spacing-micro); border-radius: var(--radius-subtle);">relay-client.ts</code> with the new reconnect strategy. Starting with the backoff configuration…</span>
+                  <span class="chat-message-meta">Sonnet 4.6 · Thinking: medium</span>
+                </div>
+              </div>
+
+              <!-- Composer -->
+              <div class="iphone-composer">
+                <div class="composer-input">Message Superset…</div>
+                <div class="composer-send">↑</div>
+              </div>
+
+              <!-- Home Indicator -->
+              <div class="iphone-home-indicator">
+                <div class="home-indicator-bar"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Annotations -->
+          <div class="device-annotations">
+            <div class="annotation-row">
+              <span class="annotation-key">Device outer</span>
+              <span class="annotation-value">444 × 962 px — var(--device-width/height)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Device radius</span>
+              <span class="annotation-value">60px — var(--device-radius)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Viewport</span>
+              <span class="annotation-value">430 × 932 px — var(--viewport-width/height)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Viewport radius</span>
+              <span class="annotation-value">54px — var(--viewport-radius)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Dynamic Island</span>
+              <span class="annotation-value">126 × 37 px, top 11px</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Status bar height</span>
+              <span class="annotation-value">54px — var(--status-bar-height)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Home indicator</span>
+              <span class="annotation-value">134 × 5 px — var(--home-indicator-width/height)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Touch target min</span>
+              <span class="annotation-value">44px — var(--touch-target-min)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section><!-- end dark pane -->
+
+  <!-- ======================================================
+       LIGHT THEME — stacked full-width pane below dark
+  ====================================================== -->
+  <section class="theme-pane" data-theme="light">
+
+    <div class="theme-label">
+      <span class="theme-label-dot"></span>
+      Light theme
+    </div>
+
+    <!-- 1. TYPOGRAPHY -->
+    <div class="section">
+      <h2 class="section-title">01 Typography</h2>
+      <div class="type-demo-stack">
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-h1</span>
+          <div class="type-demo-sample">
+            <span class="type-h1">Mobile Chat v2</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-h2</span>
+          <div class="type-demo-sample">
+            <span class="type-h2">Refactor relay tunnel reconnect</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-title</span>
+          <div class="type-demo-sample">
+            <span class="type-title">Workspace: superset-monorepo</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-body</span>
+          <div class="type-demo-sample">
+            <span class="type-body">The relay client maintains a persistent WebSocket connection to the Superset cloud relay. When the connection drops, the reconnect backoff ramps from 250 ms to 30 s with jitter applied.</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-meta</span>
+          <div class="type-demo-sample">
+            <span class="type-meta">Sonnet 4.6 · Thinking: medium · 2 min ago</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-label</span>
+          <div class="type-demo-sample">
+            <span class="type-label">dispatch_failed · skipped_offline</span>
+          </div>
+        </div>
+        <div class="type-demo-row">
+          <span class="type-demo-tag">.type-code</span>
+          <div class="type-demo-sample">
+            <span class="type-code">git checkout main &amp;&amp; bun install</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 2. SURFACE -->
+    <div class="section">
+      <h2 class="section-title">02 Surface</h2>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-page);"></div>
+          <span class="swatch-name">--surface-page</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-soft);"></div>
+          <span class="swatch-name">--surface-soft</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-sunken);"></div>
+          <span class="swatch-name">--surface-sunken</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-raised);"></div>
+          <span class="swatch-name">--surface-raised</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-overlay);"></div>
+          <span class="swatch-name">--surface-overlay</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-sidebar);"></div>
+          <span class="swatch-name">--surface-sidebar</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-active);"></div>
+          <span class="swatch-name">--surface-active</span>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--surface-inverse);"></div>
+          <span class="swatch-name">--surface-inverse</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 3. TEXT -->
+    <div class="section">
+      <h2 class="section-title">03 Text</h2>
+      <div class="text-sample-list">
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-heading</span>
+          <span class="text-sample-value" style="color: var(--text-heading); font-weight: var(--font-weight-heading);">Refactor relay tunnel reconnect</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-body</span>
+          <span class="text-sample-value" style="color: var(--text-body);">The connection is authenticated via ECDSA token exchange.</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-muted</span>
+          <span class="text-sample-value" style="color: var(--text-muted);">Last updated 3 minutes ago</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-faint</span>
+          <span class="text-sample-value" style="color: var(--text-faint); font-size: var(--font-size-meta);">DISPATCH_FAILED · SKIPPED_OFFLINE</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-inverse</span>
+          <span class="text-sample-value" style="color: var(--text-inverse); background: var(--surface-inverse); padding: var(--spacing-nano) var(--space-2); border-radius: var(--radius-subtle);">On inverted bg</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-link</span>
+          <span class="text-sample-value" style="color: var(--text-link); text-decoration: underline;">relay-client.ts · line 142</span>
+        </div>
+        <div class="text-sample-row">
+          <span class="text-sample-label">--text-disabled</span>
+          <span class="text-sample-value" style="color: var(--text-disabled); opacity: 0.5;">Unavailable in offline mode</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 4. BORDER -->
+    <div class="section">
+      <h2 class="section-title">04 Border</h2>
+      <div class="border-sample-list">
+        <div class="border-sample-row">
+          <span class="border-sample-label">--border-default</span>
+          <div class="border-sample-box border-default-box"></div>
+        </div>
+        <div class="border-sample-row">
+          <span class="border-sample-label">--border-subtle</span>
+          <div class="border-sample-box border-subtle-box"></div>
+        </div>
+        <div class="border-sample-row">
+          <span class="border-sample-label">--border-strong</span>
+          <div class="border-sample-box border-strong-box"></div>
+        </div>
+        <div class="border-sample-row">
+          <span class="border-sample-label">--border-focus</span>
+          <div class="border-sample-box border-focus-box"></div>
+        </div>
+        <div class="border-sample-row">
+          <span class="border-sample-label">--border-disabled</span>
+          <div class="border-sample-box border-disabled-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 5. ACCENT -->
+    <div class="section">
+      <h2 class="section-title">05 Accent</h2>
+      <div class="accent-grid">
+        <div class="accent-swatch">
+          <div class="accent-color-block accent-primary-block">Ember</div>
+          <span class="swatch-name">--accent-primary</span>
+        </div>
+        <div class="accent-swatch">
+          <div class="accent-color-block accent-subtle-block">Subtle</div>
+          <span class="swatch-name">--accent-primary-subtle</span>
+        </div>
+        <div class="accent-swatch">
+          <div class="accent-color-block accent-secondary-block">Mint</div>
+          <span class="swatch-name">--state-live-fg</span>
+        </div>
+        <div class="accent-swatch">
+          <div class="accent-color-block accent-secondary-subtle-block">Live bg</div>
+          <span class="swatch-name">--state-live-bg</span>
+        </div>
+        <div class="accent-swatch">
+          <div class="accent-color-block" style="background: var(--accent-highlight-match); color: var(--accent-primary); border: 1px solid var(--accent-primary);">Search</div>
+          <span class="swatch-name">--accent-highlight-match</span>
+        </div>
+        <div class="accent-swatch">
+          <div class="accent-color-block" style="background: var(--accent-highlight-active); color: var(--surface-page);">Active</div>
+          <span class="swatch-name">--accent-highlight-active</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 6. STATE -->
+    <div class="section">
+      <h2 class="section-title">06 State</h2>
+      <div class="state-grid">
+        <div class="state-card">
+          <div class="state-header">
+            <span class="state-dot state-dot-live"></span>
+            Live
+          </div>
+          <span class="state-badge state-badge-live">Streaming</span>
+          <span style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-muted);">relay connected</span>
+        </div>
+        <div class="state-card">
+          <div class="state-header">
+            <span class="state-dot state-dot-warning"></span>
+            Warning
+          </div>
+          <span class="state-badge state-badge-warning">Pending</span>
+          <span style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-muted);">approval required</span>
+        </div>
+        <div class="state-card">
+          <div class="state-header">
+            <span class="state-dot state-dot-danger"></span>
+            Danger
+          </div>
+          <span class="state-badge state-badge-danger">Failed</span>
+          <span style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-muted);">dispatch_failed</span>
+        </div>
+        <div class="state-card">
+          <div class="state-header">
+            <span class="state-dot state-dot-success"></span>
+            Success
+          </div>
+          <span class="state-badge state-badge-success">Complete</span>
+          <span style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-muted);">task approved</span>
+        </div>
+        <div class="state-card">
+          <div class="state-header">
+            <span class="state-dot state-dot-neutral"></span>
+            Neutral
+          </div>
+          <span class="state-badge state-badge-neutral">Paused</span>
+          <span style="font-family: var(--font-mono); font-size: var(--font-size-meta); color: var(--text-muted);">skipped_offline</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 7. SPACING -->
+    <div class="section">
+      <h2 class="section-title">07 Spacing</h2>
+      <div class="spacing-list">
+        <div class="spacing-row">
+          <span class="spacing-label">--spacing-micro (4px)</span>
+          <div class="spacing-bar" style="width: var(--space-1);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--space-2 (8px)</span>
+          <div class="spacing-bar" style="width: var(--space-2);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--spacing-internal (12px)</span>
+          <div class="spacing-bar" style="width: var(--space-3);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--spacing-between (16px)</span>
+          <div class="spacing-bar" style="width: var(--space-4);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--space-6 (24px)</span>
+          <div class="spacing-bar" style="width: var(--space-6);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--spacing-section (32px)</span>
+          <div class="spacing-bar" style="width: var(--space-8);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--space-12 (48px)</span>
+          <div class="spacing-bar" style="width: var(--space-12);"></div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacing-label">--space-16 (64px)</span>
+          <div class="spacing-bar" style="width: var(--space-16);"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 8. RADIUS -->
+    <div class="section">
+      <h2 class="section-title">08 Radius</h2>
+      <div class="radius-grid">
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: 0;"></div>
+          <span class="radius-label">0 (none)</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-subtle);"></div>
+          <span class="radius-label">--radius-subtle</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-default);"></div>
+          <span class="radius-label">--radius-default</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-lg);"></div>
+          <span class="radius-label">--radius-lg</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-xl);"></div>
+          <span class="radius-label">--radius-xl</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-pill); width: 96px; height: 40px;"></div>
+          <span class="radius-label">--radius-pill</span>
+        </div>
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius: var(--radius-round);"></div>
+          <span class="radius-label">--radius-round</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 9. ELEVATION -->
+    <div class="section">
+      <h2 class="section-title">09 Elevation</h2>
+      <div class="elevation-row">
+        <div class="elevation-card elevation-flat-card">
+          <span class="elevation-card-label">--elevation-flat</span>
+          <span class="elevation-card-name">Flat</span>
+        </div>
+        <div class="elevation-card elevation-raised-card">
+          <span class="elevation-card-label">--elevation-raised</span>
+          <span class="elevation-card-name">Raised card</span>
+        </div>
+        <div class="elevation-card elevation-overlay-card">
+          <span class="elevation-card-label">--elevation-overlay</span>
+          <span class="elevation-card-name">Popover</span>
+        </div>
+        <div class="elevation-card elevation-modal-card">
+          <span class="elevation-card-label">--elevation-modal</span>
+          <span class="elevation-card-name">Modal</span>
+        </div>
+        <div class="elevation-card elevation-sheet-card">
+          <span class="elevation-card-label">--elevation-sheet</span>
+          <span class="elevation-card-name">Bottom sheet</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 10. MOTION -->
+    <div class="section">
+      <h2 class="section-title">10 Motion</h2>
+      <div class="motion-grid">
+        <div class="motion-demo">
+          <div class="motion-dot motion-dot-fast"></div>
+          <span class="motion-label">--motion-fast<br>120ms</span>
+        </div>
+        <div class="motion-demo">
+          <div class="motion-dot motion-dot-medium"></div>
+          <span class="motion-label">--motion-medium<br>220ms</span>
+        </div>
+        <div class="motion-demo">
+          <div class="motion-dot motion-dot-slow"></div>
+          <span class="motion-label">--motion-slow<br>360ms</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 11. MOBILE CHROME -->
+    <div class="section">
+      <h2 class="section-title">11 Mobile Chrome — iPhone 16 Pro Max</h2>
+      <div class="mobile-chrome-section">
+        <div>
+          <div class="iphone-frame">
+            <div class="iphone-viewport">
+              <!-- Dynamic Island -->
+              <div class="dynamic-island">
+                <span class="dynamic-island-dot"></span>
+                <span class="dynamic-island-label">Live</span>
+              </div>
+
+              <!-- Status Bar -->
+              <div class="iphone-status-bar">
+                <span class="status-time">9:41</span>
+                <div class="status-icons">
+                  <span class="status-icon">●●●</span>
+                  <span class="status-icon">WiFi</span>
+                  <span class="status-icon">⬛</span>
+                </div>
+              </div>
+
+              <!-- Nav Bar -->
+              <div class="iphone-content">
+                <div class="iphone-nav-bar">
+                  <span class="iphone-nav-title">superset-monorepo</span>
+                  <span class="iphone-nav-badge">
+                    <span class="iphone-nav-badge-dot"></span>
+                    Streaming
+                  </span>
+                </div>
+
+                <!-- Chat messages -->
+                <div class="chat-message chat-message-user">
+                  <span class="chat-message-text">Refactor the relay tunnel reconnect logic with exponential backoff and jitter</span>
+                  <span class="chat-message-meta">You · just now</span>
+                </div>
+                <div class="chat-message chat-message-assistant">
+                  <span class="chat-message-text">I'll update <code style="font-family: var(--font-mono); font-size: var(--font-size-meta); background: var(--surface-soft); padding: var(--spacing-hairline) var(--spacing-micro); border-radius: var(--radius-subtle);">relay-client.ts</code> with the new reconnect strategy. Starting with the backoff configuration…</span>
+                  <span class="chat-message-meta">Sonnet 4.6 · Thinking: medium</span>
+                </div>
+              </div>
+
+              <!-- Composer -->
+              <div class="iphone-composer">
+                <div class="composer-input">Message Superset…</div>
+                <div class="composer-send">↑</div>
+              </div>
+
+              <!-- Home Indicator -->
+              <div class="iphone-home-indicator">
+                <div class="home-indicator-bar"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Annotations -->
+          <div class="device-annotations">
+            <div class="annotation-row">
+              <span class="annotation-key">Device outer</span>
+              <span class="annotation-value">444 × 962 px — var(--device-width/height)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Device radius</span>
+              <span class="annotation-value">60px — var(--device-radius)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Viewport</span>
+              <span class="annotation-value">430 × 932 px — var(--viewport-width/height)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Viewport radius</span>
+              <span class="annotation-value">54px — var(--viewport-radius)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Dynamic Island</span>
+              <span class="annotation-value">126 × 37 px, top 11px</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Status bar height</span>
+              <span class="annotation-value">54px — var(--status-bar-height)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Home indicator</span>
+              <span class="annotation-value">134 × 5 px — var(--home-indicator-width/height)</span>
+            </div>
+            <div class="annotation-row">
+              <span class="annotation-key">Touch target min</span>
+              <span class="annotation-value">44px — var(--touch-target-min)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section><!-- end light pane -->
+
+  </main>
+</div><!-- end index-shell -->
+
+</body>
+</html>
