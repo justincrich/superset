@@ -9,7 +9,8 @@
 | `@10play/tentap-editor` | latest stable | WebView-hosted Tiptap for input parity | https://10play.github.io/10tap-editor/ |
 | `lucide-react-native` | matches mobile lucide version | Icon parity with desktop's `lucide-react` | https://lucide.dev/guide/packages/lucide-react-native |
 | `react-native-markdown-display` (or alternative) | latest stable | Markdown rendering in assistant messages | https://github.com/iamacup/react-native-markdown-display |
-| `expo-notifications` | matches Expo SDK 56 | Push token registration + foreground/background notification handling | https://docs.expo.dev/versions/latest/sdk/notifications/ |
+| `expo-notifications` | matches Expo SDK 56 | Permission gating (`getPermissionsAsync` / `requestPermissionsAsync`), push token registration (`getExpoPushTokenAsync`), route-aware foreground handler (`setNotificationHandler`), and tap dispatch (`addNotificationResponseReceivedListener`) for the UC-NAV-05 deep-link router | https://docs.expo.dev/versions/latest/sdk/notifications/ |
+| `expo-device` | matches Expo SDK 56 | Provides the stable `deviceId` used to keep a single user's phone + tablet addressable as separate entries in the relay-side Upstash token set (multi-device fanout) | https://docs.expo.dev/versions/latest/sdk/device/ |
 | `@storybook/react-native` | latest stable (v9) | Component testing — isolated UI state development via Storybook under custom root toggle | https://storybookjs.github.io/react-native/docs/intro/getting-started/ |
 | `@storybook/addon-ondevice-controls` | matches storybook version | Storybook controls addon for RN | https://storybookjs.github.io/react-native/docs/intro/getting-started/ |
 | `@storybook/addon-ondevice-actions` | matches storybook version | Storybook actions addon for RN | https://storybookjs.github.io/react-native/docs/intro/getting-started/ |

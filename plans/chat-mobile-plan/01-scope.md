@@ -35,7 +35,7 @@ scope_posture: full
   - **Plan approval** → **full-screen modal as a pushed expo-router route** (`/chat/[sessionId]/plan-review/[planId]`). Plan markdown gets full vertical scroll with docked Approve/Reject buttons; matches Apple HIG's recommendation of full-screen modals for "in-depth content or a task that involves multiple steps." → `chat.respondToPlan`
 - **Pending-action indicator** (`PendingActionIndicator`): floating "Tap to respond" pill near the chat input that surfaces when a session has an active pause and the user has scrolled away from the inline card OR dismissed the sheet/modal without responding. Tapping it returns the user to the relevant container.
 - **Multi-device session sync**: a session created on desktop or via Slack agent appears in mobile's session list in realtime (via `chat_sessions` Electric shape).
-- **Push notifications** (Expo push) wired to host-service `notificationsEmitter` / `AGENT_LIFECYCLE` events: agent turn complete, agent paused for user input, agent failed.
+- **Push notifications** (Expo push, **v2 minimal scope**) delivered through a relay-side fanout: host-service pushes a new outbound `push:lifecycle` message on its existing tunnel WS to `apps/relay`; relay calls Expo Push API against registered tokens. Mobile registers/de-registers push tokens via new endpoints on `apps/relay` using the same JWT bearer it already uses for chat tRPC; tokens stored in Upstash KV (relay's existing infra). Two events fan out: `Stop` (turn complete) and `PermissionRequest` (any of the three PAUSE shapes collapses to one event per `packages/host-service/src/events/map-event-type.ts`). Permission flow follows Expo best practices (custom pre-prompt before the OS dialog, re-check on every cold launch, deny → "Re-enable in Settings"). Foreground suppression is local-only: `expo-notifications.setNotificationHandler` swallows the banner when the user is already on the matching `/(chat)/[sessionId]` route. Tap-to-open routing is specified by UC-NAV-05; wire-level design in `11-technical-requirements/07-notifications.md`.
 - **Host-offline UX**: clear UI state when the user's host-service is unreachable; automatic reconnect when host returns.
 - **Session resume after background/foreground**: app catches up missed events using `stream-next-offset` / cursor protocol on resume.
 - **Authentication via JWT bearer** routed through the relay; mobile mints / refreshes per the chosen sub-decision (see TRD).
@@ -93,6 +93,36 @@ Each item below is tagged `[DEFERRED: separate PRD]` (could ship later as its ow
 
 - **Attachment payload UI in messages (file chips, image previews, link cards)** — `[DEFERRED: separate PRD]`.
   **Why:** Consequence of the attachments deferral above. The host-service `chat_attachments` table is read-only to mobile, but rendering attachment payloads in user/assistant messages introduces media-handling, image-caching, and download flows that don't pay off until users can also upload attachments. Pair the render with the send.
+
+- **Notification preferences (mute, ringtone, custom sound, volume)** — `[DEFERRED: separate PRD]`. Desktop ships these via `local-db` settings (`notificationVolume`, `notificationSoundsMuted`, `selectedRingtoneId`, custom ringtone file path); mobile-chat v2 uses default OS-provided sound only.
+  **Why:** v2 minimal posture — push delivery is the foundational capability; preferences ride on top once we have a stable register/deliver/tap loop. Adding a settings surface, persistence schema, and a ringtone picker UI doubles the surface for an MVP we still need to validate end-to-end.
+
+- **iOS Time-Sensitive interruption level + entitlement** — `[DEFERRED: separate PRD]`.
+  **Why:** Time-Sensitive (iOS 15+) bypasses Focus modes for `PermissionRequest` (pause) events and is genuinely valuable, but it requires the `com.apple.developer.usernotifications.time-sensitive` entitlement, EAS-side credential configuration, and per-notification `interruptionLevel` plumbing. v2 minimal uses the default `active` level on both platforms.
+
+- **iOS interactive notification action buttons** (Approve / Decline from lock screen) — `[DEFERRED: separate PRD]`.
+  **Why:** Notification actions would let users resolve a `PermissionRequest` without opening the app, but they require notification categories declared at app startup, action handlers in the foreground/background notification response handler, and a relay-side response-without-app-foreground path. Worthwhile follow-up; out of v2 minimal.
+
+- **Per-workspace / per-host notification preferences** — `[DEFERRED: separate PRD]`.
+  **Why:** v2 minimal has no preferences at all — adding per-host or per-workspace toggles compounds the deferred preferences UI. Useful when users have many active hosts and want quieter notifications from some.
+
+- **In-app activity center mirroring desktop's `V2NotificationStatusIndicator`** — `[DEFERRED: separate PRD]`. Desktop's sidebar status indicator surfaces "this workspace had recent agent activity even though you weren't watching."
+  **Why:** Mobile-chat v2 relies on `chat_sessions.lastActiveAt`-ordered list ordering + OS push notifications + the session-row status icons defined in `09-uc-nav.md` UC-NAV-02. A dedicated in-app activity surface is duplicative until users tell us list-ordering isn't enough.
+
+- **Server-side presence tracking for push suppression** — `[NOT SUPPORTED]` in mobile-chat v2.
+  **Why:** Desktop suppresses notifications locally based on the focused pane (`shouldSuppressForVisiblePane` in `apps/desktop/src/main/lib/notifications/notification-manager.ts`). Mobile v2 mirrors that locally via `expo-notifications.setNotificationHandler` route-checking. Building server-side presence (mobile pings relay on session open / close, relay skips push if "active") adds a heartbeat protocol + a presence cache for marginal benefit when local-only suppression already covers the common case.
+
+- **Universal Links / App Links** (`apple-app-site-association`, `assetlinks.json` hosted at `app.superset.sh`) — `[DEFERRED: separate PRD]`.
+  **Why:** Universal Links would let `https://app.superset.sh/chat/{sessionId}` URLs from email/Slack/web open the mobile app directly. v2 ships with custom scheme `superset://` only — sufficient for tap-from-notification (the in-scope path) and avoids the DNS + EAS-credential + entitlement work needed for Universal Links.
+
+- **Notification grouping / threading** (iOS thread identifiers, Android `groupSummary`) — `[DEFERRED: separate PRD]`.
+  **Why:** Multiple notifications for the same session or workspace would collapse into a thread; multiple sessions could group by workspace. Nice quality-of-life when users see notification spikes, but v2 minimal uses default unrelated stacking — server-side dedup by `sessionId` already prevents most duplication noise.
+
+- **App-icon badge with unread count** — `[DEFERRED: separate PRD]`.
+  **Why:** Requires tracking "unread" state somewhere — either mobile-local (every notification increments, every tap decrements) or server-derived (relay maintains an unread count per token). Both are meaningful state-management additions. v2 explicitly sets `shouldSetBadge: false` in the notification handler.
+
+- **"Agent failed" notifications** — `[DEFERRED: separate PRD]`.
+  **Why:** Host-service emits no failure event today (`AgentLifecycleEventType = "Start" | "Stop" | "PermissionRequest" | "Attached" | "Detached"` in `packages/host-service/src/events/map-event-type.ts`). Adding a `Failed` event is a host-side cross-cutting change with its own scope (where to catch turn errors, how to represent the failure payload, how to render in desktop too) — it's a precursor that earns its own initiative. v2 ships with `Stop` + `PermissionRequest` only.
 
 ## Scope size check
 

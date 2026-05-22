@@ -19,16 +19,36 @@ functional_group: PLATF
 
 ## UC-PLATF-01: Receive OS push notifications on lifecycle events
 
-The host-service emits lifecycle events via its `notificationsEmitter` (`NOTIFICATION_EVENTS.AGENT_LIFECYCLE`). For mobile users, these events are forwarded as Expo push notifications to the device. Notifications are sent for: agent turn complete, agent paused for user input (any of the three PAUSE types), agent failed. Notifications include the session id and workspace id so tapping them navigates the user directly to the relevant session.
+The mobile app receives OS push notifications when an agent turn completes (`Stop`) or pauses for user input (`PermissionRequest` — covers tool approval, `ask_user`, and plan approval) while the app is backgrounded. Delivery is server-driven: host-service pushes a new outbound `push:lifecycle` message on its existing tunnel WS to `apps/relay`; relay looks up registered Expo push tokens for the org+user in Upstash KV and calls the Expo Push API. Mobile registers/de-registers push tokens against the relay using the same JWT bearer it uses for chat tRPC. Permission acquisition follows Expo best practices (custom pre-prompt before the OS dialog; never on first cold launch). Tap-to-open routing is specified separately by **`09-uc-nav.md` UC-NAV-05**, which silently aligns the selected host to the session's host and opens the pause container immediately when applicable. Wire-level architecture, diagrams, and failure handling live in `11-technical-requirements/07-notifications.md`.
 
 **Acceptance Criteria:**
-- ☐ User receives an OS push notification when an agent turn completes while the mobile app is backgrounded
-- ☐ User receives an OS push notification when an agent pauses for tool approval, ask_user, or plan approval while the app is backgrounded
-- ☐ User receives an OS push notification when an agent turn fails while the app is backgrounded
-- ☐ User can tap a notification to open the mobile app directly into the corresponding chat session
-- ☐ System registers the device's Expo push token with the cloud backend on app launch and re-registers on token refresh
-- ☐ System suppresses redundant notifications when the mobile app is foregrounded and actively viewing the corresponding session
-- ☐ System includes the session id, workspace id, and a human-readable summary in the notification payload
+
+*Permission flow:*
+- ☐ System does NOT trigger the OS notification-permission dialog on first cold launch
+- ☐ User can see an in-app pre-prompt screen the first time they enter a chat session that explains the value before any OS dialog is triggered
+- ☐ User can tap "Enable" on the pre-prompt to trigger `expo-notifications.requestPermissionsAsync()`; tapping "Not now" defers the request without contacting the OS
+- ☐ System re-checks notification permission status on every cold launch via `getPermissionsAsync()` so OS-level revocations are detected
+- ☐ User can see a "Re-enable in Settings" banner with a `Linking.openSettings()` affordance under `/(more)/settings` when permission status is `denied`
+
+*Token lifecycle:*
+- ☐ System calls `getExpoPushTokenAsync()` and `POST ${RELAY_URL}/push/register { expoToken, platform, deviceId }` after permission status becomes `granted` or `provisional`, using the same JWT bearer mobile uses for host-service tRPC routing
+- ☐ System re-registers the token whenever the cached token differs from the value returned by `getExpoPushTokenAsync()` on cold launch (Expo token rotation)
+- ☐ System sends `DELETE ${RELAY_URL}/push/register/:deviceId` on user logout
+- ☐ System sends `DELETE ${RELAY_URL}/push/register/:deviceId` on a cold-launch transition from `granted` → `denied` (OS-revoked permission)
+
+*Delivery (server-side, validated end-to-end):*
+- ☐ User receives an OS push notification when an agent turn completes (`Stop`) while the mobile app is backgrounded
+- ☐ User receives an OS push notification when an agent pauses for any of the three PAUSE types (`PermissionRequest`) while the mobile app is backgrounded
+- ☐ System encodes `{ sessionId, workspaceId, hostId, kind }` in the notification payload `data` field for use by the UC-NAV-05 deep-link router
+- ☐ System dedupes by `sessionId` such that a later notification for the same session replaces a still-visible earlier one (no stacking from rapid event sequences)
+
+*Foreground suppression:*
+- ☐ System invokes `expo-notifications.setNotificationHandler` on app startup with a route-aware handler
+- ☐ System suppresses the foreground banner when the current expo-router route is `/(chat)/[sessionId]` and the `sessionId` matches the notification payload (returning `{ shouldShowBanner: false, shouldPlaySound: false, shouldSetBadge: false }`)
+- ☐ System shows the foreground banner when the current route does not match (returning `{ shouldShowBanner: true, shouldPlaySound: true, shouldSetBadge: false }`)
+
+*Tap-to-open handoff:*
+- ☐ System delegates tap handling to the deep-link router specified in **UC-NAV-05** (host alignment, pause-container auto-open, back-navigation consistency)
 
 ---
 
