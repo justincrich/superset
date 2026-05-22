@@ -30,7 +30,7 @@ Atomic-composition primitives — each molecule combines 2+ atoms with layout/gl
 |---|----------|----------------|--------|
 | 13 | `picker-trigger` | pill, icon-glyph (leading + chevron), section-label (label) | pending |
 | 13b | `composer-row` | textarea (--composer), icon-button (--primary --pill send / --destructive --pill stop), icon-glyph (paper-plane / square), progress-dots (--sm --accent sending) | completed |
-| 14 | `composer-toolbar` | picker-trigger ×3, icon-button (send/stop) — note: this composes molecules so may be flagged as 'large molecule' or split as organism | pending |
+| 14 | `composer-toolbar` | picker-trigger ×3 (inline: atom-pill + atom-icon-glyph + atom-section-label), atom-scroll-fade | completed |
 | 15 | `slash-command-option` | icon-glyph (slash), section-label (command + args hint), divider (between options) | pending |
 | 16 | `file-mention-chip` | pill (compact + monospace), icon-glyph (file), hit-target-wrapper (dismiss) | pending |
 
