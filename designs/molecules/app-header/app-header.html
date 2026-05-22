@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-app-header — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-app-header — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. Structural constant 1px allowed per spec.
+       ================================================================ */
+
+    /* ---- Shell -------------------------------------------------- */
+    .mol-app-header {
+      display:      flex;
+      align-items:  center;
+      gap:          var(--space-2);
+      padding:      var(--space-2) var(--space-3);
+      min-height:   var(--touch-target-min);
+      background:   var(--surface-page);
+      border-bottom: 1px solid var(--border-subtle);
+      position:     relative;
+      z-index:      10;
+    }
+
+    /* ---- Title wrap (center region) ----------------------------- */
+    .mol-app-header__title-wrap {
+      flex:       1;
+      min-width:  0; /* enables overflow truncation */
+      text-align: center;
+    }
+
+    /* ---- Title -------------------------------------------------- */
+    .mol-app-header__title {
+      margin:        0;
+      white-space:   nowrap;
+      overflow:      hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---- Subtitle ---------------------------------------------- */
+    .mol-app-header__subtitle {
+      margin:     var(--space-half) 0 0; /* TOKEN_GAP: 2px sub-scale typographic leading */
+      color:      var(--text-muted);     /* reinforces .type-meta default */
+    }
+
+    /* ---- Icon buttons: never shrink ---------------------------- */
+    .mol-app-header__back,
+    .mol-app-header__actions {
+      flex-shrink: 0;
+    }
+
+    /* ---- Variant: no-back -------------------------------------- */
+    /* No leading button; title shifts left */
+    .mol-app-header--no-back .mol-app-header__title-wrap {
+      text-align:         left;
+      padding-inline-start: var(--space-2);
+    }
+
+    /* ---- State: is-scrolled ------------------------------------ */
+    /* Adds shadow for visual layering when content scrolls behind */
+    .mol-app-header.is-scrolled {
+      box-shadow: 0 1px 0 var(--border-subtle);
+    }
+
+
+    /* ================================================================
+       Preview-local helpers — harness chrome only, no component logic
+       ================================================================ */
+
+    .section-head {
+      margin:         0 0 var(--space-3);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+    }
+
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--space-8) 0;
+    }
+
+    /* Framed cell: renders a header specimen with a visible boundary */
+    .header-frame {
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      overflow:      hidden;
+      margin-bottom: var(--space-4);
+    }
+
+    .header-frame-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-faint);
+      margin:         0 0 var(--space-2);
+    }
+
+    /* State row: two specimens side by side with labels */
+    .state-pair {
+      display:   flex;
+      gap:       var(--space-6);
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .state-cell {
+      flex:    1;
+      min-width: 260px;
+    }
+    .state-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-faint);
+      margin:         0 0 var(--space-2);
+    }
+
+    /* Composition: device viewport with scroll stub */
+    .composition-wrap {
+      display:   flex;
+      flex-wrap: wrap;
+      gap:       var(--space-8);
+    }
+
+    .mock-scroll-area {
+      flex:            1;
+      overflow:        hidden;
+      background:      var(--surface-page);
+      position:        relative;
+    }
+
+    .mock-scroll-stub {
+      padding: var(--space-4);
+    }
+
+    .mock-message-line {
+      height:        var(--space-4);
+      background:    var(--surface-soft);
+      border-radius: var(--radius-subtle);
+      margin-bottom: var(--space-3);
+    }
+    .mock-message-line--short { width: 60%; }
+    .mock-message-line--med   { width: 80%; }
+    .mock-message-line--long  { width: 100%; }
+    .mock-message-line--xs    { width: 40%; }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">app-header</h1>
+    <p class="crumb">molecule · top navigation header — chat views</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, light pane second
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT MATRIX -------------------------------- -->
+      <p class="section-head">1 · variant matrix — 3 variants</p>
+
+      <!-- default: back + centered title/subtitle + actions -->
+      <p class="header-frame-label">default — back + centered title + subtitle + actions</p>
+      <div class="header-frame">
+        <header class="mol-app-header mol-app-header--default" aria-label="Session header">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+            aria-label="Back to sessions"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+
+          <div class="mol-app-header__title-wrap">
+            <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+            <p class="mol-app-header__subtitle type-meta">superset · main</p>
+          </div>
+
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+            aria-label="Session actions"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="5" r="1" fill="currentColor"/>
+              <circle cx="12" cy="12" r="1" fill="currentColor"/>
+              <circle cx="12" cy="19" r="1" fill="currentColor"/>
+            </svg>
+          </button>
+        </header>
+      </div>
+
+      <!-- no-back: no back button, left-aligned title + actions -->
+      <p class="header-frame-label">no-back — leading title + actions (top-level / sessions list)</p>
+      <div class="header-frame">
+        <header class="mol-app-header mol-app-header--no-back" aria-label="Sessions header">
+          <div class="mol-app-header__title-wrap">
+            <h1 class="mol-app-header__title type-title">Chat</h1>
+          </div>
+
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+            aria-label="Session actions"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="5" r="1" fill="currentColor"/>
+              <circle cx="12" cy="12" r="1" fill="currentColor"/>
+              <circle cx="12" cy="19" r="1" fill="currentColor"/>
+            </svg>
+          </button>
+        </header>
+      </div>
+
+      <!-- simple: back + title only (no subtitle, no actions) -->
+      <p class="header-frame-label">simple — back + title only (plan-review modal-adjacent)</p>
+      <div class="header-frame">
+        <header class="mol-app-header mol-app-header--simple" aria-label="Plan review header">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+            aria-label="Back"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+
+          <div class="mol-app-header__title-wrap">
+            <h1 class="mol-app-header__title type-title">Review Plan</h1>
+          </div>
+        </header>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. STATE ROW ------------------------------------- -->
+      <p class="section-head">2 · state row — default vs is-scrolled</p>
+
+      <div class="state-pair">
+        <div class="state-cell">
+          <p class="state-cell-label">default</p>
+          <div class="header-frame">
+            <header class="mol-app-header mol-app-header--default" aria-label="Session header">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+                aria-label="Back to sessions"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--md"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+                </svg>
+              </button>
+              <div class="mol-app-header__title-wrap">
+                <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+                <p class="mol-app-header__subtitle type-meta">superset · main</p>
+              </div>
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+                aria-label="Session actions"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--md"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="5" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="19" r="1" fill="currentColor"/>
+                </svg>
+              </button>
+            </header>
+          </div>
+        </div>
+
+        <div class="state-cell">
+          <p class="state-cell-label">is-scrolled — shadow elevation</p>
+          <div class="header-frame">
+            <header class="mol-app-header mol-app-header--default is-scrolled" aria-label="Session header">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+                aria-label="Back to sessions"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--md"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+                </svg>
+              </button>
+              <div class="mol-app-header__title-wrap">
+                <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+                <p class="mol-app-header__subtitle type-meta">superset · main</p>
+              </div>
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+                aria-label="Session actions"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--md"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="5" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="19" r="1" fill="currentColor"/>
+                </svg>
+              </button>
+            </header>
+          </div>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. LONG TITLE TRUNCATION ------------------------- -->
+      <p class="section-head">3 · long title truncation</p>
+
+      <p class="header-frame-label">default variant — very long title ellipsis-truncates</p>
+      <div class="header-frame">
+        <header class="mol-app-header mol-app-header--default" aria-label="Session header">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+            aria-label="Back to sessions"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+
+          <div class="mol-app-header__title-wrap">
+            <h1 class="mol-app-header__title type-title">This is a very long session title that should ellipsis-truncate at the available width</h1>
+            <p class="mol-app-header__subtitle type-meta">superset · chat-mobile-sprint-1</p>
+          </div>
+
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+            aria-label="Session actions"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="5" r="1" fill="currentColor"/>
+              <circle cx="12" cy="12" r="1" fill="currentColor"/>
+              <circle cx="12" cy="19" r="1" fill="currentColor"/>
+            </svg>
+          </button>
+        </header>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 4. COMPOSITION — iPhone viewport ------------------- -->
+      <p class="section-head">4 · composition — iPhone viewport (app-header at top, scroll stub below)</p>
+
+      <div class="composition-wrap">
+        <!-- Default variant inside device bezel -->
+        <div>
+          <p class="header-frame-label">default — chat view</p>
+          <div class="atom-device-bezel">
+            <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+            <div class="atom-device-bezel__viewport">
+              <!-- Status bar -->
+              <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <!-- Signal bars -->
+                  <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                    <rect x="0"  y="6" width="3" height="6" rx="1"/>
+                    <rect x="4"  y="4" width="3" height="8" rx="1"/>
+                    <rect x="8"  y="2" width="3" height="10" rx="1"/>
+                    <rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/>
+                  </svg>
+                  <!-- Wi-Fi -->
+                  <svg width="16" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                    <circle cx="12" cy="20" r="1" fill="currentColor"/>
+                  </svg>
+                  <!-- Battery -->
+                  <div class="atom-device-bezel__battery" aria-hidden="true">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- App header molecule -->
+              <header class="mol-app-header mol-app-header--default" aria-label="Session header">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+                  aria-label="Back to sessions"
+                >
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--md"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+                  </svg>
+                </button>
+
+                <div class="mol-app-header__title-wrap">
+                  <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+                  <p class="mol-app-header__subtitle type-meta">superset · main</p>
+                </div>
+
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+                  aria-label="Session actions"
+                >
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--md"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="5" r="1" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="1" fill="currentColor"/>
+                  </svg>
+                </button>
+              </header>
+
+              <!-- Stub scroll area below header -->
+              <div class="mock-scroll-area">
+                <div class="mock-scroll-stub">
+                  <div class="mock-message-line mock-message-line--med"></div>
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--short"></div>
+                  <div class="mock-message-line mock-message-line--xs"></div>
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--med"></div>
+                  <div class="mock-message-line mock-message-line--short"></div>
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--xs"></div>
+                  <div class="mock-message-line mock-message-line--med"></div>
+                </div>
+              </div>
+
+              <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+            </div><!-- /viewport -->
+          </div><!-- /device-bezel -->
+        </div>
+
+        <!-- no-back variant inside device bezel -->
+        <div>
+          <p class="header-frame-label">no-back — sessions list</p>
+          <div class="atom-device-bezel">
+            <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+            <div class="atom-device-bezel__viewport">
+              <!-- Status bar -->
+              <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                    <rect x="0"  y="6" width="3" height="6" rx="1"/>
+                    <rect x="4"  y="4" width="3" height="8" rx="1"/>
+                    <rect x="8"  y="2" width="3" height="10" rx="1"/>
+                    <rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/>
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                    <circle cx="12" cy="20" r="1" fill="currentColor"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery" aria-hidden="true">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- App header — no-back variant -->
+              <header class="mol-app-header mol-app-header--no-back is-scrolled" aria-label="Sessions header">
+                <div class="mol-app-header__title-wrap">
+                  <h1 class="mol-app-header__title type-title">Chat</h1>
+                </div>
+
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+                  aria-label="Session actions"
+                >
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--md"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="5" r="1" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="1" fill="currentColor"/>
+                  </svg>
+                </button>
+              </header>
+
+              <!-- Stub scroll area -->
+              <div class="mock-scroll-area">
+                <div class="mock-scroll-stub">
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--med"></div>
+                  <div class="mock-message-line mock-message-line--short"></div>
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--xs"></div>
+                  <div class="mock-message-line mock-message-line--med"></div>
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--short"></div>
+                  <div class="mock-message-line mock-message-line--med"></div>
+                  <div class="mock-message-line mock-message-line--xs"></div>
+                </div>
+              </div>
+
+              <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+            </div><!-- /viewport -->
+          </div><!-- /device-bezel -->
+        </div>
+
+      </div><!-- /composition-wrap -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT MATRIX -------------------------------- -->
+      <p class="section-head">1 · variant matrix — 3 variants</p>
+
+      <!-- default -->
+      <p class="header-frame-label">default — back + centered title + subtitle + actions</p>
+      <div class="header-frame">
+        <header class="mol-app-header mol-app-header--default" aria-label="Session header">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+            aria-label="Back to sessions"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+
+          <div class="mol-app-header__title-wrap">
+            <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+            <p class="mol-app-header__subtitle type-meta">superset · main</p>
+          </div>
+
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+            aria-label="Session actions"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="5" r="1" fill="currentColor"/>
+              <circle cx="12" cy="12" r="1" fill="currentColor"/>
+              <circle cx="12" cy="19" r="1" fill="currentColor"/>
+            </svg>
+          </button>
+        </header>
+      </div>
+
+      <!-- no-back -->
+      <p class="header-frame-label">no-back — leading title + actions</p>
+      <div class="header-frame">
+        <header class="mol-app-header mol-app-header--no-back" aria-label="Sessions header">
+          <div class="mol-app-header__title-wrap">
+            <h1 class="mol-app-header__title type-title">Chat</h1>
+          </div>
+
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+            aria-label="Session actions"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="5" r="1" fill="currentColor"/>
+              <circle cx="12" cy="12" r="1" fill="currentColor"/>
+              <circle cx="12" cy="19" r="1" fill="currentColor"/>
+            </svg>
+          </button>
+        </header>
+      </div>
+
+      <!-- simple -->
+      <p class="header-frame-label">simple — back + title only</p>
+      <div class="header-frame">
+        <header class="mol-app-header mol-app-header--simple" aria-label="Plan review header">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+            aria-label="Back"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+
+          <div class="mol-app-header__title-wrap">
+            <h1 class="mol-app-header__title type-title">Review Plan</h1>
+          </div>
+        </header>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. STATE ROW ------------------------------------- -->
+      <p class="section-head">2 · state row — default vs is-scrolled</p>
+
+      <div class="state-pair">
+        <div class="state-cell">
+          <p class="state-cell-label">default</p>
+          <div class="header-frame">
+            <header class="mol-app-header mol-app-header--default" aria-label="Session header">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+                aria-label="Back to sessions"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--md"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+                </svg>
+              </button>
+              <div class="mol-app-header__title-wrap">
+                <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+                <p class="mol-app-header__subtitle type-meta">superset · main</p>
+              </div>
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+                aria-label="Session actions"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--md"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="5" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="19" r="1" fill="currentColor"/>
+                </svg>
+              </button>
+            </header>
+          </div>
+        </div>
+
+        <div class="state-cell">
+          <p class="state-cell-label">is-scrolled — shadow elevation</p>
+          <div class="header-frame">
+            <header class="mol-app-header mol-app-header--default is-scrolled" aria-label="Session header">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+                aria-label="Back to sessions"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--md"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+                </svg>
+              </button>
+              <div class="mol-app-header__title-wrap">
+                <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+                <p class="mol-app-header__subtitle type-meta">superset · main</p>
+              </div>
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+                aria-label="Session actions"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--md"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="5" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="19" r="1" fill="currentColor"/>
+                </svg>
+              </button>
+            </header>
+          </div>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. LONG TITLE TRUNCATION ------------------------- -->
+      <p class="section-head">3 · long title truncation</p>
+
+      <p class="header-frame-label">default variant — very long title ellipsis-truncates</p>
+      <div class="header-frame">
+        <header class="mol-app-header mol-app-header--default" aria-label="Session header">
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+            aria-label="Back to sessions"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+
+          <div class="mol-app-header__title-wrap">
+            <h1 class="mol-app-header__title type-title">This is a very long session title that should ellipsis-truncate at the available width</h1>
+            <p class="mol-app-header__subtitle type-meta">superset · chat-mobile-sprint-1</p>
+          </div>
+
+          <button
+            class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+            aria-label="Session actions"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--md"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="5" r="1" fill="currentColor"/>
+              <circle cx="12" cy="12" r="1" fill="currentColor"/>
+              <circle cx="12" cy="19" r="1" fill="currentColor"/>
+            </svg>
+          </button>
+        </header>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 4. COMPOSITION — iPhone viewport ------------------- -->
+      <p class="section-head">4 · composition — iPhone viewport (app-header at top, scroll stub below)</p>
+
+      <div class="composition-wrap">
+        <!-- Default variant inside device bezel -->
+        <div>
+          <p class="header-frame-label">default — chat view</p>
+          <div class="atom-device-bezel">
+            <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+            <div class="atom-device-bezel__viewport">
+              <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                    <rect x="0"  y="6" width="3" height="6" rx="1"/>
+                    <rect x="4"  y="4" width="3" height="8" rx="1"/>
+                    <rect x="8"  y="2" width="3" height="10" rx="1"/>
+                    <rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/>
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                    <circle cx="12" cy="20" r="1" fill="currentColor"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery" aria-hidden="true">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <header class="mol-app-header mol-app-header--default" aria-label="Session header">
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__back"
+                  aria-label="Back to sessions"
+                >
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--md"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+                  </svg>
+                </button>
+
+                <div class="mol-app-header__title-wrap">
+                  <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+                  <p class="mol-app-header__subtitle type-meta">superset · main</p>
+                </div>
+
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+                  aria-label="Session actions"
+                >
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--md"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="5" r="1" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="1" fill="currentColor"/>
+                  </svg>
+                </button>
+              </header>
+
+              <div class="mock-scroll-area">
+                <div class="mock-scroll-stub">
+                  <div class="mock-message-line mock-message-line--med"></div>
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--short"></div>
+                  <div class="mock-message-line mock-message-line--xs"></div>
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--med"></div>
+                  <div class="mock-message-line mock-message-line--short"></div>
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--xs"></div>
+                  <div class="mock-message-line mock-message-line--med"></div>
+                </div>
+              </div>
+
+              <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- no-back variant inside device bezel (scrolled) -->
+        <div>
+          <p class="header-frame-label">no-back — sessions list (is-scrolled)</p>
+          <div class="atom-device-bezel">
+            <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+            <div class="atom-device-bezel__viewport">
+              <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                    <rect x="0"  y="6" width="3" height="6" rx="1"/>
+                    <rect x="4"  y="4" width="3" height="8" rx="1"/>
+                    <rect x="8"  y="2" width="3" height="10" rx="1"/>
+                    <rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/>
+                  </svg>
+                  <svg width="16" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                    <circle cx="12" cy="20" r="1" fill="currentColor"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery" aria-hidden="true">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <header class="mol-app-header mol-app-header--no-back is-scrolled" aria-label="Sessions header">
+                <div class="mol-app-header__title-wrap">
+                  <h1 class="mol-app-header__title type-title">Chat</h1>
+                </div>
+
+                <button
+                  class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-app-header__actions"
+                  aria-label="Session actions"
+                >
+                  <svg
+                    class="atom-icon-glyph atom-icon-glyph--md"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="5" r="1" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="1" fill="currentColor"/>
+                  </svg>
+                </button>
+              </header>
+
+              <div class="mock-scroll-area">
+                <div class="mock-scroll-stub">
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--med"></div>
+                  <div class="mock-message-line mock-message-line--short"></div>
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--xs"></div>
+                  <div class="mock-message-line mock-message-line--med"></div>
+                  <div class="mock-message-line mock-message-line--long"></div>
+                  <div class="mock-message-line mock-message-line--short"></div>
+                  <div class="mock-message-line mock-message-line--med"></div>
+                  <div class="mock-message-line mock-message-line--xs"></div>
+                </div>
+              </div>
+
+              <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /composition-wrap -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
