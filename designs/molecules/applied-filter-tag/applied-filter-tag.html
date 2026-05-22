@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-applied-filter-tag — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-applied-filter-tag — molecule-local layout + glue only.
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Structural exceptions documented inline.
+       ================================================================ */
+
+    /* ---- Root chip ------------------------------------------------- */
+    .mol-applied-filter-tag {
+      display:     inline-flex;
+      align-items: center;
+      gap:         var(--space-1); /* tighter than --sm gap; fits xs icons */
+      flex-shrink: 0;
+      white-space: nowrap;
+      max-width:   16em; /* soft truncation cap — structural layout bound */
+      cursor:      default;
+    }
+
+    /* Clear-all is a <button>, needs cursor reset */
+    button.mol-applied-filter-tag {
+      cursor: pointer;
+    }
+
+    /* ---- Label ----------------------------------------------------- */
+    .mol-applied-filter-tag__label {
+      overflow:      hidden;
+      text-overflow: ellipsis;
+      /* font inherits from atom-pill--sm */
+      min-width:     0; /* allows ellipsis to trigger in a flex child */
+    }
+
+    /* ---- Leading icon slot ----------------------------------------- */
+    .mol-applied-filter-tag__leading-icon {
+      flex-shrink: 0;
+    }
+
+    /* ---- Dismiss button -------------------------------------------- */
+    .mol-applied-filter-tag__dismiss {
+      /* Reset */
+      appearance: none;
+      background: transparent;
+      border:     none;
+      outline:    none;
+      margin:     0;
+      cursor:     pointer;
+
+      /* Visual sizing — 20px tap zone minimum; pseudo expands to 44pt */
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      padding:         var(--space-1);
+      margin-inline-end: calc(-1 * var(--space-1)); /* collapse trailing gap */
+      border-radius:   var(--radius-round);
+
+      /* Minimum touch target */
+      min-width:  20px;
+      min-height: 20px;
+
+      /* Tap zone expansion via pseudo (does not affect layout) */
+      position: relative;
+    }
+
+    .mol-applied-filter-tag__dismiss::before {
+      content:  '';
+      position: absolute;
+      /* Expand tap zone to var(--touch-target-min) without affecting layout */
+      inset:    calc((var(--touch-target-min) - 20px) / -2);
+    }
+
+    .mol-applied-filter-tag__dismiss:hover {
+      background: var(--surface-active);
+    }
+
+    .mol-applied-filter-tag__dismiss:focus-visible {
+      outline:    none;
+      box-shadow: 0 0 0 2px var(--border-focus);
+    }
+
+    /* ---- Removing state -------------------------------------------- */
+    .mol-applied-filter-tag.is-removing {
+      opacity:   0;
+      transform: scale(0.9);
+      transition:
+        opacity   var(--motion-fast) var(--motion-ease-out),
+        transform var(--motion-fast) var(--motion-ease-out);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .mol-applied-filter-tag.is-removing {
+        transition: none;
+      }
+    }
+
+    /* ---- Filter-tag row (horizontal scroll list) ------------------- */
+    .mol-applied-filter-tag-row {
+      display:                    flex;
+      flex-direction:             row;
+      align-items:                center;
+      gap:                        var(--space-2);
+      overflow-x:                 auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width:            none;
+      padding-block:              var(--space-1);
+      padding-inline:             var(--space-4);
+    }
+
+    .mol-applied-filter-tag-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* ================================================================
+       Preview layout helpers (not shipped to product)
+       ================================================================ */
+
+    .preview-section {
+      margin-bottom: var(--spacing-section);
+    }
+
+    .preview-section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      margin:         0 0 var(--space-3);
+      text-transform: uppercase;
+    }
+
+    .preview-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-3);
+      flex-wrap:   wrap;
+      margin-bottom: var(--spacing-between);
+    }
+
+    .preview-state-grid {
+      display:   grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap:       var(--space-3);
+      margin-bottom: var(--spacing-between);
+    }
+
+    .preview-state-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      align-items:    flex-start;
+    }
+
+    .section-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0 var(--spacing-between);
+    }
+
+    /* Faux search-bar + project chip for composition demo */
+    .faux-header {
+      background:   var(--surface-raised);
+      border:       1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      overflow:     hidden;
+      margin-bottom: var(--spacing-between);
+    }
+
+    .faux-header-top {
+      display:        flex;
+      align-items:    center;
+      gap:            var(--space-2);
+      padding:        var(--space-3) var(--space-4);
+      border-bottom:  1px solid var(--border-subtle);
+    }
+
+    .faux-project-chip {
+      display:         inline-flex;
+      align-items:     center;
+      gap:             var(--space-1);
+      padding:         var(--space-1) var(--space-2);
+      background:      var(--surface-soft);
+      border-radius:   var(--radius-pill);
+      border:          0.5px solid var(--border-default);
+      font-family:     var(--font-mono);
+      font-size:       var(--font-size-meta);
+      font-weight:     var(--font-weight-meta);
+      letter-spacing:  var(--tracking-mono);
+      color:           var(--text-body);
+      flex-shrink:     0;
+    }
+
+    .faux-search {
+      flex:           1;
+      height:         28px;
+      background:     var(--surface-sunken);
+      border-radius:  var(--radius-default);
+      border:         0.5px solid var(--border-subtle);
+      display:        flex;
+      align-items:    center;
+      padding-inline: var(--space-2);
+      gap:            var(--space-2);
+    }
+
+    .faux-search-placeholder {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-label);
+      color:          var(--text-faint);
+    }
+
+    .faux-header-filter-row {
+      /* This is the actual mol-applied-filter-tag-row used inline */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+  ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">applied-filter-tag</h1>
+    <p class="crumb">molecule · dismissible filter chip for nav search bar row</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ============================================================
+         DARK PANE
+    ============================================================ -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ===========================================================
+           1. VARIANT MATRIX — 4 variants with realistic content
+      =========================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">variant matrix</p>
+
+        <div class="preview-row">
+
+          <!-- workspace -->
+          <div
+            class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                   atom-pill atom-pill--default atom-pill--sm"
+            role="listitem"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon"
+              aria-hidden="true"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <!-- git-branch -->
+              <circle cx="3" cy="3" r="1.25"/>
+              <circle cx="3" cy="9" r="1.25"/>
+              <circle cx="9" cy="3" r="1.25"/>
+              <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+              <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+            </svg>
+            <span class="mol-applied-filter-tag__label">chat-mobile-plan · macbook</span>
+            <button
+              class="mol-applied-filter-tag__dismiss"
+              aria-label="Remove workspace filter: chat-mobile-plan · macbook"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+              >
+                <line x1="3" y1="3" x2="9" y2="9"/>
+                <line x1="9" y1="3" x2="3" y2="9"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- status-live -->
+          <div
+            class="mol-applied-filter-tag mol-applied-filter-tag--status-live
+                   atom-pill atom-pill--live atom-pill--sm"
+            role="listitem"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs mol-applied-filter-tag__leading-icon"
+              aria-hidden="true"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <!-- radio / target -->
+              <circle cx="6" cy="6" r="4"/>
+              <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+              <line x1="6" y1="1" x2="6" y2="3"/>
+              <line x1="6" y1="9" x2="6" y2="11"/>
+              <line x1="1" y1="6" x2="3" y2="6"/>
+              <line x1="9" y1="6" x2="11" y2="6"/>
+            </svg>
+            <span class="mol-applied-filter-tag__label">Streaming</span>
+            <button
+              class="mol-applied-filter-tag__dismiss"
+              aria-label="Remove status filter: Streaming"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+              >
+                <line x1="3" y1="3" x2="9" y2="9"/>
+                <line x1="9" y1="3" x2="3" y2="9"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- status-warning -->
+          <div
+            class="mol-applied-filter-tag mol-applied-filter-tag--status-warning
+                   atom-pill atom-pill--warning atom-pill--sm"
+            role="listitem"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs mol-applied-filter-tag__leading-icon"
+              aria-hidden="true"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <!-- alert-triangle -->
+              <path d="M6 1.5L11 10H1L6 1.5z"/>
+              <line x1="6" y1="5" x2="6" y2="7.5"/>
+              <circle cx="6" cy="9" r="0.5" fill="currentColor" stroke="none"/>
+            </svg>
+            <span class="mol-applied-filter-tag__label">Pause pending</span>
+            <button
+              class="mol-applied-filter-tag__dismiss"
+              aria-label="Remove status filter: Pause pending"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+              >
+                <line x1="3" y1="3" x2="9" y2="9"/>
+                <line x1="9" y1="3" x2="3" y2="9"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- clear-all -->
+          <button
+            class="mol-applied-filter-tag mol-applied-filter-tag--clear-all
+                   atom-pill atom-pill--default atom-pill--sm"
+            aria-label="Clear all filters"
+            type="button"
+          >
+            <span class="mol-applied-filter-tag__label">Clear</span>
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+              aria-hidden="true"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+            >
+              <line x1="3" y1="3" x2="9" y2="9"/>
+              <line x1="9" y1="3" x2="3" y2="9"/>
+            </svg>
+          </button>
+
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ===========================================================
+           2. STATE ROW — workspace variant in 5 states
+      =========================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">states · workspace variant</p>
+
+        <div class="preview-state-grid">
+
+          <!-- default -->
+          <div class="preview-state-cell">
+            <span class="state-label">default</span>
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm"
+              role="listitem"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="3" cy="3" r="1.25"/>
+                <circle cx="3" cy="9" r="1.25"/>
+                <circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+                <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove workspace filter: chat-mobile-plan" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/>
+                  <line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- hover -->
+          <div class="preview-state-cell">
+            <span class="state-label">hover</span>
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm is-hover"
+              role="listitem"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="3" cy="3" r="1.25"/>
+                <circle cx="3" cy="9" r="1.25"/>
+                <circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+                <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove workspace filter: chat-mobile-plan" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/>
+                  <line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- active -->
+          <div class="preview-state-cell">
+            <span class="state-label">active</span>
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm is-active"
+              role="listitem"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="3" cy="3" r="1.25"/>
+                <circle cx="3" cy="9" r="1.25"/>
+                <circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+                <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove workspace filter: chat-mobile-plan" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/>
+                  <line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- focus -->
+          <div class="preview-state-cell">
+            <span class="state-label">focus</span>
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm is-focus"
+              role="listitem"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="3" cy="3" r="1.25"/>
+                <circle cx="3" cy="9" r="1.25"/>
+                <circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+                <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove workspace filter: chat-mobile-plan" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/>
+                  <line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- removing -->
+          <div class="preview-state-cell">
+            <span class="state-label">is-removing</span>
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm is-removing"
+              role="listitem"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="3" cy="3" r="1.25"/>
+                <circle cx="3" cy="9" r="1.25"/>
+                <circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+                <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove workspace filter: chat-mobile-plan" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/>
+                  <line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ===========================================================
+           3. TRUNCATION — long label ellipsis demo
+      =========================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">truncation · long label</p>
+
+        <div class="preview-row">
+          <div
+            class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                   atom-pill atom-pill--default atom-pill--sm"
+            role="listitem"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon"
+              aria-hidden="true"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="3" cy="3" r="1.25"/>
+              <circle cx="3" cy="9" r="1.25"/>
+              <circle cx="9" cy="3" r="1.25"/>
+              <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+              <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+            </svg>
+            <span class="mol-applied-filter-tag__label">feat/very-long-branch-name-for-truncation-demo · macbook</span>
+            <button
+              class="mol-applied-filter-tag__dismiss"
+              aria-label="Remove workspace filter: feat/very-long-branch-name-for-truncation-demo · macbook"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+              >
+                <line x1="3" y1="3" x2="9" y2="9"/>
+                <line x1="9" y1="3" x2="3" y2="9"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ===========================================================
+           4. COMPOSITION — horizontal-scroll row beneath faux header
+      =========================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">composition · filter row beneath search bar</p>
+
+        <div class="faux-header">
+          <!-- Row 1: project chip + search bar -->
+          <div class="faux-header-top">
+            <div class="faux-project-chip">
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="3" cy="3" r="1.25"/>
+                <circle cx="3" cy="9" r="1.25"/>
+                <circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+                <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              superset
+            </div>
+            <div class="faux-search">
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="5" cy="5" r="3.5"/>
+                <line x1="8" y1="8" x2="11" y2="11"/>
+              </svg>
+              <span class="faux-search-placeholder">Search sessions…</span>
+            </div>
+          </div>
+
+          <!-- Row 2: applied filter tags -->
+          <div
+            class="mol-applied-filter-tag-row faux-header-filter-row"
+            role="list"
+            aria-label="Active filters"
+          >
+
+            <!-- workspace tag -->
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm"
+              role="listitem"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="3" cy="3" r="1.25"/>
+                <circle cx="3" cy="9" r="1.25"/>
+                <circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+                <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan · macbook</span>
+              <button
+                class="mol-applied-filter-tag__dismiss"
+                aria-label="Remove workspace filter: chat-mobile-plan · macbook"
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                  aria-hidden="true"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                >
+                  <line x1="3" y1="3" x2="9" y2="9"/>
+                  <line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- status-live tag -->
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--status-live
+                     atom-pill atom-pill--live atom-pill--sm"
+              role="listitem"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs mol-applied-filter-tag__leading-icon"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="6" cy="6" r="4"/>
+                <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="3"/>
+                <line x1="6" y1="9" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="3" y2="6"/>
+                <line x1="9" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">Streaming</span>
+              <button
+                class="mol-applied-filter-tag__dismiss"
+                aria-label="Remove status filter: Streaming"
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs"
+                  aria-hidden="true"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                >
+                  <line x1="3" y1="3" x2="9" y2="9"/>
+                  <line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- status-warning tag -->
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--status-warning
+                     atom-pill atom-pill--warning atom-pill--sm"
+              role="listitem"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs mol-applied-filter-tag__leading-icon"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M6 1.5L11 10H1L6 1.5z"/>
+                <line x1="6" y1="5" x2="6" y2="7.5"/>
+                <circle cx="6" cy="9" r="0.5" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">Pause pending</span>
+              <button
+                class="mol-applied-filter-tag__dismiss"
+                aria-label="Remove status filter: Pause pending"
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xs"
+                  aria-hidden="true"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                >
+                  <line x1="3" y1="3" x2="9" y2="9"/>
+                  <line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- clear-all -->
+            <button
+              class="mol-applied-filter-tag mol-applied-filter-tag--clear-all
+                     atom-pill atom-pill--default atom-pill--sm"
+              aria-label="Clear all filters"
+              type="button"
+            >
+              <span class="mol-applied-filter-tag__label">Clear</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+              >
+                <line x1="3" y1="3" x2="9" y2="9"/>
+                <line x1="9" y1="3" x2="3" y2="9"/>
+              </svg>
+            </button>
+
+          </div><!-- /mol-applied-filter-tag-row -->
+        </div><!-- /faux-header -->
+
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ============================================================
+         LIGHT PANE
+    ============================================================ -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ===========================================================
+           1. VARIANT MATRIX
+      =========================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">variant matrix</p>
+
+        <div class="preview-row">
+
+          <!-- workspace -->
+          <div
+            class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                   atom-pill atom-pill--default atom-pill--sm"
+            role="listitem"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon"
+              aria-hidden="true"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="3" cy="3" r="1.25"/>
+              <circle cx="3" cy="9" r="1.25"/>
+              <circle cx="9" cy="3" r="1.25"/>
+              <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+              <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+            </svg>
+            <span class="mol-applied-filter-tag__label">chat-mobile-plan · macbook</span>
+            <button
+              class="mol-applied-filter-tag__dismiss"
+              aria-label="Remove workspace filter: chat-mobile-plan · macbook"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+              >
+                <line x1="3" y1="3" x2="9" y2="9"/>
+                <line x1="9" y1="3" x2="3" y2="9"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- status-live -->
+          <div
+            class="mol-applied-filter-tag mol-applied-filter-tag--status-live
+                   atom-pill atom-pill--live atom-pill--sm"
+            role="listitem"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs mol-applied-filter-tag__leading-icon"
+              aria-hidden="true"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="6" cy="6" r="4"/>
+              <circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+              <line x1="6" y1="1" x2="6" y2="3"/>
+              <line x1="6" y1="9" x2="6" y2="11"/>
+              <line x1="1" y1="6" x2="3" y2="6"/>
+              <line x1="9" y1="6" x2="11" y2="6"/>
+            </svg>
+            <span class="mol-applied-filter-tag__label">Streaming</span>
+            <button
+              class="mol-applied-filter-tag__dismiss"
+              aria-label="Remove status filter: Streaming"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+              >
+                <line x1="3" y1="3" x2="9" y2="9"/>
+                <line x1="9" y1="3" x2="3" y2="9"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- status-warning -->
+          <div
+            class="mol-applied-filter-tag mol-applied-filter-tag--status-warning
+                   atom-pill atom-pill--warning atom-pill--sm"
+            role="listitem"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs mol-applied-filter-tag__leading-icon"
+              aria-hidden="true"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M6 1.5L11 10H1L6 1.5z"/>
+              <line x1="6" y1="5" x2="6" y2="7.5"/>
+              <circle cx="6" cy="9" r="0.5" fill="currentColor" stroke="none"/>
+            </svg>
+            <span class="mol-applied-filter-tag__label">Pause pending</span>
+            <button
+              class="mol-applied-filter-tag__dismiss"
+              aria-label="Remove status filter: Pause pending"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+              >
+                <line x1="3" y1="3" x2="9" y2="9"/>
+                <line x1="9" y1="3" x2="3" y2="9"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- clear-all -->
+          <button
+            class="mol-applied-filter-tag mol-applied-filter-tag--clear-all
+                   atom-pill atom-pill--default atom-pill--sm"
+            aria-label="Clear all filters"
+            type="button"
+          >
+            <span class="mol-applied-filter-tag__label">Clear</span>
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+              aria-hidden="true"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+            >
+              <line x1="3" y1="3" x2="9" y2="9"/>
+              <line x1="9" y1="3" x2="3" y2="9"/>
+            </svg>
+          </button>
+
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ===========================================================
+           2. STATE ROW
+      =========================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">states · workspace variant</p>
+
+        <div class="preview-state-grid">
+
+          <!-- default -->
+          <div class="preview-state-cell">
+            <span class="state-label">default</span>
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm"
+              role="listitem"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="3" cy="3" r="1.25"/><circle cx="3" cy="9" r="1.25"/><circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/><path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove workspace filter: chat-mobile-plan" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- hover -->
+          <div class="preview-state-cell">
+            <span class="state-label">hover</span>
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm is-hover"
+              role="listitem"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="3" cy="3" r="1.25"/><circle cx="3" cy="9" r="1.25"/><circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/><path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove workspace filter: chat-mobile-plan" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- active -->
+          <div class="preview-state-cell">
+            <span class="state-label">active</span>
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm is-active"
+              role="listitem"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="3" cy="3" r="1.25"/><circle cx="3" cy="9" r="1.25"/><circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/><path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove workspace filter: chat-mobile-plan" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- focus -->
+          <div class="preview-state-cell">
+            <span class="state-label">focus</span>
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm is-focus"
+              role="listitem"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="3" cy="3" r="1.25"/><circle cx="3" cy="9" r="1.25"/><circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/><path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove workspace filter: chat-mobile-plan" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- removing -->
+          <div class="preview-state-cell">
+            <span class="state-label">is-removing</span>
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm is-removing"
+              role="listitem"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="3" cy="3" r="1.25"/><circle cx="3" cy="9" r="1.25"/><circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/><path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove workspace filter: chat-mobile-plan" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ===========================================================
+           3. TRUNCATION
+      =========================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">truncation · long label</p>
+
+        <div class="preview-row">
+          <div
+            class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                   atom-pill atom-pill--default atom-pill--sm"
+            role="listitem"
+          >
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon"
+              aria-hidden="true"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="3" cy="3" r="1.25"/>
+              <circle cx="3" cy="9" r="1.25"/>
+              <circle cx="9" cy="3" r="1.25"/>
+              <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+              <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+            </svg>
+            <span class="mol-applied-filter-tag__label">feat/very-long-branch-name-for-truncation-demo · macbook</span>
+            <button
+              class="mol-applied-filter-tag__dismiss"
+              aria-label="Remove workspace filter: feat/very-long-branch-name-for-truncation-demo · macbook"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+              >
+                <line x1="3" y1="3" x2="9" y2="9"/>
+                <line x1="9" y1="3" x2="3" y2="9"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ===========================================================
+           4. COMPOSITION — filter row beneath search bar
+      =========================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">composition · filter row beneath search bar</p>
+
+        <div class="faux-header">
+          <div class="faux-header-top">
+            <div class="faux-project-chip">
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="3" cy="3" r="1.25"/>
+                <circle cx="3" cy="9" r="1.25"/>
+                <circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/>
+                <path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              superset
+            </div>
+            <div class="faux-search">
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint"
+                aria-hidden="true"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="5" cy="5" r="3.5"/>
+                <line x1="8" y1="8" x2="11" y2="11"/>
+              </svg>
+              <span class="faux-search-placeholder">Search sessions…</span>
+            </div>
+          </div>
+
+          <div
+            class="mol-applied-filter-tag-row faux-header-filter-row"
+            role="list"
+            aria-label="Active filters"
+          >
+            <!-- workspace -->
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--workspace
+                     atom-pill atom-pill--default atom-pill--sm"
+              role="listitem"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-applied-filter-tag__leading-icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="3" cy="3" r="1.25"/><circle cx="3" cy="9" r="1.25"/><circle cx="9" cy="3" r="1.25"/>
+                <line x1="3" y1="4.25" x2="3" y2="7.75"/><path d="M9 4.25C9 7 6.5 7.5 3 7.75"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">chat-mobile-plan · macbook</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove workspace filter: chat-mobile-plan · macbook" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- status-live -->
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--status-live
+                     atom-pill atom-pill--live atom-pill--sm"
+              role="listitem"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-applied-filter-tag__leading-icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="4"/><circle cx="6" cy="6" r="1" fill="currentColor" stroke="none"/>
+                <line x1="6" y1="1" x2="6" y2="3"/><line x1="6" y1="9" x2="6" y2="11"/>
+                <line x1="1" y1="6" x2="3" y2="6"/><line x1="9" y1="6" x2="11" y2="6"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">Streaming</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove status filter: Streaming" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- status-warning -->
+            <div
+              class="mol-applied-filter-tag mol-applied-filter-tag--status-warning
+                     atom-pill atom-pill--warning atom-pill--sm"
+              role="listitem"
+            >
+              <svg class="atom-icon-glyph atom-icon-glyph--xs mol-applied-filter-tag__leading-icon" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 1.5L11 10H1L6 1.5z"/>
+                <line x1="6" y1="5" x2="6" y2="7.5"/>
+                <circle cx="6" cy="9" r="0.5" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-applied-filter-tag__label">Pause pending</span>
+              <button class="mol-applied-filter-tag__dismiss" aria-label="Remove status filter: Pause pending" type="button">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                  <line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- clear-all -->
+            <button
+              class="mol-applied-filter-tag mol-applied-filter-tag--clear-all
+                     atom-pill atom-pill--default atom-pill--sm"
+              aria-label="Clear all filters"
+              type="button"
+            >
+              <span class="mol-applied-filter-tag__label">Clear</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round">
+                <line x1="3" y1="3" x2="9" y2="9"/><line x1="9" y1="3" x2="3" y2="9"/>
+              </svg>
+            </button>
+
+          </div>
+        </div>
+
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
