@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-banner — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-banner — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. Zero raw font-size/weight/color values.
+       Structural geometry comment-flagged where used.
+       ================================================================ */
+
+    /* ---- Base container ------------------------------------------ */
+    .mol-banner {
+      position:       relative;
+      padding:        var(--space-3) var(--space-4);
+      background:     var(--state-warning-bg);     /* warning default */
+      color:          var(--text-body);
+      border-radius:  var(--radius-default);
+      overflow:       hidden;                       /* structural: clips rule to radius */
+    }
+
+    /* ---- Danger variants ----------------------------------------- */
+    .mol-banner--unpaid,
+    .mol-banner--dispatch-failed {
+      background: var(--state-danger-bg);
+    }
+
+    /* ---- Top accent rule — pinned to top edge -------------------- */
+    .mol-banner__rule {
+      position: absolute;
+      top:      0;
+      left:     0;
+      right:    0;
+      /* border-radius override: rule sits at edge, no radius on top */
+      border-radius: var(--radius-subtle) var(--radius-subtle) 0 0; /* structural: top-cap only */
+    }
+
+    /* ---- Primary content row ------------------------------------- */
+    .mol-banner__row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-3);
+      /* top padding accounts for rule height so content doesn't overlap */
+      padding-top: calc(var(--domain-tool-rule-width) + var(--space-1)); /* structural: rule clearance */
+    }
+
+    /* ---- Status icon --------------------------------------------- */
+    .mol-banner__icon {
+      flex-shrink: 0;
+      color:       var(--state-warning-fg);         /* warning default */
+    }
+
+    .mol-banner--unpaid .mol-banner__icon,
+    .mol-banner--dispatch-failed .mol-banner__icon {
+      color: var(--state-danger-fg);
+    }
+
+    /* ---- Headline text ------------------------------------------- */
+    .mol-banner__text {
+      flex:  1;
+      color: var(--state-warning-fg);               /* warning default */
+    }
+
+    .mol-banner--unpaid .mol-banner__text,
+    .mol-banner--dispatch-failed .mol-banner__text {
+      color: var(--state-danger-fg);
+    }
+
+    /* ---- Body explainer (stacked shape only) --------------------- */
+    .mol-banner__body {
+      margin:  var(--space-2) 0 var(--space-3);
+      padding: 0;
+      color:   var(--text-muted);
+    }
+
+    /* ---- CTA button ---------------------------------------------- */
+    .mol-banner__cta {
+      flex-shrink: 0;
+    }
+
+    /* Stacked shape: CTA sits below body, not trailing in the row */
+    .mol-banner--stacked .mol-banner__cta {
+      align-self: flex-start;
+    }
+
+    /* ---- Dismiss button (is-dismissible state) ------------------- */
+    .mol-banner__dismiss {
+      flex-shrink: 0;
+      /* atom-icon-button provides sizing, color, and interaction */
+    }
+
+    /* ================================================================
+       Preview-only helpers
+       ================================================================ */
+
+    .preview-banner-stack {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-4);
+      max-width:      480px;    /* structural: approximate mobile viewport width */
+    }
+
+    .preview-variant-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-variant-group {
+      margin-bottom: var(--spacing-section);
+    }
+
+    /* Faux chat view */
+    .faux-chat {
+      display:        flex;
+      flex-direction: column;
+      height:         100%;
+      background:     var(--surface-page);
+      overflow:       hidden;
+    }
+
+    .faux-chat__banner-zone {
+      padding: var(--space-3) var(--space-4) 0;
+    }
+
+    .faux-chat__messages {
+      flex:       1;
+      padding:    var(--space-4);
+      overflow-y: auto;
+      display:    flex;
+      flex-direction: column;
+      gap:        var(--space-4);
+    }
+
+    .faux-message {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+    }
+
+    .faux-message__label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+    }
+
+    .faux-message__bubble {
+      padding:        var(--space-3) var(--space-4);
+      background:     var(--surface-raised);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      color:          var(--text-body);
+      max-width:       85%;    /* structural: chat bubble width cap */
+    }
+
+    .faux-message--user .faux-message__bubble {
+      align-self:  flex-end;
+      background:  var(--accent-primary);
+      color:       var(--accent-primary-fg);
+      border:      none;
+    }
+
+    .faux-message--assistant .faux-message__bubble {
+      align-self: flex-start;
+    }
+
+    .faux-chat__composer {
+      padding:       var(--space-3) var(--space-4);
+      border-top:    1px solid var(--border-subtle);
+      background:    var(--surface-page);
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-2);
+    }
+
+    .faux-composer-input {
+      flex:           1;
+      height:         36px;    /* structural: composer height */
+      background:     var(--surface-soft);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-pill);
+      padding:        0 var(--space-3);
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      color:          var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">banner</h1>
+    <p class="crumb">molecule · platform status · 4 variants × 2 shapes · UC-PLATF-01 / UC-PLATF-03</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ============================================================
+         DARK PANE
+         ============================================================ -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- 1. VARIANT MATRIX ===================================== -->
+      <div class="variant">
+        <h3>1 · variant matrix — 4 status variants × 2 shapes = 8 banners</h3>
+
+        <!-- ---- INLINE shape ------------------------------------ -->
+        <p class="preview-variant-label">shape: inline (default)</p>
+
+        <div class="preview-variant-group">
+          <!-- mol-banner--offline --inline (warning, wifi-off) -->
+          <p class="preview-variant-label">offline · warning · wifi-off</p>
+          <aside class="mol-banner mol-banner--offline mol-banner--inline"
+                 role="status" aria-live="polite" aria-label="Host offline">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <!-- wifi-off icon -->
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"/>
+                <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+                <path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+                <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/>
+                <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/>
+                <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+                <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Host offline</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Retry connection">Retry</button>
+            </div>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <!-- mol-banner--unpaid --inline (danger, alert-triangle) -->
+          <p class="preview-variant-label">unpaid · danger · alert-triangle</p>
+          <aside class="mol-banner mol-banner--unpaid mol-banner--inline"
+                 role="alert" aria-live="assertive" aria-label="Host plan required">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <!-- alert-triangle icon -->
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Host plan required</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Upgrade your host plan">Upgrade</button>
+            </div>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <!-- mol-banner--dispatch-failed --inline (danger, alert-triangle) -->
+          <p class="preview-variant-label">dispatch-failed · danger · alert-triangle</p>
+          <aside class="mol-banner mol-banner--dispatch-failed mol-banner--inline"
+                 role="alert" aria-live="assertive" aria-label="Dispatch failed">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <!-- alert-triangle icon -->
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Dispatch failed · Couldn't reach Claude.</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Retry dispatch">Retry</button>
+            </div>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <!-- mol-banner--permission-denied --inline (warning, bell) -->
+          <p class="preview-variant-label">permission-denied · warning · bell · inline</p>
+          <aside class="mol-banner mol-banner--permission-denied mol-banner--inline"
+                 role="status" aria-live="polite" aria-label="Notifications are disabled">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <!-- bell icon -->
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Notifications are disabled</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Open notification settings">Open Settings →</button>
+            </div>
+          </aside>
+        </div>
+
+        <!-- ---- STACKED shape ----------------------------------- -->
+        <p class="preview-variant-label">shape: stacked</p>
+
+        <div class="preview-variant-group">
+          <!-- mol-banner--offline --stacked (warning, wifi-off) -->
+          <p class="preview-variant-label">offline · warning · stacked</p>
+          <aside class="mol-banner mol-banner--offline mol-banner--stacked"
+                 role="status" aria-live="polite" aria-label="Host offline">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"/>
+                <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+                <path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+                <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/>
+                <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/>
+                <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+                <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm"><strong>Host offline</strong></span>
+            </div>
+            <p class="mol-banner__body type-body-sm">
+              Your host machine is unreachable. Reconnecting automatically.
+            </p>
+            <button class="atom-button atom-button--secondary atom-button--sm mol-banner__cta"
+                    type="button" aria-label="Retry connection">Retry</button>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <!-- mol-banner--unpaid --stacked (danger, alert-triangle) -->
+          <p class="preview-variant-label">unpaid · danger · stacked</p>
+          <aside class="mol-banner mol-banner--unpaid mol-banner--stacked"
+                 role="alert" aria-live="assertive" aria-label="Host plan required">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm"><strong>Host plan required</strong></span>
+            </div>
+            <p class="mol-banner__body type-body-sm">
+              Upgrade your host to resume. Sessions are paused until the plan is active.
+            </p>
+            <button class="atom-button atom-button--secondary atom-button--sm mol-banner__cta"
+                    type="button">Upgrade your host →</button>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <!-- mol-banner--dispatch-failed --stacked (danger, alert-triangle) -->
+          <p class="preview-variant-label">dispatch-failed · danger · stacked</p>
+          <aside class="mol-banner mol-banner--dispatch-failed mol-banner--stacked"
+                 role="alert" aria-live="assertive" aria-label="Dispatch failed">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm"><strong>Dispatch failed</strong></span>
+            </div>
+            <p class="mol-banner__body type-body-sm">
+              Couldn't reach Claude. Check your network connection and try again.
+            </p>
+            <button class="atom-button atom-button--secondary atom-button--sm mol-banner__cta"
+                    type="button" aria-label="Retry dispatch">Retry</button>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <!-- mol-banner--permission-denied --stacked (warning, bell) -->
+          <p class="preview-variant-label">permission-denied · warning · stacked</p>
+          <aside class="mol-banner mol-banner--permission-denied mol-banner--stacked"
+                 role="status" aria-live="polite" aria-label="Notifications are disabled">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm"><strong>Notifications are disabled</strong></span>
+            </div>
+            <p class="mol-banner__body type-body-sm">
+              You'll miss turn updates and pause prompts while backgrounded.
+            </p>
+            <button class="atom-button atom-button--secondary atom-button--sm mol-banner__cta"
+                    type="button">Open Settings →</button>
+          </aside>
+        </div>
+
+      </div><!-- /variant matrix -->
+
+      <!-- 2. STATE ROW ========================================== -->
+      <div class="variant">
+        <h3>2 · state row — offline inline: default vs is-dismissible</h3>
+
+        <p class="preview-variant-label">default (no dismiss)</p>
+        <div class="preview-variant-group">
+          <aside class="mol-banner mol-banner--offline mol-banner--inline"
+                 role="status" aria-live="polite" aria-label="Host offline">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"/>
+                <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+                <path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+                <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/>
+                <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/>
+                <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+                <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Host offline</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Retry connection">Retry</button>
+            </div>
+          </aside>
+        </div>
+
+        <p class="preview-variant-label">is-dismissible (with close button)</p>
+        <div class="preview-variant-group">
+          <aside class="mol-banner mol-banner--offline mol-banner--inline is-dismissible"
+                 role="status" aria-live="polite" aria-label="Host offline">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"/>
+                <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+                <path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+                <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/>
+                <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/>
+                <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+                <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Host offline</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Retry connection">Retry</button>
+              <!-- dismiss icon-button -->
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm mol-banner__dismiss"
+                      type="button" aria-label="Dismiss notification">
+                <svg class="atom-icon-button__icon" aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </aside>
+        </div>
+      </div><!-- /state row -->
+
+      <!-- 3. COMPOSITION — banners in faux chat view ============ -->
+      <div class="variant">
+        <h3>3 · composition — banners at top of faux chat view (device bezel)</h3>
+
+        <div style="display: flex; gap: var(--space-6); flex-wrap: wrap; align-items: flex-start;">
+
+          <!-- Device: offline banner -->
+          <div>
+            <p class="preview-variant-label">offline banner</p>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+              <div class="atom-device-bezel__status-bar">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg aria-hidden="true" width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
+                    <rect x="0" y="4" width="3" height="8" rx="1"/>
+                    <rect x="4.5" y="2.5" width="3" height="9.5" rx="1"/>
+                    <rect x="9" y="0.5" width="3" height="11.5" rx="1"/>
+                    <rect x="13.5" y="0" width="2.5" height="12" rx="1" opacity="0.3"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__content">
+                  <div class="faux-chat">
+                    <div class="faux-chat__banner-zone">
+                      <aside class="mol-banner mol-banner--offline mol-banner--inline"
+                             role="status" aria-live="polite" aria-label="Host offline">
+                        <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                              aria-hidden="true"></span>
+                        <div class="mol-banner__row">
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                               aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                               stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="2" y1="2" x2="22" y2="22"/>
+                            <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+                            <path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+                            <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/>
+                            <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/>
+                            <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+                            <circle cx="12" cy="20" r="1" fill="currentColor"/>
+                          </svg>
+                          <span class="mol-banner__text type-body-sm">Host offline</span>
+                          <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                                  type="button" aria-label="Retry connection">Retry</button>
+                        </div>
+                      </aside>
+                    </div>
+                    <div class="faux-chat__messages">
+                      <div class="faux-message faux-message--user">
+                        <span class="faux-message__label">You</span>
+                        <div class="faux-message__bubble">Refactor the relay tunnel</div>
+                      </div>
+                      <div class="faux-message faux-message--assistant">
+                        <span class="faux-message__label">Claude</span>
+                        <div class="faux-message__bubble">On it. Reading relay-client.ts…</div>
+                      </div>
+                    </div>
+                    <div class="faux-chat__composer">
+                      <div class="faux-composer-input" aria-label="Message input (disabled)">Message…</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__home-indicator"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Device: dispatch-failed banner -->
+          <div>
+            <p class="preview-variant-label">dispatch-failed banner</p>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+              <div class="atom-device-bezel__status-bar">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg aria-hidden="true" width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
+                    <rect x="0" y="4" width="3" height="8" rx="1"/>
+                    <rect x="4.5" y="2.5" width="3" height="9.5" rx="1"/>
+                    <rect x="9" y="0.5" width="3" height="11.5" rx="1"/>
+                    <rect x="13.5" y="0" width="2.5" height="12" rx="1" opacity="0.3"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__content">
+                  <div class="faux-chat">
+                    <div class="faux-chat__banner-zone">
+                      <aside class="mol-banner mol-banner--dispatch-failed mol-banner--inline"
+                             role="alert" aria-live="assertive" aria-label="Dispatch failed">
+                        <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error mol-banner__rule"
+                              aria-hidden="true"></span>
+                        <div class="mol-banner__row">
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                               aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                               stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                          </svg>
+                          <span class="mol-banner__text type-body-sm">Dispatch failed</span>
+                          <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                                  type="button" aria-label="Retry dispatch">Retry</button>
+                        </div>
+                      </aside>
+                    </div>
+                    <div class="faux-chat__messages">
+                      <div class="faux-message faux-message--user">
+                        <span class="faux-message__label">You</span>
+                        <div class="faux-message__bubble">Continue the migration</div>
+                      </div>
+                      <div class="faux-message faux-message--assistant">
+                        <span class="faux-message__label">Claude</span>
+                        <div class="faux-message__bubble">Working on schema changes…</div>
+                      </div>
+                    </div>
+                    <div class="faux-chat__composer">
+                      <div class="faux-composer-input" aria-label="Message input (disabled)">Message…</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__home-indicator"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Device: permission-denied stacked banner -->
+          <div>
+            <p class="preview-variant-label">permission-denied stacked</p>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+              <div class="atom-device-bezel__status-bar">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg aria-hidden="true" width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
+                    <rect x="0" y="4" width="3" height="8" rx="1"/>
+                    <rect x="4.5" y="2.5" width="3" height="9.5" rx="1"/>
+                    <rect x="9" y="0.5" width="3" height="11.5" rx="1"/>
+                    <rect x="13.5" y="0" width="2.5" height="12" rx="1" opacity="0.3"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__content">
+                  <div class="faux-chat">
+                    <div class="faux-chat__banner-zone">
+                      <aside class="mol-banner mol-banner--permission-denied mol-banner--stacked"
+                             role="status" aria-live="polite" aria-label="Notifications are disabled">
+                        <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                              aria-hidden="true"></span>
+                        <div class="mol-banner__row">
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                               aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                               stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                          </svg>
+                          <span class="mol-banner__text type-body-sm"><strong>Notifications are disabled</strong></span>
+                        </div>
+                        <p class="mol-banner__body type-body-sm">
+                          You'll miss turn updates and pause prompts while backgrounded.
+                        </p>
+                        <button class="atom-button atom-button--secondary atom-button--sm mol-banner__cta"
+                                type="button">Open Settings →</button>
+                      </aside>
+                    </div>
+                    <div class="faux-chat__messages">
+                      <div class="faux-message faux-message--user">
+                        <span class="faux-message__label">You</span>
+                        <div class="faux-message__bubble">Run the test suite</div>
+                      </div>
+                      <div class="faux-message faux-message--assistant">
+                        <span class="faux-message__label">Claude</span>
+                        <div class="faux-message__bubble">Running bun test…</div>
+                      </div>
+                    </div>
+                    <div class="faux-chat__composer">
+                      <div class="faux-composer-input" aria-label="Message input">Message…</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__home-indicator"></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /device row -->
+      </div><!-- /composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ============================================================
+         LIGHT PANE
+         ============================================================ -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- 1. VARIANT MATRIX ===================================== -->
+      <div class="variant">
+        <h3>1 · variant matrix — 4 status variants × 2 shapes = 8 banners</h3>
+
+        <!-- ---- INLINE shape ------------------------------------ -->
+        <p class="preview-variant-label">shape: inline (default)</p>
+
+        <div class="preview-variant-group">
+          <p class="preview-variant-label">offline · warning · wifi-off</p>
+          <aside class="mol-banner mol-banner--offline mol-banner--inline"
+                 role="status" aria-live="polite" aria-label="Host offline">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"/>
+                <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+                <path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+                <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/>
+                <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/>
+                <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+                <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Host offline</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Retry connection">Retry</button>
+            </div>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <p class="preview-variant-label">unpaid · danger · alert-triangle</p>
+          <aside class="mol-banner mol-banner--unpaid mol-banner--inline"
+                 role="alert" aria-live="assertive" aria-label="Host plan required">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Host plan required</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Upgrade your host plan">Upgrade</button>
+            </div>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <p class="preview-variant-label">dispatch-failed · danger · alert-triangle</p>
+          <aside class="mol-banner mol-banner--dispatch-failed mol-banner--inline"
+                 role="alert" aria-live="assertive" aria-label="Dispatch failed">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Dispatch failed · Couldn't reach Claude.</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Retry dispatch">Retry</button>
+            </div>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <p class="preview-variant-label">permission-denied · warning · bell · inline</p>
+          <aside class="mol-banner mol-banner--permission-denied mol-banner--inline"
+                 role="status" aria-live="polite" aria-label="Notifications are disabled">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Notifications are disabled</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Open notification settings">Open Settings →</button>
+            </div>
+          </aside>
+        </div>
+
+        <!-- ---- STACKED shape ----------------------------------- -->
+        <p class="preview-variant-label">shape: stacked</p>
+
+        <div class="preview-variant-group">
+          <p class="preview-variant-label">offline · warning · stacked</p>
+          <aside class="mol-banner mol-banner--offline mol-banner--stacked"
+                 role="status" aria-live="polite" aria-label="Host offline">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"/>
+                <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+                <path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+                <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/>
+                <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/>
+                <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+                <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm"><strong>Host offline</strong></span>
+            </div>
+            <p class="mol-banner__body type-body-sm">
+              Your host machine is unreachable. Reconnecting automatically.
+            </p>
+            <button class="atom-button atom-button--secondary atom-button--sm mol-banner__cta"
+                    type="button" aria-label="Retry connection">Retry</button>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <p class="preview-variant-label">unpaid · danger · stacked</p>
+          <aside class="mol-banner mol-banner--unpaid mol-banner--stacked"
+                 role="alert" aria-live="assertive" aria-label="Host plan required">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm"><strong>Host plan required</strong></span>
+            </div>
+            <p class="mol-banner__body type-body-sm">
+              Upgrade your host to resume. Sessions are paused until the plan is active.
+            </p>
+            <button class="atom-button atom-button--secondary atom-button--sm mol-banner__cta"
+                    type="button">Upgrade your host →</button>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <p class="preview-variant-label">dispatch-failed · danger · stacked</p>
+          <aside class="mol-banner mol-banner--dispatch-failed mol-banner--stacked"
+                 role="alert" aria-live="assertive" aria-label="Dispatch failed">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm"><strong>Dispatch failed</strong></span>
+            </div>
+            <p class="mol-banner__body type-body-sm">
+              Couldn't reach Claude. Check your network connection and try again.
+            </p>
+            <button class="atom-button atom-button--secondary atom-button--sm mol-banner__cta"
+                    type="button" aria-label="Retry dispatch">Retry</button>
+          </aside>
+        </div>
+
+        <div class="preview-variant-group">
+          <p class="preview-variant-label">permission-denied · warning · stacked</p>
+          <aside class="mol-banner mol-banner--permission-denied mol-banner--stacked"
+                 role="status" aria-live="polite" aria-label="Notifications are disabled">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm"><strong>Notifications are disabled</strong></span>
+            </div>
+            <p class="mol-banner__body type-body-sm">
+              You'll miss turn updates and pause prompts while backgrounded.
+            </p>
+            <button class="atom-button atom-button--secondary atom-button--sm mol-banner__cta"
+                    type="button">Open Settings →</button>
+          </aside>
+        </div>
+
+      </div><!-- /variant matrix -->
+
+      <!-- 2. STATE ROW ========================================== -->
+      <div class="variant">
+        <h3>2 · state row — offline inline: default vs is-dismissible</h3>
+
+        <p class="preview-variant-label">default (no dismiss)</p>
+        <div class="preview-variant-group">
+          <aside class="mol-banner mol-banner--offline mol-banner--inline"
+                 role="status" aria-live="polite" aria-label="Host offline">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"/>
+                <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+                <path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+                <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/>
+                <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/>
+                <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+                <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Host offline</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Retry connection">Retry</button>
+            </div>
+          </aside>
+        </div>
+
+        <p class="preview-variant-label">is-dismissible (with close button)</p>
+        <div class="preview-variant-group">
+          <aside class="mol-banner mol-banner--offline mol-banner--inline is-dismissible"
+                 role="status" aria-live="polite" aria-label="Host offline">
+            <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                  aria-hidden="true"></span>
+            <div class="mol-banner__row">
+              <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                   aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"/>
+                <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+                <path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+                <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/>
+                <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/>
+                <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+                <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              </svg>
+              <span class="mol-banner__text type-body-sm">Host offline</span>
+              <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                      type="button" aria-label="Retry connection">Retry</button>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm mol-banner__dismiss"
+                      type="button" aria-label="Dismiss notification">
+                <svg class="atom-icon-button__icon" aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </aside>
+        </div>
+      </div><!-- /state row -->
+
+      <!-- 3. COMPOSITION — banners in faux chat view ============ -->
+      <div class="variant">
+        <h3>3 · composition — banners at top of faux chat view (device bezel)</h3>
+
+        <div style="display: flex; gap: var(--space-6); flex-wrap: wrap; align-items: flex-start;">
+
+          <!-- Device: offline banner -->
+          <div>
+            <p class="preview-variant-label">offline banner</p>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+              <div class="atom-device-bezel__status-bar">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg aria-hidden="true" width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
+                    <rect x="0" y="4" width="3" height="8" rx="1"/>
+                    <rect x="4.5" y="2.5" width="3" height="9.5" rx="1"/>
+                    <rect x="9" y="0.5" width="3" height="11.5" rx="1"/>
+                    <rect x="13.5" y="0" width="2.5" height="12" rx="1" opacity="0.3"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__content">
+                  <div class="faux-chat">
+                    <div class="faux-chat__banner-zone">
+                      <aside class="mol-banner mol-banner--offline mol-banner--inline"
+                             role="status" aria-live="polite" aria-label="Host offline">
+                        <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                              aria-hidden="true"></span>
+                        <div class="mol-banner__row">
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                               aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                               stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="2" y1="2" x2="22" y2="22"/>
+                            <path d="M8.5 16.5a5 5 0 0 1 7 0"/>
+                            <path d="M2 8.82a15 15 0 0 1 4.17-2.65"/>
+                            <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/>
+                            <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/>
+                            <path d="M5 13a10 10 0 0 1 5.24-2.76"/>
+                            <circle cx="12" cy="20" r="1" fill="currentColor"/>
+                          </svg>
+                          <span class="mol-banner__text type-body-sm">Host offline</span>
+                          <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                                  type="button" aria-label="Retry connection">Retry</button>
+                        </div>
+                      </aside>
+                    </div>
+                    <div class="faux-chat__messages">
+                      <div class="faux-message faux-message--user">
+                        <span class="faux-message__label">You</span>
+                        <div class="faux-message__bubble">Refactor the relay tunnel</div>
+                      </div>
+                      <div class="faux-message faux-message--assistant">
+                        <span class="faux-message__label">Claude</span>
+                        <div class="faux-message__bubble">On it. Reading relay-client.ts…</div>
+                      </div>
+                    </div>
+                    <div class="faux-chat__composer">
+                      <div class="faux-composer-input">Message…</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__home-indicator"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Device: unpaid banner -->
+          <div>
+            <p class="preview-variant-label">unpaid banner</p>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+              <div class="atom-device-bezel__status-bar">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg aria-hidden="true" width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
+                    <rect x="0" y="4" width="3" height="8" rx="1"/>
+                    <rect x="4.5" y="2.5" width="3" height="9.5" rx="1"/>
+                    <rect x="9" y="0.5" width="3" height="11.5" rx="1"/>
+                    <rect x="13.5" y="0" width="2.5" height="12" rx="1" opacity="0.3"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__content">
+                  <div class="faux-chat">
+                    <div class="faux-chat__banner-zone">
+                      <aside class="mol-banner mol-banner--unpaid mol-banner--inline"
+                             role="alert" aria-live="assertive" aria-label="Host plan required">
+                        <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error mol-banner__rule"
+                              aria-hidden="true"></span>
+                        <div class="mol-banner__row">
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                               aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                               stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                          </svg>
+                          <span class="mol-banner__text type-body-sm">Host plan required</span>
+                          <button class="atom-button atom-button--link atom-button--sm mol-banner__cta"
+                                  type="button" aria-label="Upgrade your host plan">Upgrade</button>
+                        </div>
+                      </aside>
+                    </div>
+                    <div class="faux-chat__messages">
+                      <div class="faux-message faux-message--user">
+                        <span class="faux-message__label">You</span>
+                        <div class="faux-message__bubble">Continue the analysis</div>
+                      </div>
+                      <div class="faux-message faux-message--assistant">
+                        <span class="faux-message__label">Claude</span>
+                        <div class="faux-message__bubble">Session paused.</div>
+                      </div>
+                    </div>
+                    <div class="faux-chat__composer">
+                      <div class="faux-composer-input">Message…</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__home-indicator"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Device: permission-denied stacked -->
+          <div>
+            <p class="preview-variant-label">permission-denied stacked</p>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+              <div class="atom-device-bezel__status-bar">
+                <span class="atom-device-bezel__time">9:41</span>
+                <div class="atom-device-bezel__indicators">
+                  <svg aria-hidden="true" width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
+                    <rect x="0" y="4" width="3" height="8" rx="1"/>
+                    <rect x="4.5" y="2.5" width="3" height="9.5" rx="1"/>
+                    <rect x="9" y="0.5" width="3" height="11.5" rx="1"/>
+                    <rect x="13.5" y="0" width="2.5" height="12" rx="1" opacity="0.3"/>
+                  </svg>
+                  <div class="atom-device-bezel__battery">
+                    <div class="atom-device-bezel__battery-body">
+                      <div class="atom-device-bezel__battery-fill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__content">
+                  <div class="faux-chat">
+                    <div class="faux-chat__banner-zone">
+                      <aside class="mol-banner mol-banner--permission-denied mol-banner--stacked"
+                             role="status" aria-live="polite" aria-label="Notifications are disabled">
+                        <span class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-banner__rule"
+                              aria-hidden="true"></span>
+                        <div class="mol-banner__row">
+                          <svg class="atom-icon-glyph atom-icon-glyph--sm mol-banner__icon"
+                               aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                               stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                          </svg>
+                          <span class="mol-banner__text type-body-sm"><strong>Notifications are disabled</strong></span>
+                        </div>
+                        <p class="mol-banner__body type-body-sm">
+                          You'll miss turn updates and pause prompts while backgrounded.
+                        </p>
+                        <button class="atom-button atom-button--secondary atom-button--sm mol-banner__cta"
+                                type="button">Open Settings →</button>
+                      </aside>
+                    </div>
+                    <div class="faux-chat__messages">
+                      <div class="faux-message faux-message--user">
+                        <span class="faux-message__label">You</span>
+                        <div class="faux-message__bubble">Run the test suite</div>
+                      </div>
+                      <div class="faux-message faux-message--assistant">
+                        <span class="faux-message__label">Claude</span>
+                        <div class="faux-message__bubble">Running bun test…</div>
+                      </div>
+                    </div>
+                    <div class="faux-chat__composer">
+                      <div class="faux-composer-input">Message…</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__home-indicator"></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /device row -->
+      </div><!-- /composition -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>

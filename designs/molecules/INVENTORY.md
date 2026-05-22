@@ -47,7 +47,7 @@ Atomic-composition primitives — each molecule combines 2+ atoms with layout/gl
 
 | # | Molecule | Atoms composed | Status |
 |---|----------|----------------|--------|
-| 21 | `banner` | icon-glyph, body (1-line), button (sm), section-label (status). Variants: offline / re-enable / unpaid / dispatch-failed / push-pre-prompt | pending |
+| 21 | `banner` | icon-glyph (wifi-off / alert-triangle / bell), tool-status-rule (horizontal --pending / --error), button (--link --sm / --secondary --sm), icon-button (--ghost --sm dismiss). Variants: offline / unpaid / dispatch-failed / permission-denied. Shapes: inline / stacked | completed |
 | 22 | `tab-bar-item` | icon-glyph, section-label, badge (notification count), hit-target-wrapper | pending |
 | 23 | `app-header` | icon-button (back), section-label (title + meta), icon-button (more-vertical) | pending |
 
