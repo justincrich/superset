@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · device-bezel</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-device-bezel — iPhone 16 Pro Max hardware shell
+
+       HARDWARE EXCEPTIONS (documented):
+         1. Dynamic Island background: #000
+            — OLED-off physical pixels; structural, not semantic.
+            Same precedent as island-mockup in live-activity-dot.html.
+         2. Status-bar padding: 18px 32px 0
+            — Apple HIG iPhone 16 Pro Max safe-area spec.
+         3. Home-indicator bottom: 8px
+            — Apple HIG bottom clearance spec.
+
+       All other values via tokens only.
+       ============================================================ */
+
+    /* ---- Outer bezel ----------------------------------------- */
+    .atom-device-bezel {
+      width:         var(--device-width);    /* 444px */
+      height:        var(--device-height);   /* 962px */
+      border-radius: var(--device-radius);   /* 60px */
+      background:    var(--device-bg);       /* linear-gradient(160deg, #1a1a1a, #050505) */
+      padding:       var(--device-bezel);    /* 7.5px */
+      position:      relative;
+      box-shadow:    var(--elevation-modal);
+      flex-shrink:   0;
+    }
+
+    /* ---- Viewport -------------------------------------------- */
+    .atom-device-bezel__viewport {
+      width:          var(--viewport-width);    /* 430px */
+      height:         var(--viewport-height);   /* 932px */
+      border-radius:  var(--viewport-radius);   /* 54px */
+      background:     var(--surface-page);
+      overflow:       hidden;
+      position:       relative;
+      display:        flex;
+      flex-direction: column;
+    }
+
+    /* ---- Dynamic Island -------------------------------------- */
+    .atom-device-bezel__dynamic-island {
+      position:      absolute;
+      top:           var(--dynamic-island-top);    /* 11px */
+      left:          50%;
+      transform:     translateX(-50%);
+      width:         var(--dynamic-island-width);  /* 126px */
+      height:        var(--dynamic-island-height); /* 37px */
+      background:    #000;  /* hardware OLED-off black — documented exception */
+      border-radius: var(--radius-pill);
+      z-index:       30;
+      display:       flex;
+      align-items:   center;
+      justify-content: center;
+    }
+
+    /* ---- Status bar ------------------------------------------ */
+    .atom-device-bezel__status-bar {
+      height:          var(--status-bar-height); /* 54px */
+      padding:         18px 32px 0;              /* Apple HIG iPhone 16 Pro Max spec — hardware exception */
+      display:         flex;
+      align-items:     center;
+      justify-content: space-between;
+      font-family:     var(--font-mono);
+      font-weight:     var(--font-weight-meta);
+      font-size:       var(--font-size-label);
+      color:           var(--text-body);
+      flex-shrink:     0;
+      position:        relative;
+      z-index:         20;
+    }
+
+    .atom-device-bezel__time {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-label);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-body);
+    }
+
+    .atom-device-bezel__indicators {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-1);
+    }
+
+    /* Signal bars SVG + wifi SVG inherit currentColor from status-bar */
+    .atom-device-bezel__indicators svg {
+      display: block;
+      color:   var(--text-body);
+    }
+
+    /* Battery capsule */
+    .atom-device-bezel__battery {
+      display:     inline-flex;
+      align-items: center;
+      gap:         2px; /* structural: nub gutter — no token equivalent */
+    }
+
+    .atom-device-bezel__battery-body {
+      position:      relative;
+      width:         22px; /* structural: iOS battery capsule width */
+      height:        11px; /* structural: iOS battery capsule height */
+      border:        1px solid var(--text-body);
+      border-radius: var(--radius-subtle);
+      padding:       1px;  /* structural: fill inset */
+    }
+
+    /* Battery nub — right-side terminal pip */
+    .atom-device-bezel__battery-body::after {
+      content:       '';
+      position:      absolute;
+      right:         -3px;    /* structural: nub offset */
+      top:           3px;     /* structural: nub vertical center */
+      width:         1.5px;   /* structural: nub width */
+      height:        5px;     /* structural: nub height */
+      background:    var(--text-body);
+      border-radius: 0 var(--radius-subtle) var(--radius-subtle) 0;
+    }
+
+    .atom-device-bezel__battery-fill {
+      height:        100%;
+      width:         75%;     /* represents ~75% charge in the mockup */
+      background:    var(--text-body);
+      border-radius: 1.5px;   /* structural: matches capsule inner corner */
+    }
+
+    /* ---- Slot / content area --------------------------------- */
+    .atom-device-bezel__content {
+      flex:          1;
+      overflow:      hidden;
+      position:      relative;
+    }
+
+    /* ---- Home indicator -------------------------------------- */
+    .atom-device-bezel__home-indicator {
+      position:      absolute;
+      bottom:        8px;  /* Apple HIG bottom clearance — hardware exception */
+      left:          50%;
+      transform:     translateX(-50%);
+      width:         var(--home-indicator-width);  /* 134px */
+      height:        var(--home-indicator-height); /* 5px */
+      background:    var(--text-body);
+      border-radius: var(--radius-pill);
+      z-index:       30;
+    }
+
+    /* ---- Variant: minimal ------------------------------------ */
+    /* Hide all chrome; only bezel + viewport surface remain */
+    .atom-device-bezel--minimal .atom-device-bezel__dynamic-island,
+    .atom-device-bezel--minimal .atom-device-bezel__status-bar,
+    .atom-device-bezel--minimal .atom-device-bezel__home-indicator {
+      display: none;
+    }
+
+    /* ---- Modifier: with-island-content ----------------------- */
+    /* Exposes an inner flex row inside the Island for consumer content */
+    .atom-device-bezel--with-island-content .atom-device-bezel__dynamic-island {
+      gap: var(--space-2);
+    }
+
+    /* ============================================================
+       Preview-only helpers — not part of the atom API
+       ============================================================ */
+
+    /* Stage layout: center device horizontally with breathing room */
+    .bezel-stage {
+      display:         flex;
+      justify-content: center;
+      align-items:     flex-start;
+      padding:         var(--spacing-section);
+    }
+
+    /* Variant showcase row — side-by-side bezels */
+    .bezel-row {
+      display:     flex;
+      gap:         var(--spacing-section);
+      align-items: flex-start;
+      flex-wrap:   wrap;
+    }
+
+    /* Label under a bezel */
+    .bezel-caption {
+      margin-top:     var(--space-4);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+    }
+
+    /* Placeholder for view-content slot */
+    .placeholder {
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      height:          100%;
+      font-family:     var(--font-mono);
+      font-size:       var(--font-size-meta);
+      color:           var(--text-faint);
+      letter-spacing:  var(--tracking-mono);
+      text-transform:  uppercase;
+    }
+
+    /* Sessions-list mockup items */
+    .mock-sessions {
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .mock-session-item {
+      padding:       var(--space-3);
+      background:    var(--surface-raised);
+      border-radius: var(--radius-default);
+      display:       flex;
+      flex-direction: column;
+      gap:           var(--space-1);
+    }
+
+    .mock-session-title {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-label);
+      color:          var(--text-body);
+      letter-spacing: var(--tracking-snug);
+    }
+
+    .mock-session-meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* Chat-view mockup messages */
+    .mock-chat {
+      padding:        var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-4);
+      flex:           1;
+    }
+
+    .mock-msg {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+      max-width:      80%;
+    }
+
+    .mock-msg--user {
+      align-self:  flex-end;
+      align-items: flex-end;
+    }
+
+    .mock-msg--assistant {
+      align-self:  flex-start;
+      align-items: flex-start;
+    }
+
+    .mock-bubble {
+      padding:       var(--space-3) var(--space-4);
+      border-radius: var(--radius-xl);
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      color:         var(--text-body);
+      line-height:   var(--line-height-normal);
+    }
+
+    .mock-msg--user .mock-bubble {
+      background: var(--accent-primary);
+      color:      var(--accent-primary-fg);
+    }
+
+    .mock-msg--assistant .mock-bubble {
+      background: var(--surface-raised);
+    }
+
+    .mock-meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+    }
+
+    /* Live-activity-dot inline (for island-content modifier preview) */
+    .live-dot-inline {
+      display:       inline-flex;
+      align-items:   center;
+      gap:           var(--space-2);
+      font-family:   var(--font-mono);
+      font-size:     10px; /* structural: Island interior label at 10px matches original tokens.html */
+      font-weight:   var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:         var(--state-live-fg);
+    }
+
+    .live-dot-inline__dot {
+      width:         6px; /* structural: Island live-dot spec */
+      height:        6px;
+      border-radius: var(--radius-round);
+      background:    var(--state-live-fg);
+      box-shadow:    0 0 8px var(--state-live-fg);
+      flex-shrink:   0;
+    }
+
+    /* Scale down the pegboard panes so horizontally-stacked bezels fit cleanly */
+    .pane .bezel-row {
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="preview-plate">
+    <div class="crumb">atoms / device-bezel</div>
+    <h1>device-bezel</h1>
+  </div>
+
+  <div class="pegboard">
+
+    <!-- ============================================================
+         DARK THEME PANE
+         ============================================================ -->
+    <div class="pane" data-theme="dark">
+      <span class="pane-label">dark theme</span>
+
+      <!-- ---- 1. VARIANT COMPARISON -------------------------------- -->
+      <div class="variant">
+        <h3>1 · variant comparison</h3>
+        <div class="bezel-row">
+
+          <!-- Default: full chrome -->
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--default" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <!-- Signal bars -->
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <!-- Wifi -->
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <!-- Battery -->
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__content">
+                  <div class="placeholder">View content goes here</div>
+                </div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">--default (full chrome)</div>
+          </div>
+
+          <!-- Minimal: bezel + viewport only -->
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--minimal" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__content">
+                  <div class="placeholder">View content goes here</div>
+                </div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">--minimal (no chrome)</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- 2. MODIFIER SHOWCASE --------------------------------- -->
+      <div class="variant">
+        <h3>2 · modifier — --with-island-content</h3>
+        <div class="bezel-row">
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--default atom-device-bezel--with-island-content" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <!-- Dynamic Island with live-activity-dot slotted in -->
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true">
+                  <div class="live-dot-inline" aria-hidden="true">
+                    <div class="live-dot-inline__dot"></div>
+                    <span>Live</span>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__content">
+                  <div class="placeholder">View content goes here</div>
+                </div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">--with-island-content (live-activity-dot slotted)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 3. COMPOSITION EXAMPLES ------------------------------ -->
+      <div class="variant">
+        <h3>3 · composition examples — viewport content</h3>
+        <div class="bezel-row">
+
+          <!-- A: Empty viewport — just surface-page bg -->
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--default" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Empty viewport — only surface-page background shows -->
+                <div class="atom-device-bezel__content"></div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">empty viewport (surface-page bg)</div>
+          </div>
+
+          <!-- B: Sessions-list mockup -->
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--default" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__content">
+                  <div class="mock-sessions">
+                    <div class="mock-session-item">
+                      <span class="mock-session-title">superset-monorepo</span>
+                      <span class="mock-session-meta">Streaming · just now</span>
+                    </div>
+                    <div class="mock-session-item">
+                      <span class="mock-session-title">relay-client reconnect logic</span>
+                      <span class="mock-session-meta">Completed · 2 min ago</span>
+                    </div>
+                    <div class="mock-session-item">
+                      <span class="mock-session-title">fix onboarding GitHub auth</span>
+                      <span class="mock-session-meta">Completed · 18 min ago</span>
+                    </div>
+                    <div class="mock-session-item">
+                      <span class="mock-session-title">bump version 1.11.0</span>
+                      <span class="mock-session-meta">Completed · 1 hr ago</span>
+                    </div>
+                    <div class="placeholder" style="height: 60px; font-size: var(--font-size-meta);">View content goes here</div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">sessions-list mockup</div>
+          </div>
+
+          <!-- C: Chat-view mockup -->
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--default atom-device-bezel--with-island-content" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true">
+                  <div class="live-dot-inline" aria-hidden="true">
+                    <div class="live-dot-inline__dot"></div>
+                    <span>Live</span>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__content">
+                  <div class="mock-chat">
+                    <div class="mock-msg mock-msg--user">
+                      <div class="mock-bubble">Refactor relay tunnel reconnect with exponential backoff</div>
+                      <span class="mock-meta">You · just now</span>
+                    </div>
+                    <div class="mock-msg mock-msg--assistant">
+                      <div class="mock-bubble">I'll update relay-client.ts with the new reconnect strategy…</div>
+                      <span class="mock-meta">Sonnet 4.6 · Streaming</span>
+                    </div>
+                    <div class="placeholder" style="height: 40px; font-size: var(--font-size-meta);">View content goes here</div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">chat-view mockup</div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /pane dark -->
+
+    <!-- ============================================================
+         LIGHT THEME PANE
+         ============================================================ -->
+    <div class="pane" data-theme="light">
+      <span class="pane-label">light theme</span>
+
+      <!-- ---- 1. VARIANT COMPARISON -------------------------------- -->
+      <div class="variant">
+        <h3>1 · variant comparison</h3>
+        <div class="bezel-row">
+
+          <!-- Default: full chrome -->
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--default" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__content">
+                  <div class="placeholder">View content goes here</div>
+                </div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">--default (full chrome)</div>
+          </div>
+
+          <!-- Minimal: bezel + viewport only -->
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--minimal" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__content">
+                  <div class="placeholder">View content goes here</div>
+                </div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">--minimal (no chrome)</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- 2. MODIFIER SHOWCASE --------------------------------- -->
+      <div class="variant">
+        <h3>2 · modifier — --with-island-content</h3>
+        <div class="bezel-row">
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--default atom-device-bezel--with-island-content" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true">
+                  <div class="live-dot-inline" aria-hidden="true">
+                    <div class="live-dot-inline__dot"></div>
+                    <span>Live</span>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__content">
+                  <div class="placeholder">View content goes here</div>
+                </div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">--with-island-content (live-activity-dot slotted)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 3. COMPOSITION EXAMPLES ------------------------------ -->
+      <div class="variant">
+        <h3>3 · composition examples — viewport content</h3>
+        <div class="bezel-row">
+
+          <!-- A: Empty viewport -->
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--default" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__content"></div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">empty viewport (surface-page bg)</div>
+          </div>
+
+          <!-- B: Sessions-list mockup -->
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--default" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__content">
+                  <div class="mock-sessions">
+                    <div class="mock-session-item">
+                      <span class="mock-session-title">superset-monorepo</span>
+                      <span class="mock-session-meta">Streaming · just now</span>
+                    </div>
+                    <div class="mock-session-item">
+                      <span class="mock-session-title">relay-client reconnect logic</span>
+                      <span class="mock-session-meta">Completed · 2 min ago</span>
+                    </div>
+                    <div class="mock-session-item">
+                      <span class="mock-session-title">fix onboarding GitHub auth</span>
+                      <span class="mock-session-meta">Completed · 18 min ago</span>
+                    </div>
+                    <div class="mock-session-item">
+                      <span class="mock-session-title">bump version 1.11.0</span>
+                      <span class="mock-session-meta">Completed · 1 hr ago</span>
+                    </div>
+                    <div class="placeholder" style="height: 60px; font-size: var(--font-size-meta);">View content goes here</div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">sessions-list mockup</div>
+          </div>
+
+          <!-- C: Chat-view mockup -->
+          <div>
+            <div class="atom-device-bezel atom-device-bezel--default atom-device-bezel--with-island-content" aria-hidden="true">
+              <div class="atom-device-bezel__viewport">
+                <div class="atom-device-bezel__dynamic-island" aria-hidden="true">
+                  <div class="live-dot-inline" aria-hidden="true">
+                    <div class="live-dot-inline__dot"></div>
+                    <span>Live</span>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__status-bar" aria-hidden="true">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                      <rect x="0"  y="8" width="3" height="4" rx="0.5" fill="currentColor"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5" fill="currentColor"/>
+                      <rect x="9"  y="2" width="3" height="10" rx="0.5" fill="currentColor"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                      <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" fill="currentColor"/>
+                      <path d="M3.2 6.3a6.8 6.8 0 0 1 9.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                      <path d="M0.5 3.6a10.6 10.6 0 0 1 15 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery" aria-hidden="true">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__content">
+                  <div class="mock-chat">
+                    <div class="mock-msg mock-msg--user">
+                      <div class="mock-bubble">Refactor relay tunnel reconnect with exponential backoff</div>
+                      <span class="mock-meta">You · just now</span>
+                    </div>
+                    <div class="mock-msg mock-msg--assistant">
+                      <div class="mock-bubble">I'll update relay-client.ts with the new reconnect strategy…</div>
+                      <span class="mock-meta">Sonnet 4.6 · Streaming</span>
+                    </div>
+                    <div class="placeholder" style="height: 40px; font-size: var(--font-size-meta);">View content goes here</div>
+                  </div>
+                </div>
+                <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="bezel-caption">chat-view mockup</div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /pane light -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
