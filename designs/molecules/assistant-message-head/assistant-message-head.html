@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-assistant-message-head — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-assistant-message-head — molecule-local layout + glue only
+       NEVER redefines .atom-* rules — composes by class only.
+       Zero hex literals. Zero raw color values.
+       Structural exceptions: 85% max-width (layout constraint, TOKEN_GAP),
+       completed-state opacity 0.5 (no token for faint-success state).
+       ================================================================ */
+
+    /* ---- Head row ----------------------------------------------- */
+    .mol-assistant-message-head {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+      margin-bottom: var(--space-2);
+      flex-wrap:   wrap; /* mobile: wraps on very narrow viewports */
+    }
+
+    /* ---- Label: no extra rules — inherited from atom-section-label--strong */
+    .mol-assistant-message-head__label {
+      /* atom-section-label--strong provides color: var(--text-body) */
+    }
+
+    /* ---- Time: no extra rules — inherited from atom-section-label (muted) */
+    .mol-assistant-message-head__time {
+      /* atom-section-label (default) provides color: var(--text-muted) */
+    }
+
+    /* ---- Separator dots: aria-hidden punctuation glue ----------- */
+    .mol-assistant-message-head__separator {
+      /* atom-section-label--faint provides color: var(--text-faint) */
+      user-select: none;
+    }
+
+    /* ---- Status segment: dot + label row ----------------------- */
+    .mol-assistant-message-head__status {
+      display:     inline-flex;
+      align-items: center;
+      gap:         var(--space-1);
+    }
+
+    /* ---- Variant: idle — hide status segment entirely ----------- */
+    .mol-assistant-message-head--idle .mol-assistant-message-head__status,
+    .mol-assistant-message-head--idle .mol-assistant-message-head__status-separator {
+      display: none;
+    }
+
+    /* ---- Variant: completed — dot at reduced opacity (faint success) */
+    /* No success-faint token exists; 0.5 documented as TOKEN_GAP      */
+    .mol-assistant-message-head--completed .mol-assistant-message-head__status .atom-status-dot {
+      opacity: 0.5;
+    }
+
+    /* ---- Composition preview helpers (NOT part of molecule spec) --- */
+
+    /* Faux message thread: article wrapper for each assistant message */
+    .faux-article {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+      padding:        var(--space-4) 0;
+      border-bottom:  1px solid var(--border-subtle);
+    }
+    .faux-article:last-child {
+      border-bottom: none;
+    }
+
+    /* Body text below the head */
+    .faux-body {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-body);
+      font-weight:  var(--font-weight-body);
+      line-height:  var(--line-height-normal);
+      color:        var(--text-body);
+      margin:       0;
+      padding-left: calc(28px + var(--space-2)); /* aligns with text start after avatar */
+    }
+
+    /* Faux thread container */
+    .faux-thread {
+      display:        flex;
+      flex-direction: column;
+      gap:            0;
+      max-width:      600px;
+    }
+
+    /* Variant matrix cell labels */
+    .variant-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-2);
+    }
+
+    /* Spacer between variant rows */
+    .variant-row {
+      margin-bottom: var(--space-6);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       HEADER
+       ============================================================ -->
+  <header class="preview-plate">
+    <p class="crumb">molecules / assistant-message-head</p>
+    <h1>mol-assistant-message-head</h1>
+  </header>
+
+  <!-- ============================================================
+       DARK PANE
+       ============================================================ -->
+  <div class="pegboard">
+  <div class="pane" data-theme="dark">
+    <span class="pane-label">dark</span>
+
+    <!-- ============================================================
+         SECTION 1 — VARIANT MATRIX (all 5 variants)
+         ============================================================ -->
+    <div class="variant">
+      <h3>Variant Matrix — All 5 States</h3>
+
+      <!-- 1a. idle (default) -->
+      <div class="variant-row">
+        <p class="variant-label">--idle (default) · no status segment</p>
+        <header class="mol-assistant-message-head mol-assistant-message-head--idle">
+          <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                aria-hidden="true">A</span>
+          <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="atom-section-label mol-assistant-message-head__time">12:43 PM</span>
+          <!-- status hidden by --idle rule -->
+          <span class="mol-assistant-message-head__separator mol-assistant-message-head__status-separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="mol-assistant-message-head__status">
+            <span role="status" aria-live="polite" style="display:contents;"></span>
+          </span>
+        </header>
+      </div>
+
+      <!-- 1b. streaming -->
+      <div class="variant-row">
+        <p class="variant-label">--streaming · live pulse dot</p>
+        <header class="mol-assistant-message-head mol-assistant-message-head--streaming">
+          <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                aria-hidden="true">A</span>
+          <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="atom-section-label mol-assistant-message-head__time">12:43 PM</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="mol-assistant-message-head__status">
+            <span role="status" aria-live="polite" style="display:contents;">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs" aria-hidden="true"></span>
+              <span class="atom-section-label">STREAMING</span>
+            </span>
+          </span>
+        </header>
+      </div>
+
+      <!-- 1c. thinking -->
+      <div class="variant-row">
+        <p class="variant-label">--thinking · warning dot · reasoning step active</p>
+        <header class="mol-assistant-message-head mol-assistant-message-head--thinking">
+          <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                aria-hidden="true">A</span>
+          <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="atom-section-label mol-assistant-message-head__time">12:44 PM</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="mol-assistant-message-head__status">
+            <span role="status" aria-live="polite" style="display:contents;">
+              <span class="atom-status-dot atom-status-dot--warning atom-status-dot--xs" aria-hidden="true"></span>
+              <span class="atom-section-label">THINKING</span>
+            </span>
+          </span>
+        </header>
+      </div>
+
+      <!-- 1d. paused -->
+      <div class="variant-row">
+        <p class="variant-label">--paused · warning dot · awaiting approval / question</p>
+        <header class="mol-assistant-message-head mol-assistant-message-head--paused">
+          <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                aria-hidden="true">A</span>
+          <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="atom-section-label mol-assistant-message-head__time">12:44 PM</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="mol-assistant-message-head__status">
+            <span role="status" aria-live="polite" style="display:contents;">
+              <span class="atom-status-dot atom-status-dot--warning atom-status-dot--xs" aria-hidden="true"></span>
+              <span class="atom-section-label">PAUSED</span>
+            </span>
+          </span>
+        </header>
+      </div>
+
+      <!-- 1e. completed -->
+      <div class="variant-row">
+        <p class="variant-label">--completed · success dot (faint) · fades after 1.5s in production</p>
+        <header class="mol-assistant-message-head mol-assistant-message-head--completed">
+          <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                aria-hidden="true">A</span>
+          <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="atom-section-label mol-assistant-message-head__time">12:43 PM</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="mol-assistant-message-head__status">
+            <span role="status" aria-live="polite" style="display:contents;">
+              <span class="atom-status-dot atom-status-dot--success atom-status-dot--xs" aria-hidden="true"></span>
+              <span class="atom-section-label">COMPLETED · 3.2s</span>
+            </span>
+          </span>
+        </header>
+      </div>
+
+    </div><!-- /variant matrix -->
+
+    <!-- ============================================================
+         SECTION 2 — COMPOSITION: faux chat thread (3 messages)
+         ============================================================ -->
+    <div class="variant">
+      <h3>Composition — Faux Chat Thread</h3>
+      <div class="faux-thread">
+
+        <!-- Message 1: idle — historical -->
+        <article class="faux-article"
+                 role="article"
+                 aria-label="Assistant message, sent 12:41 PM">
+          <header class="mol-assistant-message-head mol-assistant-message-head--idle">
+            <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                  aria-hidden="true">A</span>
+            <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+            <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="atom-section-label mol-assistant-message-head__time">12:41 PM</span>
+            <span class="mol-assistant-message-head__separator mol-assistant-message-head__status-separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="mol-assistant-message-head__status">
+              <span role="status" aria-live="polite" style="display:contents;"></span>
+            </span>
+          </header>
+          <p class="faux-body">
+            Found it. The reconnect loop in <code>apps/relay/src/tunnel-client.ts</code> uses a hardcoded 250ms backoff with no exponential growth — that's why the relay floods logs under flaky network conditions.
+          </p>
+        </article>
+
+        <!-- Message 2: streaming — mid-turn with cursor in body -->
+        <article class="faux-article"
+                 role="article"
+                 aria-label="Assistant message, sent 12:43 PM, currently streaming">
+          <header class="mol-assistant-message-head mol-assistant-message-head--streaming">
+            <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                  aria-hidden="true">A</span>
+            <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+            <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="atom-section-label mol-assistant-message-head__time">12:43 PM</span>
+            <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="mol-assistant-message-head__status">
+              <span role="status" aria-live="polite" style="display:contents;">
+                <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs" aria-hidden="true"></span>
+                <span class="atom-section-label">STREAMING</span>
+              </span>
+            </span>
+          </header>
+          <!-- Body with streaming-cursor at end (organism-layer concern shown here for composition reference) -->
+          <p class="faux-body" role="status" aria-live="polite">
+            Refactoring the relay tunnel reconnect loop now—I'll preserve the inner try/catch and log err.code before the backoff sleeps<span class="atom-streaming-cursor" aria-hidden="true"></span>
+          </p>
+        </article>
+
+        <!-- Message 3: completed — just finished -->
+        <article class="faux-article"
+                 role="article"
+                 aria-label="Assistant message, sent 12:44 PM, completed">
+          <header class="mol-assistant-message-head mol-assistant-message-head--completed">
+            <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                  aria-hidden="true">A</span>
+            <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+            <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="atom-section-label mol-assistant-message-head__time">12:44 PM</span>
+            <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="mol-assistant-message-head__status">
+              <span role="status" aria-live="polite" style="display:contents;">
+                <span class="atom-status-dot atom-status-dot--success atom-status-dot--xs" aria-hidden="true"></span>
+                <span class="atom-section-label">COMPLETED · 3.2s</span>
+              </span>
+            </span>
+          </header>
+          <p class="faux-body">Done.</p>
+        </article>
+
+      </div>
+    </div><!-- /composition -->
+
+  </div><!-- /dark pane -->
+
+
+  <!-- ============================================================
+       LIGHT PANE
+       ============================================================ -->
+  <div class="pane" data-theme="light">
+    <span class="pane-label">light</span>
+
+    <!-- ============================================================
+         SECTION 1 — VARIANT MATRIX (all 5 variants)
+         ============================================================ -->
+    <div class="variant">
+      <h3>Variant Matrix — All 5 States</h3>
+
+      <!-- 1a. idle -->
+      <div class="variant-row">
+        <p class="variant-label">--idle (default) · no status segment</p>
+        <header class="mol-assistant-message-head mol-assistant-message-head--idle">
+          <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                aria-hidden="true">A</span>
+          <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="atom-section-label mol-assistant-message-head__time">12:43 PM</span>
+          <span class="mol-assistant-message-head__separator mol-assistant-message-head__status-separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="mol-assistant-message-head__status">
+            <span role="status" aria-live="polite" style="display:contents;"></span>
+          </span>
+        </header>
+      </div>
+
+      <!-- 1b. streaming -->
+      <div class="variant-row">
+        <p class="variant-label">--streaming · live pulse dot</p>
+        <header class="mol-assistant-message-head mol-assistant-message-head--streaming">
+          <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                aria-hidden="true">A</span>
+          <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="atom-section-label mol-assistant-message-head__time">12:43 PM</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="mol-assistant-message-head__status">
+            <span role="status" aria-live="polite" style="display:contents;">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs" aria-hidden="true"></span>
+              <span class="atom-section-label">STREAMING</span>
+            </span>
+          </span>
+        </header>
+      </div>
+
+      <!-- 1c. thinking -->
+      <div class="variant-row">
+        <p class="variant-label">--thinking · warning dot</p>
+        <header class="mol-assistant-message-head mol-assistant-message-head--thinking">
+          <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                aria-hidden="true">A</span>
+          <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="atom-section-label mol-assistant-message-head__time">12:44 PM</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="mol-assistant-message-head__status">
+            <span role="status" aria-live="polite" style="display:contents;">
+              <span class="atom-status-dot atom-status-dot--warning atom-status-dot--xs" aria-hidden="true"></span>
+              <span class="atom-section-label">THINKING</span>
+            </span>
+          </span>
+        </header>
+      </div>
+
+      <!-- 1d. paused -->
+      <div class="variant-row">
+        <p class="variant-label">--paused · warning dot</p>
+        <header class="mol-assistant-message-head mol-assistant-message-head--paused">
+          <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                aria-hidden="true">A</span>
+          <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="atom-section-label mol-assistant-message-head__time">12:44 PM</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="mol-assistant-message-head__status">
+            <span role="status" aria-live="polite" style="display:contents;">
+              <span class="atom-status-dot atom-status-dot--warning atom-status-dot--xs" aria-hidden="true"></span>
+              <span class="atom-section-label">PAUSED</span>
+            </span>
+          </span>
+        </header>
+      </div>
+
+      <!-- 1e. completed -->
+      <div class="variant-row">
+        <p class="variant-label">--completed · success dot (faint)</p>
+        <header class="mol-assistant-message-head mol-assistant-message-head--completed">
+          <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                aria-hidden="true">A</span>
+          <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="atom-section-label mol-assistant-message-head__time">12:43 PM</span>
+          <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                aria-hidden="true">·</span>
+          <span class="mol-assistant-message-head__status">
+            <span role="status" aria-live="polite" style="display:contents;">
+              <span class="atom-status-dot atom-status-dot--success atom-status-dot--xs" aria-hidden="true"></span>
+              <span class="atom-section-label">COMPLETED · 3.2s</span>
+            </span>
+          </span>
+        </header>
+      </div>
+
+    </div><!-- /variant matrix -->
+
+    <!-- ============================================================
+         SECTION 2 — COMPOSITION: faux chat thread (3 messages)
+         ============================================================ -->
+    <div class="variant">
+      <h3>Composition — Faux Chat Thread</h3>
+      <div class="faux-thread">
+
+        <!-- Message 1: idle -->
+        <article class="faux-article"
+                 role="article"
+                 aria-label="Assistant message, sent 12:41 PM">
+          <header class="mol-assistant-message-head mol-assistant-message-head--idle">
+            <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                  aria-hidden="true">A</span>
+            <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+            <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="atom-section-label mol-assistant-message-head__time">12:41 PM</span>
+            <span class="mol-assistant-message-head__separator mol-assistant-message-head__status-separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="mol-assistant-message-head__status">
+              <span role="status" aria-live="polite" style="display:contents;"></span>
+            </span>
+          </header>
+          <p class="faux-body">
+            Found it. The reconnect loop in <code>apps/relay/src/tunnel-client.ts</code> uses a hardcoded 250ms backoff with no exponential growth — that's why the relay floods logs under flaky network conditions.
+          </p>
+        </article>
+
+        <!-- Message 2: streaming -->
+        <article class="faux-article"
+                 role="article"
+                 aria-label="Assistant message, sent 12:43 PM, currently streaming">
+          <header class="mol-assistant-message-head mol-assistant-message-head--streaming">
+            <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                  aria-hidden="true">A</span>
+            <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+            <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="atom-section-label mol-assistant-message-head__time">12:43 PM</span>
+            <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="mol-assistant-message-head__status">
+              <span role="status" aria-live="polite" style="display:contents;">
+                <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs" aria-hidden="true"></span>
+                <span class="atom-section-label">STREAMING</span>
+              </span>
+            </span>
+          </header>
+          <p class="faux-body" role="status" aria-live="polite">
+            Refactoring the relay tunnel reconnect loop now—I'll preserve the inner try/catch and log err.code before the backoff sleeps<span class="atom-streaming-cursor" aria-hidden="true"></span>
+          </p>
+        </article>
+
+        <!-- Message 3: completed -->
+        <article class="faux-article"
+                 role="article"
+                 aria-label="Assistant message, sent 12:44 PM, completed">
+          <header class="mol-assistant-message-head mol-assistant-message-head--completed">
+            <span class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                  aria-hidden="true">A</span>
+            <span class="atom-section-label atom-section-label--strong mol-assistant-message-head__label">Assistant</span>
+            <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="atom-section-label mol-assistant-message-head__time">12:44 PM</span>
+            <span class="mol-assistant-message-head__separator atom-section-label atom-section-label--faint"
+                  aria-hidden="true">·</span>
+            <span class="mol-assistant-message-head__status">
+              <span role="status" aria-live="polite" style="display:contents;">
+                <span class="atom-status-dot atom-status-dot--success atom-status-dot--xs" aria-hidden="true"></span>
+                <span class="atom-section-label">COMPLETED · 3.2s</span>
+              </span>
+            </span>
+          </header>
+          <p class="faux-body">Done.</p>
+        </article>
+
+      </div>
+    </div><!-- /composition -->
+
+  </div><!-- /light pane -->
+  </div><!-- /pegboard -->
+
+</body>
+</html>

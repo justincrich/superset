@@ -8,7 +8,7 @@ Atomic-composition primitives — each molecule combines 2+ atoms with layout/gl
 |---|----------|----------------|--------|
 | 1 | `session-row` | status-dot, avatar (optional), divider, hit-target-wrapper (long-press), section-label (timestamp) | completed |
 | 2 | `workspace-section-header` | section-label, badge (count), icon-glyph (chevron), divider | completed |
-| 3 | `load-more-pill` | button (secondary md), icon-glyph (chevron-down) | pending |
+| 3 | `load-more-pill` | button (secondary md), icon-glyph (chevron-down) | completed |
 | 4 | `host-chip` | pill, status-dot, icon-glyph (host + chevron) | completed |
 | 5 | `search-bar` | text-input (inset), icon-glyph (search + ✕), hit-target-wrapper | completed |
 | 6 | `host-picker-row` | status-dot, icon-glyph (host + check), section-label (meta), divider | completed |
@@ -19,7 +19,7 @@ Atomic-composition primitives — each molecule combines 2+ atoms with layout/gl
 | # | Molecule | Atoms composed | Status |
 |---|----------|----------------|--------|
 | 8 | `user-message-bubble` | avatar, body text (markdown), section-label (timestamp), hit-target-wrapper (long-press) | completed |
-| 9 | `assistant-message-head` | avatar (A accent), section-label (timestamp + meta), streaming-cursor (when streaming) | pending |
+| 9 | `assistant-message-head` | avatar (A accent), section-label (timestamp + meta), status-dot (live/warning/success) | completed |
 | 10 | `tool-call-card` | tool-status-rule (5 status variants), icon-glyph, pill (model name), badge (status), divider, body (args preview) | pending |
 | 11 | `collapsed-block` | icon-glyph (chevron), section-label (label), body (collapsed preview). Variants: plan / reasoning / subagent-execution | pending |
 | 12 | `scroll-back-button` | fab-base (overlay variant) + icon-glyph (chevron-down) | pending |
