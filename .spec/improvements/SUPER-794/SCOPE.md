@@ -156,3 +156,118 @@ All proposed file changes are confined to `apps/desktop/`. The three changed sub
 ## Recommendation
 
 **Minimum.** It is identical to v1 minus the one-line accelerator removal mistake. The Electron `before-input-event` behavior is verified: `event.preventDefault()` suppresses the menu accelerator for the focused webContents, so keeping `CmdOrCtrl+R` in the menu is safe — it will not double-fire when a webview is focused. All five BRIEF §5 non-negotiables are met. LOC budget is ~95. No new abstractions. The mistake was precisely identified; the fix is precisely scoped.
+
+---
+
+## Challenge
+
+**Challenger:** code-reviewer (fresh-eyes adversarial review — no prior involvement in v1 or v2 investigation)
+**Date:** 2026-05-22
+
+### Task 1 — Evidence Re-verification
+
+#### v1-prior-art-excerpt.md
+
+**Status: CONFIRMED.** File exists. All 8 file:line references verified against live post-revert code. No fabrication detected. One v1 bug confirmed by the excerpt itself (already in minimum's risks): `isReloadKey` at v1-prior-art-excerpt.md:86-95 is missing `input.type === "keyDown"` — the v1 handler would have double-fired on keyUp. The `isCloseKey` guard includes it; `isReloadKey` does not. The v2 implementer MUST add `input.type === "keyDown"` to both guards.
+
+| Reference | Verified |
+|-----------|----------|
+| `menu.ts:31` — `{ label: "Close Window", role: "close" }` | CONFIRMED (line 31) |
+| `menu.ts:14` — `reloadAccelerator = "CmdOrCtrl+R"` | CONFIRMED (line 14) |
+| `menu.ts:51` — `accelerator: reloadAccelerator` | CONFIRMED (line 51) |
+| `menu.ts:72` — Window menu close role | CONFIRMED (line 72) |
+| `registry.ts:341` — CLOSE_PANE | CONFIRMED (lines 341-350) |
+| `registry.ts:419` — CLOSE_TERMINAL | CONFIRMED (lines 419-427) |
+| `browser-manager.ts:32` — `register(paneId, webContentsId)` | CONFIRMED |
+| `browser-manager.ts:36` — cleanup loop, no `beforeInputListeners` | CONFIRMED |
+
+#### Electron docs URL and canonical quote
+
+**Status: CONFIRMED with an unverified nuance.**
+
+The canonical quote is real (https://www.electronjs.org/docs/latest/api/web-contents and corroborated by Electron issue #19279). However, Electron docs describe this behavior for the **host** BrowserWindow's webContents. The fix installs listeners on the **guest** webContents of a `<webview>` — a separate renderer process. Whether `event.preventDefault()` on a guest's `before-input-event` suppresses the **host** BrowserWindow's menu accelerators is not explicitly documented for the guest case. Electron issue #17794 documents anomalous webview behavior with `before-input-event`.
+
+v1 PR #4783's Cmd+W interception shipped and worked (the revert was for unrelated Cmd+R accelerator removal), providing empirical support that guest-webContents `preventDefault` does suppress host menu accelerators.
+
+**Assessment: NOT `investigation-incomplete`.** The quote is real. Empirical evidence supports the claim. The nuance is a required implementer verification task (added to unverified risks below), not a fabricated citation.
+
+### Task 2 — Smaller Option Proposed
+
+A credible smaller option exists.
+
+#### Option 4 (challenger-proposed): minimum-minus-onReloadPane
+
+**one_line:** Same Cmd+W fix as minimum (full tRPC path required); intercept Cmd+R in `setupBeforeInput` and call `wc.reload()` directly in the main process — eliminates `onReloadPane` tRPC subscription and all renderer-side reload subscribers.
+
+**rationale:** `browserManager` already holds the guest `webContents`. `wc.reload()` called from `setupBeforeInput` produces identical results to the renderer calling `webview.reload()` — both trigger the same DOM events (`did-start-loading`, `did-stop-loading`, `did-navigate`) that the `browserRuntimeRegistry` (v2, `browserRuntimeRegistry.ts:237-260`) and the v1 usePersistentWebview event handlers already process. Renderer-side state tracking is event-driven; it does not depend on who initiated the reload.
+
+Cmd+W cannot use this shortcut: the v2 `CLOSE_PANE` handler (`useWorkspaceHotkeys.ts:113-129`) runs `onBeforeClose` hooks before calling `state.closePane()`. Bypassing tRPC would skip `onBeforeClose` — a correctness regression. `onClosePane` tRPC subscription is required for Cmd+W.
+
+**files_in_scope:** Same 5 files as minimum. Changes:
+- `browser-manager.ts`: In `setupBeforeInput`, Cmd+R calls `wc.reload()` instead of `this.emit('reload-pane:${paneId}')`. All other changes identical to minimum.
+- `browser.ts`: Add `onClosePane` only. No `onReloadPane`.
+- Both `usePersistentWebview.ts` variants: Subscribe to `onClosePane` only. No `onReloadPane` subscriber.
+
+**loc_budget:** ~62 (~33 LOC saved vs minimum's 95)
+
+**acceptance_criteria:** AC-1 through AC-9 unchanged.
+
+**risks:**
+- If a "before-reload" hook is needed in the future (e.g., "Page has unsaved data — reload?"), the main-process-direct approach requires retrofitting. The minimum option's `onReloadPane` tRPC path provides that hook point. If a before-reload hook is anticipated within 2 sprints, prefer minimum.
+- `wc` is confirmed non-null at the point `before-input-event` fires (the event fires on wc). Race window between event and `wc.reload()` call is negligible.
+
+**out_of_scope:** Same as minimum.
+**task_chunks:** 1
+
+### Task 3 — Minimum Resolves Both Non-Negotiables
+
+**Cmd+W verdict: PASS (all test cases)**
+
+| Test case | Verdict | Reasoning |
+|-----------|---------|-----------|
+| Window focus / no pane focused → Cmd+W does nothing | PASS | File menu implicit accelerator removed; no guest wc focused; no handler fires |
+| Terminal pane focused → Cmd+W closes terminal pane | PASS | xterm.js in renderer DOM; `react-hotkeys-hook` fires; no guest wc involved |
+| Browser pane focused → Cmd+W closes browser pane | PASS (pending verification) | Guest wc `before-input-event` + `preventDefault` + tRPC `onClosePane` |
+| Cmd+Shift+W → closes tab | PASS | `!input.shift` guard in `setupBeforeInput` skips interception |
+
+**Cmd+R verdict: PASS (all test cases)**
+
+| Test case | Verdict | Reasoning |
+|-----------|---------|-----------|
+| Window focus / no pane focused → Cmd+R reloads window | PASS | No guest wc focused; View→Reload menu accelerator fires normally |
+| Terminal pane focused → Cmd+R reloads window (BRIEF §3) | PASS | Terminal = renderer DOM; no guest wc `before-input-event`; menu accelerator fires |
+| Browser pane focused → Cmd+R reloads webview only | PASS (pending verification) | Guest wc `before-input-event` + `preventDefault` + tRPC `onReloadPane` |
+| Cmd+Shift+R in browser pane → host force-reload | PASS | `!input.shift` guard prevents interception |
+
+No gaps in minimum's design for either non-negotiable.
+
+### Task 4 — Scope Creep Flags
+
+| File | Option | Required by AC? | Flag |
+|------|--------|-----------------|------|
+| `browser-manager.ts` — `FocusAwareShortcut` interface + `registerFocusAwareShortcut` method | moderate | No — AC-10 is self-referential | YAGNI: no second caller exists or is planned |
+| `apps/desktop/src/main/lib/hotkey-router.ts` (NEW) | strategic | No | Architectural aspiration; correctly deferred |
+| `apps/desktop/src/main/lib/focus-tracker.ts` (NEW) | strategic | No | Architectural aspiration; correctly deferred |
+
+All 5 files in the minimum option are required by ACs. No scope creep in minimum.
+
+### Task 5 — Focus Detection Strategy Risks
+
+**Unverified risks (implementer must confirm before shipping):**
+
+1. **Guest-webContents `preventDefault` → host menu suppression:** Does `event.preventDefault()` on a guest webContents's `before-input-event` suppress the host BrowserWindow's menu accelerators? Electron docs confirm this for the host webContents case. v1 empirical evidence (Cmd+W worked) supports yes for the guest case. Electron issue #17794 documents anomalies. Implementer MUST confirm with a manual test: install `before-input-event` on a guest wc, call `preventDefault()`, press the accelerator, verify the host menu item does not fire.
+2. **Hung guest renderer:** If the guest page JS is hung, the guest renderer process does not process `before-input-event`. The event never fires. The host menu accelerator fires: Cmd+W closes the window; Cmd+R reloads the window. Pre-existing limitation identical to v1. Acceptable as edge case; no mitigation needed for v2.
+
+**Confirmed non-risks:** title-bar click (menu fires normally; correct behavior), keyboard vs hover focus (`before-input-event` requires keyboard focus), multiple browser panes (each listener keyed by paneId; no cross-contamination), `unregisterAll` (calls `unregister` per pane; cleanup map handles `beforeInputListeners`).
+
+### Challenger Recommendation Override
+
+Investigator recommends **minimum**. Challenger agrees minimum is correct and correctly scoped.
+
+**However, Option 4 (challenger-proposed, ~62 LOC) is strictly smaller and equally correct** for all ACs. It eliminates the `onReloadPane` tRPC subscription by calling `wc.reload()` directly from the main process, since webview reload requires no renderer-side pre-close hooks (unlike pane close).
+
+**Updated recommendation order:**
+1. **Option 4** if no "before-reload" hook is anticipated within 2 sprints. Saves ~33 LOC, fewer moving parts.
+2. **Minimum** if symmetric tRPC pattern (close + reload via subscription) is preferred, or a before-reload hook is anticipated.
+3. **Do not adopt moderate** — `FocusAwareShortcut` has no second caller; YAGNI.
+4. Strategic remains a separate-sprint candidate.
