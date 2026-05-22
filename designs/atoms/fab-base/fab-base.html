@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · fab-base</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-fab-base — token-governed floating action button
+       Composition purity: only .atom-fab-base rules defined here.
+       Zero hex literals. Zero raw font-size/weight/spacing outside
+       structural geometry (56px/64px diameter, 24px/28px icon,
+       2px spinner border, 4px focus ring offset).
+       ============================================================ */
+
+    /* ---- Keyframes --------------------------------------------- */
+    @keyframes atom-fab-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes atom-fab-live-pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.7;
+      }
+      50% {
+        transform: scale(1.45);
+        opacity: 0;
+      }
+    }
+
+    /* ---- Base reset -------------------------------------------- */
+    .atom-fab-base {
+      /* Layout */
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      flex-shrink:     0;
+      position:        relative;
+
+      /* Shape — circle default */
+      border:        none;
+      border-radius: var(--radius-round);
+      outline:       none;
+      cursor:        pointer;
+
+      /* Elevation */
+      box-shadow: var(--elevation-modal);
+
+      /* Motion */
+      transition:
+        background-color var(--motion-medium) var(--motion-ease-out),
+        color            var(--motion-medium) var(--motion-ease-out),
+        box-shadow       var(--motion-medium) var(--motion-ease-out),
+        opacity          var(--motion-medium) var(--motion-ease-out),
+        transform        var(--motion-medium) var(--motion-ease-out),
+        border-color     var(--motion-medium) var(--motion-ease-out);
+    }
+
+    /* ---- Icon element ------------------------------------------ */
+    .atom-fab-base__icon {
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    /* ---- Label element (only present with --with-label) --------- */
+    .atom-fab-base__label {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-label);
+      letter-spacing: var(--tracking-snug);
+      line-height:    var(--line-height-tight);
+      white-space:    nowrap;
+    }
+
+    /* ============================================================
+       SIZES
+       ============================================================ */
+
+    /* md — 56px diameter, 24px icon (default) */
+    .atom-fab-base--md,
+    .atom-fab-base:not(.atom-fab-base--lg) {
+      width:  56px;
+      height: 56px;
+    }
+    .atom-fab-base--md .atom-fab-base__icon,
+    .atom-fab-base:not(.atom-fab-base--lg) .atom-fab-base__icon {
+      width:  24px;
+      height: 24px;
+    }
+
+    /* lg — 64px diameter, 28px icon */
+    .atom-fab-base--lg {
+      width:  64px;
+      height: 64px;
+    }
+    .atom-fab-base--lg .atom-fab-base__icon {
+      width:  28px;
+      height: 28px;
+    }
+
+    /* ============================================================
+       MODIFIER: --with-label (extended FAB — pill shape)
+       ============================================================ */
+    .atom-fab-base--with-label {
+      border-radius: var(--radius-pill);
+      width:         auto;
+      height:        56px;
+      padding-inline: var(--space-5);
+      gap:           var(--space-2);
+    }
+    .atom-fab-base--with-label.atom-fab-base--lg {
+      height:         64px;
+      padding-inline: var(--space-6);
+      gap:            var(--space-3);
+    }
+
+    /* ============================================================
+       VARIANT: accent (default — ember brand)
+       ============================================================ */
+    .atom-fab-base--accent {
+      background-color: var(--accent-primary);
+      color:            var(--accent-primary-fg);
+    }
+    .atom-fab-base--accent:hover,
+    .atom-fab-base--accent.is-hover {
+      background-color: var(--accent-primary-hover);
+      transform:        scale(1.05);
+      box-shadow:       var(--elevation-modal);
+    }
+    .atom-fab-base--accent:active,
+    .atom-fab-base--accent.is-active {
+      background-color: var(--accent-primary-pressed);
+      transform:        scale(0.97);
+    }
+    .atom-fab-base--accent:focus-visible,
+    .atom-fab-base--accent.is-focus {
+      background-color: var(--accent-primary);
+      box-shadow:
+        var(--elevation-modal),
+        0 0 0 2px var(--surface-page),
+        0 0 0 4px var(--border-focus);
+    }
+    .atom-fab-base--accent:disabled,
+    .atom-fab-base--accent.is-disabled {
+      opacity:        0.4;
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       VARIANT: neutral (high-contrast alternative)
+       ============================================================ */
+    .atom-fab-base--neutral {
+      background-color: var(--surface-inverse);
+      color:            var(--text-on-inverse);
+    }
+    .atom-fab-base--neutral:hover,
+    .atom-fab-base--neutral.is-hover {
+      background-color: color-mix(in oklch, var(--surface-inverse) 85%, transparent 15%);
+      transform:        scale(1.05);
+      box-shadow:       var(--elevation-modal);
+    }
+    .atom-fab-base--neutral:active,
+    .atom-fab-base--neutral.is-active {
+      background-color: color-mix(in oklch, var(--surface-inverse) 70%, transparent 30%);
+      transform:        scale(0.97);
+    }
+    .atom-fab-base--neutral:focus-visible,
+    .atom-fab-base--neutral.is-focus {
+      box-shadow:
+        var(--elevation-modal),
+        0 0 0 2px var(--surface-page),
+        0 0 0 4px var(--border-focus);
+    }
+    .atom-fab-base--neutral:disabled,
+    .atom-fab-base--neutral.is-disabled {
+      opacity:        0.4;
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       VARIANT: overlay (subtle, with border)
+       ============================================================ */
+    .atom-fab-base--overlay {
+      background-color: var(--surface-overlay);
+      color:            var(--text-body);
+      border:           1px solid var(--border-default);
+    }
+    .atom-fab-base--overlay:hover,
+    .atom-fab-base--overlay.is-hover {
+      background-color: var(--surface-active);
+      transform:        scale(1.05);
+      box-shadow:       var(--elevation-modal);
+    }
+    .atom-fab-base--overlay:active,
+    .atom-fab-base--overlay.is-active {
+      background-color: var(--surface-active);
+      transform:        scale(0.97);
+    }
+    .atom-fab-base--overlay:focus-visible,
+    .atom-fab-base--overlay.is-focus {
+      box-shadow:
+        var(--elevation-modal),
+        0 0 0 2px var(--surface-page),
+        0 0 0 4px var(--border-focus);
+    }
+    .atom-fab-base--overlay:disabled,
+    .atom-fab-base--overlay.is-disabled {
+      opacity:        0.4;
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       STATE: is-loading (cross-variant)
+       ============================================================ */
+    .atom-fab-base.is-loading {
+      pointer-events: none;
+    }
+    .atom-fab-base.is-loading .atom-fab-base__icon,
+    .atom-fab-base.is-loading .atom-fab-base__label {
+      opacity: 0;
+    }
+    .atom-fab-base.is-loading::after {
+      content:       '';
+      position:      absolute;
+      width:         24px;
+      height:        24px;
+      border-radius: var(--radius-round);
+      border-style:  solid;
+      border-width:  2px;             /* structural geometry — spinner convention */
+      border-top-color: transparent;
+      animation:     atom-fab-spin var(--motion-slow) linear infinite;
+    }
+    /* Spinner color per variant */
+    .atom-fab-base--accent.is-loading::after  { border-color: var(--accent-primary-fg);  border-top-color: transparent; }
+    .atom-fab-base--neutral.is-loading::after { border-color: var(--text-on-inverse);    border-top-color: transparent; }
+    .atom-fab-base--overlay.is-loading::after { border-color: var(--text-body);          border-top-color: transparent; }
+
+    /* ============================================================
+       MODIFIER: --live-ring wrapper + ring element
+       ============================================================ */
+
+    /* Wrapper — positions ring behind button, no layout impact */
+    .atom-fab-base__live-ring-wrap {
+      position: relative;
+      display:  inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* The ring: absolutely centered, same diameter as FAB, animate out */
+    .atom-fab-base__live-ring {
+      position:      absolute;
+      inset:         0;
+      border-radius: var(--radius-round);
+      border:        2px solid var(--state-live-fg);   /* 2px structural — ring stroke */
+      pointer-events: none;
+      animation:     atom-fab-live-pulse var(--motion-cadence-pulse-medium) var(--motion-ease-out) infinite;
+    }
+
+    /* Extended FAB ring: match pill radius */
+    .atom-fab-base--with-label ~ .atom-fab-base__live-ring,
+    .atom-fab-base__live-ring-wrap:has(.atom-fab-base--with-label) .atom-fab-base__live-ring {
+      border-radius: var(--radius-pill);
+    }
+
+    /* Reduced motion: keep ring visible but static */
+    @media (prefers-reduced-motion: reduce) {
+      .atom-fab-base {
+        transition: none;
+      }
+      .atom-fab-base.is-loading::after {
+        animation: none;
+      }
+      .atom-fab-base__live-ring {
+        animation: none;
+        opacity:   0.5;
+      }
+    }
+
+    /* ============================================================
+       PLACEMENT HELPER (for composition examples in this preview)
+       ============================================================ */
+
+    /* Sessions-list container — simulated viewport */
+    .fab-composition-host {
+      position:    relative;
+      height:      420px;
+      overflow:    hidden;
+      border:      1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background:  var(--surface-page);
+    }
+
+    /* FAB standard placement above tab bar */
+    .fab-placement {
+      position: absolute;
+      right:    var(--space-4);
+      bottom:   calc(var(--tab-bar-height) + var(--space-4));
+    }
+
+    /* Simulated tab bar strip at bottom of composition host */
+    .sim-tab-bar {
+      position:       absolute;
+      bottom:         0;
+      left:           0;
+      right:          0;
+      height:         var(--tab-bar-height);
+      background:     var(--surface-sunken);
+      border-top:     1px solid var(--border-subtle);
+      display:        flex;
+      align-items:    center;
+      justify-content: center;
+    }
+    .sim-tab-bar-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-faint);
+    }
+
+    /* Simulated session list rows */
+    .sim-session-list {
+      padding:        var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      padding-bottom: calc(var(--tab-bar-height) + var(--space-8));
+    }
+    .sim-session-row {
+      display:        flex;
+      align-items:    center;
+      gap:            var(--space-3);
+      padding:        var(--space-3) var(--space-4);
+      background:     var(--surface-raised);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+    }
+    .sim-session-dot {
+      width:         8px;
+      height:        8px;
+      border-radius: var(--radius-round);
+      background:    var(--text-faint);
+      flex-shrink:   0;
+    }
+    .sim-session-dot--live {
+      background: var(--state-live-fg);
+      box-shadow: 0 0 6px var(--state-live-fg);
+    }
+    .sim-session-title {
+      font-family: var(--font-body);
+      font-size:   var(--font-size-body-sm);
+      color:       var(--text-body);
+      line-height: var(--line-height-snug);
+    }
+    .sim-session-meta {
+      font-family: var(--font-mono);
+      font-size:   var(--font-size-meta);
+      color:       var(--text-muted);
+      margin-left: auto;
+    }
+
+    /* Empty-state composition helper */
+    .sim-empty-state {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      justify-content: center;
+      gap:            var(--space-4);
+      height:         100%;
+      padding-bottom: calc(var(--tab-bar-height) + var(--space-12));
+    }
+    .sim-empty-title {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-title);
+      font-weight:  var(--font-weight-title);
+      color:        var(--text-heading);
+      line-height:  var(--line-height-snug);
+      text-align:   center;
+    }
+    .sim-empty-sub {
+      font-family: var(--font-body);
+      font-size:   var(--font-size-body-sm);
+      color:       var(--text-muted);
+      text-align:  center;
+    }
+
+    /* ============================================================
+       PREVIEW LAYOUT HELPERS
+       ============================================================ */
+
+    .section-block {
+      margin-bottom: var(--spacing-section);
+    }
+    .section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-heading);
+      letter-spacing: var(--tracking-tight);
+      color:          var(--text-heading);
+      margin:         0 0 var(--spacing-between);
+      text-transform: uppercase;
+    }
+    .sub-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-2);
+    }
+    .fab-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-6);
+      flex-wrap:   wrap;
+      margin-bottom: var(--spacing-between);
+    }
+    .fab-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-2);
+    }
+    .fab-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+      white-space:    nowrap;
+    }
+
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">fab-base</h1>
+    <p class="crumb">atom · floating action button — new chat session affordance</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ==================================================
+           1. VARIANT × SIZE MATRIX (3 variants × 2 sizes = 6 FABs)
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">1 · variant × size matrix</p>
+
+        <!-- accent -->
+        <p class="sub-label">accent (default)</p>
+        <div class="fab-row">
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">accent · md<br>56px</span>
+          </div>
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--lg"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">accent · lg<br>64px</span>
+          </div>
+        </div>
+
+        <!-- neutral -->
+        <p class="sub-label">neutral</p>
+        <div class="fab-row">
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--neutral atom-fab-base--md"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">neutral · md<br>56px</span>
+          </div>
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--neutral atom-fab-base--lg"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">neutral · lg<br>64px</span>
+          </div>
+        </div>
+
+        <!-- overlay -->
+        <p class="sub-label">overlay</p>
+        <div class="fab-row">
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">overlay · md<br>56px</span>
+          </div>
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--overlay atom-fab-base--lg"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">overlay · lg<br>64px</span>
+          </div>
+        </div>
+      </div><!-- /matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           2. MODIFIER SHOWCASE
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">2 · modifier showcase</p>
+
+        <!-- with-label: extended FAB -->
+        <p class="sub-label">--with-label · extended FAB</p>
+        <div class="fab-row" style="flex-direction: column; align-items: flex-start;">
+          <div class="fab-cell" style="flex-direction: row; gap: var(--space-4); align-items: center;">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md atom-fab-base--with-label"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span class="atom-fab-base__label">New chat</span>
+            </button>
+            <span class="fab-cell-label">accent · md · with-label</span>
+          </div>
+          <div class="fab-cell" style="flex-direction: row; gap: var(--space-4); align-items: center;">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--lg atom-fab-base--with-label"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span class="atom-fab-base__label">New chat</span>
+            </button>
+            <span class="fab-cell-label">accent · lg · with-label</span>
+          </div>
+          <div class="fab-cell" style="flex-direction: row; gap: var(--space-4); align-items: center;">
+            <button
+              class="atom-fab-base atom-fab-base--neutral atom-fab-base--md atom-fab-base--with-label"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span class="atom-fab-base__label">New chat</span>
+            </button>
+            <span class="fab-cell-label">neutral · md · with-label</span>
+          </div>
+        </div>
+
+        <!-- live-ring -->
+        <p class="sub-label" style="margin-top: var(--space-6);">--live-ring · streaming pulse ring</p>
+        <div class="fab-row">
+          <div class="fab-cell">
+            <div class="atom-fab-base__live-ring-wrap">
+              <div class="atom-fab-base__live-ring" aria-hidden="true"></div>
+              <button
+                class="atom-fab-base atom-fab-base--accent atom-fab-base--md atom-fab-base--live-ring"
+                aria-label="New chat session"
+                type="button"
+              >
+                <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+            </div>
+            <span class="fab-cell-label">accent · md<br>live-ring active</span>
+          </div>
+          <div class="fab-cell">
+            <div class="atom-fab-base__live-ring-wrap">
+              <div class="atom-fab-base__live-ring" aria-hidden="true"></div>
+              <button
+                class="atom-fab-base atom-fab-base--accent atom-fab-base--lg atom-fab-base--live-ring"
+                aria-label="New chat session"
+                type="button"
+              >
+                <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+            </div>
+            <span class="fab-cell-label">accent · lg<br>live-ring active</span>
+          </div>
+        </div>
+      </div><!-- /modifiers -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           3. STATE ROW — accent · md in all 6 states
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">3 · state row — accent · md</p>
+        <div class="state-grid" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
+
+          <!-- default -->
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- hover -->
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md is-hover"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- active -->
+          <div class="state">
+            <span class="state-label">active</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md is-active"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- focus -->
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md is-focus"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- disabled -->
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md is-disabled"
+              aria-label="New chat session"
+              aria-disabled="true"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- loading -->
+          <div class="state">
+            <span class="state-label">loading</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md is-loading"
+              aria-label="New chat session"
+              aria-busy="true"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           4. COMPOSITION EXAMPLES
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">4 · composition examples</p>
+
+        <!-- 4a. Sessions list with FAB anchored at bottom-right above tab bar -->
+        <p class="sub-label">sessions list — standard placement</p>
+        <div class="fab-composition-host" style="margin-bottom: var(--spacing-between);">
+          <div class="sim-session-list">
+            <div class="sim-session-row">
+              <div class="sim-session-dot sim-session-dot--live"></div>
+              <span class="sim-session-title">Refactor auth middleware</span>
+              <span class="sim-session-meta">now</span>
+            </div>
+            <div class="sim-session-row">
+              <div class="sim-session-dot"></div>
+              <span class="sim-session-title">Debug Electron IPC crash</span>
+              <span class="sim-session-meta">2h ago</span>
+            </div>
+            <div class="sim-session-row">
+              <div class="sim-session-dot"></div>
+              <span class="sim-session-title">Update Drizzle schema</span>
+              <span class="sim-session-meta">yesterday</span>
+            </div>
+            <div class="sim-session-row">
+              <div class="sim-session-dot"></div>
+              <span class="sim-session-title">Write onboarding copy</span>
+              <span class="sim-session-meta">2d ago</span>
+            </div>
+          </div>
+          <!-- FAB: standard placement -->
+          <div class="fab-placement">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+          <!-- Simulated tab bar -->
+          <div class="sim-tab-bar">
+            <span class="sim-tab-bar-label">tab bar · 83px</span>
+          </div>
+        </div>
+
+        <!-- 4b. Active session streaming — FAB with live-ring -->
+        <p class="sub-label">active session indicator — FAB with live-ring pulsing</p>
+        <div class="fab-composition-host" style="margin-bottom: var(--spacing-between);">
+          <div class="sim-session-list">
+            <div class="sim-session-row" style="background: var(--surface-active); border-color: var(--accent-primary-subtle);">
+              <div class="sim-session-dot sim-session-dot--live"></div>
+              <span class="sim-session-title" style="color: var(--text-heading);">Refactor auth middleware</span>
+              <span class="sim-session-meta" style="color: var(--state-live-fg);">streaming</span>
+            </div>
+            <div class="sim-session-row">
+              <div class="sim-session-dot"></div>
+              <span class="sim-session-title">Debug Electron IPC crash</span>
+              <span class="sim-session-meta">2h ago</span>
+            </div>
+            <div class="sim-session-row">
+              <div class="sim-session-dot"></div>
+              <span class="sim-session-title">Update Drizzle schema</span>
+              <span class="sim-session-meta">yesterday</span>
+            </div>
+          </div>
+          <!-- FAB with live-ring -->
+          <div class="fab-placement">
+            <div class="atom-fab-base__live-ring-wrap">
+              <div class="atom-fab-base__live-ring" aria-hidden="true"></div>
+              <button
+                class="atom-fab-base atom-fab-base--accent atom-fab-base--md atom-fab-base--live-ring"
+                aria-label="New chat session"
+                type="button"
+              >
+                <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <!-- Simulated tab bar -->
+          <div class="sim-tab-bar">
+            <span class="sim-tab-bar-label">tab bar · 83px</span>
+          </div>
+        </div>
+
+        <!-- 4c. Extended FAB above empty state -->
+        <p class="sub-label">extended FAB above empty state — "start your first chat"</p>
+        <div class="fab-composition-host">
+          <div class="sim-empty-state">
+            <span class="sim-empty-title">No chats yet</span>
+            <span class="sim-empty-sub">Start your first conversation with Claude.</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md atom-fab-base--with-label"
+              aria-label="Start new chat"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span class="atom-fab-base__label">Start your first chat</span>
+            </button>
+          </div>
+          <!-- Simulated tab bar -->
+          <div class="sim-tab-bar">
+            <span class="sim-tab-bar-label">tab bar · 83px</span>
+          </div>
+        </div>
+
+      </div><!-- /compositions -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ==================================================
+           1. VARIANT × SIZE MATRIX
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">1 · variant × size matrix</p>
+
+        <!-- accent -->
+        <p class="sub-label">accent (default)</p>
+        <div class="fab-row">
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">accent · md<br>56px</span>
+          </div>
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--lg"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">accent · lg<br>64px</span>
+          </div>
+        </div>
+
+        <!-- neutral -->
+        <p class="sub-label">neutral</p>
+        <div class="fab-row">
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--neutral atom-fab-base--md"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">neutral · md<br>56px</span>
+          </div>
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--neutral atom-fab-base--lg"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">neutral · lg<br>64px</span>
+          </div>
+        </div>
+
+        <!-- overlay -->
+        <p class="sub-label">overlay</p>
+        <div class="fab-row">
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">overlay · md<br>56px</span>
+          </div>
+          <div class="fab-cell">
+            <button
+              class="atom-fab-base atom-fab-base--overlay atom-fab-base--lg"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="fab-cell-label">overlay · lg<br>64px</span>
+          </div>
+        </div>
+      </div><!-- /matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           2. MODIFIER SHOWCASE
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">2 · modifier showcase</p>
+
+        <!-- with-label -->
+        <p class="sub-label">--with-label · extended FAB</p>
+        <div class="fab-row" style="flex-direction: column; align-items: flex-start;">
+          <div class="fab-cell" style="flex-direction: row; gap: var(--space-4); align-items: center;">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md atom-fab-base--with-label"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span class="atom-fab-base__label">New chat</span>
+            </button>
+            <span class="fab-cell-label">accent · md · with-label</span>
+          </div>
+          <div class="fab-cell" style="flex-direction: row; gap: var(--space-4); align-items: center;">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--lg atom-fab-base--with-label"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span class="atom-fab-base__label">New chat</span>
+            </button>
+            <span class="fab-cell-label">accent · lg · with-label</span>
+          </div>
+          <div class="fab-cell" style="flex-direction: row; gap: var(--space-4); align-items: center;">
+            <button
+              class="atom-fab-base atom-fab-base--neutral atom-fab-base--md atom-fab-base--with-label"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span class="atom-fab-base__label">New chat</span>
+            </button>
+            <span class="fab-cell-label">neutral · md · with-label</span>
+          </div>
+        </div>
+
+        <!-- live-ring -->
+        <p class="sub-label" style="margin-top: var(--space-6);">--live-ring · streaming pulse ring</p>
+        <div class="fab-row">
+          <div class="fab-cell">
+            <div class="atom-fab-base__live-ring-wrap">
+              <div class="atom-fab-base__live-ring" aria-hidden="true"></div>
+              <button
+                class="atom-fab-base atom-fab-base--accent atom-fab-base--md atom-fab-base--live-ring"
+                aria-label="New chat session"
+                type="button"
+              >
+                <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+            </div>
+            <span class="fab-cell-label">accent · md<br>live-ring active</span>
+          </div>
+          <div class="fab-cell">
+            <div class="atom-fab-base__live-ring-wrap">
+              <div class="atom-fab-base__live-ring" aria-hidden="true"></div>
+              <button
+                class="atom-fab-base atom-fab-base--accent atom-fab-base--lg atom-fab-base--live-ring"
+                aria-label="New chat session"
+                type="button"
+              >
+                <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+            </div>
+            <span class="fab-cell-label">accent · lg<br>live-ring active</span>
+          </div>
+        </div>
+      </div><!-- /modifiers -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           3. STATE ROW — accent · md in all 6 states
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">3 · state row — accent · md</p>
+        <div class="state-grid" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
+
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md is-hover"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">active</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md is-active"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md is-focus"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md is-disabled"
+              aria-label="New chat session"
+              aria-disabled="true"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="state">
+            <span class="state-label">loading</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md is-loading"
+              aria-label="New chat session"
+              aria-busy="true"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           4. COMPOSITION EXAMPLES
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">4 · composition examples</p>
+
+        <!-- 4a. Sessions list standard placement -->
+        <p class="sub-label">sessions list — standard placement</p>
+        <div class="fab-composition-host" style="margin-bottom: var(--spacing-between);">
+          <div class="sim-session-list">
+            <div class="sim-session-row">
+              <div class="sim-session-dot sim-session-dot--live"></div>
+              <span class="sim-session-title">Refactor auth middleware</span>
+              <span class="sim-session-meta">now</span>
+            </div>
+            <div class="sim-session-row">
+              <div class="sim-session-dot"></div>
+              <span class="sim-session-title">Debug Electron IPC crash</span>
+              <span class="sim-session-meta">2h ago</span>
+            </div>
+            <div class="sim-session-row">
+              <div class="sim-session-dot"></div>
+              <span class="sim-session-title">Update Drizzle schema</span>
+              <span class="sim-session-meta">yesterday</span>
+            </div>
+            <div class="sim-session-row">
+              <div class="sim-session-dot"></div>
+              <span class="sim-session-title">Write onboarding copy</span>
+              <span class="sim-session-meta">2d ago</span>
+            </div>
+          </div>
+          <div class="fab-placement">
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md"
+              aria-label="New chat session"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+          <div class="sim-tab-bar">
+            <span class="sim-tab-bar-label">tab bar · 83px</span>
+          </div>
+        </div>
+
+        <!-- 4b. Active session streaming — FAB with live-ring -->
+        <p class="sub-label">active session indicator — FAB with live-ring pulsing</p>
+        <div class="fab-composition-host" style="margin-bottom: var(--spacing-between);">
+          <div class="sim-session-list">
+            <div class="sim-session-row" style="background: var(--surface-active); border-color: var(--accent-primary-subtle);">
+              <div class="sim-session-dot sim-session-dot--live"></div>
+              <span class="sim-session-title" style="color: var(--text-heading);">Refactor auth middleware</span>
+              <span class="sim-session-meta" style="color: var(--state-live-fg);">streaming</span>
+            </div>
+            <div class="sim-session-row">
+              <div class="sim-session-dot"></div>
+              <span class="sim-session-title">Debug Electron IPC crash</span>
+              <span class="sim-session-meta">2h ago</span>
+            </div>
+            <div class="sim-session-row">
+              <div class="sim-session-dot"></div>
+              <span class="sim-session-title">Update Drizzle schema</span>
+              <span class="sim-session-meta">yesterday</span>
+            </div>
+          </div>
+          <div class="fab-placement">
+            <div class="atom-fab-base__live-ring-wrap">
+              <div class="atom-fab-base__live-ring" aria-hidden="true"></div>
+              <button
+                class="atom-fab-base atom-fab-base--accent atom-fab-base--md atom-fab-base--live-ring"
+                aria-label="New chat session"
+                type="button"
+              >
+                <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="sim-tab-bar">
+            <span class="sim-tab-bar-label">tab bar · 83px</span>
+          </div>
+        </div>
+
+        <!-- 4c. Extended FAB above empty state -->
+        <p class="sub-label">extended FAB above empty state — "start your first chat"</p>
+        <div class="fab-composition-host">
+          <div class="sim-empty-state">
+            <span class="sim-empty-title">No chats yet</span>
+            <span class="sim-empty-sub">Start your first conversation with Claude.</span>
+            <button
+              class="atom-fab-base atom-fab-base--accent atom-fab-base--md atom-fab-base--with-label"
+              aria-label="Start new chat"
+              type="button"
+            >
+              <svg class="atom-fab-base__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span class="atom-fab-base__label">Start your first chat</span>
+            </button>
+          </div>
+          <div class="sim-tab-bar">
+            <span class="sim-tab-bar-label">tab bar · 83px</span>
+          </div>
+        </div>
+
+      </div><!-- /compositions -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
