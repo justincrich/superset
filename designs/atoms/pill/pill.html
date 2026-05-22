@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · pill</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-pill — token-governed pill/chip atom
+       Composition purity: only .atom-pill rules defined here.
+       Zero hex literals. Zero raw font-size/weight/line-height/tracking.
+       Zero raw px in padding/margin/gap.
+       Structural geometry heights (20/28/36) are allowed.
+    ============================================================ */
+
+    /* ---- Base ------------------------------------------------ */
+    .atom-pill {
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      white-space:     nowrap;
+      flex-shrink:     0;
+      position:        relative;
+
+      /* Shape */
+      border-radius: var(--radius-pill);
+      border:        none;
+      outline:       none;
+      cursor:        default;
+
+      /* Typography defaults (md size) */
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-label);
+      font-weight:    var(--font-weight-label);
+      letter-spacing: var(--tracking-mono);
+      line-height:    var(--line-height-snug);
+
+      /* Motion */
+      transition:
+        background-color var(--motion-fast) var(--motion-ease-out),
+        color            var(--motion-fast) var(--motion-ease-out),
+        box-shadow       var(--motion-fast) var(--motion-ease-out),
+        opacity          var(--motion-fast) var(--motion-ease-out),
+        transform        var(--motion-fast) var(--motion-ease-out),
+        border-color     var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Sizes ----------------------------------------------- */
+    .atom-pill--sm {
+      height:         20px;
+      padding-inline: var(--space-2);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      gap:            var(--space-1);
+    }
+
+    /* Default (md) — applied when no size class present */
+    .atom-pill,
+    .atom-pill--md {
+      height:         28px;
+      padding-inline: var(--space-3);
+      gap:            var(--space-2);
+    }
+
+    /* sm overrides the base height/padding set above */
+    .atom-pill--sm {
+      height:         20px;
+      padding-inline: var(--space-2);
+    }
+
+    .atom-pill--lg {
+      height:         36px;
+      padding-inline: var(--space-4);
+      gap:            var(--space-2);
+    }
+
+    /* ---- Variant: default ------------------------------------ */
+    .atom-pill--default {
+      background-color: var(--surface-soft);
+      color:            var(--text-body);
+      border:           0.5px solid var(--border-default);
+    }
+    .atom-pill--default:hover,
+    .atom-pill--default.is-hover {
+      background-color: var(--surface-active);
+    }
+
+    /* ---- Variant: strong ------------------------------------- */
+    .atom-pill--strong {
+      background-color: var(--surface-active);
+      color:            var(--text-body);
+      border:           0.5px solid var(--border-strong);
+    }
+    .atom-pill--strong:hover,
+    .atom-pill--strong.is-hover {
+      background-color: color-mix(in oklch, var(--surface-active) 85%, var(--surface-soft) 15%);
+    }
+
+    /* ---- Variant: accent ------------------------------------- */
+    .atom-pill--accent {
+      background-color: var(--accent-primary-subtle);
+      color:            var(--accent-primary);
+      border:           none;
+    }
+    .atom-pill--accent:hover,
+    .atom-pill--accent.is-hover {
+      background-color: color-mix(in oklch, var(--accent-primary-subtle) 95%, var(--accent-primary) 5%);
+    }
+
+    /* ---- Variant: live --------------------------------------- */
+    .atom-pill--live {
+      background-color: var(--state-live-bg);
+      color:            var(--state-live-fg);
+      border:           none;
+    }
+    .atom-pill--live:hover,
+    .atom-pill--live.is-hover {
+      background-color: color-mix(in oklch, var(--state-live-bg) 80%, var(--state-live-fg) 10%);
+    }
+
+    /* ---- Variant: warning ------------------------------------ */
+    .atom-pill--warning {
+      background-color: var(--state-warning-bg);
+      color:            var(--state-warning-fg);
+      border:           none;
+    }
+    .atom-pill--warning:hover,
+    .atom-pill--warning.is-hover {
+      background-color: color-mix(in oklch, var(--state-warning-bg) 80%, var(--state-warning-fg) 10%);
+    }
+
+    /* ---- Variant: danger ------------------------------------- */
+    .atom-pill--danger {
+      background-color: var(--state-danger-bg);
+      color:            var(--state-danger-fg);
+      border:           none;
+    }
+    .atom-pill--danger:hover,
+    .atom-pill--danger.is-hover {
+      background-color: color-mix(in oklch, var(--state-danger-bg) 80%, var(--state-danger-fg) 10%);
+    }
+
+    /* ---- States (cross-variant) ------------------------------ */
+    .atom-pill:active,
+    .atom-pill.is-active {
+      transform: translateY(1px);
+    }
+
+    .atom-pill:focus-visible,
+    .atom-pill.is-focus {
+      box-shadow: 0 0 0 2px var(--border-focus);
+      outline:    none;
+    }
+
+    .atom-pill.is-disabled {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+
+    /* is-selected: upgrades any base variant to strong visuals */
+    .atom-pill.is-selected {
+      background-color: var(--surface-active);
+      border-color:     var(--border-strong);
+      border-width:     0.5px;
+      border-style:     solid;
+    }
+    /* is-selected on accent: keep accent bg but boost border */
+    .atom-pill--accent.is-selected {
+      background-color: var(--accent-primary-subtle);
+      border:           0.5px solid var(--accent-primary);
+    }
+
+    /* ---- Modifier: leading-icon ----------------------------- */
+    .atom-pill--leading-icon {
+      padding-inline-start: var(--space-2);
+    }
+    .atom-pill__icon {
+      display:     inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+      width:       14px;
+      height:      14px;
+      color:       currentColor;
+    }
+    /* sm icon is slightly smaller */
+    .atom-pill--sm .atom-pill__icon {
+      width:  12px;
+      height: 12px;
+    }
+
+    /* ---- Modifier: trailing-dismiss ------------------------- */
+    .atom-pill--trailing-dismiss {
+      padding-inline-end: var(--space-1);
+    }
+    .atom-pill__dismiss {
+      /* Reset button */
+      appearance:    none;
+      background:    none;
+      border:        none;
+      outline:       none;
+      padding:       0;
+      margin:        0;
+      cursor:        pointer;
+
+      /* Sizing — visual glyph is 10px; tap area expanded via padding */
+      display:        inline-flex;
+      align-items:    center;
+      justify-content: center;
+      width:          var(--space-4);
+      height:         var(--space-4);
+      min-width:      var(--space-4);
+      /* Negative margin collapses excess so pill shape stays tight */
+      margin-inline-end: calc(var(--space-1) * -1);
+
+      /* Inherit pill foreground */
+      color:   currentColor;
+      opacity: 0.7;
+      transition: opacity var(--motion-fast) var(--motion-ease-out);
+      border-radius: var(--radius-round);
+
+      /* Touch target expansion via pseudo (does not affect layout) */
+      position: relative;
+    }
+    .atom-pill__dismiss::before {
+      content:  '';
+      position: absolute;
+      inset:    calc((var(--touch-target-min) - var(--space-4)) / -2);
+    }
+    .atom-pill__dismiss:hover {
+      opacity: 1;
+    }
+    .atom-pill__dismiss:focus-visible {
+      box-shadow: 0 0 0 2px var(--border-focus);
+      outline:    none;
+    }
+
+    /* ---- Modifier: monospace -------------------------------- */
+    .atom-pill--monospace {
+      font-family: var(--font-mono);
+    }
+
+    /* ---- Modifier: uppercase -------------------------------- */
+    .atom-pill--uppercase {
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-uppercase);
+    }
+
+    /* ---- Preview layout helpers ----------------------------- */
+    .variant-group {
+      margin-bottom: var(--spacing-section);
+    }
+    .variant-group-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      margin:         0 0 var(--space-3);
+      text-transform: uppercase;
+    }
+    .size-row {
+      margin-bottom: var(--spacing-between);
+    }
+    .size-row-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-2);
+    }
+    .pill-row {
+      display:     flex;
+      flex-wrap:   wrap;
+      align-items: center;
+      gap:         var(--space-3);
+    }
+    .pill-col {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      align-items:    flex-start;
+    }
+    .composition-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+      flex-wrap:   wrap;
+      padding:     var(--space-4);
+      background:  var(--surface-raised);
+      border-radius: var(--radius-default);
+      border:      1px solid var(--border-subtle);
+    }
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+      margin: var(--spacing-section) 0 var(--spacing-between);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+  ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">pill</h1>
+    <p class="crumb">atom · rounded chip with optional icon + dismiss</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ============================================================
+         DARK PANE
+    ============================================================ -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ======================================================
+           1. VARIANT MATRIX — 6 variants × 3 sizes = 18 cells
+      ====================================================== -->
+
+      <!-- ---- default ---------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">default</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--default atom-pill--sm">host:macbook-pro</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--default atom-pill--md">superset · chat-mobile-plan</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--default atom-pill--lg">@apps/desktop/src/index.ts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- strong ----------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">strong</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--strong atom-pill--sm">SUPER-771</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--strong atom-pill--md">host:macbook-pro</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--strong atom-pill--lg">superset · chat-mobile-plan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- accent ----------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">accent</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--accent atom-pill--sm atom-pill--monospace">/clear</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--accent atom-pill--md atom-pill--monospace">/clear</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--accent atom-pill--lg atom-pill--monospace">/clear</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- live ------------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">live</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--live atom-pill--sm atom-pill--uppercase">STREAMING</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--live atom-pill--md atom-pill--uppercase">STREAMING</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--live atom-pill--lg atom-pill--uppercase">STREAMING</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- warning ---------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">warning</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--warning atom-pill--sm atom-pill--uppercase">AWAITING APPROVAL</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--warning atom-pill--md atom-pill--uppercase">AWAITING APPROVAL</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--warning atom-pill--lg atom-pill--uppercase">AWAITING APPROVAL</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- danger ----------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">danger</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--danger atom-pill--sm atom-pill--uppercase">DISPATCH FAILED</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--danger atom-pill--md atom-pill--uppercase">DISPATCH FAILED</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--danger atom-pill--lg atom-pill--uppercase">DISPATCH FAILED</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ======================================================
+           2. MODIFIER SHOWCASE
+           4 modifiers × 2 examples each (all --default --md)
+      ====================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">modifiers</p>
+
+        <!-- leading-icon -->
+        <div class="size-row">
+          <p class="size-row-label">leading-icon</p>
+          <div class="pill-row">
+            <!-- host chip: server icon -->
+            <span class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon">
+              <span class="atom-pill__icon" aria-hidden="true">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                  <rect x="1" y="2" width="12" height="4" rx="1"/>
+                  <rect x="1" y="8" width="12" height="4" rx="1"/>
+                  <circle cx="10.5" cy="4" r="0.75" fill="currentColor" stroke="none"/>
+                  <circle cx="10.5" cy="10" r="0.75" fill="currentColor" stroke="none"/>
+                </svg>
+              </span>
+              host:macbook-pro
+            </span>
+            <!-- file chip: file icon -->
+            <span class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon">
+              <span class="atom-pill__icon" aria-hidden="true">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                  <path d="M2 2a1 1 0 0 1 1-1h6l3 3v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2z"/>
+                  <polyline points="9,1 9,4 12,4"/>
+                </svg>
+              </span>
+              @apps/desktop/src/index.ts
+            </span>
+          </div>
+        </div>
+
+        <!-- trailing-dismiss -->
+        <div class="size-row">
+          <p class="size-row-label">trailing-dismiss</p>
+          <div class="pill-row">
+            <!-- issue chip with dismiss -->
+            <span class="atom-pill atom-pill--default atom-pill--md atom-pill--trailing-dismiss">
+              SUPER-771
+              <button class="atom-pill__dismiss" aria-label="Remove SUPER-771" type="button">
+                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="10" height="10" aria-hidden="true">
+                  <line x1="2" y1="2" x2="8" y2="8"/>
+                  <line x1="8" y1="2" x2="2" y2="8"/>
+                </svg>
+              </button>
+            </span>
+            <!-- host chip with dismiss -->
+            <span class="atom-pill atom-pill--strong atom-pill--md atom-pill--trailing-dismiss">
+              host:macbook-pro
+              <button class="atom-pill__dismiss" aria-label="Remove host:macbook-pro" type="button">
+                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="10" height="10" aria-hidden="true">
+                  <line x1="2" y1="2" x2="8" y2="8"/>
+                  <line x1="8" y1="2" x2="2" y2="8"/>
+                </svg>
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <!-- monospace -->
+        <div class="size-row">
+          <p class="size-row-label">monospace</p>
+          <div class="pill-row">
+            <!-- slash-command pill -->
+            <span class="atom-pill atom-pill--accent atom-pill--md atom-pill--leading-icon atom-pill--monospace">
+              <span class="atom-pill__icon" aria-hidden="true">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14">
+                  <line x1="10" y1="2" x2="4" y2="12"/>
+                </svg>
+              </span>
+              /clear
+            </span>
+            <!-- model badge -->
+            <span class="atom-pill atom-pill--default atom-pill--md atom-pill--monospace">Sonnet 4.6</span>
+          </div>
+        </div>
+
+        <!-- uppercase -->
+        <div class="size-row">
+          <p class="size-row-label">uppercase</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--live atom-pill--md atom-pill--uppercase">STREAMING</span>
+            <span class="atom-pill atom-pill--warning atom-pill--md atom-pill--uppercase">AWAITING APPROVAL</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ======================================================
+           3. STATES ROW — --default --md in 6 states
+      ====================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">states · default md</p>
+
+        <div class="state-grid">
+          <div class="state">
+            <span class="state-label">default</span>
+            <span class="atom-pill atom-pill--default atom-pill--md">host:macbook-pro</span>
+          </div>
+          <div class="state">
+            <span class="state-label">hover</span>
+            <span class="atom-pill atom-pill--default atom-pill--md is-hover">host:macbook-pro</span>
+          </div>
+          <div class="state">
+            <span class="state-label">active</span>
+            <span class="atom-pill atom-pill--default atom-pill--md is-active">host:macbook-pro</span>
+          </div>
+          <div class="state">
+            <span class="state-label">focus</span>
+            <span class="atom-pill atom-pill--default atom-pill--md is-focus">host:macbook-pro</span>
+          </div>
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <span class="atom-pill atom-pill--default atom-pill--md is-disabled">host:macbook-pro</span>
+          </div>
+          <div class="state">
+            <span class="state-label">selected</span>
+            <span class="atom-pill atom-pill--default atom-pill--md is-selected">host:macbook-pro</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ======================================================
+           4. COMPOSITION EXAMPLE — real composer toolbar
+      ====================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">composition · composer toolbar</p>
+
+        <div class="composition-row">
+          <!-- Host chip: server icon + leading -->
+          <span class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon atom-pill--monospace" role="button" aria-label="Switch host">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <rect x="1" y="2" width="12" height="4" rx="1"/>
+                <rect x="1" y="8" width="12" height="4" rx="1"/>
+                <circle cx="10.5" cy="4" r="0.75" fill="currentColor" stroke="none"/>
+                <circle cx="10.5" cy="10" r="0.75" fill="currentColor" stroke="none"/>
+              </svg>
+            </span>
+            host:macbook-pro
+          </span>
+
+          <!-- Model picker pill: monospace -->
+          <span class="atom-pill atom-pill--default atom-pill--md atom-pill--monospace" role="button" aria-label="Switch model">
+            Sonnet 4.6
+          </span>
+
+          <!-- Thinking-level pill: accent + leading brain icon -->
+          <span class="atom-pill atom-pill--accent atom-pill--md atom-pill--leading-icon" role="button" aria-label="Thinking level: medium">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <path d="M7 2C4.79 2 3 3.79 3 6c0 1.1.45 2.1 1.17 2.83L4 10h6l-.17-1.17C10.55 8.1 11 7.1 11 6c0-2.21-1.79-4-4-4z"/>
+                <line x1="5" y1="10" x2="9" y2="10"/>
+                <line x1="5.5" y1="12" x2="8.5" y2="12"/>
+              </svg>
+            </span>
+            Thinking: medium
+          </span>
+
+          <!-- Permission-mode pill: strong + git-branch icon -->
+          <span class="atom-pill atom-pill--strong atom-pill--md atom-pill--leading-icon" role="button" aria-label="Permission mode: default">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <circle cx="4" cy="4" r="1.5"/>
+                <circle cx="10" cy="4" r="1.5"/>
+                <circle cx="4" cy="11" r="1.5"/>
+                <line x1="4" y1="5.5" x2="4" y2="9.5"/>
+                <path d="M10 5.5C10 8 7 8 7 8H4"/>
+              </svg>
+            </span>
+            default
+          </span>
+        </div>
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ============================================================
+         LIGHT PANE
+    ============================================================ -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ======================================================
+           1. VARIANT MATRIX — 6 variants × 3 sizes = 18 cells
+      ====================================================== -->
+
+      <!-- ---- default ---------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">default</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--default atom-pill--sm">host:macbook-pro</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--default atom-pill--md">superset · chat-mobile-plan</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--default atom-pill--lg">@apps/desktop/src/index.ts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- strong ----------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">strong</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--strong atom-pill--sm">SUPER-771</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--strong atom-pill--md">host:macbook-pro</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--strong atom-pill--lg">superset · chat-mobile-plan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- accent ----------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">accent</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--accent atom-pill--sm atom-pill--monospace">/clear</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--accent atom-pill--md atom-pill--monospace">/clear</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--accent atom-pill--lg atom-pill--monospace">/clear</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- live ------------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">live</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--live atom-pill--sm atom-pill--uppercase">STREAMING</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--live atom-pill--md atom-pill--uppercase">STREAMING</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--live atom-pill--lg atom-pill--uppercase">STREAMING</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- warning ---------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">warning</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--warning atom-pill--sm atom-pill--uppercase">AWAITING APPROVAL</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--warning atom-pill--md atom-pill--uppercase">AWAITING APPROVAL</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--warning atom-pill--lg atom-pill--uppercase">AWAITING APPROVAL</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- danger ----------------------------------------- -->
+      <div class="variant-group">
+        <p class="variant-group-title">danger</p>
+
+        <div class="size-row">
+          <p class="size-row-label">sm · 20px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--danger atom-pill--sm atom-pill--uppercase">DISPATCH FAILED</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">md · 28px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--danger atom-pill--md atom-pill--uppercase">DISPATCH FAILED</span>
+          </div>
+        </div>
+
+        <div class="size-row">
+          <p class="size-row-label">lg · 36px</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--danger atom-pill--lg atom-pill--uppercase">DISPATCH FAILED</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ======================================================
+           2. MODIFIER SHOWCASE
+      ====================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">modifiers</p>
+
+        <!-- leading-icon -->
+        <div class="size-row">
+          <p class="size-row-label">leading-icon</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon">
+              <span class="atom-pill__icon" aria-hidden="true">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                  <rect x="1" y="2" width="12" height="4" rx="1"/>
+                  <rect x="1" y="8" width="12" height="4" rx="1"/>
+                  <circle cx="10.5" cy="4" r="0.75" fill="currentColor" stroke="none"/>
+                  <circle cx="10.5" cy="10" r="0.75" fill="currentColor" stroke="none"/>
+                </svg>
+              </span>
+              host:macbook-pro
+            </span>
+            <span class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon">
+              <span class="atom-pill__icon" aria-hidden="true">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                  <path d="M2 2a1 1 0 0 1 1-1h6l3 3v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2z"/>
+                  <polyline points="9,1 9,4 12,4"/>
+                </svg>
+              </span>
+              @apps/desktop/src/index.ts
+            </span>
+          </div>
+        </div>
+
+        <!-- trailing-dismiss -->
+        <div class="size-row">
+          <p class="size-row-label">trailing-dismiss</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--default atom-pill--md atom-pill--trailing-dismiss">
+              SUPER-771
+              <button class="atom-pill__dismiss" aria-label="Remove SUPER-771" type="button">
+                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="10" height="10" aria-hidden="true">
+                  <line x1="2" y1="2" x2="8" y2="8"/>
+                  <line x1="8" y1="2" x2="2" y2="8"/>
+                </svg>
+              </button>
+            </span>
+            <span class="atom-pill atom-pill--strong atom-pill--md atom-pill--trailing-dismiss">
+              host:macbook-pro
+              <button class="atom-pill__dismiss" aria-label="Remove host:macbook-pro" type="button">
+                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="10" height="10" aria-hidden="true">
+                  <line x1="2" y1="2" x2="8" y2="8"/>
+                  <line x1="8" y1="2" x2="2" y2="8"/>
+                </svg>
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <!-- monospace -->
+        <div class="size-row">
+          <p class="size-row-label">monospace</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--accent atom-pill--md atom-pill--leading-icon atom-pill--monospace">
+              <span class="atom-pill__icon" aria-hidden="true">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14">
+                  <line x1="10" y1="2" x2="4" y2="12"/>
+                </svg>
+              </span>
+              /clear
+            </span>
+            <span class="atom-pill atom-pill--default atom-pill--md atom-pill--monospace">Sonnet 4.6</span>
+          </div>
+        </div>
+
+        <!-- uppercase -->
+        <div class="size-row">
+          <p class="size-row-label">uppercase</p>
+          <div class="pill-row">
+            <span class="atom-pill atom-pill--live atom-pill--md atom-pill--uppercase">STREAMING</span>
+            <span class="atom-pill atom-pill--warning atom-pill--md atom-pill--uppercase">AWAITING APPROVAL</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ======================================================
+           3. STATES ROW
+      ====================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">states · default md</p>
+
+        <div class="state-grid">
+          <div class="state">
+            <span class="state-label">default</span>
+            <span class="atom-pill atom-pill--default atom-pill--md">host:macbook-pro</span>
+          </div>
+          <div class="state">
+            <span class="state-label">hover</span>
+            <span class="atom-pill atom-pill--default atom-pill--md is-hover">host:macbook-pro</span>
+          </div>
+          <div class="state">
+            <span class="state-label">active</span>
+            <span class="atom-pill atom-pill--default atom-pill--md is-active">host:macbook-pro</span>
+          </div>
+          <div class="state">
+            <span class="state-label">focus</span>
+            <span class="atom-pill atom-pill--default atom-pill--md is-focus">host:macbook-pro</span>
+          </div>
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <span class="atom-pill atom-pill--default atom-pill--md is-disabled">host:macbook-pro</span>
+          </div>
+          <div class="state">
+            <span class="state-label">selected</span>
+            <span class="atom-pill atom-pill--default atom-pill--md is-selected">host:macbook-pro</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ======================================================
+           4. COMPOSITION EXAMPLE — real composer toolbar
+      ====================================================== -->
+      <div class="variant-group">
+        <p class="variant-group-title">composition · composer toolbar</p>
+
+        <div class="composition-row">
+          <!-- Host chip -->
+          <span class="atom-pill atom-pill--default atom-pill--md atom-pill--leading-icon atom-pill--monospace" role="button" aria-label="Switch host">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <rect x="1" y="2" width="12" height="4" rx="1"/>
+                <rect x="1" y="8" width="12" height="4" rx="1"/>
+                <circle cx="10.5" cy="4" r="0.75" fill="currentColor" stroke="none"/>
+                <circle cx="10.5" cy="10" r="0.75" fill="currentColor" stroke="none"/>
+              </svg>
+            </span>
+            host:macbook-pro
+          </span>
+
+          <!-- Model picker -->
+          <span class="atom-pill atom-pill--default atom-pill--md atom-pill--monospace" role="button" aria-label="Switch model">
+            Sonnet 4.6
+          </span>
+
+          <!-- Thinking-level pill -->
+          <span class="atom-pill atom-pill--accent atom-pill--md atom-pill--leading-icon" role="button" aria-label="Thinking level: medium">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <path d="M7 2C4.79 2 3 3.79 3 6c0 1.1.45 2.1 1.17 2.83L4 10h6l-.17-1.17C10.55 8.1 11 7.1 11 6c0-2.21-1.79-4-4-4z"/>
+                <line x1="5" y1="10" x2="9" y2="10"/>
+                <line x1="5.5" y1="12" x2="8.5" y2="12"/>
+              </svg>
+            </span>
+            Thinking: medium
+          </span>
+
+          <!-- Permission-mode pill -->
+          <span class="atom-pill atom-pill--strong atom-pill--md atom-pill--leading-icon" role="button" aria-label="Permission mode: default">
+            <span class="atom-pill__icon" aria-hidden="true">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <circle cx="4" cy="4" r="1.5"/>
+                <circle cx="10" cy="4" r="1.5"/>
+                <circle cx="4" cy="11" r="1.5"/>
+                <line x1="4" y1="5.5" x2="4" y2="9.5"/>
+                <path d="M10 5.5C10 8 7 8 7 8H4"/>
+              </svg>
+            </span>
+            default
+          </span>
+        </div>
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
