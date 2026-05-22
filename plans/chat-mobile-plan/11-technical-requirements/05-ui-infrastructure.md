@@ -4,23 +4,44 @@
 
 Components follow AGENTS.md co-location rules (folder-per-component, barrel `index.ts`, subcomponents nest under parent's `components/`). See `12-component-organization-addendum.md` for full convention details.
 
-In addition to the `components/chat/` tree below, **shell-level navigation components** (UC-NAV-* surfaces) live in `apps/mobile/screens/(authenticated)/(chat)/` per the project's screen co-location convention:
+In addition to the `components/chat/` tree below, **shell-level navigation components** (UC-NAV-* surfaces) live in `apps/mobile/screens/(authenticated)/(chat)/` per the project's screen co-location convention. **v2.0.0 flipped this surface from host-first to project-first** — `SelectedHostProvider`/`HostPickerSheet`/`WorkspaceSection`/`LoadMorePill`/`HostChip` are deleted; their successors are listed below:
 
-- `SessionsListScreen/` — UC-NAV-01, UC-NAV-02, UC-NAV-07 (sessions list with workspace sections + FAB + search). Holds `sectionDisplayCounts: Record<workspaceId, number>` (per-section pagination, persisted via async-storage per `(userId, hostId)`) and `searchQuery: string` (in-memory only).
-  - `components/WorkspaceSection/` — section header rendered as **sticky during scroll** (UC-NAV-02; contact-directory pattern). Uses FlashList `stickyHeaderIndices` over a flattened-with-headers data array per https://shopify.github.io/flash-list/docs/guides/section-list. Fallback if v1.7.x sticky proves unsatisfactory: switch to RN built-in `SectionList` with `stickySectionHeadersEnabled={true}` — simpler API, less virtualization tuning, decision deferred to the sprint that builds this component.
-    - `components/LoadMorePill/` — "Load more (N more)" affordance appended to the section when `displayedCount < totalCount` and multi-workspace mode is active (UC-NAV-02)
-  - `components/SessionRow/` — single session row with status icon (`⌖ ⚠ ● ○`)
-  - `components/SessionSearchBar/` — header TextInput driving the cross-workspace title filter (UC-NAV-07). Debounced query state (~100ms) feeds a memoized selector over the synced `chat_sessions` Electric collection — client-side filter only, no backend calls.
-  - `components/HostChip/` — header host display + tap target (UC-NAV-03 trigger)
-  - `components/NewChatFab/` — floating "+" button (UC-NAV-04 trigger)
-  - `components/SessionsEmptyState/` — UC-NAV-06 three-state renderer plus a fourth "no search results" state when `searchQuery` is non-empty and no sessions match
-- `HostPickerSheet/` — UC-NAV-03 bottom sheet (`@gorhom/bottom-sheet` + `BottomSheetFlatList` of hosts)
-- `NewChatSheet/` — UC-NAV-04 workspace-picker sheet
-- `providers/SelectedHostProvider/` — local state + `expo-secure-store` persistence of `selectedHostId` keyed by `userId+organizationId`
-- `hooks/useSelectedHost/` — read/write the selected host
-- `hooks/useAccessibleHosts/` — query `v2_users_hosts` joined to `v2_hosts` (Electric collection)
-- `hooks/useSessionsForHost/` — derived selector over `chat_sessions` + `v2_workspaces` Electric collections, scoped to the selected host
-- `utils/handleDeepLink/` — UC-NAV-05 routing logic invoked by the Expo notification handler
+- `SessionsListScreen/` — UC-NAV-01, UC-NAV-07, UC-NAV-08 (flat recency-sorted sessions list scoped to the selected project + FAB + search + filter sheet). Holds two pieces of in-memory state (cleared on screen exit): `searchQuery: string` and `activeFilters: { workspaceIds: string[]; statuses: SessionStatus[] }`. `FlashList` tuned with explicit `estimatedItemSize` for the two-line row and stable `keyExtractor` (`session.id`) so virtualization survives filter-set changes.
+  - `components/ProjectChip/` — header project display + tap target (UC-NAV-08 trigger via `ProjectPickerSheet`). Renders as a static label (no chevron, no tap target) when the org has 1 project; renders as a tappable chip with `▾` when ≥2 projects.
+  - `components/SessionSearchBar/` — header `TextInput` driving the project-scoped title filter (UC-NAV-07). Debounced query state (~100ms) feeds a memoized selector over the synced `chat_sessions` Electric collection joined to `v2_workspaces` — client-side filter only, no backend calls.
+  - `components/FilterButton/` — ⚙ button to the right of the search input, opens `SessionFilterSheet` (UC-NAV-08). Renders a `·N` badge when `activeFilters` has ≥1 entry (`N = activeFilters.workspaceIds.length + activeFilters.statuses.length`).
+  - `components/AppliedFilterTags/` — horizontally-scrollable row of removable chip tags below the search bar, one chip per applied workspace (`🌿 {branch} · {hostName}`) and one per applied status (`{icon} {label}`), plus a trailing `Clear ✕` affordance when ≥1 chip. Stale chips (referencing a workspace that has been tombstoned in the synced collection) silently drop on next render.
+  - `components/SessionRow/` — single session row with status icon (`⌖ ⚠ ● ○`) and a two-line layout. Row truncation order: title (1 line, ellipsis), then `branch` ellipsis before `host` before `relativeTime`. TestID: `session-row-{sessionId}`.
+  - `components/NewChatFab/` — floating "+" button (UC-NAV-04 trigger). TestID: `new-chat-fab`.
+  - `components/SessionsEmptyState/` — UC-NAV-06 five-state renderer: no-projects, no-workspaces, no-sessions, search-no-match, filters-no-match.
+- `ProjectPickerSheet/` — UC-NAV-08 surface (`@gorhom/bottom-sheet` + `BottomSheetFlatList` of `v2_projects` for the active organization). Project rows show workspace + session counts derived via `useLiveQuery` (cache-first per AGENTS.md TanStack DB rule). Renders only when the org has ≥2 projects.
+- `SessionFilterSheet/` — UC-NAV-08 surface (`@gorhom/bottom-sheet` with stacked Workspace + Status multi-select sections + Clear all/Apply footer). Multi-select rows expose `accessibilityState={{ selected }}` and the sheet announces applied count via screen-reader hint on close.
+- `NewChatSheet/` — UC-NAV-04 workspace-picker sheet, scoped to the selected project across all hosts; rows display `{branch} · {hostIcon} {hostName}`.
+- `providers/SelectedProjectProvider/` — local state + `expo-secure-store` persistence of `selectedProjectId` keyed by `userId + organizationId`. First-launch default = project with most-recent activity, fallback to alphabetical-first. **One-time migration** on first launch post-upgrade: drop legacy `selectedHostId` from secure-store and seed `selectedProjectId` via the default-selection logic. Fallback when stored `selectedProjectId` is no longer accessible: re-run default selection + emit a brief toast.
+- `hooks/useSelectedProject/` — read/write the selected project.
+- `hooks/useAccessibleProjects/` — query `v2_projects` for the active organization (Electric collection).
+- `hooks/useSessionsForProject/` — derived selector over `chat_sessions` + `v2_workspaces` Electric collections, scoped to the selected project + optional `activeFilters` + optional `searchQuery`. Cache-first per AGENTS.md TanStack DB rule.
+- `utils/handleDeepLink/` — UC-NAV-05 routing logic invoked by the Expo notification handler. Awaits `v2_workspaces` collection readiness with a bounded timeout; on cold-launch race, falls back to a tRPC `chat.getSnapshot({ sessionId })` fetch to resolve the workspace inline before aligning `selectedProjectId` and pushing the chat route.
+
+Plus, under the chat session route (`screens/(authenticated)/chat/[sessionId]/ChatScreen/hooks/`):
+- `useChatTunnel/` — manages the lazy relay-tunnel lifecycle for the chat session route. Opens an HTTP+tRPC tunnel against `workspace.hostId` on mount; drops on unmount; drops on background; re-opens on foreground while chat is mounted. **De-duplicates concurrent opens to the same `hostId` across remounts** (single in-flight per host) to avoid flapping on rapid route transitions. Surfaces `{ status: 'connecting' | 'open' | 'error', retry }` for skeleton loader + inline retry banner UI.
+
+**TestIDs for v2.0.0 new components** (referenced by Maestro E2E flows):
+- `project-picker-chip`
+- `project-picker-row-{projectId}`
+- `filter-button`
+- `filter-badge`
+- `applied-filter-tag-workspace-{workspaceId}`
+- `applied-filter-tag-status-{status}`
+- `applied-filter-clear-all`
+- `filter-sheet-workspace-row-{workspaceId}`
+- `filter-sheet-status-row-{status}`
+- `filter-sheet-apply`
+- `filter-sheet-clear`
+- `session-row-{sessionId}`
+- `new-chat-fab`
+- `tunnel-loading`
+- `tunnel-error-retry`
 
 ```
 components/chat/

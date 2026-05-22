@@ -43,19 +43,21 @@ All four data sources mobile needs for the chat surface are **already exposed** 
 
 | Endpoint (table) | Org-scoped via | Use Cases | Where in mobile |
 |---|---|---|---|
-| `chat_sessions` | `organization_id` | UC-SESS-01, UC-NAV-01/02, UC-PLATF-05 | New collection in `apps/mobile/lib/collections/collections.ts` |
-| `v2_workspaces` | `organization_id` | UC-NAV-02 (workspace headers), UC-NAV-04 (workspace picker) | New collection |
-| `v2_hosts` | `organization_id` | UC-NAV-03 (host picker — online state) | New collection |
-| `v2_users_hosts` | `organization_id` | UC-NAV-03 (which hosts this user can access) | New collection (or derived selector joining v2_users_hosts × v2_hosts × current userId) |
+| `chat_sessions` | `organization_id` | UC-SESS-01, UC-NAV-01, UC-NAV-07, UC-NAV-08, UC-PLATF-05 | New collection in `apps/mobile/lib/collections/collections.ts` |
+| `v2_projects` | `organization_id` | UC-NAV-01 (project chip), UC-NAV-08 (project picker), UC-NAV-04 (workspace picker title) | New collection |
+| `v2_workspaces` | `organization_id` | UC-NAV-04 (workspace picker), UC-NAV-08 (workspace filter rows), UC-NAV-05 (deep-link `projectId` resolution) | New collection |
 
-All four cases are present in `where.ts:49-133` (case statements for `v2_hosts`, `v2_users_hosts`, `v2_workspaces`, and `chat_sessions`). Mobile consumes via existing TanStack Electric DB Collection infrastructure (`@tanstack/electric-db-collection`, `electricCollectionOptions` — the same shape used today for tasks/projects/members in `apps/mobile/lib/collections/collections.ts`).
+All cases are present in `where.ts:49-133` (case statements for `v2_workspaces` and `chat_sessions`; `v2_projects` exposed through the existing `projects`-shaped path the mobile app already syncs). Mobile consumes via existing TanStack Electric DB Collection infrastructure (`@tanstack/electric-db-collection`, `electricCollectionOptions` — the same shape used today for tasks/projects/members in `apps/mobile/lib/collections/collections.ts`).
 
-**Client-side scoping for NAV:**
-- Sessions list (UC-NAV-01/02): filter `chat_sessions` by `selectedHostId` via a join through `v2_workspaces` (workspace row carries `host_id`), then group by `v2_workspace_id`, ordered by `lastActiveAt` desc.
-- Host picker (UC-NAV-03): list `v2_hosts` where `(organization_id, machine_id)` joins to `v2_users_hosts` for the current user, with `is_online` driving the badge.
-- Workspace picker (UC-NAV-04): list `v2_workspaces` where `host_id == selectedHostId`, sorted by max session `lastActiveAt` then name.
+**Client-side scoping for NAV (v2.0.0 project-first model):**
+- Sessions list (UC-NAV-01): filter `chat_sessions` by `selectedProjectId` via a join through `v2_workspaces` (workspace row carries `project_id` and `host_id`), then sort flat by `lastActiveAt` desc. No grouping, no sectioning. Host appears only as inline row metadata.
+- Search (UC-NAV-07): same selector + case-insensitive substring match against `chat_sessions.title`. AND-composed with the UC-NAV-08 filter predicate.
+- Filter (UC-NAV-08): same selector + workspace OR-set match (`activeFilters.workspaceIds` against `chat_sessions.v2_workspace_id`) + status OR-set match (`activeFilters.statuses` against derived `chat_sessions` status). Cross-axis AND.
+- Project picker (UC-NAV-08): list `v2_projects` for the active organization; workspace + session counts derived via `useLiveQuery` over `v2_workspaces` + `chat_sessions` (cache-first per AGENTS.md TanStack DB rule).
+- Workspace picker (UC-NAV-04): list `v2_workspaces` where `project_id == selectedProjectId`, across all hosts, sorted by max session `lastActiveAt` then name. Each row shows `{branch} · {hostIcon} {hostName}`.
+- Deep-link (UC-NAV-05): resolve `workspace.projectId` from the synced `v2_workspaces` row matched by `payload.workspaceId`; fall back to a tRPC `chat.getSnapshot({ sessionId })` fetch on cold-launch race when the workspace row is not yet synced.
 
-No new tRPC procedures or cloud-router additions are required for the NAV surface — it's a pure client-side selector over already-published Electric shapes.
+No new tRPC procedures or cloud-router additions are required for the NAV surface — it's a pure client-side selector over already-published Electric shapes. The `chat_sessions` shape remains org-scoped (no shape changes).
 
 ## 4. Relay push endpoints — token registration
 

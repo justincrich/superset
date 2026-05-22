@@ -1,7 +1,7 @@
 ---
 stability: FEATURE_SPEC
-last_validated: 2026-05-21
-prd_version: 1.0.0
+last_validated: 2026-05-22
+prd_version: 2.0.1
 functional_group: COMP
 ---
 
@@ -23,6 +23,60 @@ The chat input is a `@10play/tentap-editor` instance (WebView-hosted Tiptap) con
 
 The slash command popover (`@rn-primitives/popover`) renders both built-in commands (`/new`, `/clear`, `/stop`, `/model`, `/review`, `/plan`, `/test`, `/refactor`, etc.) and custom commands discovered by the host from project-level (`.claude/commands/`, `.agents/commands/`) and user-level (`~/.claude/commands/`) directories. The host-service `getSlashCommands` procedure already returns both categories; mobile's SlashCommandMenu popover must render them all, including descriptions and argument hints when present. See `packages/chat/src/server/desktop/slash-commands/registry.ts` for the discovery protocol.
 
+### Wireframes
+
+#### A. Composer — idle / empty
+
+```
+┌──────────────────────────────────────┐
+│  [message list]                      │
+│                                      │
+├──────────────────────────────────────┤
+│ [Sonnet 4.6] [⚡ low] [🔐 default]   │  ← toolbar: model · thinking · perm
+│ ┌────────────────────────────────┐   │
+│ │  Type a message…               │   │  ← Tiptap editor, placeholder
+│ │                                │   │
+│ └─────────────────────────── [▶] ┘   │  ← Send button (disabled, no text)
+└──────────────────────────────────────┘
+```
+
+Caption: Composer idle state. Toolbar shows current model, thinking level, and permission mode as tappable chips. Send is disabled with no content.
+
+#### B. Composer — typing + Send enabled
+
+```
+├──────────────────────────────────────┤
+│ [Sonnet 4.6] [⚡ low] [🔐 default]   │
+│ ┌────────────────────────────────┐   │
+│ │  Can you refactor the billing  │   │  ← user has typed content
+│ │  module to use tRPC?           │   │
+│ │                                │   │
+│ └─────────────────────────── [▶] ┘   │  ← Send active ← --color-primary
+└──────────────────────────────────────┘
+```
+
+Caption: Send button activates as soon as there is content. Editor autogrows with content up to a max height before introducing an internal scroll.
+
+#### C. Composer — slash command popover
+
+```
+├──────────────────────────────────────┤
+│ ┌──────────────────────────────────┐ │
+│ │ /model   Switch model            │ │  ← popover list ← @rn-primitives
+│ │ /plan    Create a plan           │ │
+│ │ /review  Review changes          │ │
+│ │ /stop    Stop current turn       │ │
+│ │ ── custom ──────────────────     │ │
+│ │ /deploy  Deploy to staging       │ │  ← custom command from .claude/
+│ └──────────────────────────────────┘ │
+│ ┌────────────────────────────────┐   │
+│ │  /                             │   │  ← cursor after slash
+│ └─────────────────────────── [▶] ┘   │
+└──────────────────────────────────────┘
+```
+
+Caption: Slash command popover surfaces built-in and custom commands with descriptions. Divider separates built-in from workspace-discovered custom commands (loaded via `chat.getSlashCommands`).
+
 **Acceptance Criteria:**
 - ☐ User can type multiline freeform text into the chat input on the chat view
 - ☐ User can see a placeholder string when the input is empty and the placeholder disappears when typing starts
@@ -41,6 +95,10 @@ The slash command popover (`@rn-primitives/popover`) renders both built-in comma
 
 User taps Send (on-screen button) or uses the iOS/Android keyboard "send" action; the typed content is appended to the local message reducer as a `user` message before the host responds, then the actual `chat.sendMessage` mutation is awaited. The input clears immediately on submit.
 
+### Wireframes
+
+The visible UI is the composer-with-content state in UC-COMP-01 §B; on tap, the typed content appears as a user message bubble in the message stream (see UC-RENDER-01 §A). Optimistic append is behavioral — the canonical server message replaces the optimistic one with no visible flicker; the only visible affordance for failure is an error toast that re-populates the input.
+
 **Acceptance Criteria:**
 - ☐ User can tap an on-screen Send button to submit the composed message
 - ☐ System appends the user message to the local message list immediately on submit (optimistic update)
@@ -55,6 +113,22 @@ User taps Send (on-screen button) or uses the iOS/Android keyboard "send" action
 
 While an assistant turn is streaming, the Send button is replaced by a Stop button. Tapping Stop invokes `chat.stop` on the host, which cancels the in-progress harness call. The partial response remains in the message list (consistent with desktop behavior).
 
+### Wireframes
+
+#### A. Composer — streaming / Stop button
+
+```
+├──────────────────────────────────────┤
+│ [Sonnet 4.6] [⚡ low] [🔐 default]   │
+│ ┌────────────────────────────────┐   │
+│ │  (input disabled while turn    │   │  ← greyed placeholder
+│ │   is streaming)                │   │
+│ └─────────────────────────── [■] ┘   │  ← Stop button replaces Send
+└──────────────────────────────────────┘
+```
+
+Caption: While the assistant turn streams, Send (▶) is replaced by Stop (■). Input is disabled. Mirrors desktop behavior.
+
 **Acceptance Criteria:**
 - ☐ User can see the Send button replaced by a Stop button while a turn is streaming
 - ☐ User can tap Stop during a streaming turn to interrupt the agent loop
@@ -68,6 +142,27 @@ While an assistant turn is streaming, the Send button is replaced by a Stop butt
 
 A model picker affordance in the composer toolbar opens an `@rn-primitives/popover` listing models returned by cloud `chat.getModels` (Opus 4.7, Opus 4.6, Sonnet 4.6, Haiku 4.5, GPT-5.5, GPT-5.4, GPT-5.3 Codex). The selected model is stored locally per session and passed as `metadata.model` on `chat.sendMessage`.
 
+### Wireframes
+
+#### A. Model picker popover
+
+```
+├──────────────────────────────────────┤
+│ ┌──────────────────────────────────┐ │
+│ │ ● Claude Opus 4.7         new   │ │  ← selected ← --color-primary dot
+│ │ ○ Claude Opus 4.6                │ │
+│ │ ○ Claude Sonnet 4.6              │ │
+│ │ ○ Claude Haiku 4.5               │ │
+│ │ ── OpenAI ──────────────────     │ │
+│ │ ○ GPT-5.5                        │ │
+│ │ ○ GPT-5.4                        │ │
+│ └──────────────────────────────────┘ │
+│ [Sonnet 4.6▼] [⚡ low] [🔐 default] │  ← affordance tapped to open
+└──────────────────────────────────────┘
+```
+
+Caption: Model picker popover showing all models from `chat.getModels`. Currently selected model has a filled dot. Section divider separates Anthropic from OpenAI models.
+
 **Acceptance Criteria:**
 - ☐ User can tap a model picker affordance in the composer toolbar to open a popover
 - ☐ User can see the list of models in the popover loaded from cloud `chat.getModels`
@@ -80,6 +175,25 @@ A model picker affordance in the composer toolbar opens an `@rn-primitives/popov
 ## UC-COMP-05: Set thinking level and permission mode
 
 The composer toolbar exposes a thinking-level affordance (`off | low | medium | high | xhigh`) and a permission-mode affordance (matching desktop's `PermissionModePicker`). Both open `@rn-primitives/popover` menus with the available values. Selections are passed on `chat.sendMessage` (`metadata.thinkingLevel`) and stored per session.
+
+### Wireframes
+
+#### A. Thinking-level popover
+
+```
+├──────────────────────────────────────┤
+│ ┌──────────────────────────────────┐ │
+│ │ ○ off      No extended thinking  │ │
+│ │ ● low      ~1K tokens            │ │  ← selected
+│ │ ○ medium   ~5K tokens            │ │
+│ │ ○ high     ~10K tokens           │ │
+│ │ ○ xhigh    ~20K tokens           │ │
+│ └──────────────────────────────────┘ │
+│ [Sonnet 4.6] [⚡ low▼] [🔐 default] │  ← ⚡ affordance tapped
+└──────────────────────────────────────┘
+```
+
+Caption: Thinking-level popover. Token-budget hints help users understand cost trade-offs. The permission-mode popover follows the identical layout with mode names substituted (`default`, `acceptEdits`, `plan`, `bypassPermissions`).
 
 **Acceptance Criteria:**
 - ☐ User can tap a thinking-level affordance in the composer to open a popover with the values `off`, `low`, `medium`, `high`, `xhigh`

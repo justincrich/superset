@@ -1,7 +1,7 @@
 ---
 stability: FEATURE_SPEC
-last_validated: 2026-05-21
-prd_version: 1.0.0
+last_validated: 2026-05-22
+prd_version: 2.0.1
 functional_group: PLATF
 ---
 
@@ -20,6 +20,57 @@ functional_group: PLATF
 ## UC-PLATF-01: Receive OS push notifications on lifecycle events
 
 The mobile app receives OS push notifications when an agent turn completes (`Stop`) or pauses for user input (`PermissionRequest` — covers tool approval, `ask_user`, and plan approval) while the app is backgrounded. Delivery is server-driven: host-service pushes a new outbound `push:lifecycle` message on its existing tunnel WS to `apps/relay`; relay looks up registered Expo push tokens for the org+user in Upstash KV and calls the Expo Push API. Mobile registers/de-registers push tokens against the relay using the same JWT bearer it uses for chat tRPC. Permission acquisition follows Expo best practices (custom pre-prompt before the OS dialog; never on first cold launch). Tap-to-open routing is specified separately by **`09-uc-nav.md` UC-NAV-05**, which silently aligns the selected host to the session's host and opens the pause container immediately when applicable. Wire-level architecture, diagrams, and failure handling live in `11-technical-requirements/07-notifications.md`.
+
+### Wireframes
+
+#### A. In-app pre-prompt screen
+
+```
+┌──────────────────────────────────────┐
+│  ← Back                              │
+├──────────────────────────────────────┤
+│                                      │
+│               🔔                     │
+│                                      │
+│   Stay in the loop                   │  ← headline
+│                                      │
+│   Get notified when Claude           │
+│   finishes a task or needs your      │
+│   input — even when the app is       │
+│   in the background.                 │
+│                                      │
+│   ┌──────────────────────────────┐   │
+│   │       Enable notifications   │   │  ← triggers
+│   └──────────────────────────────┘   │     requestPermissionsAsync()
+│                                      │
+│          Not now                     │  ← defers without OS dialog
+│                                      │
+└──────────────────────────────────────┘
+```
+
+Caption: Custom pre-prompt shown the first time a user enters a chat session. Never shown on cold launch. "Not now" defers without touching the OS permission API. Mirrors Expo best practices.
+
+#### B. Settings — permission denied banner
+
+```
+┌──────────────────────────────────────┐
+│  ← Settings                          │
+├──────────────────────────────────────┤
+│                                      │
+│ ┌──────────────────────────────────┐ │
+│ │ ⚠ Notifications are disabled    │ │  ← banner ← --color-warning bg
+│ │ You'll miss turn updates and     │ │
+│ │ pause prompts while backgrounded.│ │
+│ │                                  │ │
+│ │  Open Settings →                 │ │  ← Linking.openSettings()
+│ └──────────────────────────────────┘ │
+│                                      │
+│  [other settings rows]               │
+│                                      │
+└──────────────────────────────────────┘
+```
+
+Caption: Banner shown under `/(more)/settings` when `getPermissionsAsync()` returns `denied`. "Open Settings →" calls `Linking.openSettings()` to take the user to OS notification settings.
 
 **Acceptance Criteria:**
 
@@ -56,6 +107,10 @@ The mobile app receives OS push notifications when an agent turn completes (`Sto
 
 When the mobile app is suspended (OS background, screen lock) and resumed, the chat view catches up missed events using a cursor protocol (analogous to desktop's `stream-next-offset` + `stream-cursor` headers from `apps/api /api/chat/[sessionId]/stream`). On resume, the chat view re-queries `chat.getSnapshot` or `chat.listMessages` and reconciles any local optimistic state.
 
+### Wireframes
+
+Resume is largely invisible — the user sees a brief loading indicator already covered by UC-SESS-02 §A (the skeleton state). Behavior is reconciliation + dedupe, not a distinct visual surface, so no separate wireframe is provided.
+
 **Acceptance Criteria:**
 - ☐ System detects when the mobile app returns from background to foreground for an open chat session
 - ☐ System re-queries `chat.getSnapshot` over the relay when the chat view returns from background to catch up missed events
@@ -69,6 +124,48 @@ When the mobile app is suspended (OS background, screen lock) and resumed, the c
 ## UC-PLATF-03: Show host-offline UI state
 
 If the host-service becomes unreachable (network error, host shutdown, relay tunnel down), the chat view shows a clear banner indicating "Host offline" with retry affordance. The composer disables Send while the host is offline. The session list (Electric-backed) continues to render existing data without errors but flagging it as stale.
+
+### Wireframes
+
+#### A. Chat view — host offline banner + disabled Send
+
+```
+┌──────────────────────────────────────┐
+│  ← Sessions   Fix auth bug    ···    │
+├──────────────────────────────────────┤
+│ ┌──────────────────────────────────┐ │
+│ │ ⚠ Host offline · Retry         │ │  ← offline banner ← --color-warning
+│ └──────────────────────────────────┘ │     dismisses when host returns
+│                                      │
+│  [message history — still visible]   │
+│                                      │
+├──────────────────────────────────────┤
+│ [Sonnet 4.6] [⚡ low] [🔐 default]   │
+│ ┌────────────────────────────────┐   │
+│ │  Type a message…        [ ▶ ] │   │  ← Send visually disabled (greyed)
+│ └────────────────────────────────┘   │
+└──────────────────────────────────────┘
+```
+
+#### B. Dispatch-outcome variants
+
+```
+┌──────────────────────────────────────┐
+│ ┌──────────────────────────────────┐ │
+│ │ ⚠ Host plan required            │ │  ← skipped_unpaid variant
+│ │ Upgrade your host to resume.     │ │     ← --color-destructive
+│ └──────────────────────────────────┘ │
+└──────────────────────────────────────┘
+
+┌──────────────────────────────────────┐
+│ ┌──────────────────────────────────┐ │
+│ │ ⚠ Dispatch failed               │ │  ← dispatch_failed variant
+│ │ Couldn't reach Claude. Retry.    │ │     ← --color-destructive
+│ └──────────────────────────────────┘ │
+└──────────────────────────────────────┘
+```
+
+Caption: Top banner shows host-offline state with an inline Retry affordance. Send is disabled while offline. The second wireframe shows the `skipped_unpaid` / `dispatch_failed` / `skipped_offline` variants — copy tailored to each dispatch outcome enum, matching the values tracked in SUPER-771. The session list (Electric-backed) keeps rendering existing rows; only the chat view shows the banner.
 
 **Acceptance Criteria:**
 - ☐ User can see a "Host offline" banner at the top of the chat view when the host-service is unreachable
@@ -84,6 +181,10 @@ If the host-service becomes unreachable (network error, host shutdown, relay tun
 
 When the host-service is detected as available again (poll, push notification, manual retry, network change), the mobile app automatically clears the offline banner, re-enables Send, and re-fetches the session snapshot. No user action required.
 
+### Wireframes
+
+Reconnect is the reverse of UC-PLATF-03 §A — the banner dismisses, Send re-enables, and the chat view returns to its normal composition shown across UC-RENDER-01 / UC-COMP-01. No distinct wireframe is provided.
+
 **Acceptance Criteria:**
 - ☐ System detects host availability returning via periodic poll or push notification while the offline banner is shown
 - ☐ System clears the offline banner automatically on reconnect detection
@@ -96,6 +197,10 @@ When the host-service is detected as available again (poll, push notification, m
 ## UC-PLATF-05: Sync sessions created on other devices
 
 A session created from desktop, from a Slack agent (`dd1f51793` proactive workspace spawn pattern), or from another browser tab appears in the mobile session list in realtime via the ElectricSQL `chat_sessions` shape. This use case requires no new infrastructure — the shape is already published and filtered by org.
+
+### Wireframes
+
+Real-time row insertion happens against the sessions list shown in `09-uc-nav.md` §A (UC-NAV-01) — a new `chat_sessions` row from desktop / Slack / another browser tab appears at the top of the recency-sorted list within the Electric sync window. No distinct wireframe is provided; the visible surface is identical to UC-NAV-01 §A with a fresh row.
 
 **Acceptance Criteria:**
 - ☐ User can see a session created from desktop appear in the mobile session list within a short window of creation
