@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Views — Phase 5 Gallery</title>
+  <title>Chat Views — Route Topology Gallery</title>
   <link rel="stylesheet" href="../typography/fonts.css">
   <link rel="stylesheet" href="../tokens/tokens.css">
   <link rel="stylesheet" href="../typography/type-modules.css">
@@ -188,6 +188,15 @@
       margin-bottom: var(--space-1);
     }
 
+    .gallery-card__path {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: var(--font-size-meta);
+      color: var(--text-faint);
+      margin-bottom: var(--space-2);
+      word-break: break-all;
+    }
+
     .gallery-card__uc {
       display: block;
       font-family: var(--font-mono);
@@ -211,217 +220,329 @@
   <header class="gallery-header">
     <h1 class="type-h1">Chat Views</h1>
     <p class="type-body">
-      25 mobile chat-view mockups built from the PRD wireframes at
-      <code>plans/chat-mobile-plan/</code>.
-      Each view renders inside an iPhone 16 Pro Max frame, both dark + light theme panes stacked.
-      Click a view to open its full mockup.
+      37 mobile chat-view mockups organized by route topology. 5 routes + 1 shared-overlays bucket.
+      Built from the PRD wireframes at <code>plans/chat-mobile-plan/</code>.
+      Each view renders inside an iPhone 16 Pro Max frame, dark + light panes stacked.
+      See <code>ROUTES.md</code> for the canonical route-to-mock cross-reference.
     </p>
     <div class="gallery-header__meta">
       <span class="gallery-header__badge gallery-header__badge--accent">Phase 5</span>
-      <span class="gallery-header__badge">25 views</span>
-      <span class="gallery-header__badge">5 categories</span>
+      <span class="gallery-header__badge">37 views</span>
+      <span class="gallery-header__badge">5 routes</span>
       <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle color theme">
         Toggle theme
       </button>
     </div>
   </header>
 
-  <!-- ── Section 1: Chat-tree (UC-RENDER) ─────────────────── -->
+  <!-- ── § 01 — Sessions list route ───────────────────────── -->
   <section class="gallery-section">
-    <div class="gallery-section__tag">Category 1</div>
-    <h2 class="type-h2">Chat-tree — UC-RENDER</h2>
+    <div class="gallery-section__tag">Route 01 · Sprint 02 · planned</div>
+    <h2 class="type-h2">Sessions list — <code>/(authenticated)/(chat)</code></h2>
     <div class="gallery-grid">
 
-      <a class="gallery-card" href="chat-view-thread/chat-view-thread.html">
-        <span class="gallery-card__name">chat-view-thread</span>
+      <a class="gallery-card" href="01-sessions-list/states/loaded/loaded.html">
+        <span class="gallery-card__name">loaded</span>
+        <span class="gallery-card__path">01-sessions-list/states/loaded/</span>
+        <span class="gallery-card__uc">UC-NAV-01 §A</span>
+        <span class="gallery-card__desc">Canonical sessions list — project chip header, search bar, flat recency-sorted rows with branch + host metadata</span>
+      </a>
+
+      <a class="gallery-card" href="01-sessions-list/states/empty-no-projects/empty-no-projects.html">
+        <span class="gallery-card__name">empty-no-projects</span>
+        <span class="gallery-card__path">01-sessions-list/states/empty-no-projects/</span>
+        <span class="gallery-card__uc">UC-NAV-06.1</span>
+        <span class="gallery-card__desc">v2_projects collection returns zero rows — no projects configured for this org</span>
+      </a>
+
+      <a class="gallery-card" href="01-sessions-list/states/empty-no-workspaces/empty-no-workspaces.html">
+        <span class="gallery-card__name">empty-no-workspaces</span>
+        <span class="gallery-card__path">01-sessions-list/states/empty-no-workspaces/</span>
+        <span class="gallery-card__uc">UC-NAV-06.2</span>
+        <span class="gallery-card__desc">Project exists but v2_workspaces for selected project returns zero rows</span>
+      </a>
+
+      <a class="gallery-card" href="01-sessions-list/states/empty-no-sessions/empty-no-sessions.html">
+        <span class="gallery-card__name">empty-no-sessions</span>
+        <span class="gallery-card__path">01-sessions-list/states/empty-no-sessions/</span>
+        <span class="gallery-card__uc">UC-NAV-06.3</span>
+        <span class="gallery-card__desc">Workspace exists but chat_sessions returns zero rows — first chat prompt</span>
+      </a>
+
+      <a class="gallery-card" href="01-sessions-list/states/search-no-match/search-no-match.html">
+        <span class="gallery-card__name">search-no-match</span>
+        <span class="gallery-card__path">01-sessions-list/states/search-no-match/</span>
+        <span class="gallery-card__uc">UC-NAV-06.4 · UC-NAV-07</span>
+        <span class="gallery-card__desc">Search query active; zero title matches across all sessions in selected project</span>
+      </a>
+
+      <a class="gallery-card" href="01-sessions-list/states/filters-no-match/filters-no-match.html">
+        <span class="gallery-card__name">filters-no-match</span>
+        <span class="gallery-card__path">01-sessions-list/states/filters-no-match/</span>
+        <span class="gallery-card__uc">UC-NAV-06.5 · UC-NAV-08</span>
+        <span class="gallery-card__desc">Workspace or status filter active; zero sessions match the combined predicate</span>
+      </a>
+
+      <a class="gallery-card" href="01-sessions-list/states/_combined-empty/_combined-empty.html">
+        <span class="gallery-card__name">_combined-empty</span>
+        <span class="gallery-card__path">01-sessions-list/states/_combined-empty/</span>
+        <span class="gallery-card__uc">UC-NAV-06</span>
+        <span class="gallery-card__desc">Comparison sheet — all 5 empty-state variants side-by-side for design review</span>
+      </a>
+
+      <a class="gallery-card" href="01-sessions-list/overlays/project-picker-sheet/project-picker-sheet.html">
+        <span class="gallery-card__name">project-picker-sheet</span>
+        <span class="gallery-card__path">01-sessions-list/overlays/project-picker-sheet/</span>
+        <span class="gallery-card__uc">UC-NAV §B</span>
+        <span class="gallery-card__desc">Bottom sheet for switching active project; triggered by tapping the project chip (▾)</span>
+      </a>
+
+      <a class="gallery-card" href="01-sessions-list/overlays/filter-sheet/filter-sheet.html">
+        <span class="gallery-card__name">filter-sheet</span>
+        <span class="gallery-card__path">01-sessions-list/overlays/filter-sheet/</span>
+        <span class="gallery-card__uc">UC-NAV-08 §C</span>
+        <span class="gallery-card__desc">Filter bottom sheet — workspace multi-select + status multi-select; applied as removable chip tags</span>
+      </a>
+
+      <a class="gallery-card" href="01-sessions-list/overlays/new-chat-sheet/new-chat-sheet.html">
+        <span class="gallery-card__name">new-chat-sheet</span>
+        <span class="gallery-card__path">01-sessions-list/overlays/new-chat-sheet/</span>
+        <span class="gallery-card__uc">UC-NAV-04</span>
+        <span class="gallery-card__desc">Workspace picker bottom sheet triggered by FAB + — selects destination workspace for new chat</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── § 02 — Chat view route ────────────────────────────── -->
+  <section class="gallery-section">
+    <div class="gallery-section__tag">Route 02 · Sprint 03 · planned</div>
+    <h2 class="type-h2">Chat view — <code>/(authenticated)/(chat)/[sessionId]</code></h2>
+    <div class="gallery-grid">
+
+      <a class="gallery-card" href="02-chat-view/states/loading/loading.html">
+        <span class="gallery-card__name">loading</span>
+        <span class="gallery-card__path">02-chat-view/states/loading/</span>
+        <span class="gallery-card__uc">UC-SESS-02 §A</span>
+        <span class="gallery-card__desc">Skeleton loading state while chat.listMessages is in-flight or Electric not ready</span>
+      </a>
+
+      <a class="gallery-card" href="02-chat-view/states/error-retry/error-retry.html">
+        <span class="gallery-card__name">error-retry</span>
+        <span class="gallery-card__path">02-chat-view/states/error-retry/</span>
+        <span class="gallery-card__uc">UC-SESS-02 §B</span>
+        <span class="gallery-card__desc">Message fetch failure with inline retry affordance in the thread</span>
+      </a>
+
+      <a class="gallery-card" href="02-chat-view/states/streaming/streaming.html">
+        <span class="gallery-card__name">streaming</span>
+        <span class="gallery-card__path">02-chat-view/states/streaming/</span>
         <span class="gallery-card__uc">UC-RENDER-01 §A</span>
-        <span class="gallery-card__desc">Canonical hero: user message + assistant streaming response with live cursor</span>
+        <span class="gallery-card__desc">Canonical hero — user message + assistant streaming response with live cursor; composer stop visible</span>
       </a>
 
-      <a class="gallery-card" href="chat-view-markdown/chat-view-markdown.html">
-        <span class="gallery-card__name">chat-view-markdown</span>
+      <a class="gallery-card" href="02-chat-view/states/markdown/markdown.html">
+        <span class="gallery-card__name">markdown</span>
+        <span class="gallery-card__path">02-chat-view/states/markdown/</span>
         <span class="gallery-card__uc">UC-RENDER-03 §A</span>
-        <span class="gallery-card__desc">Code block + inline code rendering; syntax-highlighted assistant reply</span>
+        <span class="gallery-card__desc">Completed assistant turn with code blocks and inline code; syntax-highlighted reply</span>
       </a>
 
-      <a class="gallery-card" href="chat-view-tool-calls/chat-view-tool-calls.html">
-        <span class="gallery-card__name">chat-view-tool-calls</span>
+      <a class="gallery-card" href="02-chat-view/states/tool-calls/tool-calls.html">
+        <span class="gallery-card__name">tool-calls</span>
+        <span class="gallery-card__path">02-chat-view/states/tool-calls/</span>
         <span class="gallery-card__uc">UC-RENDER-04 §A</span>
-        <span class="gallery-card__desc">Tool call cards in all 3 status states: running, done, error</span>
+        <span class="gallery-card__desc">Three tool-call cards in running, done, and error states within the thread</span>
       </a>
 
-      <a class="gallery-card" href="chat-view-reasoning-plan/chat-view-reasoning-plan.html">
-        <span class="gallery-card__name">chat-view-reasoning-plan</span>
+      <a class="gallery-card" href="02-chat-view/states/reasoning-plan/reasoning-plan.html">
+        <span class="gallery-card__name">reasoning-plan</span>
+        <span class="gallery-card__path">02-chat-view/states/reasoning-plan/</span>
         <span class="gallery-card__uc">UC-RENDER-05 §A</span>
         <span class="gallery-card__desc">PlanBlock + ReasoningBlock collapsed and expanded in a single thread</span>
       </a>
 
-      <a class="gallery-card" href="chat-view-subagent/chat-view-subagent.html">
-        <span class="gallery-card__name">chat-view-subagent</span>
+      <a class="gallery-card" href="02-chat-view/states/subagent/subagent.html">
+        <span class="gallery-card__name">subagent</span>
+        <span class="gallery-card__path">02-chat-view/states/subagent/</span>
         <span class="gallery-card__uc">UC-RENDER-06 §A</span>
-        <span class="gallery-card__desc">Nested subagent execution with inner tool-call cards inside collapsed block</span>
+        <span class="gallery-card__desc">Nested subagent execution block with inner tool-call cards inside collapsed block</span>
       </a>
 
-      <a class="gallery-card" href="chat-view-scroll-back/chat-view-scroll-back.html">
-        <span class="gallery-card__name">chat-view-scroll-back</span>
+      <a class="gallery-card" href="02-chat-view/states/scroll-back-visible/scroll-back-visible.html">
+        <span class="gallery-card__name">scroll-back-visible</span>
+        <span class="gallery-card__path">02-chat-view/states/scroll-back-visible/</span>
         <span class="gallery-card__uc">UC-RENDER-07 §A</span>
-        <span class="gallery-card__desc">Scroll-back FAB floating above composer when user has scrolled up in history</span>
+        <span class="gallery-card__desc">Scroll-back FAB floating above the composer when user has scrolled up in history</span>
       </a>
 
-    </div>
-  </section>
-
-  <!-- ── Section 2: Composer (UC-COMP) ────────────────────── -->
-  <section class="gallery-section">
-    <div class="gallery-section__tag">Category 2</div>
-    <h2 class="type-h2">Composer — UC-COMP</h2>
-    <div class="gallery-grid">
-
-      <a class="gallery-card" href="composer-states/composer-states.html">
-        <span class="gallery-card__name">composer-states</span>
-        <span class="gallery-card__uc">UC-COMP-01 §A/B · UC-COMP-03 §A</span>
-        <span class="gallery-card__desc">Idle, Typing, and Streaming-stop states stacked in one view</span>
+      <a class="gallery-card" href="02-chat-view/states/host-offline/host-offline.html">
+        <span class="gallery-card__name">host-offline</span>
+        <span class="gallery-card__path">02-chat-view/states/host-offline/</span>
+        <span class="gallery-card__uc">UC-PLATF-03 §A</span>
+        <span class="gallery-card__desc">Host-offline banner in the chat thread; relay tunnel unreachable</span>
       </a>
 
-      <a class="gallery-card" href="composer-slash-menu/composer-slash-menu.html">
-        <span class="gallery-card__name">composer-slash-menu</span>
+      <a class="gallery-card" href="02-chat-view/states/plan-required/plan-required.html">
+        <span class="gallery-card__name">plan-required</span>
+        <span class="gallery-card__path">02-chat-view/states/plan-required/</span>
+        <span class="gallery-card__uc">UC-PAUSE-03 §A (entry)</span>
+        <span class="gallery-card__desc">Session plan gate — plan not yet approved; banner prompts user to review plan</span>
+      </a>
+
+      <a class="gallery-card" href="02-chat-view/states/dispatch-failed/dispatch-failed.html">
+        <span class="gallery-card__name">dispatch-failed</span>
+        <span class="gallery-card__path">02-chat-view/states/dispatch-failed/</span>
+        <span class="gallery-card__uc">UC-PLATF-03 §B</span>
+        <span class="gallery-card__desc">Dispatch-failed banner shown when displayState.status === "dispatch_failed"</span>
+      </a>
+
+      <a class="gallery-card" href="02-chat-view/states/pause-approval/pause-approval.html">
+        <span class="gallery-card__name">pause-approval</span>
+        <span class="gallery-card__path">02-chat-view/states/pause-approval/</span>
+        <span class="gallery-card__uc">UC-PAUSE-01 §A</span>
+        <span class="gallery-card__desc">Inline pending-approval card in thread + sticky Approve / Decline / Always footer</span>
+      </a>
+
+      <a class="gallery-card" href="02-chat-view/states/pause-pending-pill/pause-pending-pill.html">
+        <span class="gallery-card__name">pause-pending-pill</span>
+        <span class="gallery-card__path">02-chat-view/states/pause-pending-pill/</span>
+        <span class="gallery-card__uc">UC-PAUSE-04 §A</span>
+        <span class="gallery-card__desc">Floating pending-action pill above the composer when the approval card is scrolled off-screen</span>
+      </a>
+
+      <a class="gallery-card" href="02-chat-view/states/_platform-errors-combined/_platform-errors-combined.html">
+        <span class="gallery-card__name">_platform-errors-combined</span>
+        <span class="gallery-card__path">02-chat-view/states/_platform-errors-combined/</span>
+        <span class="gallery-card__uc">UC-PLATF-03</span>
+        <span class="gallery-card__desc">Comparison sheet — host-offline, dispatch-failed, and plan-required banners side-by-side</span>
+      </a>
+
+      <a class="gallery-card" href="02-chat-view/composer-states/idle/idle.html">
+        <span class="gallery-card__name">composer: idle</span>
+        <span class="gallery-card__path">02-chat-view/composer-states/idle/</span>
+        <span class="gallery-card__uc">UC-COMP-01 §A</span>
+        <span class="gallery-card__desc">Composer mounted, no input, not streaming — model + thinking + permission pills visible</span>
+      </a>
+
+      <a class="gallery-card" href="02-chat-view/composer-states/typing-send-enabled/typing-send-enabled.html">
+        <span class="gallery-card__name">composer: typing-send-enabled</span>
+        <span class="gallery-card__path">02-chat-view/composer-states/typing-send-enabled/</span>
+        <span class="gallery-card__uc">UC-COMP-01 §B</span>
+        <span class="gallery-card__desc">User has typed at least one character — send button becomes active</span>
+      </a>
+
+      <a class="gallery-card" href="02-chat-view/composer-states/streaming-stop/streaming-stop.html">
+        <span class="gallery-card__name">composer: streaming-stop</span>
+        <span class="gallery-card__path">02-chat-view/composer-states/streaming-stop/</span>
+        <span class="gallery-card__uc">UC-COMP-03 §A</span>
+        <span class="gallery-card__desc">Streaming in progress — textarea disabled, stop icon-button replaces send</span>
+      </a>
+
+      <a class="gallery-card" href="02-chat-view/composer-states/_combined/_combined.html">
+        <span class="gallery-card__name">composer: _combined</span>
+        <span class="gallery-card__path">02-chat-view/composer-states/_combined/</span>
+        <span class="gallery-card__uc">UC-COMP-01 · UC-COMP-03</span>
+        <span class="gallery-card__desc">Comparison sheet — idle, typing, and streaming-stop composer states stacked</span>
+      </a>
+
+      <a class="gallery-card" href="02-chat-view/overlays/slash-command-popover/slash-command-popover.html">
+        <span class="gallery-card__name">slash-command-popover</span>
+        <span class="gallery-card__path">02-chat-view/overlays/slash-command-popover/</span>
         <span class="gallery-card__uc">UC-COMP-01 §C</span>
-        <span class="gallery-card__desc">Slash command popover appearing above the composer input field</span>
+        <span class="gallery-card__desc">Slash command popover appearing above the composer when input begins with /</span>
       </a>
 
-      <a class="gallery-card" href="composer-model-picker/composer-model-picker.html">
-        <span class="gallery-card__name">composer-model-picker</span>
+      <a class="gallery-card" href="02-chat-view/overlays/model-picker-popover/model-picker-popover.html">
+        <span class="gallery-card__name">model-picker-popover</span>
+        <span class="gallery-card__path">02-chat-view/overlays/model-picker-popover/</span>
         <span class="gallery-card__uc">UC-COMP-04 §A</span>
-        <span class="gallery-card__desc">Model picker popover with Anthropic and OpenAI section dividers</span>
+        <span class="gallery-card__desc">Model picker popover with Anthropic and OpenAI section dividers; triggered from toolbar pill</span>
       </a>
 
-      <a class="gallery-card" href="composer-thinking-picker/composer-thinking-picker.html">
-        <span class="gallery-card__name">composer-thinking-picker</span>
+      <a class="gallery-card" href="02-chat-view/overlays/thinking-level-popover/thinking-level-popover.html">
+        <span class="gallery-card__name">thinking-level-popover</span>
+        <span class="gallery-card__path">02-chat-view/overlays/thinking-level-popover/</span>
         <span class="gallery-card__uc">UC-COMP-05 §A</span>
         <span class="gallery-card__desc">Thinking-level selector popover with token-budget hints per level</span>
       </a>
 
-    </div>
-  </section>
-
-  <!-- ── Section 3: Pause (UC-PAUSE) ──────────────────────── -->
-  <section class="gallery-section">
-    <div class="gallery-section__tag">Category 3</div>
-    <h2 class="type-h2">Pause — UC-PAUSE</h2>
-    <div class="gallery-grid">
-
-      <a class="gallery-card" href="pause-approval-inline-footer/pause-approval-inline-footer.html">
-        <span class="gallery-card__name">pause-approval-inline-footer</span>
-        <span class="gallery-card__uc">UC-PAUSE-01 §A</span>
-        <span class="gallery-card__desc">Inline pending-approval card in chat + sticky Approve / Decline / Always footer</span>
-      </a>
-
-      <a class="gallery-card" href="pause-ask-user-sheet/pause-ask-user-sheet.html">
-        <span class="gallery-card__name">pause-ask-user-sheet</span>
+      <a class="gallery-card" href="02-chat-view/overlays/ask-user-sheet/ask-user-sheet.html">
+        <span class="gallery-card__name">ask-user-sheet</span>
+        <span class="gallery-card__path">02-chat-view/overlays/ask-user-sheet/</span>
         <span class="gallery-card__uc">UC-PAUSE-02 §A</span>
-        <span class="gallery-card__desc">Ask_user bottom sheet with question, suggested-answer pills, and text input</span>
+        <span class="gallery-card__desc">Ask_user bottom sheet with question prompt, suggested-answer pills, and free-text input</span>
       </a>
 
-      <a class="gallery-card" href="pause-plan-review-modal/pause-plan-review-modal.html">
-        <span class="gallery-card__name">pause-plan-review-modal</span>
+    </div>
+  </section>
+
+  <!-- ── § 03 — Plan review modal route ────────────────────── -->
+  <section class="gallery-section">
+    <div class="gallery-section__tag">Route 03 · Sprint 05 · planned</div>
+    <h2 class="type-h2">Plan review modal — <code>/(authenticated)/(chat)/[sessionId]/plan-review/[planId]</code></h2>
+    <div class="gallery-grid">
+
+      <a class="gallery-card" href="03-plan-review-modal/plan-review-modal/plan-review-modal.html">
+        <span class="gallery-card__name">plan-review-modal</span>
+        <span class="gallery-card__path">03-plan-review-modal/plan-review-modal/</span>
         <span class="gallery-card__uc">UC-PAUSE-03 §A</span>
-        <span class="gallery-card__desc">Plan review modal: scrollable markdown plan + feedback block + docked Approve / Reject</span>
-      </a>
-
-      <a class="gallery-card" href="pause-pending-action-pill/pause-pending-action-pill.html">
-        <span class="gallery-card__name">pause-pending-action-pill</span>
-        <span class="gallery-card__uc">UC-PAUSE-04 §A</span>
-        <span class="gallery-card__desc">Floating pending-action pill above composer when pause card is off-screen</span>
+        <span class="gallery-card__desc">Full-screen stack modal — scrollable markdown plan + collapsible feedback block + docked Approve / Reject footer</span>
       </a>
 
     </div>
   </section>
 
-  <!-- ── Section 4: Error / Dialog / Platform (UC-SESS, UC-PLATF) -->
+  <!-- ── § 04 — Push pre-prompt route ──────────────────────── -->
   <section class="gallery-section">
-    <div class="gallery-section__tag">Category 4</div>
-    <h2 class="type-h2">Error / Dialog / Platform — UC-SESS · UC-PLATF</h2>
+    <div class="gallery-section__tag">Route 04 · Sprint 06 · planned</div>
+    <h2 class="type-h2">Push pre-prompt — <code>/(authenticated)/push-permission</code></h2>
     <div class="gallery-grid">
 
-      <a class="gallery-card" href="chat-view-loading/chat-view-loading.html">
-        <span class="gallery-card__name">chat-view-loading</span>
-        <span class="gallery-card__uc">UC-SESS-02 §A</span>
-        <span class="gallery-card__desc">Loading history skeleton shown while session messages are being fetched</span>
-      </a>
-
-      <a class="gallery-card" href="chat-view-error-retry/chat-view-error-retry.html">
-        <span class="gallery-card__name">chat-view-error-retry</span>
-        <span class="gallery-card__uc">UC-SESS-02 §B</span>
-        <span class="gallery-card__desc">Error state in chat with inline retry action for failed message delivery</span>
-      </a>
-
-      <a class="gallery-card" href="session-overflow-menu/session-overflow-menu.html">
-        <span class="gallery-card__name">session-overflow-menu</span>
-        <span class="gallery-card__uc">UC-SESS-04 §A</span>
-        <span class="gallery-card__desc">Action sheet with session-level options: rename, share, archive, delete</span>
-      </a>
-
-      <a class="gallery-card" href="delete-session-dialog/delete-session-dialog.html">
-        <span class="gallery-card__name">delete-session-dialog</span>
-        <span class="gallery-card__uc">UC-SESS-05 §A</span>
-        <span class="gallery-card__desc">Destructive delete-session confirmation dialog with cancel and confirm actions</span>
-      </a>
-
-      <a class="gallery-card" href="chat-view-host-offline-and-dispatch/chat-view-host-offline-and-dispatch.html">
-        <span class="gallery-card__name">chat-view-host-offline-and-dispatch</span>
-        <span class="gallery-card__uc">UC-PLATF-03 §A/B</span>
-        <span class="gallery-card__desc">Host-offline banner and dispatch-failed banner shown in the chat thread</span>
-      </a>
-
-      <a class="gallery-card" href="push-pre-prompt-screen/push-pre-prompt-screen.html">
-        <span class="gallery-card__name">push-pre-prompt-screen</span>
+      <a class="gallery-card" href="04-push-pre-prompt/push-pre-prompt/push-pre-prompt.html">
+        <span class="gallery-card__name">push-pre-prompt</span>
+        <span class="gallery-card__path">04-push-pre-prompt/push-pre-prompt/</span>
         <span class="gallery-card__uc">UC-PLATF-01 §A</span>
-        <span class="gallery-card__desc">Push notification permission pre-prompt screen before OS dialog is shown</span>
-      </a>
-
-      <a class="gallery-card" href="settings-permission-denied-banner/settings-permission-denied-banner.html">
-        <span class="gallery-card__name">settings-permission-denied-banner</span>
-        <span class="gallery-card__uc">UC-PLATF-01 §B</span>
-        <span class="gallery-card__desc">Settings-page banner shown when push permission was denied; links to OS settings</span>
+        <span class="gallery-card__desc">One-time interstitial before the OS push-permission dialog — explains value, Enable / Not now CTAs</span>
       </a>
 
     </div>
   </section>
 
-  <!-- ── Section 5: Nav (UC-NAV) ───────────────────────────── -->
+  <!-- ── § 05 — Settings screen route ──────────────────────── -->
   <section class="gallery-section">
-    <div class="gallery-section__tag">Category 5</div>
-    <h2 class="type-h2">Nav — UC-NAV</h2>
+    <div class="gallery-section__tag">Route 05 · exists · active</div>
+    <h2 class="type-h2">Settings — <code>/(authenticated)/(more)/settings</code></h2>
     <div class="gallery-grid">
 
-      <a class="gallery-card" href="sessions-list-loaded/sessions-list-loaded.html">
-        <span class="gallery-card__name">sessions-list-loaded</span>
-        <span class="gallery-card__uc">UC-NAV §A</span>
-        <span class="gallery-card__desc">Canonical sessions list: search bar, workspace sections, session rows with meta</span>
+      <a class="gallery-card" href="05-settings-screen/states/permission-denied-banner/permission-denied-banner.html">
+        <span class="gallery-card__name">permission-denied-banner</span>
+        <span class="gallery-card__path">05-settings-screen/states/permission-denied-banner/</span>
+        <span class="gallery-card__uc">UC-PLATF-01 §B</span>
+        <span class="gallery-card__desc">Settings screen banner when push permission was denied at OS level — deep-links to OS Settings</span>
       </a>
 
-      <a class="gallery-card" href="project-picker-sheet/project-picker-sheet.html">
-        <span class="gallery-card__name">project-picker-sheet</span>
-        <span class="gallery-card__uc">UC-NAV §B</span>
-        <span class="gallery-card__desc">Bottom sheet for picking a project when starting or moving a chat session</span>
+    </div>
+  </section>
+
+  <!-- ── § Shared overlays ─────────────────────────────────── -->
+  <section class="gallery-section">
+    <div class="gallery-section__tag">Shared overlays · UC-SESS-04 · UC-SESS-05</div>
+    <h2 class="type-h2">Shared overlays — reachable from ≥2 routes</h2>
+    <div class="gallery-grid">
+
+      <a class="gallery-card" href="shared-overlays/session-overflow-sheet/session-overflow-sheet.html">
+        <span class="gallery-card__name">session-overflow-sheet</span>
+        <span class="gallery-card__path">shared-overlays/session-overflow-sheet/</span>
+        <span class="gallery-card__uc">UC-SESS-04 §A</span>
+        <span class="gallery-card__desc">Session action sheet — Rename, Share, End session, Delete; triggered from chat-view header or sessions-list long-press</span>
       </a>
 
-      <a class="gallery-card" href="filter-sheet/filter-sheet.html">
-        <span class="gallery-card__name">filter-sheet</span>
-        <span class="gallery-card__uc">UC-NAV-08 §C</span>
-        <span class="gallery-card__desc">Filter sheet for narrowing sessions by workspace, model, date, and status</span>
-      </a>
-
-      <a class="gallery-card" href="new-chat-workspace-picker/new-chat-workspace-picker.html">
-        <span class="gallery-card__name">new-chat-workspace-picker</span>
-        <span class="gallery-card__uc">UC-NAV §D</span>
-        <span class="gallery-card__desc">Workspace picker shown when creating a new chat: selects destination workspace</span>
-      </a>
-
-      <a class="gallery-card" href="sessions-list-empty-states/sessions-list-empty-states.html">
-        <span class="gallery-card__name">sessions-list-empty-states</span>
-        <span class="gallery-card__uc">UC-NAV-06.1–06.5</span>
-        <span class="gallery-card__desc">All 5 empty-state variants for the sessions list (no projects · no workspaces · no sessions · search no-match · filters no-match)</span>
+      <a class="gallery-card" href="shared-overlays/delete-confirmation-dialog/delete-confirmation-dialog.html">
+        <span class="gallery-card__name">delete-confirmation-dialog</span>
+        <span class="gallery-card__path">shared-overlays/delete-confirmation-dialog/</span>
+        <span class="gallery-card__uc">UC-SESS-05 §A</span>
+        <span class="gallery-card__desc">Centered iOS-style confirmation dialog for permanent session deletion; Cancel + Delete actions</span>
       </a>
 
     </div>
