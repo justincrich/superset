@@ -16,8 +16,8 @@ Single-purpose, indivisible primitives used by chat + adjacent surfaces. Each at
 | 10 | `backdrop` | full-screen dimmer; opaque / translucent / blur variants | completed |
 | 11 | `tooltip` | positioned bubble with arrow; top / bottom / left / right | completed |
 | 12 | `spinner` | circular spinner + ASCII spinner (matches `AsciiSpinner.tsx`) | completed |
-| 13 | `progress-dots` | 3-dot loading indicator | pending |
-| 14 | `toast-base` | single toast layout; success / error / info / loading | pending |
+| 13 | `progress-dots` | 3-dot loading indicator | completed |
+| 14 | `toast-base` | single toast layout; success / error / info / loading | completed |
 | 15 | `avatar` | single-letter / icon / image; circle, sizes sm/md/lg | completed |
 | 16 | `icon-glyph` | lucide stroke icons sized 14/16/20/24 via tokens | completed |
 | 17 | `live-activity-dot` | Dynamic Island pulsing dot — live / paused / dormant | completed |

@@ -53,10 +53,28 @@
   },
   "phases": {
     "tokens": "completed",
-    "atoms": "pending",
+    "atoms": "completed",
     "molecules": "pending",
     "organisms": "pending",
     "views": "pending"
+  },
+  "phase2_summary": {
+    "atoms_delivered": 25,
+    "token_gap_additions": [
+      "--motion-cadence-pulse-fast | -medium | -slow (loop animation periods, distinct from transition durations)",
+      "--line-height-none: 1 (exact line-height for inline-centered glyphs)"
+    ],
+    "audit_status": "clean with documented exceptions",
+    "documented_exceptions": [
+      "Hardware-black (#000) for Dynamic Island, backdrop, sheet handle — OLED-off cutout, not a theme surface",
+      "Status bar padding 18px 32px (iOS HIG safe-area inset, per Apple device spec) in device-bezel",
+      "Sub-scale heights (28/36/56/64px) for size classes — structural geometry, not p/m/g spacing",
+      "SVG stroke-width literals (1/1.5/1.75/2px) — structural, not CSS spacing"
+    ],
+    "low_priority_polish": [
+      "scroll-fade.html L328: font-size: 24px on FAB stand-in — should use --font-size-section-title or icon-glyph atom",
+      "toast-base.html L458: background: var(--_neutral-0, #050505) — composition purity violation (uses private primitive + hex fallback); should use --surface-page or document the hardware-island exception"
+    ]
   },
   "phase1_summary": {
     "files_written": [
