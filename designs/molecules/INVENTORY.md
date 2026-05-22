@@ -21,7 +21,7 @@ Atomic-composition primitives — each molecule combines 2+ atoms with layout/gl
 | 8 | `user-message-bubble` | avatar, body text (markdown), section-label (timestamp), hit-target-wrapper (long-press) | completed |
 | 9 | `assistant-message-head` | avatar (A accent), section-label (timestamp + meta), status-dot (live/warning/success) | completed |
 | 10 | `tool-call-card` | tool-status-rule (5 status variants), icon-glyph, pill (model name), badge (status), divider, body (args preview) | pending |
-| 11 | `collapsed-block` | icon-glyph (chevron), section-label (label), body (collapsed preview). Variants: plan / reasoning / subagent-execution | pending |
+| 11 | `collapsed-block` | icon-glyph (chevron), section-label (label), body (collapsed preview). Variants: plan / reasoning / subagent-execution | completed |
 | 12 | `scroll-back-button` | fab-base (overlay variant) + icon-glyph (chevron-down) | pending |
 
 ## Composer tier

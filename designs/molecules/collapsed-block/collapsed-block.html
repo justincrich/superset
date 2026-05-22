@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-collapsed-block — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-collapsed-block — molecule-local layout + glue only
+       NEVER redefines .atom-* rules — composes by class only.
+       Zero hex literals. Zero raw color values.
+       Structural exceptions:
+         SVG stroke-width values are TOKEN-AUDIT structural exceptions.
+         1px border on block/preview follows the atom-divider hairline
+         pattern (structural — documented in atom-divider spec).
+       ================================================================ */
+
+    /* ---- Block container ----------------------------------------- */
+    .mol-collapsed-block {
+      background:    var(--surface-raised);
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      overflow:      hidden;
+    }
+
+    /* ---- Summary row --------------------------------------------- */
+    .mol-collapsed-block__summary {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+      padding:     var(--space-3) var(--space-4);
+      cursor:      pointer;
+      list-style:  none; /* suppress UA list bullet on some browsers */
+      min-height:  var(--touch-target-min);
+      user-select: none;
+      transition:  background-color var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* Suppress WebKit's default disclosure triangle */
+    .mol-collapsed-block__summary::-webkit-details-marker {
+      display: none;
+    }
+    /* Firefox / standard */
+    .mol-collapsed-block__summary::marker {
+      display: none;
+    }
+
+    /* ---- Hover state --------------------------------------------- */
+    .mol-collapsed-block__summary:hover,
+    .mol-collapsed-block__summary.is-hover {
+      background: var(--surface-soft);
+    }
+
+    /* ---- Focus state --------------------------------------------- */
+    .mol-collapsed-block__summary:focus-visible,
+    .mol-collapsed-block__summary.is-focus {
+      outline:        2px solid var(--border-focus);
+      outline-offset: -2px;
+    }
+
+    /* ---- Leading icon: no extra layout — atom handles sizing ----- */
+    .mol-collapsed-block__icon {
+      flex-shrink: 0;
+    }
+
+    /* ---- Label: no extra rules — atom-section-label--strong handles */
+    .mol-collapsed-block__label {
+      flex-shrink: 0;
+    }
+
+    /* ---- Meta: slight left push from label ----------------------- */
+    .mol-collapsed-block__meta {
+      margin-left: var(--space-2);
+      /* atom-section-label (default/muted) provides color: var(--text-muted) */
+    }
+
+    /* ---- Chevron: auto left margin pushes it to the right edge --- */
+    .mol-collapsed-block__chevron {
+      margin-left: auto;
+      flex-shrink: 0;
+      transition:  transform var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Open state: chevron flips 180° -------------------------- */
+    .mol-collapsed-block[open] .mol-collapsed-block__chevron {
+      transform: rotate(180deg);
+    }
+
+    /* ---- Preview body -------------------------------------------- */
+    .mol-collapsed-block__preview {
+      padding:     var(--space-3) var(--space-4) var(--space-4);
+      color:       var(--text-muted);
+      /* hairline rule between summary and preview — follows atom-divider
+         hairline pattern: 1px border-top using var(--border-subtle) */
+      border-top:  1px solid var(--border-subtle);
+    }
+
+    /* Remove default <p> margin inside preview */
+    .mol-collapsed-block__preview p {
+      margin: 0;
+    }
+
+    /* ---- Variant: subagent — neutral left rule + indent ----------- */
+    /* Mirrors atom-tool-status-rule--vertical neutral pattern as border */
+    .mol-collapsed-block--subagent {
+      border-left: var(--domain-tool-rule-width) solid var(--text-muted);
+      margin-left: var(--space-6);
+    }
+
+    /* ---- Reduced motion ------------------------------------------ */
+    @media (prefers-reduced-motion: reduce) {
+      .mol-collapsed-block__summary {
+        transition: none;
+      }
+      .mol-collapsed-block__chevron {
+        transition: none;
+      }
+    }
+
+
+    /* ================================================================
+       Preview scaffold (NOT part of molecule spec)
+       ================================================================ */
+
+    .section-head {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-4);
+    }
+
+    .section-sub {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-3);
+    }
+
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0;
+    }
+
+    /* Variant matrix: stacked column with comfortable gap */
+    .variant-stack {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-4);
+      max-width:      480px;
+    }
+
+    /* State row: horizontal flex of fixed-width blocks */
+    .state-row {
+      display:   flex;
+      gap:       var(--space-4);
+      flex-wrap: wrap;
+      max-width: 720px;
+    }
+    .state-row .state-cell {
+      flex:       1;
+      min-width:  200px;
+      max-width:  240px;
+    }
+    .state-row .state-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin-bottom:  var(--space-2);
+    }
+
+    /* Composition: faux chat thread */
+    .faux-thread {
+      max-width:      480px;
+      display:        flex;
+      flex-direction: column;
+      gap:            0;
+      background:     var(--surface-page);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      overflow:       hidden;
+    }
+
+    .faux-head {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+      padding:     var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .faux-body-text {
+      padding: var(--space-3) var(--space-4);
+      color:   var(--text-body);
+    }
+
+    .faux-body-text p {
+      margin: 0;
+    }
+
+    .faux-blocks {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+      padding:        0 var(--space-4) var(--space-4);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">collapsed-block</h1>
+    <p class="crumb">molecule · collapsible plan / reasoning / subagent block</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ============================================================
+         DARK PANE
+         ============================================================ -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- 1. VARIANT MATRIX ---------------------------------------- -->
+      <div class="variant">
+        <h3 class="section-head">1 · variant matrix</h3>
+
+        <div class="variant-stack">
+
+          <!-- ---- Plan variant ------------------------------------ -->
+          <div>
+            <p class="section-sub">--plan (default)</p>
+            <details class="mol-collapsed-block mol-collapsed-block--plan"
+                     aria-label="Agent plan, 12 steps">
+              <summary class="mol-collapsed-block__summary">
+                <!-- sparkles icon: accent color, sm size -->
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--accent mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                  <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                  <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">PLAN</span>
+                <span class="atom-section-label mol-collapsed-block__meta">12 steps · 1m est</span>
+                <!-- chevron-down: xs, muted -->
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  1. Locate the reconnect backoff constant in <code>apps/relay/src/tunnel-client.ts</code><br>
+                  2. Replace 250ms with exponential backoff starting at 1s, cap at 30s, ±20% jitter<br>
+                  3. Preserve inner try/catch and log err.code + err.message on reconnect failure<br>
+                  4. Add unit tests for the backoff schedule and jitter bounds using vitest
+                </p>
+              </div>
+            </details>
+          </div>
+
+          <!-- ---- Reasoning variant ------------------------------- -->
+          <div>
+            <p class="section-sub">--reasoning</p>
+            <details class="mol-collapsed-block mol-collapsed-block--reasoning"
+                     aria-label="Agent reasoning trace, 3.4 seconds">
+              <summary class="mol-collapsed-block__summary">
+                <!-- brain icon: muted color, sm size -->
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+                  <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+                  <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+                  <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
+                  <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+                  <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+                  <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
+                  <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+                  <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">REASONING</span>
+                <span class="atom-section-label mol-collapsed-block__meta">3.4s · 245 tokens</span>
+                <!-- chevron-down: xs, muted -->
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  The user wants to move chat_messages from a jsonb column to a proper relational table. The safest approach is an append-only events table with a composite PK.<br>
+                  Key concern: backfill consistency during dual-write window — need to handle seq gaps if the background job is interrupted.<br>
+                  Read path can stay on jsonb until the flag is flipped; write path dual-writes immediately. One release of soak before the flag flip.<br>
+                  Drop migration should be a separate PR, not part of this migration, to allow rollback window.
+                </p>
+              </div>
+            </details>
+          </div>
+
+          <!-- ---- Subagent variant -------------------------------- -->
+          <div>
+            <p class="section-sub">--subagent (left rule + indent)</p>
+            <details class="mol-collapsed-block mol-collapsed-block--subagent"
+                     aria-label="Subagent execution: claude-haiku, 0.8 seconds">
+              <summary class="mol-collapsed-block__summary">
+                <!-- bot icon: muted color, sm size -->
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="10" rx="2"/>
+                  <circle cx="12" cy="5" r="2"/>
+                  <path d="M12 7v4"/>
+                  <line x1="8" y1="16" x2="8" y2="16"/>
+                  <line x1="16" y1="16" x2="16" y2="16"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">SUBAGENT</span>
+                <span class="atom-section-label mol-collapsed-block__meta">claude-haiku · 0.8s</span>
+                <!-- chevron-down: xs, muted -->
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  Scanned 9 files across apps/web, apps/desktop, and apps/mobile for references to chat_sessions.<br>
+                  Found 14 read sites: 6 in query hooks, 5 in tRPC routers, 3 in Electric live queries.<br>
+                  No write sites outside of packages/db — schema layer is clean. All consumers use typed Drizzle selects.<br>
+                  Returning: file list with line refs for each read site.
+                </p>
+              </div>
+            </details>
+          </div>
+
+        </div><!-- /variant-stack -->
+      </div><!-- /variant matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- 2. STATE ROW --------------------------------------------- -->
+      <div class="variant">
+        <h3 class="section-head">2 · state row — plan variant</h3>
+
+        <div class="state-row">
+
+          <!-- default: collapsed -->
+          <div class="state-cell">
+            <p class="state-label">default (collapsed)</p>
+            <details class="mol-collapsed-block mol-collapsed-block--plan"
+                     aria-label="Agent plan, 12 steps">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--accent mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                  <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                  <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">PLAN</span>
+                <span class="atom-section-label mol-collapsed-block__meta">12 steps</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">Plan preview content…</p>
+              </div>
+            </details>
+          </div>
+
+          <!-- is-open: open attribute applied -->
+          <div class="state-cell">
+            <p class="state-label">is-open (expanded)</p>
+            <details class="mol-collapsed-block mol-collapsed-block--plan"
+                     open
+                     aria-label="Agent plan, 12 steps">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--accent mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                  <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                  <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">PLAN</span>
+                <span class="atom-section-label mol-collapsed-block__meta">12 steps</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">1. Locate backoff constant<br>2. Replace 250ms with exponential backoff<br>3. Preserve try/catch</p>
+              </div>
+            </details>
+          </div>
+
+          <!-- is-hover: simulated via class -->
+          <div class="state-cell">
+            <p class="state-label">is-hover</p>
+            <details class="mol-collapsed-block mol-collapsed-block--plan"
+                     aria-label="Agent plan, 12 steps">
+              <summary class="mol-collapsed-block__summary is-hover">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--accent mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                  <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                  <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">PLAN</span>
+                <span class="atom-section-label mol-collapsed-block__meta">12 steps</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">Plan preview content…</p>
+              </div>
+            </details>
+          </div>
+
+        </div><!-- /state-row -->
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- 3. COMPOSITION — faux chat sequence ---------------------- -->
+      <div class="variant">
+        <h3 class="section-head">3 · composition — faux chat sequence</h3>
+        <p class="section-sub">assistant-message-head + body + plan → reasoning → subagent cluster</p>
+
+        <div class="faux-thread">
+
+          <!-- Head row (assistant-message-head molecule pattern) -->
+          <div class="faux-head">
+            <!-- avatar -->
+            <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+            <!-- label -->
+            <span class="atom-section-label atom-section-label--strong">ASSISTANT</span>
+            <!-- separator -->
+            <span class="atom-section-label atom-section-label--faint" aria-hidden="true">·</span>
+            <!-- timestamp -->
+            <span class="atom-section-label">12:43 PM</span>
+          </div>
+
+          <!-- Body text -->
+          <div class="faux-body-text">
+            <p class="type-body-sm">
+              I'll migrate chat_messages to a proper events table. Let me reason through the approach, then lay out the plan. I'll also spin up a sub-agent to map all read consumers in the monorepo before we start.
+            </p>
+          </div>
+
+          <!-- Blocks cluster -->
+          <div class="faux-blocks">
+
+            <!-- Plan block -->
+            <details class="mol-collapsed-block mol-collapsed-block--plan"
+                     aria-label="Agent plan, 5 steps">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--accent mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                  <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                  <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">PLAN</span>
+                <span class="atom-section-label mol-collapsed-block__meta">5 steps · 3m est</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  1. Add chat_events table with composite PK (session_id, seq)<br>
+                  2. Backfill from existing jsonb arrays in batched background job<br>
+                  3. Ship dual-write behind ff.chat_events_dual_write<br>
+                  4. Flip ff.chat_events_read after one release of soak<br>
+                  5. Drop the jsonb column in follow-up migration
+                </p>
+              </div>
+            </details>
+
+            <!-- Reasoning block (open to show expanded state in composition) -->
+            <details class="mol-collapsed-block mol-collapsed-block--reasoning"
+                     open
+                     aria-label="Agent reasoning trace, 2.1 seconds">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+                  <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+                  <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+                  <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
+                  <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+                  <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+                  <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
+                  <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+                  <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">REASONING</span>
+                <span class="atom-section-label mol-collapsed-block__meta">2.1s · 183 tokens</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  Backfill job needs to be resumable — store last processed session_id as checkpoint. Dual-write window is the high-risk period: if the background job falls behind, reads from the events table will be stale. Need a catch-up mechanism or rate-limit the dual-write window length.
+                </p>
+              </div>
+            </details>
+
+            <!-- Subagent block (indented) -->
+            <details class="mol-collapsed-block mol-collapsed-block--subagent"
+                     aria-label="Subagent execution: claude-haiku, 1.2 seconds">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="10" rx="2"/>
+                  <circle cx="12" cy="5" r="2"/>
+                  <path d="M12 7v4"/>
+                  <line x1="8" y1="16" x2="8" y2="16"/>
+                  <line x1="16" y1="16" x2="16" y2="16"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">SUBAGENT</span>
+                <span class="atom-section-label mol-collapsed-block__meta">claude-haiku · 1.2s</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  Mapped 14 chat_sessions read sites across 9 files. All consumers are typed Drizzle selects. No raw SQL. Migration can proceed without read-path changes until flag flip.
+                </p>
+              </div>
+            </details>
+
+          </div><!-- /faux-blocks -->
+
+        </div><!-- /faux-thread -->
+
+      </div><!-- /composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ============================================================
+         LIGHT PANE
+         ============================================================ -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- 1. VARIANT MATRIX ---------------------------------------- -->
+      <div class="variant">
+        <h3 class="section-head">1 · variant matrix</h3>
+
+        <div class="variant-stack">
+
+          <!-- ---- Plan variant ------------------------------------ -->
+          <div>
+            <p class="section-sub">--plan (default)</p>
+            <details class="mol-collapsed-block mol-collapsed-block--plan"
+                     aria-label="Agent plan, 12 steps">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--accent mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                  <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                  <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">PLAN</span>
+                <span class="atom-section-label mol-collapsed-block__meta">12 steps · 1m est</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  1. Locate the reconnect backoff constant in <code>apps/relay/src/tunnel-client.ts</code><br>
+                  2. Replace 250ms with exponential backoff starting at 1s, cap at 30s, ±20% jitter<br>
+                  3. Preserve inner try/catch and log err.code + err.message on reconnect failure<br>
+                  4. Add unit tests for the backoff schedule and jitter bounds using vitest
+                </p>
+              </div>
+            </details>
+          </div>
+
+          <!-- ---- Reasoning variant ------------------------------- -->
+          <div>
+            <p class="section-sub">--reasoning</p>
+            <details class="mol-collapsed-block mol-collapsed-block--reasoning"
+                     aria-label="Agent reasoning trace, 3.4 seconds">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+                  <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+                  <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+                  <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
+                  <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+                  <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+                  <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
+                  <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+                  <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">REASONING</span>
+                <span class="atom-section-label mol-collapsed-block__meta">3.4s · 245 tokens</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  The user wants to move chat_messages from a jsonb column to a proper relational table. The safest approach is an append-only events table with a composite PK.<br>
+                  Key concern: backfill consistency during dual-write window — need to handle seq gaps if the background job is interrupted.<br>
+                  Read path can stay on jsonb until the flag is flipped; write path dual-writes immediately. One release of soak before the flag flip.<br>
+                  Drop migration should be a separate PR, not part of this migration, to allow rollback window.
+                </p>
+              </div>
+            </details>
+          </div>
+
+          <!-- ---- Subagent variant -------------------------------- -->
+          <div>
+            <p class="section-sub">--subagent (left rule + indent)</p>
+            <details class="mol-collapsed-block mol-collapsed-block--subagent"
+                     aria-label="Subagent execution: claude-haiku, 0.8 seconds">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="10" rx="2"/>
+                  <circle cx="12" cy="5" r="2"/>
+                  <path d="M12 7v4"/>
+                  <line x1="8" y1="16" x2="8" y2="16"/>
+                  <line x1="16" y1="16" x2="16" y2="16"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">SUBAGENT</span>
+                <span class="atom-section-label mol-collapsed-block__meta">claude-haiku · 0.8s</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  Scanned 9 files across apps/web, apps/desktop, and apps/mobile for references to chat_sessions.<br>
+                  Found 14 read sites: 6 in query hooks, 5 in tRPC routers, 3 in Electric live queries.<br>
+                  No write sites outside of packages/db — schema layer is clean. All consumers use typed Drizzle selects.<br>
+                  Returning: file list with line refs for each read site.
+                </p>
+              </div>
+            </details>
+          </div>
+
+        </div><!-- /variant-stack -->
+      </div><!-- /variant matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- 2. STATE ROW --------------------------------------------- -->
+      <div class="variant">
+        <h3 class="section-head">2 · state row — plan variant</h3>
+
+        <div class="state-row">
+
+          <!-- default: collapsed -->
+          <div class="state-cell">
+            <p class="state-label">default (collapsed)</p>
+            <details class="mol-collapsed-block mol-collapsed-block--plan"
+                     aria-label="Agent plan, 12 steps">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--accent mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                  <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                  <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">PLAN</span>
+                <span class="atom-section-label mol-collapsed-block__meta">12 steps</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">Plan preview content…</p>
+              </div>
+            </details>
+          </div>
+
+          <!-- is-open -->
+          <div class="state-cell">
+            <p class="state-label">is-open (expanded)</p>
+            <details class="mol-collapsed-block mol-collapsed-block--plan"
+                     open
+                     aria-label="Agent plan, 12 steps">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--accent mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                  <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                  <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">PLAN</span>
+                <span class="atom-section-label mol-collapsed-block__meta">12 steps</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">1. Locate backoff constant<br>2. Replace 250ms with exponential backoff<br>3. Preserve try/catch</p>
+              </div>
+            </details>
+          </div>
+
+          <!-- is-hover -->
+          <div class="state-cell">
+            <p class="state-label">is-hover</p>
+            <details class="mol-collapsed-block mol-collapsed-block--plan"
+                     aria-label="Agent plan, 12 steps">
+              <summary class="mol-collapsed-block__summary is-hover">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--accent mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                  <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                  <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">PLAN</span>
+                <span class="atom-section-label mol-collapsed-block__meta">12 steps</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">Plan preview content…</p>
+              </div>
+            </details>
+          </div>
+
+        </div><!-- /state-row -->
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- 3. COMPOSITION — faux chat sequence ---------------------- -->
+      <div class="variant">
+        <h3 class="section-head">3 · composition — faux chat sequence</h3>
+        <p class="section-sub">assistant-message-head + body + plan → reasoning → subagent cluster</p>
+
+        <div class="faux-thread">
+
+          <!-- Head row -->
+          <div class="faux-head">
+            <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+            <span class="atom-section-label atom-section-label--strong">ASSISTANT</span>
+            <span class="atom-section-label atom-section-label--faint" aria-hidden="true">·</span>
+            <span class="atom-section-label">12:43 PM</span>
+          </div>
+
+          <!-- Body text -->
+          <div class="faux-body-text">
+            <p class="type-body-sm">
+              I'll migrate chat_messages to a proper events table. Let me reason through the approach, then lay out the plan. I'll also spin up a sub-agent to map all read consumers in the monorepo before we start.
+            </p>
+          </div>
+
+          <!-- Blocks cluster -->
+          <div class="faux-blocks">
+
+            <details class="mol-collapsed-block mol-collapsed-block--plan"
+                     aria-label="Agent plan, 5 steps">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--accent mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
+                  <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z"/>
+                  <path d="M5 19l.5 1.5L7 21l-1.5.5L5 23l-.5-1.5L3 21l1.5-.5z"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">PLAN</span>
+                <span class="atom-section-label mol-collapsed-block__meta">5 steps · 3m est</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  1. Add chat_events table with composite PK (session_id, seq)<br>
+                  2. Backfill from existing jsonb arrays in batched background job<br>
+                  3. Ship dual-write behind ff.chat_events_dual_write<br>
+                  4. Flip ff.chat_events_read after one release of soak<br>
+                  5. Drop the jsonb column in follow-up migration
+                </p>
+              </div>
+            </details>
+
+            <details class="mol-collapsed-block mol-collapsed-block--reasoning"
+                     open
+                     aria-label="Agent reasoning trace, 2.1 seconds">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+                  <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+                  <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+                  <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
+                  <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+                  <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+                  <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
+                  <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+                  <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">REASONING</span>
+                <span class="atom-section-label mol-collapsed-block__meta">2.1s · 183 tokens</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  Backfill job needs to be resumable — store last processed session_id as checkpoint. Dual-write window is the high-risk period: if the background job falls behind, reads from the events table will be stale.
+                </p>
+              </div>
+            </details>
+
+            <details class="mol-collapsed-block mol-collapsed-block--subagent"
+                     aria-label="Subagent execution: claude-haiku, 1.2 seconds">
+              <summary class="mol-collapsed-block__summary">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-collapsed-block__icon"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="10" rx="2"/>
+                  <circle cx="12" cy="5" r="2"/>
+                  <path d="M12 7v4"/>
+                  <line x1="8" y1="16" x2="8" y2="16"/>
+                  <line x1="16" y1="16" x2="16" y2="16"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--strong mol-collapsed-block__label">SUBAGENT</span>
+                <span class="atom-section-label mol-collapsed-block__meta">claude-haiku · 1.2s</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-collapsed-block__chevron"
+                     aria-hidden="true"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </summary>
+              <div class="mol-collapsed-block__preview">
+                <p class="type-body-sm">
+                  Mapped 14 chat_sessions read sites across 9 files. All consumers are typed Drizzle selects. No raw SQL. Migration can proceed without read-path changes until flag flip.
+                </p>
+              </div>
+            </details>
+
+          </div><!-- /faux-blocks -->
+
+        </div><!-- /faux-thread -->
+
+      </div><!-- /composition -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
