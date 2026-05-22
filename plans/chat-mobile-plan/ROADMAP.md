@@ -3,24 +3,25 @@ roadmap: 1
 project: Mobile Chat v2
 generated: 2026-05-21T00:00:00Z
 prd: ./README.md
-sprint_count: 11
+sprint_count: 7
 pr_sequencing: true
 gate_strategy: ui-first-via-storybook
+phase_1_driver: pixel-perfect
 ---
 
 # Sprint Roadmap: Mobile Chat v2
 
 ## Overview
 
-**Sprints:** 11
-**Total Tasks:** 95
-**Current Sprint:** — (all Planned)
+**Sprints:** 7
+**Total Tasks:** 53 + pixel-perfect-managed Phase 1
+**Current Sprint:** Sprint 01 (🟠 In flight via pixel-perfect; scaffold gate passed)
 
-**Planning Specialists:** `react-native-ui-planner` · `node-planner` · `frontend-designer`
+**Planning Specialists:** `pixel-perfect` (Phase 1) · `react-native-ui-planner` · `node-planner` · `frontend-designer`
 
-**Gate strategy.** This roadmap is organized **UI-first**: Phase 1 (Sprints 01–05) ships pure, props-driven components with co-located Storybook stories — verified by a reviewer who launches the mobile app in Storybook mode (`EXPO_PUBLIC_STORYBOOK=true`) on iOS Simulator and Android Emulator and navigates each component's state matrix. Phase 2 (Sprints 06–11) composes those components into real app screens, wires them to real services (Electric, host-service tRPC, relay-routed push pipeline), and verifies each user-facing surface end-to-end via Maestro flows against real services.
+**Gate strategy.** This roadmap is organized **UI-first**. **Phase 1 (Sprint 01)** is driven end-to-end by the `pixel-perfect` plugin on the single branch `chat-mobile-ui-elements`: pixel-perfect executes `init → scaffold → plan → atoms → molecules → compose` with gate state tracked in `apps/mobile/design/manifest.json`. Each gate ships pure, props-driven components with co-located Storybook stories — verified by a reviewer who launches the mobile app in Storybook mode (`bun storybook` from `apps/mobile/`) on iOS Simulator and Android Emulator and navigates each component's state matrix. **Phase 2 (Sprints 02–07)** composes those components into real app screens, wires them to real services (Electric, host-service tRPC, relay-routed push pipeline), and verifies each user-facing surface end-to-end via Maestro flows against real services.
 
-> **Skill-rule override (per user direction, 2026-05-21).** The `kb-sprint-plan` skill's default test-step rule rejects `\bstorybook\b` as a verification surface ("Storybook is a developer tool, not the product"). This roadmap **intentionally overrides** that rule for Phase 1 only, because the testing strategy spelled out in `13-testing-strategy.md` explicitly designates Storybook 9 (under custom root toggle `EXPO_PUBLIC_STORYBOOK=true` with build-time stripping for production) as the Phase 1 verification harness, and the user has selected this strategy. Phase 2 sprints use Maestro E2E against the running app per the default rule.
+> **Skill-rule override (per user direction, 2026-05-21).** The `kb-sprint-plan` skill's default test-step rule rejects `\bstorybook\b` as a verification surface ("Storybook is a developer tool, not the product"). This roadmap **intentionally overrides** that rule for Phase 1 only, because the testing strategy spelled out in `13-testing-strategy.md` explicitly designates Storybook 9 (under custom root toggle `EXPO_PUBLIC_STORYBOOK=true` with build-time stripping for production) as the Phase 1 verification harness, and the user has selected this strategy. As of the pixel-perfect migration, Phase 1 no longer routes through `kb-sprint-tasks-plan` at all — pixel-perfect's own `plan → atoms → molecules → compose` workflow drives decomposition and verification — so the override is mostly moot in practice. Phase 2 sprints continue to use Maestro E2E against the running app per the default rule.
 
 > **PR sequencing enabled.** Lifecycle: 🔵 Planned → 🟠 In flight → 🟣 In review → ✅ Completed → 🔴 Blocked. PR cell required for Completed status. See [`~/Projects/brain/docs/PR-SEQUENCING.md`](~/Projects/brain/docs/PR-SEQUENCING.md) for the full convention.
 
@@ -28,74 +29,113 @@ gate_strategy: ui-first-via-storybook
 
 | # | Sprint | Gate | Tasks | Dependencies | Status | Branch | PR |
 |---|--------|------|-------|--------------|--------|--------|----|
-| 1 | [Sprint 01: Storybook Infra + Sessions List Components](#sprint-01-storybook-infra--sessions-list-components) | Sessions-list-tier components render correctly in Storybook on simulator/emulator across all state matrices | 10 | — | 🔵 Planned | `chat-mobile-storybook-sessions` | — |
-| 2 | [Sprint 02: Chat View Components](#sprint-02-chat-view-components) | Chat-tree render components render correctly in Storybook across all message-type states | 9 | Sprint 01 | 🔵 Planned | `chat-mobile-chat-render` | — |
-| 3 | [Sprint 03: Composer Components](#sprint-03-composer-components) | Composer components (Tiptap editor + pickers + slash menu + new-chat sheet) render correctly in Storybook with all interaction states | 10 | Sprint 01 | 🔵 Planned | `chat-mobile-composer` | — |
-| 4 | [Sprint 04: Pause Container Components](#sprint-04-pause-container-components) | All four pause containers render correctly in Storybook (approval card + sticky footer with 1-of-N, ask_user bottom sheet, plan-review full-screen, pending-action pill) | 9 | Sprint 01, 02 | 🔵 Planned | `chat-mobile-pause-components` | — |
-| 5 | [Sprint 05: Platform Surface Components](#sprint-05-platform-surface-components) | Platform surface components render correctly in Storybook (push pre-prompt, re-enable-in-settings banner per permission state, host-offline banner per dispatch outcome variant) | 6 | Sprint 01 | 🔵 Planned | `chat-mobile-platform-components` | — |
-| 6 | [Sprint 06: Sessions List Integration](#sprint-06-sessions-list-integration) | A signed-in user taps the Chat tab and uses the full real sessions list — workspace sections with sticky scroll, search, load-more, host picker, empty states — backed by Electric collections; sessions created on desktop appear within 3s | 12 | Sprint 01 | 🔵 Planned | `chat-mobile-sessions-int` | — |
-| 7 | [Sprint 07: Chat View Read + Session Management](#sprint-07-chat-view-read--session-management) | User taps a real session, opens the chat view, sees real message history rendered with all types and live streaming-cursor updates; End / Rename / Delete via overflow + swipe-delete work end-to-end | 8 | Sprint 02, 06 | 🔵 Planned | `chat-mobile-chat-view-int` | — |
-| 8 | [Sprint 08: Compose + Send Integration](#sprint-08-compose--send-integration) | User taps FAB to create a real session, types and sends a message (real optimistic + streaming), Stops a running turn; slash commands and model picker load real data from host | 6 | Sprint 03, 07 | 🔵 Planned | `chat-mobile-send-int` | — |
-| 9 | [Sprint 09: Pause Response Integration](#sprint-09-pause-response-integration) | Real agent tool-approval / ask_user / plan-approval pauses trigger correct containers with live data; user responds and agent resumes end-to-end | 5 | Sprint 04, 08 | 🔵 Planned | `chat-mobile-pause-int` | — |
-| 10 | [Sprint 10: Push Notifications (Server + Mobile)](#sprint-10-push-notifications-server--mobile) | Real agent event on connected host triggers OS push delivered via APNs/FCM through Expo; tap opens correct session with silent host alignment; pre-prompt + foreground suppression + re-enable flow all work end-to-end | 19 | Sprint 05, 09 | 🔵 Planned | `chat-mobile-push` | — |
-| 11 | [Sprint 11: Offline + Background Resume](#sprint-11-offline--background-resume) | Real host-offline produces banner + disabled Send + correct dispatch outcome surfacing; real reconnect auto-resumes; background → foreground catches up missed events | 3 | Sprint 05, 08, 10 | 🔵 Planned | `chat-mobile-offline` | — |
+| 1 | [Sprint 01: Pixel-Perfect UI Components](#sprint-01-pixel-perfect-ui-components) | Reviewer launches Storybook on simulator/emulator and walks the full component inventory (Design System + sessions-list + chat-tree + composer + pause + platform-surface) across state matrices on light + dark themes; pixel-perfect manifest gates `atoms`, `molecules`, `compose` all show `passed` | pixel-perfect-managed | — | 🟠 In flight | `chat-mobile-ui-elements` | — |
+| 2 | [Sprint 02: Sessions List Integration](#sprint-02-sessions-list-integration) | A signed-in user taps the Chat tab and uses the full real sessions list — workspace sections with sticky scroll, search, load-more, host picker, empty states — backed by Electric collections; sessions created on desktop appear within 3s | 12 | Sprint 01 | 🔵 Planned | `chat-mobile-sessions-int` | — |
+| 3 | [Sprint 03: Chat View Read + Session Management](#sprint-03-chat-view-read--session-management) | User taps a real session, opens the chat view, sees real message history rendered with all types and live streaming-cursor updates; End / Rename / Delete via overflow + swipe-delete work end-to-end | 8 | Sprint 01, 02 | 🔵 Planned | `chat-mobile-chat-view-int` | — |
+| 4 | [Sprint 04: Compose + Send Integration](#sprint-04-compose--send-integration) | User taps FAB to create a real session, types and sends a message (real optimistic + streaming), Stops a running turn; slash commands and model picker load real data from host | 6 | Sprint 01, 03 | 🔵 Planned | `chat-mobile-send-int` | — |
+| 5 | [Sprint 05: Pause Response Integration](#sprint-05-pause-response-integration) | Real agent tool-approval / ask_user / plan-approval pauses trigger correct containers with live data; user responds and agent resumes end-to-end | 5 | Sprint 01, 04 | 🔵 Planned | `chat-mobile-pause-int` | — |
+| 6 | [Sprint 06: Push Notifications (Server + Mobile)](#sprint-06-push-notifications-server--mobile) | Real agent event on connected host triggers OS push delivered via APNs/FCM through Expo; tap opens correct session with silent host alignment; pre-prompt + foreground suppression + re-enable flow all work end-to-end | 19 | Sprint 01, 05 | 🔵 Planned | `chat-mobile-push` | — |
+| 7 | [Sprint 07: Offline + Background Resume](#sprint-07-offline--background-resume) | Real host-offline produces banner + disabled Send + correct dispatch outcome surfacing; real reconnect auto-resumes; background → foreground catches up missed events | 3 | Sprint 01, 04, 06 | 🔵 Planned | `chat-mobile-offline` | — |
 
 ---
 
 ## Per-Sprint Details
 
-### Sprint 01: Storybook Infra + Sessions List Components
+### Sprint 01: Pixel-Perfect UI Components
 
 **Sequence:** 1
-**Timeline:** Phase 1 — UI Components
-**Status:** 🔵 Planned
-**Branch:** `chat-mobile-storybook-sessions`
+**Timeline:** Phase 1 — UI Components (driven by pixel-perfect plugin)
+**Status:** 🟠 In flight
+**Branch:** `chat-mobile-ui-elements`
 **PR:** —
+
+#### Pixel-Perfect Manifest
+
+Gate state tracked in `apps/mobile/design/manifest.json`:
+
+- **Top-level gates:** `discover`, `target`, `equip` all `passed`
+- **Per-platform gates** (`mobile-ios`, `mobile-android`): `scaffold: passed`, `plan/atoms/molecules/compose: pending`
+- **Tools locked:** Expo · uniwind · react-native-reusables (`@rn-primitives/*`) · lucide-react-native · storybook-native
+- **Vibe locked** to existing `apps/mobile/global.css` tokens (RNR neutral palette, cool gray hsl 240, light + dark via `@variant`, 0.5rem radius) — pixel-perfect:build MUST NOT redefine theme tokens
+
+#### Pixel-Perfect Workflow
+
+1. `/pixel-perfect:build --platform mobile-ios` (and `--platform mobile-android`) — **plan phase**: pixel-perfect reads `plans/chat-mobile-plan/` (PRD + UCs + tech requirements + component organization addendum) and the Component Inventory below, then writes its atoms/molecules/compose plan to the manifest
+2. **Atoms phase**: pure primitives built first (each verified per-component in Storybook before flipping `atoms: passed`)
+3. **Molecules phase**: compositions of atoms (verified in Storybook against state matrices before flipping `molecules: passed`)
+4. **Compose phase**: full views/screens with realistic prop data (verified in Storybook before flipping `compose: passed`)
+5. Each gate flips in `manifest.json` only after the human reviewer accepts the Storybook walkthrough for that tier
 
 #### Human Testing Gate
 
-**Gate:** Reviewer launches the mobile app in Storybook mode on iOS Simulator and Android Emulator and navigates every sessions-list-tier component (SessionRow, WorkspaceSection, LoadMorePill, HostChip, NewChatFab, SessionSearchBar, SessionsEmptyState, HostPickerSheet) seeing every documented state render correctly against design tokens on both light and dark themes.
+**Gate:** Reviewer launches the mobile app in Storybook mode on iOS Simulator and Android Emulator, walks the full component inventory across state matrices on both light and dark themes, and confirms every component renders correctly against the existing `apps/mobile/global.css` tokens. The pixel-perfect manifest's `atoms`, `molecules`, and `compose` gates all show `passed` for both `mobile-ios` and `mobile-android`.
 
 **Test Steps:**
-1. From `apps/mobile/`, start the app in Storybook mode: `EXPO_PUBLIC_STORYBOOK=true bun start` — open the iOS Simulator and Android Emulator simultaneously.
-2. Navigate Storybook's on-device controls to **SessionRow** stories and tap through each variant — confirm the streaming (`⌖`), pause-pending (`⚠`), idle (`●`), and dormant (`○`) status icons render with the correct token-derived colors, and long-press copies the title to the clipboard.
-3. Navigate to **WorkspaceSection** stories — verify collapsed/expanded chevron states, the sticky-header visual layout, and the empty-workspace-with-CTA variant.
-4. Navigate to **LoadMorePill** stories — confirm the "Load more (N more)" button at 44pt with `--color-secondary` background and `--radius` corners.
-5. Navigate to **HostChip**, **NewChatFab**, and **SessionSearchBar** stories — confirm shadow + 56pt FAB, online/offline chip indicator, placeholder + focused state + clear (✕) affordance.
-6. Navigate to **SessionsEmptyState** stories — verify all four variants (no-hosts / no-workspaces / no-sessions / no-search) render with the correct icon, heading, body copy, and CTA per the design sticker sheet.
-7. Navigate to **HostPickerSheet** stories — confirm sheet handle, header, online/offline row badges, currently-selected check, and meta-line typography across populated and empty variants.
-8. Toggle Storybook from light to dark theme via the on-device controls and re-verify every component renders correctly on both themes.
+1. From `apps/mobile/`, run `bun storybook` — this generates `.rnstorybook/storybook.requires.ts` and launches Expo with `EXPO_PUBLIC_STORYBOOK=true`. Open the iOS Simulator and Android Emulator simultaneously.
+2. **Design System** group — navigate to Colors, Typography, Spacing, Icons. Confirm every swatch / variant / spacing step / icon reads from the existing global.css tokens (no deviation from the locked vibe).
+3. **Sessions-list tier** — navigate every story for SessionRow (status icons `⌖ ⚠ ● ○` with token colors, long-press copy), WorkspaceSection (sticky-header, collapse/expand chevron, empty-with-CTA), LoadMorePill (44pt button, `--color-secondary` background, `--radius` corners), HostChip, NewChatFab (shadow + 56pt FAB), SessionSearchBar (placeholder + focused + clear ✕), SessionsEmptyState (no-hosts / no-workspaces / no-sessions / no-search variants), HostPickerSheet (sheet handle, online/offline row badges, currently-selected check, populated + empty variants).
+4. **Chat-tree tier** — navigate every story for UserMessage (right-aligned bubble, `bg-secondary`, `max-w-[85%]`, long-press copy), AssistantMessage (left-aligned full-width, optional streaming-cursor Reanimated blink variant), MessageMarkdown (code blocks with syntax highlighting, lists / headings / blockquotes / tables / HRs, inline code contrast, tappable links, long-press copy on code blocks), ToolCallBlock (collapsed-only card with running / completed / failed status indicators + right-chevron, no expansion UI per UC-RENDER-04), PlanBlock and ReasoningBlock (collapsed + expanded with smooth chevron rotation), SubagentExecutionMessage (nested visual indentation + left border), ScrollBackButton (FadeIn / FadeOut animation, 44pt hit target).
+5. **Composer tier** — navigate every story for TiptapPromptEditor (empty-with-placeholder, typed-text, slash-pill-inserted, file-mention-placeholder, multi-line autogrow, autogrow-cap; verify keyboard reveal + caret positioning), SlashCommandMenu (built-in only, built-in + custom mixed, description + arg-hint, preview-loading, empty-loading), ModelPicker (popover with mock list incl. Opus 4.7 / Sonnet 4.6 / Haiku 4.5 / GPT-5.5, selected-model trigger label), PermissionModePicker + ThinkingLevelPicker (`off / low / medium / high / xhigh` for thinking-level, permission mode variants, selected-state trigger), NewChatSheet (workspace-row layout, sessions-first sort, empty-host inline message, no-sessions meta line). Verify every toolbar control meets the 44pt hit-target rule.
+6. **Pause-container tier** — navigate every story for PendingApprovalCard (tool-name typography, short description, arguments preview collapsed JSON with truncation, pending with `--color-destructive` left accent, resolved-approved / resolved-declined), PendingApprovalFooter (44pt-tall Approve / Decline / Always-allow buttons, 1-of-N multi-approval indicator, safe-area-bottom awareness, optimistic-tap ghosting), PendingQuestionSheet (50% / 85% snap points, question text prominence, horizontal-scroll suggested-answer pills, BottomSheetTextInput multi-line, Send button alignment; verify keyboard-active state pushes sheet to 85%), PlanReviewScreen (full-screen layout with nav header + X close, scrollable markdown body multi-screen, expandable "Add feedback", docked Approve / Reject above safe area, Reject disabled when feedback empty), PendingActionIndicator (pill variants per pause type — approval / question / plan — with correct copy + FadeIn/FadeOut).
+7. **Platform-surface tier** — navigate every story for PushPrePromptScreen (centered bell icon, heading + body copy matching `07-notifications.md`, benefits list, Enable primary button at 44pt with `--color-primary` fill, Not-now text button at 48pt tap area), RebableInSettingsBanner (granted hidden / denied visible with `--color-destructive` accent + "Re-enable in Settings" CTA / undetermined informational), HostOfflineBanner (offline-idle "Host offline — tap to retry" / offline-retrying spinner + "Reconnecting…" / online hidden / session-unavailable "Session unavailable" + back link / `skipped_unpaid` "Plan upgrade required" / `dispatch_failed` "Host dispatch failed" with retry), NotificationIconPreview (192×192 transparent PNG white silhouette rendered at 192pt / 96pt / 24pt sizes matching Android status-bar constraints).
+8. Toggle light/dark theme via Storybook's on-device controls and re-verify every component renders correctly on both themes.
 
-#### Tasks
+#### Component Inventory (input to pixel-perfect:build)
 
-| ID | Title | Agent | Estimate |
-|----|-------|-------|----------|
-| MOB-INFRA-001 | Install chat-tree runtime dependencies in apps/mobile | react-native-ui-implementer | 60 min |
-| MOB-INFRA-002 | Configure Storybook 9 with root toggle and custom .rnstorybook directory | react-native-ui-implementer | 180 min |
-| MOB-NAV-002 | Build SessionRow component with status icon and Storybook stories | react-native-ui-implementer | 120 min |
-| MOB-NAV-003 | Build WorkspaceSection + LoadMorePill subcomponents with stories | react-native-ui-implementer | 180 min |
-| MOB-NAV-004 | Build HostChip, NewChatFab, SessionSearchBar, and SessionsEmptyState components with stories | react-native-ui-implementer | 180 min |
-| MOB-NAV-008-UI | Build HostPickerSheet component (props-driven; no real data wiring) with stories | react-native-ui-implementer | 150 min |
-| DESIGN-NAV-001 | Sticker sheet — SessionsListScreen header, session row, workspace section header, LoadMorePill | frontend-designer | 90 min |
-| DESIGN-NAV-002 | Sticker sheet — HostPickerSheet (host picker bottom sheet) | frontend-designer | 45 min |
-| DESIGN-NAV-003 | Sticker sheet — NewChatSheet (workspace picker) + empty states | frontend-designer | 60 min |
-| DESIGN-PLATF-003 | Iconography spec — Lucide icon set for chat actions | frontend-designer | 30 min |
+Preserves the original MOB-* and DESIGN-* IDs as a reference inventory. Pixel-perfect's plan phase decides the actual atoms / molecules / compose split; these IDs document scope and PRD coverage but no longer drive task dispatch.
 
-**Next Sprint Tasks:** *(populated JIT when sprint becomes active by kb-sprint-tasks-plan)*
+**Sessions-list tier** (was Sprint 01)
+- `MOB-NAV-002` SessionRow · `MOB-NAV-003` WorkspaceSection + LoadMorePill · `MOB-NAV-004` HostChip / NewChatFab / SessionSearchBar / SessionsEmptyState · `MOB-NAV-008-UI` HostPickerSheet
+- `DESIGN-NAV-001` SessionsListScreen + session row + workspace section header + LoadMorePill sticker sheet · `DESIGN-NAV-002` HostPickerSheet sticker sheet · `DESIGN-NAV-003` NewChatSheet + empty states sticker sheet · `DESIGN-PLATF-003` Lucide iconography spec for chat actions
+
+**Chat-tree tier** (was Sprint 02)
+- `MOB-RENDER-001` UserMessage + AssistantMessage · `MOB-RENDER-003` MessageMarkdown (react-native-markdown-display) · `MOB-RENDER-004` ToolCallBlock (collapsed-only) · `MOB-RENDER-005` PlanBlock + ReasoningBlock · `MOB-RENDER-006` SubagentExecutionMessage · `MOB-RENDER-008-UI` ScrollBackButton (Reanimated fade)
+- `DESIGN-CHAT-001` message tree foundation sticker sheet · `DESIGN-CHAT-002` MessageMarkdown + streaming cursor sticker sheet · `DESIGN-CHAT-003` message list affordances sticker sheet
+
+**Composer tier** (was Sprint 03)
+- `MOB-COMP-001` TiptapPromptEditor (`@10play/tentap-editor` WebView shell) · `MOB-COMP-002` SlashCommandNode + FileMentionNode Tiptap extensions · `MOB-COMP-003-UI` SlashCommandMenu (@rn-primitives popover) · `MOB-COMP-004-UI` ModelPicker · `MOB-COMP-005` PermissionModePicker · `MOB-COMP-006` ThinkingLevelPicker · `MOB-NAV-009-UI` NewChatSheet
+- `DESIGN-COMP-001` ChatInputFooter composer layout sticker sheet · `DESIGN-COMP-002` TiptapPromptEditor states + slash-pill sticker sheet · `DESIGN-COMP-003` SlashCommandMenu popover sticker sheet
+
+**Pause-container tier** (was Sprint 04)
+- `MOB-PAUSE-001` PendingApprovalCard (inline) · `MOB-PAUSE-002` PendingApprovalFooter (sticky thumb-docked with 1-of-N) · `MOB-PAUSE-004` PendingQuestionSheet (`@gorhom/bottom-sheet` + BottomSheetTextInput) · `MOB-PAUSE-006-UI` PlanReviewScreen (standalone full-screen; expo-router push wiring deferred to Phase 2) · `MOB-PAUSE-008` PendingActionIndicator (floating pill)
+- `DESIGN-PAUSE-001` PendingApprovalCard + Footer sticker sheet · `DESIGN-PAUSE-002` PendingQuestionSheet sticker sheet · `DESIGN-PAUSE-003` PlanReviewScreen sticker sheet · `DESIGN-PAUSE-004` PendingActionIndicator sticker sheet
+
+**Platform-surface tier** (was Sprint 05)
+- `MOB-PLATF-001` PushPrePromptScreen · `MOB-PLATF-005-UI` RebableInSettingsBanner (props-driven, no permission API wiring) · `MOB-PLATF-007-UI` HostOfflineBanner (props-driven, no detection wiring; covers all dispatch outcome variants)
+- `DESIGN-PLATF-001` PushPrePromptScreen sticker sheet · `DESIGN-PLATF-002` HostOfflineBanner + retry sticker sheet · `DESIGN-PLATF-004` Android notification icon spec + 192×192 transparent PNG
+
+**Infra (already done in this branch via /pixel-perfect:scaffold)**
+- ✅ `MOB-INFRA-001` chat-tree runtime dependencies installed via `bun add` (Storybook 9 native + `@storybook/addon-ondevice-controls` + `@storybook/addon-ondevice-actions`, `storybook@^9` pinned to avoid v10 normalizeStories incompat)
+- ✅ `MOB-INFRA-002` Storybook 9 root toggle (env-only via `EXPO_PUBLIC_STORYBOOK=true`, no UI toggle) + `.rnstorybook/` config dir (`main.js`, `preview.tsx`, `index.tsx`) + Metro `withStorybook` wrap + Design System stories (Colors, Typography, Spacing, Icons reading existing tokens) + HelloWorld reference component
 
 #### Dependencies
 
-- Blocks: Sprint 02, 03, 04, 05, 06
-- Dependent on: None
+- Blocks: Sprint 02, 03, 04, 05, 06, 07
+- Dependent on: pixel-perfect `scaffold` gate (passed for both `mobile-ios` and `mobile-android`)
 
 #### PRD Coverage
 
-- UC-NAV-01 (components)
-- UC-NAV-02 (components — SessionRow, WorkspaceSection, LoadMorePill)
+- UC-NAV-01 (Chat tab landing components)
+- UC-NAV-02 (SessionRow, WorkspaceSection, LoadMorePill components)
 - UC-NAV-03 (HostPickerSheet component)
-- UC-NAV-04 (NewChatFab + SessionsEmptyState component)
-- UC-NAV-06 (SessionsEmptyState component)
+- UC-NAV-04 (NewChatFab + NewChatSheet + SessionsEmptyState components)
+- UC-NAV-06 (SessionsEmptyState component — all variants)
 - UC-NAV-07 (SessionSearchBar component)
+- UC-RENDER-01 (UserMessage, AssistantMessage components)
+- UC-RENDER-03 (MessageMarkdown component)
+- UC-RENDER-04 (ToolCallBlock component)
+- UC-RENDER-05 (PlanBlock + ReasoningBlock components)
+- UC-RENDER-06 (SubagentExecutionMessage component)
+- UC-RENDER-07 (ScrollBackButton component)
+- UC-COMP-01 (TiptapPromptEditor + extensions + SlashCommandMenu component)
+- UC-COMP-04 (ModelPicker component)
+- UC-COMP-05 (PermissionModePicker + ThinkingLevelPicker components)
+- UC-PAUSE-01 (PendingApprovalCard + PendingApprovalFooter components)
+- UC-PAUSE-02 (PendingQuestionSheet component)
+- UC-PAUSE-03 (PlanReviewScreen component)
+- UC-PAUSE-04 (PendingActionIndicator component)
+- UC-PLATF-01 (PushPrePromptScreen + RebableInSettingsBanner components)
+- UC-PLATF-03 (HostOfflineBanner component)
 - 11-technical-requirements/04-dependencies.md
 - 11-technical-requirements/05-ui-infrastructure.md
 - 12-component-organization-addendum.md
@@ -103,211 +143,9 @@ gate_strategy: ui-first-via-storybook
 
 ---
 
-### Sprint 02: Chat View Components
+### Sprint 02: Sessions List Integration
 
 **Sequence:** 2
-**Timeline:** Phase 1 — UI Components
-**Status:** 🔵 Planned
-**Branch:** `chat-mobile-chat-render`
-**PR:** —
-
-#### Human Testing Gate
-
-**Gate:** Reviewer launches the mobile app in Storybook mode on simulator/emulator and navigates every chat-tree render component (UserMessage, AssistantMessage, MessageMarkdown, ToolCallBlock, PlanBlock, ReasoningBlock, SubagentExecutionMessage, ScrollBackButton) confirming every documented message-type and interaction state renders correctly against the design sticker sheets.
-
-**Test Steps:**
-1. Launch the mobile app in Storybook mode (`EXPO_PUBLIC_STORYBOOK=true bun start`) on iOS Simulator and Android Emulator.
-2. Navigate to **UserMessage** stories — confirm right-aligned bubble with `bg-secondary` styling and `max-w-[85%]` cap across short / multi-paragraph / long-with-truncation variants; long-press copies text to the clipboard.
-3. Navigate to **AssistantMessage** stories — confirm left-aligned full-width rendering with optional streaming-cursor variant (Reanimated blink).
-4. Navigate to **MessageMarkdown** stories — verify code blocks render with syntax highlighting, lists / headings / blockquotes / tables / horizontal rules render correctly, inline code uses contrasting background, links are tappable, long-press on a code block copies its full content.
-5. Navigate to **ToolCallBlock** stories — confirm collapsed card with running / completed / failed status indicators and right-pointing chevron; no expansion UI per UC-RENDER-04.
-6. Navigate to **PlanBlock** and **ReasoningBlock** stories — confirm collapsed and expanded variants with smooth chevron rotation.
-7. Navigate to **SubagentExecutionMessage** stories — confirm visual nesting and left-border indentation per the design spec.
-8. Navigate to **ScrollBackButton** stories — confirm Reanimated FadeIn / FadeOut animation states and 44pt hit target.
-
-#### Tasks
-
-| ID | Title | Agent | Estimate |
-|----|-------|-------|----------|
-| MOB-RENDER-001 | Build UserMessage and AssistantMessage components with Storybook stories | react-native-ui-implementer | 180 min |
-| MOB-RENDER-003 | Build MessageMarkdown renderer with react-native-markdown-display | react-native-ui-implementer | 240 min |
-| MOB-RENDER-004 | Build ToolCallBlock collapsed-only card with status indicator | react-native-ui-implementer | 120 min |
-| MOB-RENDER-005 | Build PlanBlock and ReasoningBlock collapsible cards with stories | react-native-ui-implementer | 180 min |
-| MOB-RENDER-006 | Build SubagentExecutionMessage nested-group renderer | react-native-ui-implementer | 120 min |
-| MOB-RENDER-008-UI | Build ScrollBackButton component (Reanimated fade, props-driven) with stories | react-native-ui-implementer | 90 min |
-| DESIGN-CHAT-001 | Sticker sheet — message tree foundation (UserMessage, AssistantMessage, ToolCallBlock, PlanBlock, ReasoningBlock, SubagentExecutionMessage) | frontend-designer | 90 min |
-| DESIGN-CHAT-002 | Sticker sheet — MessageMarkdown and streaming cursor | frontend-designer | 75 min |
-| DESIGN-CHAT-003 | Sticker sheet — message list affordances (auto-scroll anchor + scroll-back button) | frontend-designer | 30 min |
-
-**Next Sprint Tasks:** *(populated JIT when sprint becomes active by kb-sprint-tasks-plan)*
-
-#### Dependencies
-
-- Blocks: Sprint 07
-- Dependent on: Sprint 01
-
-#### PRD Coverage
-
-- UC-RENDER-01 (UserMessage, AssistantMessage components)
-- UC-RENDER-03 (MessageMarkdown component)
-- UC-RENDER-04 (ToolCallBlock component)
-- UC-RENDER-05 (PlanBlock + ReasoningBlock components)
-- UC-RENDER-06 (SubagentExecutionMessage component)
-- UC-RENDER-07 (ScrollBackButton component)
-
----
-
-### Sprint 03: Composer Components
-
-**Sequence:** 3
-**Timeline:** Phase 1 — UI Components
-**Status:** 🔵 Planned
-**Branch:** `chat-mobile-composer`
-**PR:** —
-
-#### Human Testing Gate
-
-**Gate:** Reviewer launches the mobile app in Storybook mode on simulator/emulator and navigates every composer component (TiptapPromptEditor, SlashCommandNode + FileMentionNode atomic-pill behavior, SlashCommandMenu, ModelPicker, PermissionModePicker, ThinkingLevelPicker, NewChatSheet) confirming every input + popover + Tiptap-pill state renders correctly per the design sticker sheets.
-
-**Test Steps:**
-1. Launch the mobile app in Storybook mode on iOS Simulator and Android Emulator.
-2. Navigate to **TiptapPromptEditor** stories — confirm empty-with-placeholder, typed-text, slash-pill-inserted, file-mention-placeholder, multi-line autogrow, and autogrow-cap states; verify keyboard reveals smoothly and caret positions correctly.
-3. Navigate to **SlashCommandMenu** stories — verify the popover with built-in commands only, built-in + custom commands mixed, description + arg-hint rendering, preview-loading state, and empty-loading state.
-4. Navigate to **ModelPicker** stories — confirm popover with mock model list (Opus 4.7, Sonnet 4.6, Haiku 4.5, GPT-5.5 etc.) and selected-model label state in the trigger.
-5. Navigate to **PermissionModePicker** and **ThinkingLevelPicker** stories — confirm popover with `off / low / medium / high / xhigh` for thinking-level, plus permission mode variants, and selected-state rendering in each trigger.
-6. Navigate to **NewChatSheet** stories — confirm workspace-row layout, sort treatment (sessions-first then empty), empty-host inline message, and no-sessions-yet meta line.
-7. Toggle light/dark theme and re-verify every component on both themes; verify all toolbar controls meet the 44pt hit-target rule.
-
-#### Tasks
-
-| ID | Title | Agent | Estimate |
-|----|-------|-------|----------|
-| MOB-COMP-001 | Build TiptapPromptEditor WebView shell with @10play/tentap-editor | react-native-ui-implementer | 240 min |
-| MOB-COMP-002 | Build SlashCommandNode and FileMentionNode Tiptap editor extensions | react-native-ui-implementer | 180 min |
-| MOB-COMP-003-UI | Build SlashCommandMenu @rn-primitives popover (props-driven, mock command list) with stories | react-native-ui-implementer | 150 min |
-| MOB-COMP-004-UI | Build ModelPicker @rn-primitives popover (props-driven, mock model list) with stories | react-native-ui-implementer | 90 min |
-| MOB-COMP-005 | Build PermissionModePicker @rn-primitives popover | react-native-ui-implementer | 90 min |
-| MOB-COMP-006 | Build ThinkingLevelPicker @rn-primitives popover | react-native-ui-implementer | 90 min |
-| MOB-NAV-009-UI | Build NewChatSheet component (props-driven workspace list) with stories | react-native-ui-implementer | 120 min |
-| DESIGN-COMP-001 | Sticker sheet — ChatInputFooter composer layout and toolbar | frontend-designer | 75 min |
-| DESIGN-COMP-002 | Sticker sheet — TiptapPromptEditor states and slash-pill rendering | frontend-designer | 60 min |
-| DESIGN-COMP-003 | Sticker sheet — SlashCommandMenu popover | frontend-designer | 45 min |
-
-**Next Sprint Tasks:** *(populated JIT when sprint becomes active by kb-sprint-tasks-plan)*
-
-#### Dependencies
-
-- Blocks: Sprint 08
-- Dependent on: Sprint 01
-
-#### PRD Coverage
-
-- UC-COMP-01 (TiptapPromptEditor + extensions + SlashCommandMenu component)
-- UC-COMP-04 (ModelPicker component)
-- UC-COMP-05 (PermissionModePicker + ThinkingLevelPicker components)
-- UC-NAV-04 (NewChatSheet component)
-
----
-
-### Sprint 04: Pause Container Components
-
-**Sequence:** 4
-**Timeline:** Phase 1 — UI Components
-**Status:** 🔵 Planned
-**Branch:** `chat-mobile-pause-components`
-**PR:** —
-
-#### Human Testing Gate
-
-**Gate:** Reviewer launches the mobile app in Storybook mode on simulator/emulator and navigates every pause container component (PendingApprovalCard, PendingApprovalFooter with 1-of-N indicator, PendingQuestionSheet with keyboard-active state, PlanReviewScreen with feedback-expanded state, PendingActionIndicator per pause variant) confirming every state matrix renders correctly per the design sticker sheets.
-
-**Test Steps:**
-1. Launch the mobile app in Storybook mode on iOS Simulator and Android Emulator.
-2. Navigate to **PendingApprovalCard** stories — confirm tool-name typography, short description, arguments preview (collapsed JSON with truncation), pending state with `--color-destructive` left accent, and resolved-approved / resolved-declined states.
-3. Navigate to **PendingApprovalFooter** stories — confirm 44pt-tall Approve / Decline / Always-allow buttons, 1-of-N indicator in multi-approval variant, safe-area-bottom awareness, and optimistic-tap ghosting state.
-4. Navigate to **PendingQuestionSheet** stories — confirm bottom-sheet snap points (50% / 85%), question text prominence, horizontal-scroll suggested-answer pill row, BottomSheetTextInput multi-line, Send button alignment; verify the keyboard-active state visually pushes the sheet to 85%.
-5. Navigate to **PlanReviewScreen** stories — confirm full-screen layout with navigation header + X close, scrollable markdown body (multi-screen content), expandable "Add feedback" section, docked Approve / Reject above safe area, and Reject-disabled when feedback empty.
-6. Navigate to **PendingActionIndicator** stories — confirm pill variants per pause type (approval / question / plan) with correct copy and Reanimated FadeIn/FadeOut visual feedback.
-7. Toggle light/dark theme and re-verify; confirm all action buttons meet the 44pt hit-target rule per `05-ui-infrastructure.md`.
-
-#### Tasks
-
-| ID | Title | Agent | Estimate |
-|----|-------|-------|----------|
-| MOB-PAUSE-001 | Build PendingApprovalCard inline component with arguments preview | react-native-ui-implementer | 180 min |
-| MOB-PAUSE-002 | Build PendingApprovalFooter sticky thumb-docked action footer with 1-of-N indicator | react-native-ui-implementer | 180 min |
-| MOB-PAUSE-004 | Build PendingQuestionSheet with @gorhom/bottom-sheet and BottomSheetTextInput | react-native-ui-implementer | 180 min |
-| MOB-PAUSE-006-UI | Build PlanReviewScreen full-screen component (standalone; expo-router push wiring deferred to Phase 2) with stories | react-native-ui-implementer | 200 min |
-| MOB-PAUSE-008 | Build PendingActionIndicator floating pill with route-aware dispatch | react-native-ui-implementer | 180 min |
-| DESIGN-PAUSE-001 | Sticker sheet — PendingApprovalCard (inline) + PendingApprovalFooter (sticky) | frontend-designer | 90 min |
-| DESIGN-PAUSE-002 | Sticker sheet — PendingQuestionSheet (ask_user bottom sheet) | frontend-designer | 60 min |
-| DESIGN-PAUSE-003 | Sticker sheet — PlanReviewScreen (full-screen modal pushed route) | frontend-designer | 75 min |
-| DESIGN-PAUSE-004 | Sticker sheet — PendingActionIndicator (floating pill) | frontend-designer | 30 min |
-
-**Next Sprint Tasks:** *(populated JIT when sprint becomes active by kb-sprint-tasks-plan)*
-
-#### Dependencies
-
-- Blocks: Sprint 09
-- Dependent on: Sprint 01, 02 (DESIGN-CHAT-001 informs PendingApprovalCard layout consistency)
-
-#### PRD Coverage
-
-- UC-PAUSE-01 (PendingApprovalCard + PendingApprovalFooter components)
-- UC-PAUSE-02 (PendingQuestionSheet component)
-- UC-PAUSE-03 (PlanReviewScreen component)
-- UC-PAUSE-04 (PendingActionIndicator component)
-
----
-
-### Sprint 05: Platform Surface Components
-
-**Sequence:** 5
-**Timeline:** Phase 1 — UI Components
-**Status:** 🔵 Planned
-**Branch:** `chat-mobile-platform-components`
-**PR:** —
-
-#### Human Testing Gate
-
-**Gate:** Reviewer launches the mobile app in Storybook mode on simulator/emulator and confirms every platform-surface component renders correctly — the PushPrePromptScreen with Enable / Not now CTAs, the re-enable-in-settings banner per permission state (granted / denied / undetermined), and the host-offline banner per dispatch outcome variant (offline / unpaid / dispatch_failed / session-unavailable).
-
-**Test Steps:**
-1. Launch the mobile app in Storybook mode on iOS Simulator and Android Emulator.
-2. Navigate to **PushPrePromptScreen** stories — confirm the centered illustration / bell icon, heading copy, body copy (matching `07-notifications.md` permission rationale), benefits list, Enable primary button (`--color-primary` fill at 44pt), and Not-now text button at 48pt tap area.
-3. Navigate to **RebableInSettingsBanner** stories — verify the granted (hidden), denied (visible with `--color-destructive` accent and "Re-enable in Settings" + `Linking.openSettings()` CTA), and undetermined (informational) variants.
-4. Navigate to **HostOfflineBanner** stories — confirm every dispatch outcome variant renders distinct copy: offline-idle ("Host offline — tap to retry"), offline-retrying (spinner + "Reconnecting…"), online (hidden), session-unavailable ("Session unavailable" + back link), `skipped_unpaid` ("Plan upgrade required" or equivalent), `dispatch_failed` ("Host dispatch failed" with retry).
-5. Navigate to the **NotificationIconPreview** story — confirm the 192×192 transparent PNG asset renders as a white silhouette at multiple display sizes (192pt, 96pt, 24pt) and matches the Android status-bar small-icon constraints.
-6. Toggle light/dark theme and re-verify each component on both themes.
-
-#### Tasks
-
-| ID | Title | Agent | Estimate |
-|----|-------|-------|----------|
-| MOB-PLATF-001 | Build PushPrePromptScreen in-app pre-prompt with Enable/Not now actions | react-native-ui-implementer | 120 min |
-| MOB-PLATF-005-UI | Build RebableInSettingsBanner component (props-driven, no permission API wiring) with stories per state | react-native-ui-implementer | 60 min |
-| MOB-PLATF-007-UI | Build HostOfflineBanner component (props-driven, no detection wiring) with stories for all dispatch outcome variants | react-native-ui-implementer | 120 min |
-| DESIGN-PLATF-001 | Sticker sheet — PushPrePromptScreen (permission pre-prompt) | frontend-designer | 45 min |
-| DESIGN-PLATF-002 | Sticker sheet — host-offline banner + retry affordance | frontend-designer | 30 min |
-| DESIGN-PLATF-004 | Android notification icon spec + 192×192 transparent PNG asset | frontend-designer | 20 min |
-
-**Next Sprint Tasks:** *(populated JIT when sprint becomes active by kb-sprint-tasks-plan)*
-
-#### Dependencies
-
-- Blocks: Sprint 10, 11
-- Dependent on: Sprint 01
-
-#### PRD Coverage
-
-- UC-PLATF-01 (PushPrePromptScreen + RebableInSettingsBanner components)
-- UC-PLATF-03 (HostOfflineBanner component)
-
----
-
-### Sprint 06: Sessions List Integration
-
-**Sequence:** 6
 **Timeline:** Phase 2 — Integration
 **Status:** 🔵 Planned
 **Branch:** `chat-mobile-sessions-int`
@@ -349,8 +187,8 @@ gate_strategy: ui-first-via-storybook
 
 #### Dependencies
 
-- Blocks: Sprint 07
-- Dependent on: Sprint 01 (Phase 1 sessions-list components)
+- Blocks: Sprint 03
+- Dependent on: Sprint 01 (Phase 1 pixel-perfect components — sessions-list tier)
 
 #### PRD Coverage
 
@@ -366,9 +204,9 @@ gate_strategy: ui-first-via-storybook
 
 ---
 
-### Sprint 07: Chat View Read + Session Management
+### Sprint 03: Chat View Read + Session Management
 
-**Sequence:** 7
+**Sequence:** 3
 **Timeline:** Phase 2 — Integration
 **Status:** 🔵 Planned
 **Branch:** `chat-mobile-chat-view-int`
@@ -405,8 +243,8 @@ gate_strategy: ui-first-via-storybook
 
 #### Dependencies
 
-- Blocks: Sprint 08, 09, 11
-- Dependent on: Sprint 02 (chat render components), Sprint 06 (sessions list provides entry points)
+- Blocks: Sprint 04, 05, 07
+- Dependent on: Sprint 01 (Phase 1 pixel-perfect components — chat-tree tier), Sprint 02 (sessions list provides entry points)
 
 #### PRD Coverage
 
@@ -418,9 +256,9 @@ gate_strategy: ui-first-via-storybook
 
 ---
 
-### Sprint 08: Compose + Send Integration
+### Sprint 04: Compose + Send Integration
 
-**Sequence:** 8
+**Sequence:** 4
 **Timeline:** Phase 2 — Integration
 **Status:** 🔵 Planned
 **Branch:** `chat-mobile-send-int`
@@ -456,8 +294,8 @@ gate_strategy: ui-first-via-storybook
 
 #### Dependencies
 
-- Blocks: Sprint 09, 11
-- Dependent on: Sprint 03 (composer components), Sprint 07 (ChatScreen + host-service-client)
+- Blocks: Sprint 05, 07
+- Dependent on: Sprint 01 (Phase 1 pixel-perfect components — composer tier), Sprint 03 (ChatScreen + host-service-client)
 
 #### PRD Coverage
 
@@ -470,9 +308,9 @@ gate_strategy: ui-first-via-storybook
 
 ---
 
-### Sprint 09: Pause Response Integration
+### Sprint 05: Pause Response Integration
 
-**Sequence:** 9
+**Sequence:** 5
 **Timeline:** Phase 2 — Integration
 **Status:** 🔵 Planned
 **Branch:** `chat-mobile-pause-int`
@@ -506,8 +344,8 @@ gate_strategy: ui-first-via-storybook
 
 #### Dependencies
 
-- Blocks: Sprint 10
-- Dependent on: Sprint 04 (pause components), Sprint 08 (compose + send + ChatInputFooter)
+- Blocks: Sprint 06
+- Dependent on: Sprint 01 (Phase 1 pixel-perfect components — pause-container tier), Sprint 04 (compose + send + ChatInputFooter)
 
 #### PRD Coverage
 
@@ -518,9 +356,9 @@ gate_strategy: ui-first-via-storybook
 
 ---
 
-### Sprint 10: Push Notifications (Server + Mobile)
+### Sprint 06: Push Notifications (Server + Mobile)
 
-**Sequence:** 10
+**Sequence:** 6
 **Timeline:** Phase 2 — Integration
 **Status:** 🔵 Planned
 **Branch:** `chat-mobile-push`
@@ -569,8 +407,8 @@ gate_strategy: ui-first-via-storybook
 
 #### Dependencies
 
-- Blocks: Sprint 11
-- Dependent on: Sprint 05 (push pre-prompt + re-enable banner components), Sprint 09 (pause containers for tap-to-open auto-open behavior)
+- Blocks: Sprint 07
+- Dependent on: Sprint 01 (Phase 1 pixel-perfect components — platform-surface tier: push pre-prompt + re-enable banner), Sprint 05 (pause containers for tap-to-open auto-open behavior)
 
 #### PRD Coverage
 
@@ -581,9 +419,9 @@ gate_strategy: ui-first-via-storybook
 
 ---
 
-### Sprint 11: Offline + Background Resume
+### Sprint 07: Offline + Background Resume
 
-**Sequence:** 11
+**Sequence:** 7
 **Timeline:** Phase 2 — Integration
 **Status:** 🔵 Planned
 **Branch:** `chat-mobile-offline`
@@ -613,7 +451,7 @@ gate_strategy: ui-first-via-storybook
 #### Dependencies
 
 - Blocks: None
-- Dependent on: Sprint 05 (HostOfflineBanner component), Sprint 08 (ChatInputFooter for Send disable), Sprint 10 (push reconnect-detection trigger)
+- Dependent on: Sprint 01 (Phase 1 pixel-perfect components — HostOfflineBanner from platform-surface tier), Sprint 04 (ChatInputFooter for Send disable), Sprint 06 (push reconnect-detection trigger)
 
 #### PRD Coverage
 
@@ -629,25 +467,26 @@ gate_strategy: ui-first-via-storybook
 
 Phase 1 components are **pure** (props-driven, no data fetches, no side effects beyond local UI state). Phase 2 sprints **compose** them into real screens and wire them to data via TanStack DB Electric collections, the host-service tRPC client, and the displayState polling reducer.
 
-Component prop interfaces declared during Phase 1 MUST anticipate the Phase 2 data shapes from `01-data-schema.md` and `02-api-design.md`. The implementer working a Phase 1 component task is responsible for sketching the prop shape that Phase 2 wiring will supply. Each Phase 1 task brief documents the props in its co-located README or Storybook story args; deviations during Phase 2 integration trigger a return ticket to revise the component.
+Component prop interfaces are decided during pixel-perfect's `plan` phase (Sprint 01) and MUST anticipate the Phase 2 data shapes from `01-data-schema.md` and `02-api-design.md`. Each component's prop shape is documented in its co-located Storybook story args (`ComponentName.stories.tsx`); deviations discovered during Phase 2 integration trigger a return ticket to pixel-perfect's compose phase to revise the component (rather than patching the consumer).
 
-### Design enrichment notes (apply during task expansion)
+### Design enrichment notes
 
-The following design enrichments from the design planner attach to specific implementer tasks during `kb-sprint-tasks-plan` expansion:
+The following design enrichments apply across BOTH phases. Pixel-perfect's `plan` phase (Sprint 01) MUST encode these constraints into atom / molecule / view specs; Phase 2 integration sprints inherit them via the component contracts.
 
-- **44pt hit-target rule** applies to all pause-footer buttons (MOB-PAUSE-002), composer toolbar controls (MOB-COMP-007), action buttons in sheets (MOB-PAUSE-004), and the close affordance on PlanReviewScreen (MOB-PAUSE-006). Source: `05-ui-infrastructure.md` Hit targets section + WCAG mobile guidelines.
-- **Optimistic-tap pattern** (UI ghosts to ~50% on tap; rolls back with toast on error) applies to MOB-PAUSE-003 / MOB-PAUSE-005 / MOB-PAUSE-007 and to MOB-COMP-008 (sendMessage). Source: UC-PAUSE-01/02/03 ACs + UC-COMP-02 AC.
-- **BottomSheetTextInput requirement** (not plain TextInput) for MOB-PAUSE-004 — keyboard avoidance is the decisive factor per `07-uc-pause.md` Design Rationale.
-- **Sticky-header fallback path** for MOB-NAV-006 — try FlashList `stickyHeaderIndices` first; fall back to RN `SectionList` with `stickySectionHeadersEnabled` if FlashList 1.7.x stickiness misbehaves on Android `inverted` lists.
-- **Tailwind→RN translation rules** (`space-y-* → gap-* on flex-col View`, `transition-* → Reanimated`, `hover:* → active:*`, `dark:* → @variant dark` tokens) apply broadly to MOB-RENDER-* and MOB-COMP-* component implementations. Source: design audit `plans/20260521-mobile-chat-design-audit.md`.
-- **Status icon glyph palette** (`⌖ ⚠ ● ○` from `09-uc-nav.md` §A or Lucide equivalents `Activity / AlertTriangle / Circle-filled / Circle-outline`) for MOB-NAV-002 — implementer must commit to one approach and not mix glyphs + icons.
-- **Palette delta (mobile cool-neutral vs desktop warm-ember)** is an OPEN product decision per `05-ui-infrastructure.md` and `10-team-contributions.md` — implementers must NOT auto-reconcile; flag any cross-app palette divergence in the PR description.
+- **44pt hit-target rule** applies to all pause-footer buttons (MOB-PAUSE-002 — Sprint 01), composer toolbar controls (MOB-COMP-007 — Sprint 04 ChatInputFooter container), action buttons in sheets (MOB-PAUSE-004 — Sprint 01), and the close affordance on PlanReviewScreen (MOB-PAUSE-006 — Sprint 01). Source: `05-ui-infrastructure.md` Hit targets section + WCAG mobile guidelines.
+- **Optimistic-tap pattern** (UI ghosts to ~50% on tap; rolls back with toast on error) applies to MOB-PAUSE-003 / MOB-PAUSE-005 / MOB-PAUSE-007 (all Sprint 05 wiring) and to MOB-COMP-008 (sendMessage wiring in Sprint 04). Pixel-perfect's Sprint 01 components must expose the ghosting state via props so Phase 2 wiring can drive it. Source: UC-PAUSE-01/02/03 ACs + UC-COMP-02 AC.
+- **BottomSheetTextInput requirement** (not plain TextInput) for MOB-PAUSE-004 (Sprint 01) — keyboard avoidance is the decisive factor per `07-uc-pause.md` Design Rationale.
+- **Sticky-header fallback path** for MOB-NAV-006 (Sprint 02 sticky-header wiring) — try FlashList `stickyHeaderIndices` first; fall back to RN `SectionList` with `stickySectionHeadersEnabled` if FlashList 1.7.x stickiness misbehaves on Android `inverted` lists. Sprint 01's WorkspaceSection must be implemented in a way that supports either path.
+- **Tailwind→RN translation rules** (`space-y-* → gap-* on flex-col View`, `transition-* → Reanimated`, `hover:* → active:*`, `dark:* → @variant dark` tokens) apply broadly to all MOB-RENDER-* and MOB-COMP-* components built in Sprint 01. Source: design audit `plans/20260521-mobile-chat-design-audit.md`.
+- **Status icon glyph palette** (`⌖ ⚠ ● ○` from `09-uc-nav.md` §A or Lucide equivalents `Activity / AlertTriangle / Circle-filled / Circle-outline`) for MOB-NAV-002 (Sprint 01 SessionRow) — pixel-perfect must commit to one approach and not mix glyphs + icons across SessionRow variants.
+- **Palette delta (mobile cool-neutral vs desktop warm-ember)** is an OPEN product decision per `05-ui-infrastructure.md` and `10-team-contributions.md`. The manifest locks Sprint 01 to the existing mobile cool-neutral palette in `apps/mobile/global.css` — pixel-perfect MUST NOT auto-reconcile to desktop's ember theme. Flag any cross-app palette divergence in the PR description for product review.
 
 ### PR sequencing operational notes
 
-- Each sprint maps to one branch + one PR by default (per `~/Projects/brain/docs/PR-SEQUENCING.md`). Multi-sprint PRs are allowed when sprints share a coherent reviewable surface (e.g., Sprint 10's server-side + mobile-side push could share one PR if the team prefers a single atomic review).
+- **Phase 1 (Sprint 01)** ships as one branch (`chat-mobile-ui-elements`) and one PR, driven end-to-end by pixel-perfect. The PR opens when pixel-perfect's `atoms` gate first passes (ready for incremental review) and merges once all of `atoms`, `molecules`, and `compose` are `passed` in `apps/mobile/design/manifest.json`.
+- **Phase 2 (Sprints 02–07)** map to one branch + one PR each by default (per `~/Projects/brain/docs/PR-SEQUENCING.md`). Multi-sprint PRs are allowed when sprints share a coherent reviewable surface (e.g., Sprint 06's server-side + mobile-side push could share one PR if the team prefers a single atomic review).
 - Sub-100-line incidental changes that span sprints (typo fixes, version bumps) can be folded into any active sprint's PR without re-planning.
-- When a sprint subdivides mid-execution, run `/kb-sprint-plan --delta-replan` to split it. The delta-replan preserves Branch + PR cells verbatim for unchanged sprints.
+- When a Phase 2 sprint subdivides mid-execution, run `/kb-sprint-plan --delta-replan` to split it. The delta-replan preserves Branch + PR cells verbatim for unchanged sprints. For Sprint 01 subdivision needs, escalate to pixel-perfect's plan phase replan (`/pixel-perfect:build --replan`) instead.
 
 ### Out-of-scope reminders (per `01-scope.md`)
 
