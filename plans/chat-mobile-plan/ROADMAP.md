@@ -14,7 +14,7 @@ gate_strategy: ui-first-via-storybook
 
 **Sprints:** 11
 **Total Tasks:** 95
-**Current Sprint:** — (all Planned)
+**Current Sprint:** **Sprint 01** — 🟠 In flight (expanded 2026-05-21, 10 task files in `tasks/sprint-01-storybook-infra-sessions-list-components/`)
 
 **Planning Specialists:** `react-native-ui-planner` · `node-planner` · `frontend-designer`
 
@@ -28,7 +28,7 @@ gate_strategy: ui-first-via-storybook
 
 | # | Sprint | Gate | Tasks | Dependencies | Status | Branch | PR |
 |---|--------|------|-------|--------------|--------|--------|----|
-| 1 | [Sprint 01: Storybook Infra + Sessions List Components](#sprint-01-storybook-infra--sessions-list-components) | Sessions-list-tier components render correctly in Storybook on simulator/emulator across all state matrices | 10 | — | 🔵 Planned | `chat-mobile-storybook-sessions` | — |
+| 1 | [Sprint 01: Storybook Infra + Sessions List Components](#sprint-01-storybook-infra--sessions-list-components) | Sessions-list-tier components render correctly in Storybook on simulator/emulator across all state matrices | 10 | — | 🟠 In flight | `sprint-1-chat-mobile-storybook-sessions` | — |
 | 2 | [Sprint 02: Chat View Components](#sprint-02-chat-view-components) | Chat-tree render components render correctly in Storybook across all message-type states | 9 | Sprint 01 | 🔵 Planned | `chat-mobile-chat-render` | — |
 | 3 | [Sprint 03: Composer Components](#sprint-03-composer-components) | Composer components (Tiptap editor + pickers + slash menu + new-chat sheet) render correctly in Storybook with all interaction states | 10 | Sprint 01 | 🔵 Planned | `chat-mobile-composer` | — |
 | 4 | [Sprint 04: Pause Container Components](#sprint-04-pause-container-components) | All four pause containers render correctly in Storybook (approval card + sticky footer with 1-of-N, ask_user bottom sheet, plan-review full-screen, pending-action pill) | 9 | Sprint 01, 02 | 🔵 Planned | `chat-mobile-pause-components` | — |
@@ -48,8 +48,8 @@ gate_strategy: ui-first-via-storybook
 
 **Sequence:** 1
 **Timeline:** Phase 1 — UI Components
-**Status:** 🔵 Planned
-**Branch:** `chat-mobile-storybook-sessions`
+**Status:** 🟠 In flight
+**Branch:** `sprint-1-chat-mobile-storybook-sessions`
 **PR:** —
 
 #### Human Testing Gate
@@ -81,7 +81,20 @@ gate_strategy: ui-first-via-storybook
 | DESIGN-NAV-003 | Sticker sheet — NewChatSheet (workspace picker) + empty states | frontend-designer | 60 min |
 | DESIGN-PLATF-003 | Iconography spec — Lucide icon set for chat actions | frontend-designer | 30 min |
 
-**Next Sprint Tasks:** *(populated JIT when sprint becomes active by kb-sprint-tasks-plan)*
+**Next Sprint Tasks:** *(expanded 2026-05-21 by `/kb-sprint-tasks-plan` — all 10 tasks score 115/115; MOB-INFRA-002 estimate bumped 180→240 min for provider-stack mirror + 4 design-system primitive stories per user steering)*
+
+- [`tasks/sprint-01-.../DESIGN-PLATF-003-iconography-spec-lucide-icon-set-for-chat-actions.md`](./tasks/sprint-01-storybook-infra-sessions-list-components/DESIGN-PLATF-003-iconography-spec-lucide-icon-set-for-chat-actions.md)
+- [`tasks/sprint-01-.../DESIGN-NAV-001-sticker-sheet-sessionslistscreen-...`](./tasks/sprint-01-storybook-infra-sessions-list-components/DESIGN-NAV-001-sticker-sheet-sessionslistscreen-header-session-row-workspace-section-.md)
+- [`tasks/sprint-01-.../DESIGN-NAV-002-sticker-sheet-hostpickersheet-...`](./tasks/sprint-01-storybook-infra-sessions-list-components/DESIGN-NAV-002-sticker-sheet-hostpickersheet-host-picker-bottom-sheet.md)
+- [`tasks/sprint-01-.../DESIGN-NAV-003-sticker-sheet-newchatsheet-...`](./tasks/sprint-01-storybook-infra-sessions-list-components/DESIGN-NAV-003-sticker-sheet-newchatsheet-workspace-picker-4-empty-states.md)
+- [`tasks/sprint-01-.../MOB-INFRA-001-install-chat-tree-runtime-dependencies-...`](./tasks/sprint-01-storybook-infra-sessions-list-components/MOB-INFRA-001-install-chat-tree-runtime-dependencies-in-apps-mobile.md)
+- [`tasks/sprint-01-.../MOB-INFRA-002-configure-storybook-9-...`](./tasks/sprint-01-storybook-infra-sessions-list-components/MOB-INFRA-002-configure-storybook-9-with-root-toggle-real-app-provider-stack-and-4-d.md) **(240 min)**
+- [`tasks/sprint-01-.../MOB-NAV-002-build-sessionrow-...`](./tasks/sprint-01-storybook-infra-sessions-list-components/MOB-NAV-002-build-sessionrow-pure-component-with-status-icon-and-storybook-stories.md)
+- [`tasks/sprint-01-.../MOB-NAV-003-build-workspacesection-loadmorepill-...`](./tasks/sprint-01-storybook-infra-sessions-list-components/MOB-NAV-003-build-workspacesection-loadmorepill-subcomponents-with-stories.md)
+- [`tasks/sprint-01-.../MOB-NAV-004-build-hostchip-newchatfab-...`](./tasks/sprint-01-storybook-infra-sessions-list-components/MOB-NAV-004-build-hostchip-newchatfab-sessionsearchbar-and-sessionsemptystate-comp.md)
+- [`tasks/sprint-01-.../MOB-NAV-008-UI-build-hostpickersheet-...`](./tasks/sprint-01-storybook-infra-sessions-list-components/MOB-NAV-008-UI-build-hostpickersheet-pure-component-uc-nav-03-visual-no-data-wiring-w.md)
+
+**Recommended execution order:** DESIGN-PLATF-003 → DESIGN-NAV-001/002/003 (parallel) → MOB-INFRA-001 → MOB-INFRA-002 → MOB-NAV-002/003/004/008-UI (parallel)
 
 #### Dependencies
 
