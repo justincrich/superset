@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · avatar</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-avatar — token-governed round avatar atom
+       Composition purity: only .atom-avatar rules defined here.
+       Zero hex literals. Zero raw color values.
+       Structural literals: 20/28/36/48 (diameter per size class),
+       2px ring gap, 8px live-dot — all keyed to spec, not free-form.
+       ============================================================ */
+
+    /* ---- Base ----------------------------------------------- */
+    .atom-avatar {
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      border-radius:   var(--radius-round);
+      font-family:     var(--font-body);
+      font-weight:     var(--font-weight-meta);
+      flex-shrink:     0;
+      position:        relative;
+      /* Default size: sm */
+      width:           28px;
+      height:          28px;
+      font-size:       var(--font-size-label);
+      line-height:     1;
+      user-select:     none;
+    }
+
+    /* ---- Variants ------------------------------------------- */
+    .atom-avatar--initial {
+      background: var(--surface-soft);
+      color:      var(--text-body);
+    }
+
+    .atom-avatar--accent {
+      background: var(--accent-primary);
+      color:      var(--accent-primary-fg);
+    }
+
+    .atom-avatar--icon {
+      background: var(--surface-soft);
+      color:      var(--text-muted);
+    }
+
+    /* ---- Sizes ---------------------------------------------- */
+    .atom-avatar--xs {
+      width:     20px;
+      height:    20px;
+      font-size: var(--font-size-meta);
+    }
+
+    .atom-avatar--sm {
+      width:     28px;
+      height:    28px;
+      font-size: var(--font-size-label);
+    }
+
+    .atom-avatar--md {
+      width:     36px;
+      height:    36px;
+      font-size: var(--font-size-body);
+    }
+
+    .atom-avatar--lg {
+      width:     48px;
+      height:    48px;
+      font-size: var(--font-size-section-title);
+    }
+
+    /* ---- Modifier: ring ------------------------------------- */
+    /* 2px gap (surface-page) then 2px ring (accent-primary) */
+    .atom-avatar--ring {
+      box-shadow:
+        0 0 0 2px var(--surface-page),
+        0 0 0 4px var(--accent-primary);
+    }
+
+    /* ---- Modifier: live-indicator --------------------------- */
+    /* 8px dot at bottom-right corner, 2px page-color halo */
+    .atom-avatar--live-indicator::after {
+      content:       '';
+      position:      absolute;
+      right:         -2px;
+      bottom:        -2px;
+      width:         8px;
+      height:        8px;
+      background:    var(--state-live-fg);
+      border-radius: var(--radius-round);
+      box-shadow:    0 0 0 2px var(--surface-page);
+    }
+
+    /* ---- State: disabled ------------------------------------ */
+    .atom-avatar.is-disabled {
+      opacity: 0.5;
+    }
+
+    /* ============================================================
+       Preview-only layout helpers (not part of atom export)
+       ============================================================ */
+
+    /* Matrix row: flex row of avatars + labels */
+    .matrix-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-6);
+      flex-wrap:   wrap;
+    }
+
+    /* Single cell in the matrix */
+    .matrix-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-2);
+    }
+
+    .matrix-cell .cell-label {
+      font-family:     var(--font-mono);
+      font-size:       var(--font-size-meta);
+      color:           var(--text-faint);
+      letter-spacing:  var(--tracking-mono);
+      text-transform:  uppercase;
+      text-align:      center;
+      white-space:     nowrap;
+    }
+
+    /* Message row mock */
+    .message-row {
+      display:     flex;
+      align-items: flex-start;
+      gap:         var(--space-3);
+      padding:     var(--space-3) 0;
+    }
+
+    .message-row + .message-row {
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .message-body {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+    }
+
+    .message-sender {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-label);
+      font-weight:    var(--font-weight-label);
+      letter-spacing: var(--tracking-snug);
+      color:          var(--text-muted);
+    }
+
+    .message-text {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-body);
+      font-weight:  var(--font-weight-body);
+      line-height:  var(--line-height-normal);
+      color:        var(--text-body);
+    }
+
+    /* Typing indicator dots (3-dot bounce) */
+    .typing-indicator {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-1);
+      padding:     var(--space-2) 0;
+    }
+
+    @keyframes avatar-typing-bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40%            { transform: translateY(-4px); opacity: 1; }
+    }
+
+    .typing-dot {
+      width:         6px;
+      height:        6px;
+      border-radius: var(--radius-round);
+      background:    var(--text-muted);
+      animation:     avatar-typing-bounce var(--motion-slow) ease-in-out infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.30s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .typing-dot { animation: none; opacity: 0.6; }
+    }
+
+    /* Section divider within variant block */
+    .sub-section {
+      margin-bottom: var(--space-8);
+    }
+
+    .sub-section > h4 {
+      margin:         0 0 var(--space-4);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       HEADER
+       ============================================================ -->
+  <div class="preview-plate">
+    <p class="crumb">atoms / avatar</p>
+    <h1>atom-avatar</h1>
+  </div>
+
+  <!-- ============================================================
+       DARK PANE
+       ============================================================ -->
+  <div class="pegboard">
+  <div class="pane" data-theme="dark">
+    <span class="pane-label">dark</span>
+
+    <!-- 1. Variant × size matrix -------------------------------- -->
+    <div class="variant">
+      <h3>Variant × Size Matrix (3 × 4 = 12 cells)</h3>
+
+      <!-- --initial row -->
+      <div class="sub-section">
+        <h4>--initial · user "J"</h4>
+        <div class="matrix-row">
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--initial atom-avatar--xs"
+                 role="img" aria-label="Justin Rich">J</div>
+            <span class="cell-label">xs · 20px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--initial atom-avatar--sm"
+                 role="img" aria-label="Justin Rich">J</div>
+            <span class="cell-label">sm · 28px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--initial atom-avatar--md"
+                 role="img" aria-label="Justin Rich">J</div>
+            <span class="cell-label">md · 36px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--initial atom-avatar--lg"
+                 role="img" aria-label="Justin Rich">J</div>
+            <span class="cell-label">lg · 48px</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- --accent row -->
+      <div class="sub-section">
+        <h4>--accent · assistant "A"</h4>
+        <div class="matrix-row">
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--accent atom-avatar--xs"
+                 role="img" aria-label="Assistant">A</div>
+            <span class="cell-label">xs · 20px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                 role="img" aria-label="Assistant">A</div>
+            <span class="cell-label">sm · 28px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--accent atom-avatar--md"
+                 role="img" aria-label="Assistant">A</div>
+            <span class="cell-label">md · 36px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--accent atom-avatar--lg"
+                 role="img" aria-label="Assistant">A</div>
+            <span class="cell-label">lg · 48px</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- --icon row -->
+      <div class="sub-section">
+        <h4>--icon · bot (assistant) / user icon</h4>
+        <div class="matrix-row">
+          <!-- xs: bot icon -->
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--icon atom-avatar--xs"
+                 role="img" aria-label="Bot">
+              <!-- lucide bot icon (12×12) -->
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.5"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <rect x="3" y="11" width="18" height="10" rx="2"/>
+                <circle cx="12" cy="5" r="2"/>
+                <path d="M12 7v4"/>
+                <line x1="8" y1="16" x2="8" y2="16"/>
+                <line x1="16" y1="16" x2="16" y2="16"/>
+              </svg>
+            </div>
+            <span class="cell-label">xs · bot</span>
+          </div>
+          <!-- sm: bot icon -->
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--icon atom-avatar--sm"
+                 role="img" aria-label="Bot">
+              <!-- lucide bot icon (16×16) -->
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <rect x="3" y="11" width="18" height="10" rx="2"/>
+                <circle cx="12" cy="5" r="2"/>
+                <path d="M12 7v4"/>
+                <line x1="8" y1="16" x2="8" y2="16"/>
+                <line x1="16" y1="16" x2="16" y2="16"/>
+              </svg>
+            </div>
+            <span class="cell-label">sm · bot</span>
+          </div>
+          <!-- md: user icon -->
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--icon atom-avatar--md"
+                 role="img" aria-label="User">
+              <!-- lucide user icon (20×20) -->
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </div>
+            <span class="cell-label">md · user</span>
+          </div>
+          <!-- lg: user icon -->
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--icon atom-avatar--lg"
+                 role="img" aria-label="User">
+              <!-- lucide user icon (24×24) -->
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </div>
+            <span class="cell-label">lg · user</span>
+          </div>
+        </div>
+      </div>
+    </div><!-- /variant matrix -->
+
+    <!-- 2. Modifier row ----------------------------------------- -->
+    <div class="variant">
+      <h3>Modifiers · --sm size</h3>
+      <div class="matrix-row">
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--initial atom-avatar--sm"
+               role="img" aria-label="Justin Rich">J</div>
+          <span class="cell-label">default</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--initial atom-avatar--sm atom-avatar--ring"
+               role="img" aria-label="Justin Rich">J</div>
+          <span class="cell-label">--ring</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm atom-avatar--live-indicator"
+               role="img" aria-label="Assistant (streaming)">A</div>
+          <span class="cell-label">--live-indicator</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--initial atom-avatar--sm atom-avatar--ring atom-avatar--live-indicator"
+               role="img" aria-label="Justin Rich (streaming)">J</div>
+          <span class="cell-label">both combined</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. States ----------------------------------------------- -->
+    <div class="variant">
+      <h3>States</h3>
+      <div class="matrix-row">
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--initial atom-avatar--sm"
+               role="img" aria-label="Justin Rich">J</div>
+          <span class="cell-label">default</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm"
+               role="img" aria-label="Assistant">A</div>
+          <span class="cell-label">accent default</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--initial atom-avatar--sm is-disabled"
+               role="img" aria-label="Justin Rich" aria-disabled="true">J</div>
+          <span class="cell-label">is-disabled</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm is-disabled"
+               role="img" aria-label="Assistant" aria-disabled="true">A</div>
+          <span class="cell-label">accent disabled</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--icon atom-avatar--sm is-disabled"
+               role="img" aria-label="Bot" aria-disabled="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.75"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <rect x="3" y="11" width="18" height="10" rx="2"/>
+              <circle cx="12" cy="5" r="2"/>
+              <path d="M12 7v4"/>
+              <line x1="8" y1="16" x2="8" y2="16"/>
+              <line x1="16" y1="16" x2="16" y2="16"/>
+            </svg>
+          </div>
+          <span class="cell-label">icon disabled</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Composition — message-row mocks ---------------------- -->
+    <div class="variant">
+      <h3>Composition · Message-Row Mocks</h3>
+
+      <!-- User message row -->
+      <div class="message-row">
+        <div class="atom-avatar atom-avatar--initial atom-avatar--sm"
+             aria-hidden="true">J</div>
+        <div class="message-body">
+          <span class="message-sender">Justin Rich</span>
+          <span class="message-text">Refactor relay tunnel reconnect</span>
+        </div>
+      </div>
+
+      <!-- Assistant message row -->
+      <div class="message-row">
+        <div class="atom-avatar atom-avatar--accent atom-avatar--sm"
+             aria-hidden="true">A</div>
+        <div class="message-body">
+          <span class="message-sender">Assistant</span>
+          <span class="message-text">Found it. The reconnect loop in apps/relay/src/tunnel-client.ts...</span>
+        </div>
+      </div>
+
+      <!-- Active-speaker row (user with ring + typing indicator) -->
+      <div class="message-row">
+        <div class="atom-avatar atom-avatar--initial atom-avatar--sm atom-avatar--ring"
+             role="img" aria-label="Justin Rich (active speaker)">J</div>
+        <div class="message-body">
+          <span class="message-sender">Justin Rich</span>
+          <div class="typing-indicator" aria-label="typing">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dark pane -->
+
+  <!-- ============================================================
+       LIGHT PANE
+       ============================================================ -->
+  <div class="pane" data-theme="light">
+    <span class="pane-label">light</span>
+
+    <!-- 1. Variant × size matrix -------------------------------- -->
+    <div class="variant">
+      <h3>Variant × Size Matrix (3 × 4 = 12 cells)</h3>
+
+      <!-- --initial row -->
+      <div class="sub-section">
+        <h4>--initial · user "J"</h4>
+        <div class="matrix-row">
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--initial atom-avatar--xs"
+                 role="img" aria-label="Justin Rich">J</div>
+            <span class="cell-label">xs · 20px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--initial atom-avatar--sm"
+                 role="img" aria-label="Justin Rich">J</div>
+            <span class="cell-label">sm · 28px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--initial atom-avatar--md"
+                 role="img" aria-label="Justin Rich">J</div>
+            <span class="cell-label">md · 36px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--initial atom-avatar--lg"
+                 role="img" aria-label="Justin Rich">J</div>
+            <span class="cell-label">lg · 48px</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- --accent row -->
+      <div class="sub-section">
+        <h4>--accent · assistant "A"</h4>
+        <div class="matrix-row">
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--accent atom-avatar--xs"
+                 role="img" aria-label="Assistant">A</div>
+            <span class="cell-label">xs · 20px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                 role="img" aria-label="Assistant">A</div>
+            <span class="cell-label">sm · 28px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--accent atom-avatar--md"
+                 role="img" aria-label="Assistant">A</div>
+            <span class="cell-label">md · 36px</span>
+          </div>
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--accent atom-avatar--lg"
+                 role="img" aria-label="Assistant">A</div>
+            <span class="cell-label">lg · 48px</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- --icon row -->
+      <div class="sub-section">
+        <h4>--icon · bot (assistant) / user icon</h4>
+        <div class="matrix-row">
+          <!-- xs: bot icon -->
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--icon atom-avatar--xs"
+                 role="img" aria-label="Bot">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.5"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <rect x="3" y="11" width="18" height="10" rx="2"/>
+                <circle cx="12" cy="5" r="2"/>
+                <path d="M12 7v4"/>
+                <line x1="8" y1="16" x2="8" y2="16"/>
+                <line x1="16" y1="16" x2="16" y2="16"/>
+              </svg>
+            </div>
+            <span class="cell-label">xs · bot</span>
+          </div>
+          <!-- sm: bot icon -->
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--icon atom-avatar--sm"
+                 role="img" aria-label="Bot">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <rect x="3" y="11" width="18" height="10" rx="2"/>
+                <circle cx="12" cy="5" r="2"/>
+                <path d="M12 7v4"/>
+                <line x1="8" y1="16" x2="8" y2="16"/>
+                <line x1="16" y1="16" x2="16" y2="16"/>
+              </svg>
+            </div>
+            <span class="cell-label">sm · bot</span>
+          </div>
+          <!-- md: user icon -->
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--icon atom-avatar--md"
+                 role="img" aria-label="User">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </div>
+            <span class="cell-label">md · user</span>
+          </div>
+          <!-- lg: user icon -->
+          <div class="matrix-cell">
+            <div class="atom-avatar atom-avatar--icon atom-avatar--lg"
+                 role="img" aria-label="User">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </div>
+            <span class="cell-label">lg · user</span>
+          </div>
+        </div>
+      </div>
+    </div><!-- /variant matrix -->
+
+    <!-- 2. Modifier row ----------------------------------------- -->
+    <div class="variant">
+      <h3>Modifiers · --sm size</h3>
+      <div class="matrix-row">
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--initial atom-avatar--sm"
+               role="img" aria-label="Justin Rich">J</div>
+          <span class="cell-label">default</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--initial atom-avatar--sm atom-avatar--ring"
+               role="img" aria-label="Justin Rich">J</div>
+          <span class="cell-label">--ring</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm atom-avatar--live-indicator"
+               role="img" aria-label="Assistant (streaming)">A</div>
+          <span class="cell-label">--live-indicator</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--initial atom-avatar--sm atom-avatar--ring atom-avatar--live-indicator"
+               role="img" aria-label="Justin Rich (streaming)">J</div>
+          <span class="cell-label">both combined</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. States ----------------------------------------------- -->
+    <div class="variant">
+      <h3>States</h3>
+      <div class="matrix-row">
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--initial atom-avatar--sm"
+               role="img" aria-label="Justin Rich">J</div>
+          <span class="cell-label">default</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm"
+               role="img" aria-label="Assistant">A</div>
+          <span class="cell-label">accent default</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--initial atom-avatar--sm is-disabled"
+               role="img" aria-label="Justin Rich" aria-disabled="true">J</div>
+          <span class="cell-label">is-disabled</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--accent atom-avatar--sm is-disabled"
+               role="img" aria-label="Assistant" aria-disabled="true">A</div>
+          <span class="cell-label">accent disabled</span>
+        </div>
+        <div class="matrix-cell">
+          <div class="atom-avatar atom-avatar--icon atom-avatar--sm is-disabled"
+               role="img" aria-label="Bot" aria-disabled="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.75"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <rect x="3" y="11" width="18" height="10" rx="2"/>
+              <circle cx="12" cy="5" r="2"/>
+              <path d="M12 7v4"/>
+              <line x1="8" y1="16" x2="8" y2="16"/>
+              <line x1="16" y1="16" x2="16" y2="16"/>
+            </svg>
+          </div>
+          <span class="cell-label">icon disabled</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Composition — message-row mocks ---------------------- -->
+    <div class="variant">
+      <h3>Composition · Message-Row Mocks</h3>
+
+      <!-- User message row -->
+      <div class="message-row">
+        <div class="atom-avatar atom-avatar--initial atom-avatar--sm"
+             aria-hidden="true">J</div>
+        <div class="message-body">
+          <span class="message-sender">Justin Rich</span>
+          <span class="message-text">Refactor relay tunnel reconnect</span>
+        </div>
+      </div>
+
+      <!-- Assistant message row -->
+      <div class="message-row">
+        <div class="atom-avatar atom-avatar--accent atom-avatar--sm"
+             aria-hidden="true">A</div>
+        <div class="message-body">
+          <span class="message-sender">Assistant</span>
+          <span class="message-text">Found it. The reconnect loop in apps/relay/src/tunnel-client.ts...</span>
+        </div>
+      </div>
+
+      <!-- Active-speaker row (user with ring + typing indicator) -->
+      <div class="message-row">
+        <div class="atom-avatar atom-avatar--initial atom-avatar--sm atom-avatar--ring"
+             role="img" aria-label="Justin Rich (active speaker)">J</div>
+        <div class="message-body">
+          <span class="message-sender">Justin Rich</span>
+          <div class="typing-indicator" aria-label="typing">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /light pane -->
+  </div><!-- /pegboard -->
+
+</body>
+</html>
