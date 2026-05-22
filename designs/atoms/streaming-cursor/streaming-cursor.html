@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · streaming-cursor</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-streaming-cursor — token-governed inline streaming caret
+       Composition purity: only .atom-streaming-cursor rules here.
+       Zero hex literals. Zero raw font-size/weight/line-height/tracking.
+       Raw 2px, 4px, 6px ARE permitted (cursor geometry, not p/m/g).
+       ============================================================ */
+
+    /* ---- Base ------------------------------------------------ */
+    .atom-streaming-cursor {
+      display:        inline-block;
+      width:          2px;
+      height:         1em;                   /* tracks surrounding line-height */
+      vertical-align: text-bottom;
+      margin-left:    2px;                   /* structural offset from last char */
+      background:     var(--domain-streaming-cursor);
+      box-shadow:     0 0 6px var(--state-live-dot);
+      animation:      atom-streaming-cursor-blink 1s steps(2) infinite;
+    }
+
+    /* ---- Variant: steady (no animation — for snapshots) ------ */
+    .atom-streaming-cursor--steady {
+      animation: none;
+    }
+
+    /* ---- Variant: paused (amber, faster blink) --------------- */
+    .atom-streaming-cursor--paused {
+      background:        var(--state-warning-dot);
+      box-shadow:        0 0 4px var(--state-warning-dot);
+      animation-duration: 0.6s;
+    }
+
+    /* ---- State: is-paused (runtime alias for --paused) ------- */
+    .atom-streaming-cursor.is-paused {
+      background:        var(--state-warning-dot);
+      box-shadow:        0 0 4px var(--state-warning-dot);
+      animation-duration: 0.6s;
+    }
+
+    /* ---- Keyframes ------------------------------------------- */
+    @keyframes atom-streaming-cursor-blink {
+      0%   { opacity: 1; }
+      50%  { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    /* ---- Preview layout helpers ------------------------------ */
+    .cursor-row {
+      margin-bottom: var(--spacing-section);
+    }
+    .cursor-row-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-2);
+    }
+    .cursor-sentence {
+      max-width: 560px;
+    }
+
+    /* ---- 5× scale comparison block -------------------------- */
+    .scale-block {
+      margin-top: var(--spacing-section);
+      padding-top: var(--spacing-between);
+      border-top: 1px solid var(--border-subtle);
+    }
+    .scale-block-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin: 0 0 var(--spacing-between);
+    }
+    .scale-row {
+      display:     flex;
+      align-items: flex-end;
+      gap:         var(--spacing-section);
+      flex-wrap:   wrap;
+    }
+    .scale-item {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-2);
+    }
+    .scale-item-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+    /* 5× enlargement: cursor is 2px wide × ~22px tall in body context.
+       At 5× that's 10px wide × 110px tall. height uses em so we override
+       on a wrapper that sets a large font-size context. */
+    .scale-cursor-wrap {
+      font-size: calc(var(--font-size-body) * 5);
+      line-height: var(--line-height-normal);
+      /* Fixed box so items align regardless of height variation */
+      display:        flex;
+      align-items:    flex-end;
+      height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">streaming-cursor</h1>
+    <p class="crumb">atom · inline blinking caret for streaming assistant text</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- DEFAULT: animated mint blink ------------------- -->
+      <div class="cursor-row">
+        <p class="cursor-row-label">default — animated mint blink · 1s steps(2)</p>
+        <div class="variant">
+          <h3>default</h3>
+          <div class="state-grid">
+            <div class="state">
+              <span class="state-label">default</span>
+              <p class="type-body cursor-sentence" role="status" aria-live="polite">
+                Refactoring the relay tunnel reconnect loop now—I'll preserve the inner try/catch
+                and log err.code before the backoff sleeps<span class="atom-streaming-cursor atom-streaming-cursor--default" aria-hidden="true"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- STEADY: no animation, same mint color ---------- -->
+      <div class="cursor-row">
+        <p class="cursor-row-label">steady — no animation · snapshot / screenshot mode</p>
+        <div class="variant">
+          <h3>steady</h3>
+          <div class="state-grid">
+            <div class="state">
+              <span class="state-label">steady</span>
+              <p class="type-body cursor-sentence">
+                Generating the diff for packages/shared/src/relay-client.ts—this
+                may take a moment<span class="atom-streaming-cursor atom-streaming-cursor--steady" aria-hidden="true"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- PAUSED: amber, faster blink -------------------- -->
+      <div class="cursor-row">
+        <p class="cursor-row-label">paused — amber · 0.6s steps(2) · pause-pending state</p>
+        <div class="variant">
+          <h3>paused</h3>
+          <div class="state-grid">
+            <div class="state">
+              <span class="state-label">paused</span>
+              <p class="type-body cursor-sentence" role="status" aria-live="polite">
+                Awaiting approval to continue<span class="atom-streaming-cursor atom-streaming-cursor--paused" aria-hidden="true"></span>
+              </p>
+            </div>
+            <div class="state">
+              <span class="state-label">is-paused (runtime state)</span>
+              <p class="type-body cursor-sentence" role="status" aria-live="polite">
+                I need permission before writing to disk<span class="atom-streaming-cursor atom-streaming-cursor--default is-paused" aria-hidden="true"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 5× SCALE COMPARISON BLOCK ---------------------- -->
+      <div class="scale-block">
+        <p class="scale-block-title">5× scale — visual-spec inspection</p>
+        <div class="scale-row">
+          <div class="scale-item">
+            <div class="scale-cursor-wrap">
+              <span class="atom-streaming-cursor atom-streaming-cursor--default" aria-hidden="true"></span>
+            </div>
+            <span class="scale-item-label">default</span>
+          </div>
+          <div class="scale-item">
+            <div class="scale-cursor-wrap">
+              <span class="atom-streaming-cursor atom-streaming-cursor--steady" aria-hidden="true"></span>
+            </div>
+            <span class="scale-item-label">steady</span>
+          </div>
+          <div class="scale-item">
+            <div class="scale-cursor-wrap">
+              <span class="atom-streaming-cursor atom-streaming-cursor--paused" aria-hidden="true"></span>
+            </div>
+            <span class="scale-item-label">paused</span>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- DEFAULT ---------------------------------------- -->
+      <div class="cursor-row">
+        <p class="cursor-row-label">default — animated mint blink · 1s steps(2)</p>
+        <div class="variant">
+          <h3>default</h3>
+          <div class="state-grid">
+            <div class="state">
+              <span class="state-label">default</span>
+              <p class="type-body cursor-sentence" role="status" aria-live="polite">
+                Refactoring the relay tunnel reconnect loop now—I'll preserve the inner try/catch
+                and log err.code before the backoff sleeps<span class="atom-streaming-cursor atom-streaming-cursor--default" aria-hidden="true"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- STEADY ----------------------------------------- -->
+      <div class="cursor-row">
+        <p class="cursor-row-label">steady — no animation · snapshot / screenshot mode</p>
+        <div class="variant">
+          <h3>steady</h3>
+          <div class="state-grid">
+            <div class="state">
+              <span class="state-label">steady</span>
+              <p class="type-body cursor-sentence">
+                Generating the diff for packages/shared/src/relay-client.ts—this
+                may take a moment<span class="atom-streaming-cursor atom-streaming-cursor--steady" aria-hidden="true"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- PAUSED ----------------------------------------- -->
+      <div class="cursor-row">
+        <p class="cursor-row-label">paused — amber · 0.6s steps(2) · pause-pending state</p>
+        <div class="variant">
+          <h3>paused</h3>
+          <div class="state-grid">
+            <div class="state">
+              <span class="state-label">paused</span>
+              <p class="type-body cursor-sentence" role="status" aria-live="polite">
+                Awaiting approval to continue<span class="atom-streaming-cursor atom-streaming-cursor--paused" aria-hidden="true"></span>
+              </p>
+            </div>
+            <div class="state">
+              <span class="state-label">is-paused (runtime state)</span>
+              <p class="type-body cursor-sentence" role="status" aria-live="polite">
+                I need permission before writing to disk<span class="atom-streaming-cursor atom-streaming-cursor--default is-paused" aria-hidden="true"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 5× SCALE COMPARISON BLOCK ---------------------- -->
+      <div class="scale-block">
+        <p class="scale-block-title">5× scale — visual-spec inspection</p>
+        <div class="scale-row">
+          <div class="scale-item">
+            <div class="scale-cursor-wrap">
+              <span class="atom-streaming-cursor atom-streaming-cursor--default" aria-hidden="true"></span>
+            </div>
+            <span class="scale-item-label">default</span>
+          </div>
+          <div class="scale-item">
+            <div class="scale-cursor-wrap">
+              <span class="atom-streaming-cursor atom-streaming-cursor--steady" aria-hidden="true"></span>
+            </div>
+            <span class="scale-item-label">steady</span>
+          </div>
+          <div class="scale-item">
+            <div class="scale-cursor-wrap">
+              <span class="atom-streaming-cursor atom-streaming-cursor--paused" aria-hidden="true"></span>
+            </div>
+            <span class="scale-item-label">paused</span>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
