@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-project-chip-header — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-project-chip-header — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. Structural constants (1px, 2px badge offset,
+       16px icon-size in search padding calc) are allowed per spec.
+       ================================================================ */
+
+    /* ---- Screen-reader-only utility -------------------------------- */
+    .sr-only {
+      position:    absolute;
+      width:       1px;
+      height:      1px;
+      padding:     0;
+      margin:      -1px;
+      overflow:    hidden;
+      clip:        rect(0 0 0 0);
+      white-space: nowrap;
+      border:      0;
+    }
+
+    /* ---- Root shell ------------------------------------------------ */
+    .mol-project-chip-header {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      padding:        var(--space-2) var(--space-3) var(--space-3);
+      background:     var(--surface-page);
+      border-bottom:  1px solid var(--border-subtle);
+      position:       relative;
+      z-index:        10;
+    }
+
+    /* ---- Row layout ------------------------------------------------ */
+    .mol-project-chip-header__row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+    }
+
+    /* ---- Project chip (pill, row 1) -------------------------------- */
+    .mol-project-chip-header__chip {
+      flex:            1;
+      justify-content: flex-start;
+      min-width:       0;
+      cursor:          pointer;
+    }
+
+    /* Chip name — semi-bold to distinguish from body copy */
+    .mol-project-chip-header__chip-name {
+      font-weight:   var(--font-weight-meta);
+      white-space:   nowrap;
+      overflow:      hidden;
+      text-overflow: ellipsis;
+      min-width:     0;
+    }
+
+    /* Single-project: static label — no interactive affordance */
+    .mol-project-chip-header--single-project .mol-project-chip-header__chip {
+      pointer-events:   none;
+      background:       transparent;
+      border-color:     transparent;
+      cursor:           default;
+    }
+
+    /* Chevron hidden on single-project and no-projects variants */
+    .mol-project-chip-header--single-project .mol-project-chip-header__chip-chevron,
+    .mol-project-chip-header--no-projects    .mol-project-chip-header__chip-chevron {
+      display: none;
+    }
+
+    /* No-projects: chip text is muted */
+    .mol-project-chip-header--no-projects .mol-project-chip-header__chip {
+      pointer-events: none;
+      background:     transparent;
+      border-color:   transparent;
+      cursor:         default;
+      color:          var(--text-faint);
+    }
+
+    /* ---- Search row (row 2) --------------------------------------- */
+    .mol-project-chip-header__search-wrap {
+      flex:        1;
+      position:    relative;
+      display:     flex;
+      align-items: center;
+      min-width:   0;
+    }
+
+    /* Leading search icon: absolutely positioned, non-interactive */
+    .mol-project-chip-header__search-leading {
+      position:       absolute;
+      inset-inline-start: var(--space-3);
+      display:        flex;
+      align-items:    center;
+      pointer-events: none;
+      z-index:        1;
+    }
+
+    /* Search input: full-width, padding-start clears the 16px icon + 12px gap + 12px left offset */
+    .mol-project-chip-header__search-input {
+      width:                100%;
+      padding-inline-start: calc(var(--space-3) * 2 + 16px);
+    }
+
+    /* ---- Filter button (trailing, row 2) -------------------------- */
+    .mol-project-chip-header__filter {
+      position:   relative;
+      flex-shrink: 0;
+    }
+
+    /* Badge: absolute top-right of the filter button */
+    .mol-project-chip-header__filter-badge {
+      position:       absolute;
+      top:            2px; /* structural: badge-over-button overlap — TOKEN_GAP */
+      right:          2px; /* structural: badge-over-button overlap — TOKEN_GAP */
+      pointer-events: none;
+    }
+
+    /* Badge only visible in is-filtering state */
+    .mol-project-chip-header:not(.is-filtering) .mol-project-chip-header__filter-badge {
+      display: none;
+    }
+
+    /* ---- Scrolled state ------------------------------------------- */
+    .mol-project-chip-header.is-scrolled {
+      box-shadow: 0 1px 0 var(--border-subtle);
+    }
+
+    /* ================================================================
+       Preview-local helpers
+       ================================================================ */
+
+    /* Section heading inside pane */
+    .preview-section-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+      margin:         0 0 var(--space-3);
+    }
+
+    /* Divider between pane sections */
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--space-6) 0;
+    }
+
+    /* Wrapper for variant/state rows — gives breathing room */
+    .preview-block {
+      margin-bottom: var(--space-6);
+    }
+
+    /* Faux iPhone viewport: shows the header sticky above stub sessions */
+    .faux-viewport {
+      width:          390px; /* iPhone 16 viewport width */
+      max-width:      100%;
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      overflow:       hidden;
+      background:     var(--surface-page);
+    }
+
+    .faux-viewport__content {
+      overflow-y:  auto;
+      max-height:  320px;
+      position:    relative;
+    }
+
+    /* Sticky header inside faux viewport */
+    .faux-viewport__header {
+      position:   sticky;
+      top:        0;
+      z-index:    10;
+    }
+
+    /* Stub session rows */
+    .stub-session-list {
+      list-style: none;
+      margin:     0;
+      padding:    0;
+    }
+
+    .stub-session-row {
+      display:       flex;
+      align-items:   center;
+      gap:           var(--space-3);
+      padding:       var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .stub-session-row__title {
+      flex:           1;
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-body);
+      color:          var(--text-body);
+      white-space:    nowrap;
+      overflow:       hidden;
+      text-overflow:  ellipsis;
+    }
+
+    .stub-session-row__meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      flex-shrink:    0;
+    }
+
+    /* State label used in state row */
+    .state-chip-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+      margin-bottom:  var(--space-2);
+    }
+
+    .state-col {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">project-chip-header</h1>
+    <p class="crumb">molecule · sessions-list top header — project chip + search + filter</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ============================================================
+         DARK PANE
+         ============================================================ -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT MATRIX ----------------------------------- -->
+      <div class="preview-block">
+        <p class="preview-section-label">1 · variant matrix — multi-project / single-project / no-projects</p>
+
+        <!-- multi-project (default) -->
+        <div class="state-col" style="margin-bottom: var(--space-4);">
+          <span class="state-chip-label">multi-project (default) — chip tappable, chevron visible</span>
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-dark-multi">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-dark-multi" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+              </div>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+              </button>
+            </div>
+          </header>
+        </div>
+
+        <!-- single-project -->
+        <div class="state-col" style="margin-bottom: var(--space-4);">
+          <span class="state-chip-label">single-project — static label, no chevron, no tap</span>
+          <header class="mol-project-chip-header mol-project-chip-header--single-project">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <!-- Single-project: use span so it's not in tab order -->
+              <span class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-label="Current project: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <!-- chevron hidden by CSS variant modifier -->
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-dark-single">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-dark-single" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+              </div>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+              </button>
+            </div>
+          </header>
+        </div>
+
+        <!-- no-projects -->
+        <div class="state-col">
+          <span class="state-chip-label">no-projects — muted chip, search + filter disabled</span>
+          <header class="mol-project-chip-header mol-project-chip-header--no-projects">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <span class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md">
+                <span class="mol-project-chip-header__chip-name">No project</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-dark-none">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-dark-none" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input is-disabled" placeholder="Search sessions" aria-label="Search sessions" disabled />
+              </div>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter is-disabled" aria-label="Filter sessions" disabled>
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">0</span>
+              </button>
+            </div>
+          </header>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. STATE ROW --------------------------------------- -->
+      <div class="preview-block">
+        <p class="preview-section-label">2 · state row — default / is-scrolled / is-filtering</p>
+
+        <!-- default -->
+        <div class="state-col" style="margin-bottom: var(--space-4);">
+          <span class="state-chip-label">default</span>
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-dark-state-default">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-dark-state-default" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+              </div>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+              </button>
+            </div>
+          </header>
+        </div>
+
+        <!-- is-scrolled -->
+        <div class="state-col" style="margin-bottom: var(--space-4);">
+          <span class="state-chip-label">is-scrolled — shadow signal added</span>
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project is-scrolled">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-dark-state-scrolled">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-dark-state-scrolled" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+              </div>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+              </button>
+            </div>
+          </header>
+        </div>
+
+        <!-- is-filtering -->
+        <div class="state-col">
+          <span class="state-chip-label">is-filtering — badge visible with active count</span>
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project is-filtering">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-dark-filtering">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-dark-filtering" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+              </div>
+              <!-- aria-label updated by JS when filtering is active -->
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions, 2 filters active">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+              </button>
+            </div>
+          </header>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. COMPOSITION — faux iPhone viewport --------------- -->
+      <div class="preview-block">
+        <p class="preview-section-label">3 · composition — sticky header above session list (faux iPhone viewport)</p>
+
+        <div class="faux-viewport">
+          <div class="faux-viewport__content">
+            <!-- Sticky header (multi-project, is-scrolled when scrolled) -->
+            <div class="faux-viewport__header">
+              <header class="mol-project-chip-header mol-project-chip-header--multi-project">
+                <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+                  <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="3" y1="6"  x2="21" y2="6"/>
+                      <line x1="3" y1="12" x2="21" y2="12"/>
+                      <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                  </button>
+                  <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                    <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                      <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                    <span class="mol-project-chip-header__chip-name">superset</span>
+                    <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+                  <div class="mol-project-chip-header__search-wrap">
+                    <label class="sr-only" for="search-dark-comp">Search sessions</label>
+                    <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                      <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                      </svg>
+                    </span>
+                    <input id="search-dark-comp" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+                  </div>
+                  <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                    </svg>
+                    <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+                  </button>
+                </div>
+              </header>
+            </div>
+            <!-- Stub session rows visible below the sticky header -->
+            <ul class="stub-session-list" role="list" aria-label="Sessions">
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Refactor relay tunnel auth flow</span>
+                <span class="stub-session-row__meta">2h ago</span>
+              </li>
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Fix desktop IPC race condition</span>
+                <span class="stub-session-row__meta">5h ago</span>
+              </li>
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Add Electric live-query to sessions list</span>
+                <span class="stub-session-row__meta">1d ago</span>
+              </li>
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Update onboarding flow copy</span>
+                <span class="stub-session-row__meta">2d ago</span>
+              </li>
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Migrate tool-call card to new atom token</span>
+                <span class="stub-session-row__meta">3d ago</span>
+              </li>
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Debug streaming cursor blink on iOS Safari</span>
+                <span class="stub-session-row__meta">4d ago</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ============================================================
+         LIGHT PANE
+         ============================================================ -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT MATRIX ----------------------------------- -->
+      <div class="preview-block">
+        <p class="preview-section-label">1 · variant matrix — multi-project / single-project / no-projects</p>
+
+        <!-- multi-project (default) -->
+        <div class="state-col" style="margin-bottom: var(--space-4);">
+          <span class="state-chip-label">multi-project (default) — chip tappable, chevron visible</span>
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-light-multi">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-light-multi" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+              </div>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+              </button>
+            </div>
+          </header>
+        </div>
+
+        <!-- single-project -->
+        <div class="state-col" style="margin-bottom: var(--space-4);">
+          <span class="state-chip-label">single-project — static label, no chevron, no tap</span>
+          <header class="mol-project-chip-header mol-project-chip-header--single-project">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <span class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-label="Current project: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-light-single">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-light-single" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+              </div>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+              </button>
+            </div>
+          </header>
+        </div>
+
+        <!-- no-projects -->
+        <div class="state-col">
+          <span class="state-chip-label">no-projects — muted chip, search + filter disabled</span>
+          <header class="mol-project-chip-header mol-project-chip-header--no-projects">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <span class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md">
+                <span class="mol-project-chip-header__chip-name">No project</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </span>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-light-none">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-light-none" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input is-disabled" placeholder="Search sessions" aria-label="Search sessions" disabled />
+              </div>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter is-disabled" aria-label="Filter sessions" disabled>
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">0</span>
+              </button>
+            </div>
+          </header>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. STATE ROW --------------------------------------- -->
+      <div class="preview-block">
+        <p class="preview-section-label">2 · state row — default / is-scrolled / is-filtering</p>
+
+        <!-- default -->
+        <div class="state-col" style="margin-bottom: var(--space-4);">
+          <span class="state-chip-label">default</span>
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-light-state-default">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-light-state-default" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+              </div>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+              </button>
+            </div>
+          </header>
+        </div>
+
+        <!-- is-scrolled -->
+        <div class="state-col" style="margin-bottom: var(--space-4);">
+          <span class="state-chip-label">is-scrolled — shadow signal added</span>
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project is-scrolled">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-light-state-scrolled">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-light-state-scrolled" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+              </div>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+              </button>
+            </div>
+          </header>
+        </div>
+
+        <!-- is-filtering -->
+        <div class="state-col">
+          <span class="state-chip-label">is-filtering — badge visible with active count</span>
+          <header class="mol-project-chip-header mol-project-chip-header--multi-project is-filtering">
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="6"  x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span class="mol-project-chip-header__chip-name">superset</span>
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+              <div class="mol-project-chip-header__search-wrap">
+                <label class="sr-only" for="search-light-filtering">Search sessions</label>
+                <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                  <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </span>
+                <input id="search-light-filtering" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+              </div>
+              <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions, 2 filters active">
+                <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+              </button>
+            </div>
+          </header>
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. COMPOSITION — faux iPhone viewport --------------- -->
+      <div class="preview-block">
+        <p class="preview-section-label">3 · composition — sticky header above session list (faux iPhone viewport)</p>
+
+        <div class="faux-viewport">
+          <div class="faux-viewport__content">
+            <div class="faux-viewport__header">
+              <header class="mol-project-chip-header mol-project-chip-header--multi-project">
+                <div class="mol-project-chip-header__row mol-project-chip-header__row--top">
+                  <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__menu" aria-label="Open navigation drawer">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="3" y1="6"  x2="21" y2="6"/>
+                      <line x1="3" y1="12" x2="21" y2="12"/>
+                      <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                  </button>
+                  <button class="mol-project-chip-header__chip atom-pill atom-pill--default atom-pill--md" aria-haspopup="dialog" aria-expanded="false" aria-label="Switch project — currently: superset">
+                    <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                      <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                    <span class="mol-project-chip-header__chip-name">superset</span>
+                    <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-project-chip-header__chip-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="mol-project-chip-header__row mol-project-chip-header__row--search">
+                  <div class="mol-project-chip-header__search-wrap">
+                    <label class="sr-only" for="search-light-comp">Search sessions</label>
+                    <span class="mol-project-chip-header__search-leading" aria-hidden="true">
+                      <svg class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                      </svg>
+                    </span>
+                    <input id="search-light-comp" type="search" class="atom-text-input atom-text-input--inset atom-text-input--md mol-project-chip-header__search-input" placeholder="Search sessions" aria-label="Search sessions" />
+                  </div>
+                  <button class="atom-icon-button atom-icon-button--ghost atom-icon-button--md mol-project-chip-header__filter" aria-label="Filter sessions">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.39 13.57M4.93 4.93a10 10 0 0 0-1.39 13.57M15.9 15.9a4 4 0 0 1-7.8 0M8.1 8.1a4 4 0 0 1 7.8 0"/>
+                    </svg>
+                    <span class="atom-badge atom-badge--accent atom-badge--sm mol-project-chip-header__filter-badge" aria-hidden="true">2</span>
+                  </button>
+                </div>
+              </header>
+            </div>
+            <ul class="stub-session-list" role="list" aria-label="Sessions">
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Refactor relay tunnel auth flow</span>
+                <span class="stub-session-row__meta">2h ago</span>
+              </li>
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Fix desktop IPC race condition</span>
+                <span class="stub-session-row__meta">5h ago</span>
+              </li>
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Add Electric live-query to sessions list</span>
+                <span class="stub-session-row__meta">1d ago</span>
+              </li>
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Update onboarding flow copy</span>
+                <span class="stub-session-row__meta">2d ago</span>
+              </li>
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Migrate tool-call card to new atom token</span>
+                <span class="stub-session-row__meta">3d ago</span>
+              </li>
+              <li class="stub-session-row">
+                <span class="stub-session-row__title">Debug streaming cursor blink on iOS Safari</span>
+                <span class="stub-session-row__meta">4d ago</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
