@@ -1,7 +1,7 @@
 {
-	"version": "5.2.0",
+	"version": "5.3.0",
 	"created": "2026-05-21",
-	"updated": "2026-05-22",
+	"updated": "2026-05-22 (Wave 4 / compose gate flipped)",
 	"goal": "Mobile-chat v2 — native iOS+Android port of the desktop ChatInterface, talking HTTP+tRPC over the relay to host-service for read/respond/initiate flows.",
 	"vibe": "Desktop ember warm palette as canonical (per 14-token-migration-audit.md, Path A committed 2026-05-22). Brand accent #e07850 (ember orange), warm-neutral surface ramp (#151110 background / #1a1716 sidebar / #201e1c card / #2a2827 secondary), Geist + Geist Mono typography loaded via @expo-google-fonts/geist with splash-screen gate, state palette (live/warning/danger/success/neutral) for chat-domain status indicators, 44pt minimum touch targets per iOS HIG + WCAG AA. Flat shadcn-style token names (--color-*) preserved for react-native-reusables CLI compatibility. Light + dark variants via uniwind @variant; active theme set via Uniwind.setTheme() in screens/RootLayout/RootLayout.tsx. Domain-token additions for chat: streaming-cursor, tool-rule.",
 	"spec": "../../plans/chat-mobile-plan/",
@@ -37,17 +37,17 @@
 				"fonts": "@expo-google-fonts/geist",
 				"sandbox": "storybook-native"
 			},
-			"phase": "organisms",
+			"phase": "compose",
 			"gates": {
 				"scaffold": "passed",
 				"plan": "passed",
 				"atoms": "passed",
 				"molecules": "passed",
 				"organisms": "passed",
-				"compose": "pending"
+				"compose": "passed"
 			},
 			"build_plan": {
-				"scope_note": "Chat-view only (per designs/AUDIT.md). Sessions-list + nav surfaces deferred. Wave 1 (atoms) completed 2026-05-22. Wave 2 (molecules) completed 2026-05-22 — 19 molecules built (1 replaces ComposerToolbar per desktop PR #4866 unified-settings-menu pattern). Wave 3 (organisms) completed 2026-05-22 — 10 organisms built per designs/AUDIT.md §ORGANISM AUDIT. Wave 4 (screens / compose) gated behind explicit user confirmation.",
+				"scope_note": "Chat-view only (per designs/AUDIT.md). Sessions-list + nav surfaces deferred. Wave 1 (atoms) completed 2026-05-22. Wave 2 (molecules) completed 2026-05-22 — 19 molecules built (1 replaces ComposerToolbar per desktop PR #4866 unified-settings-menu pattern). Wave 3 (organisms) completed 2026-05-22 — 10 organisms built per designs/AUDIT.md §ORGANISM AUDIT. Wave 4 (views / compose) completed 2026-05-22 — 20 view stories under `apps/mobile/screens/chat-view/views/` covering all 22 chat-view designs (composer-states view bundles UC-COMP-01 §A/§B + UC-COMP-03 §A; dispatch-outcomes view bundles all 4 banner variants). ChatView orchestrator at `apps/mobile/screens/chat-view/components/ChatView/` composes ChatHeader + ChatThread + Composer with slots for floating UI, bottom overlay, and full-screen overlay. Storybook glob narrowed to `apps/mobile/screens/chat-view/**` so other screens (which import expo-router) stay disabled.",
 				"tokens": "skip",
 				"atoms": {
 					"status": "build",
@@ -129,8 +129,35 @@
 					"source": "designs/AUDIT.md §ORGANISM AUDIT"
 				},
 				"screens": {
-					"status": "deferred",
-					"create_when_unlocked": "22 chat-view screens per designs/AUDIT.md §VIEW AUDIT"
+					"status": "build",
+					"location": "apps/mobile/screens/chat-view/views/",
+					"orchestrator": "apps/mobile/screens/chat-view/components/ChatView/ChatView.tsx",
+					"types": "apps/mobile/screens/chat-view/types.ts (re-exports of organism/molecule prop types + ApprovalDecision)",
+					"mock_data": "apps/mobile/screens/chat-view/mock-data.tsx",
+					"storybook_glob": "apps/mobile/.rnstorybook/main.js — `../screens/chat-view/**/*.stories.?(ts|tsx|js|jsx)` (narrow; sibling screens stay disabled)",
+					"created": [
+						"ChatViewThread (UC-RENDER-01 §A — canonical)",
+						"ChatViewMarkdown (UC-RENDER-03 §A)",
+						"ChatViewToolCalls (UC-RENDER-04 §A)",
+						"ChatViewReasoningPlan (UC-RENDER-05 §A)",
+						"ChatViewSubagent (UC-RENDER-06 §A)",
+						"ChatViewScrollBack (UC-RENDER-07 §A)",
+						"ChatViewLoading (UC-SESS-02 §A)",
+						"ChatViewErrorRetry (UC-SESS-02 §B)",
+						"ChatViewComposerStates (UC-COMP-01 §A/§B + UC-COMP-03 §A bundled)",
+						"ChatViewSlashMenu (UC-COMP-01 §C)",
+						"ChatViewModelPicker (UC-COMP-04 §A)",
+						"ChatViewThinkingPicker (UC-COMP-05 §A)",
+						"ChatViewPauseApproval (UC-PAUSE-01 §A)",
+						"ChatViewPendingActionPill (UC-PAUSE-04 §A)",
+						"ChatViewHostOffline (UC-PLATF-03 §A)",
+						"ChatViewDispatchOutcomes (UC-PLATF-03 §B — 4 banner variants)",
+						"PlanReviewModal (UC-PAUSE-03 §A)",
+						"AskUserSheet (UC-PAUSE-02 §A)",
+						"SessionOverflowMenu (UC-SESS-04 §A)",
+						"DeleteSessionDialog (UC-SESS-05 §A)"
+					],
+					"source": "designs/AUDIT.md §VIEW AUDIT"
 				}
 			}
 		},
@@ -145,14 +172,14 @@
 				"fonts": "@expo-google-fonts/geist",
 				"sandbox": "storybook-native"
 			},
-			"phase": "organisms",
+			"phase": "compose",
 			"gates": {
 				"scaffold": "passed",
 				"plan": "passed",
 				"atoms": "passed",
 				"molecules": "passed",
 				"organisms": "passed",
-				"compose": "pending"
+				"compose": "passed"
 			},
 			"build_plan": {
 				"scope_note": "Mirrors mobile-ios — apps/mobile/ source tree is shared across both platforms. Visual verification done on iOS sim only; android-specific render quirks reviewed when an android build is available.",
@@ -160,7 +187,7 @@
 				"atoms": "see mobile-ios.build_plan.atoms",
 				"molecules": "see mobile-ios.build_plan.molecules",
 				"organisms": "see mobile-ios.build_plan.organisms",
-				"screens": "deferred"
+				"screens": "see mobile-ios.build_plan.screens"
 			}
 		}
 	}
