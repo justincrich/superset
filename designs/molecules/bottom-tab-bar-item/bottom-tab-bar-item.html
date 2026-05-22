@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-bottom-tab-bar-item — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-bottom-tab-bar-item — molecule-local layout + glue only
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals.
+       Structural overlap offsets (-2px / -4px) are geometry exceptions
+       matching the atom-avatar overlay pattern.
+       ================================================================ */
+
+    /* ---- Shell (the tappable button) -------------------------- */
+    .mol-bottom-tab-bar-item {
+      flex:            1;
+      display:         flex;
+      flex-direction:  column;
+      align-items:     center;
+      justify-content: center;
+      gap:             var(--space-1);
+      padding:         var(--space-2) var(--space-1);
+
+      background:   transparent;
+      border:       none;
+      cursor:       pointer;
+      min-height:   var(--touch-target-min);
+      color:        var(--text-muted);
+
+      transition: color var(--motion-fast) var(--motion-ease-out),
+                  opacity var(--motion-fast) var(--motion-ease-out),
+                  transform var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Icon wrapper — hosts icon + optional notif dot ------- */
+    .mol-bottom-tab-bar-item__icon-wrap {
+      position:        relative;
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+    }
+
+    /* ---- Icon — color inherits from button shell -------------- */
+    .mol-bottom-tab-bar-item__icon {
+      color: inherit;
+    }
+
+    /* ---- Label — color inherits; suppress atom default uppercase
+            text-transform to preserve "Tasks / Chat / More" case --- */
+    .mol-bottom-tab-bar-item__label {
+      color:          inherit;
+      text-transform: none;
+    }
+
+    /* ---- Selected state --------------------------------------- */
+    .mol-bottom-tab-bar-item.is-selected {
+      color: var(--accent-primary);
+    }
+
+    /* ---- Hover (unselected only) ------------------------------ */
+    .mol-bottom-tab-bar-item:hover:not(.is-selected),
+    .mol-bottom-tab-bar-item.is-hover:not(.is-selected) {
+      color: var(--text-body);
+    }
+
+    /* ---- Active / pressed ------------------------------------- */
+    .mol-bottom-tab-bar-item:active,
+    .mol-bottom-tab-bar-item.is-active {
+      opacity:   0.7;
+      transform: scale(0.95);
+    }
+
+    /* ---- Focus ring ------------------------------------------- */
+    .mol-bottom-tab-bar-item:focus-visible,
+    .mol-bottom-tab-bar-item.is-focus {
+      outline:        2px solid var(--border-focus);
+      outline-offset: -2px;
+      border-radius:  var(--radius-default);
+    }
+
+    /* ---- Notification dot — positioned top-right of icon-wrap - */
+    .mol-bottom-tab-bar-item__notif {
+      position:       absolute;
+      top:            -2px;  /* structural: overlap offset */
+      right:          -4px;  /* structural: overlap offset */
+      pointer-events: none;
+    }
+
+    /* ================================================================
+       Preview layout helpers — not part of the molecule spec
+       ================================================================ */
+
+    /* Label above a variant row */
+    .preview-row-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-faint);
+      margin:         0 0 var(--space-3);
+    }
+
+    /* Generic flex row to hold items side-by-side */
+    .preview-row {
+      display:     flex;
+      align-items: stretch;
+      gap:         var(--space-2);
+      flex-wrap:   wrap;
+      margin-bottom: var(--spacing-between);
+    }
+
+    /* Cell wrapper for variant matrix labels */
+    .preview-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-2);
+      min-width:      72px;
+    }
+    .preview-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+      white-space:    nowrap;
+    }
+
+    /* Faux bar strip used in state row and composition */
+    .preview-bar-strip {
+      display:       flex;
+      align-items:   stretch;
+      background:    var(--surface-page);
+      border-top:    1px solid var(--border-subtle);
+      width:         100%;
+    }
+
+    /* iPhone faux viewport frame */
+    .preview-iphone {
+      width:          390px;  /* structural: iPhone 16 logical width */
+      height:         620px;  /* structural: abbreviated viewport height */
+      background:     var(--surface-page);
+      border-radius:  var(--radius-lg);
+      border:         1px solid var(--border-default);
+      display:        flex;
+      flex-direction: column;
+      overflow:       hidden;
+      position:       relative;
+      margin:         0 auto;
+    }
+
+    .preview-iphone__content {
+      flex:       1;
+      background: var(--surface-page);
+      display:    flex;
+      flex-direction: column;
+      align-items:    center;
+      justify-content: center;
+      gap:             var(--space-3);
+      padding:         var(--space-6);
+    }
+
+    .preview-iphone__content-title {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-title);
+      font-weight:    var(--font-weight-title);
+      color:          var(--text-heading);
+      letter-spacing: var(--tracking-snug);
+      text-align:     center;
+      margin:         0;
+    }
+
+    .preview-iphone__content-sub {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      color:          var(--text-muted);
+      text-align:     center;
+      margin:         0;
+    }
+
+    .preview-iphone__bottom {
+      flex-shrink: 0;
+    }
+
+    .preview-iphone__home-indicator-area {
+      height:          34px;  /* structural: iOS safe-area-inset-bottom */
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      background:      var(--surface-page);
+    }
+
+    /* Section header inside variants */
+    .preview-section-heading {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-4);
+    }
+
+    hr.preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">bottom-tab-bar-item</h1>
+    <p class="crumb">molecule · bottom navigation tab button — composes atom-icon-glyph · atom-section-label · atom-badge</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, light pane second
+       ============================================================ -->
+  <div class="pegboard">
+
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- 1. VARIANT MATRIX — 3 kinds × 2 states = 6 cells -->
+      <div class="variant">
+        <h3 class="preview-section-heading">1 · variant matrix — 3 kinds × 2 states (unselected / selected)</h3>
+
+        <div class="preview-row">
+
+          <!-- Tasks — unselected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks"
+                    aria-label="Tasks tab">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Tasks</span>
+            </button>
+            <span class="preview-cell-label">tasks<br>unselected</span>
+          </div>
+
+          <!-- Tasks — selected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks is-selected"
+                    aria-current="page"
+                    aria-label="Tasks tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Tasks</span>
+            </button>
+            <span class="preview-cell-label">tasks<br>selected</span>
+          </div>
+
+          <!-- Chat — unselected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat"
+                    aria-label="Chat tab">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">chat<br>unselected</span>
+          </div>
+
+          <!-- Chat — selected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected"
+                    aria-current="page"
+                    aria-label="Chat tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">chat<br>selected</span>
+          </div>
+
+          <!-- More — unselected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--more"
+                    aria-label="More tab">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">More</span>
+            </button>
+            <span class="preview-cell-label">more<br>unselected</span>
+          </div>
+
+          <!-- More — selected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--more is-selected"
+                    aria-current="page"
+                    aria-label="More tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">More</span>
+            </button>
+            <span class="preview-cell-label">more<br>selected</span>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- 2. STATE ROW — chat selected, all interactive states -->
+      <div class="variant">
+        <h3 class="preview-section-heading">2 · state row — chat selected across all interactive states</h3>
+
+        <div class="preview-row">
+
+          <!-- selected (base) -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected"
+                    aria-current="page"
+                    aria-label="Chat tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">selected</span>
+          </div>
+
+          <!-- hover (unselected) -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-hover"
+                    aria-label="Chat tab">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">hover<br>(unselected)</span>
+          </div>
+
+          <!-- active / pressed -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected is-active"
+                    aria-current="page"
+                    aria-label="Chat tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">active<br>(pressed)</span>
+          </div>
+
+          <!-- focus -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected is-focus"
+                    aria-current="page"
+                    aria-label="Chat tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">focus</span>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- 3. NOTIFICATION DOT — tasks with accent dot -->
+      <div class="variant">
+        <h3 class="preview-section-heading">3 · notification dot — tasks tab with accent dot (is-notification)</h3>
+
+        <div class="preview-row">
+
+          <!-- notification, unselected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks is-notification"
+                    aria-label="Tasks tab, 3 new tasks">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--dot mol-bottom-tab-bar-item__notif"
+                      aria-hidden="true"></span>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Tasks</span>
+            </button>
+            <span class="preview-cell-label">notification<br>unselected</span>
+          </div>
+
+          <!-- notification, selected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks is-selected is-notification"
+                    aria-current="page"
+                    aria-label="Tasks tab, currently selected, 3 new tasks">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--dot mol-bottom-tab-bar-item__notif"
+                      aria-hidden="true"></span>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Tasks</span>
+            </button>
+            <span class="preview-cell-label">notification<br>selected</span>
+          </div>
+
+          <!-- notification, chat tab -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-notification"
+                    aria-label="Chat tab, 5 new messages">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--dot mol-bottom-tab-bar-item__notif"
+                      aria-hidden="true"></span>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">chat<br>notification</span>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- 4. COMPOSITION — full bar in faux iPhone viewport -->
+      <div class="variant">
+        <h3 class="preview-section-heading">4 · composition — full bottom-tab-bar, Chat selected, faux iPhone viewport</h3>
+
+        <div class="preview-iphone">
+
+          <!-- Faux content area -->
+          <div class="preview-iphone__content">
+            <p class="preview-iphone__content-title">Chat</p>
+            <p class="preview-iphone__content-sub">Conversations appear here</p>
+          </div>
+
+          <!-- Bottom tab bar docked at bottom of viewport -->
+          <div class="preview-iphone__bottom">
+            <nav aria-label="Main navigation">
+              <div class="preview-bar-strip" role="tablist">
+
+                <!-- Tasks tab — unselected, has notification dot -->
+                <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks is-notification"
+                        role="tab"
+                        aria-selected="false"
+                        aria-label="Tasks tab, 3 new tasks">
+                  <span class="mol-bottom-tab-bar-item__icon-wrap">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                    <span class="atom-badge atom-badge--accent atom-badge--dot mol-bottom-tab-bar-item__notif"
+                          aria-hidden="true"></span>
+                  </span>
+                  <span class="atom-section-label mol-bottom-tab-bar-item__label">Tasks</span>
+                </button>
+
+                <!-- Chat tab — selected (currently active view) -->
+                <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected"
+                        role="tab"
+                        aria-selected="true"
+                        aria-current="page"
+                        aria-label="Chat tab, currently selected">
+                  <span class="mol-bottom-tab-bar-item__icon-wrap">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                  </span>
+                  <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+                </button>
+
+                <!-- More tab — unselected -->
+                <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--more"
+                        role="tab"
+                        aria-selected="false"
+                        aria-label="More tab">
+                  <span class="mol-bottom-tab-bar-item__icon-wrap">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <circle cx="5"  cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                  </span>
+                  <span class="atom-section-label mol-bottom-tab-bar-item__label">More</span>
+                </button>
+
+              </div>
+            </nav>
+
+            <!-- Home indicator -->
+            <div class="preview-iphone__home-indicator-area">
+              <span class="atom-home-indicator atom-home-indicator--ios" aria-hidden="true"></span>
+            </div>
+          </div>
+
+        </div><!-- /preview-iphone -->
+      </div><!-- /composition variant -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- 1. VARIANT MATRIX — 3 kinds × 2 states = 6 cells -->
+      <div class="variant">
+        <h3 class="preview-section-heading">1 · variant matrix — 3 kinds × 2 states (unselected / selected)</h3>
+
+        <div class="preview-row">
+
+          <!-- Tasks — unselected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks"
+                    aria-label="Tasks tab">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Tasks</span>
+            </button>
+            <span class="preview-cell-label">tasks<br>unselected</span>
+          </div>
+
+          <!-- Tasks — selected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks is-selected"
+                    aria-current="page"
+                    aria-label="Tasks tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Tasks</span>
+            </button>
+            <span class="preview-cell-label">tasks<br>selected</span>
+          </div>
+
+          <!-- Chat — unselected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat"
+                    aria-label="Chat tab">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">chat<br>unselected</span>
+          </div>
+
+          <!-- Chat — selected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected"
+                    aria-current="page"
+                    aria-label="Chat tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">chat<br>selected</span>
+          </div>
+
+          <!-- More — unselected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--more"
+                    aria-label="More tab">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">More</span>
+            </button>
+            <span class="preview-cell-label">more<br>unselected</span>
+          </div>
+
+          <!-- More — selected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--more is-selected"
+                    aria-current="page"
+                    aria-label="More tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <circle cx="5"  cy="12" r="1" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                  <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">More</span>
+            </button>
+            <span class="preview-cell-label">more<br>selected</span>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- 2. STATE ROW -->
+      <div class="variant">
+        <h3 class="preview-section-heading">2 · state row — chat selected across all interactive states</h3>
+
+        <div class="preview-row">
+
+          <!-- selected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected"
+                    aria-current="page"
+                    aria-label="Chat tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">selected</span>
+          </div>
+
+          <!-- hover (unselected) -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-hover"
+                    aria-label="Chat tab">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">hover<br>(unselected)</span>
+          </div>
+
+          <!-- active -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected is-active"
+                    aria-current="page"
+                    aria-label="Chat tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">active<br>(pressed)</span>
+          </div>
+
+          <!-- focus -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected is-focus"
+                    aria-current="page"
+                    aria-label="Chat tab, currently selected">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">focus</span>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- 3. NOTIFICATION DOT -->
+      <div class="variant">
+        <h3 class="preview-section-heading">3 · notification dot — tasks tab with accent dot (is-notification)</h3>
+
+        <div class="preview-row">
+
+          <!-- notification, unselected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks is-notification"
+                    aria-label="Tasks tab, 3 new tasks">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--dot mol-bottom-tab-bar-item__notif"
+                      aria-hidden="true"></span>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Tasks</span>
+            </button>
+            <span class="preview-cell-label">notification<br>unselected</span>
+          </div>
+
+          <!-- notification, selected -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks is-selected is-notification"
+                    aria-current="page"
+                    aria-label="Tasks tab, currently selected, 3 new tasks">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--dot mol-bottom-tab-bar-item__notif"
+                      aria-hidden="true"></span>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Tasks</span>
+            </button>
+            <span class="preview-cell-label">notification<br>selected</span>
+          </div>
+
+          <!-- notification, chat tab -->
+          <div class="preview-cell">
+            <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-notification"
+                    aria-label="Chat tab, 5 new messages">
+              <span class="mol-bottom-tab-bar-item__icon-wrap">
+                <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span class="atom-badge atom-badge--accent atom-badge--dot mol-bottom-tab-bar-item__notif"
+                      aria-hidden="true"></span>
+              </span>
+              <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+            </button>
+            <span class="preview-cell-label">chat<br>notification</span>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="preview-divider">
+
+      <!-- 4. COMPOSITION — full bar in faux iPhone viewport -->
+      <div class="variant">
+        <h3 class="preview-section-heading">4 · composition — full bottom-tab-bar, Chat selected, faux iPhone viewport</h3>
+
+        <div class="preview-iphone">
+
+          <div class="preview-iphone__content">
+            <p class="preview-iphone__content-title">Chat</p>
+            <p class="preview-iphone__content-sub">Conversations appear here</p>
+          </div>
+
+          <div class="preview-iphone__bottom">
+            <nav aria-label="Main navigation">
+              <div class="preview-bar-strip" role="tablist">
+
+                <!-- Tasks — unselected + notification -->
+                <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--tasks is-notification"
+                        role="tab"
+                        aria-selected="false"
+                        aria-label="Tasks tab, 3 new tasks">
+                  <span class="mol-bottom-tab-bar-item__icon-wrap">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                    <span class="atom-badge atom-badge--accent atom-badge--dot mol-bottom-tab-bar-item__notif"
+                          aria-hidden="true"></span>
+                  </span>
+                  <span class="atom-section-label mol-bottom-tab-bar-item__label">Tasks</span>
+                </button>
+
+                <!-- Chat — selected -->
+                <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--chat is-selected"
+                        role="tab"
+                        aria-selected="true"
+                        aria-current="page"
+                        aria-label="Chat tab, currently selected">
+                  <span class="mol-bottom-tab-bar-item__icon-wrap">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                  </span>
+                  <span class="atom-section-label mol-bottom-tab-bar-item__label">Chat</span>
+                </button>
+
+                <!-- More — unselected -->
+                <button class="mol-bottom-tab-bar-item mol-bottom-tab-bar-item--more"
+                        role="tab"
+                        aria-selected="false"
+                        aria-label="More tab">
+                  <span class="mol-bottom-tab-bar-item__icon-wrap">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md mol-bottom-tab-bar-item__icon"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                      <circle cx="5"  cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                  </span>
+                  <span class="atom-section-label mol-bottom-tab-bar-item__label">More</span>
+                </button>
+
+              </div>
+            </nav>
+
+            <div class="preview-iphone__home-indicator-area">
+              <span class="atom-home-indicator atom-home-indicator--ios" aria-hidden="true"></span>
+            </div>
+          </div>
+
+        </div><!-- /preview-iphone -->
+      </div><!-- /composition variant -->
+
+    </section><!-- /light pane -->
+
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
