@@ -56,3 +56,32 @@ All four cases are present in `where.ts:49-133` (case statements for `v2_hosts`,
 - Workspace picker (UC-NAV-04): list `v2_workspaces` where `host_id == selectedHostId`, sorted by max session `lastActiveAt` then name.
 
 No new tRPC procedures or cloud-router additions are required for the NAV surface — it's a pure client-side selector over already-published Electric shapes.
+
+## 4. Relay push endpoints — token registration
+
+New Hono routes on `apps/relay` for the v2 mobile push-notification surface (see `07-notifications.md` for the wire-level design). Mobile invokes these with the **same JWT bearer** it uses for host-service tRPC routing in §2 — no new auth surface.
+
+| Endpoint | Method | Use Case |
+|---|---|---|
+| `/push/register` | POST | UC-PLATF-01 (register Expo push token after permission grant; called again on token rotation) |
+| `/push/register/:deviceId` | DELETE | UC-PLATF-01 (logout, OS-revoked permission detected on cold launch) |
+
+**Request body (`POST /push/register`):**
+
+```ts
+{
+  expoToken: string;          // value from getExpoPushTokenAsync()
+  platform: "ios" | "android";
+  deviceId: string;           // from expo-device (Constants.deviceId equivalent)
+}
+```
+
+**Auth:** `apps/relay/src/auth.ts` `verifyJWT` middleware — the same middleware that gates `${RELAY_URL}/hosts/${hostId}/trpc/...` in §2. JWT payload provides `organizationId` and `userId` for the Upstash key.
+
+**Storage:** Upstash KV (relay's existing `directory` infra) keyed by `push:org:{organizationId}:user:{userId}`. Value is a set of `{ token, platform, deviceId, lastSeenAt }` entries (multi-device: a single user with phone + tablet keeps both addressable). `POST` upserts the deviceId entry; `DELETE` removes by deviceId.
+
+**Server-side cleanup paths** (no mobile call required):
+- Expo Push API returns `DeviceNotRegistered` → relay drops that token from the set.
+- Stale entries pruned by `lastSeenAt` TTL during background sweeps (TTL value deferred to TRD).
+
+No new procedures are required on `apps/api` (cloud tRPC) for push — push lives entirely on the relay side.

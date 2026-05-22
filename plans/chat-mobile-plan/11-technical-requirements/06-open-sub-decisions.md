@@ -14,3 +14,12 @@ Deferred to sprint planning — `/kb-sprint-plan` should slot these into specifi
    - **Selected host persisted locally** in `expo-secure-store` keyed by `userId + organizationId`. First-launch default: the host with the most-recent activity for this user.
    - **Push-notification deep-links** (UC-NAV-05) silently align the selected host to match the session's host before mounting the chat view so back-navigation lands in a consistent sessions list.
    See UC-NAV-03 for full ACs and the canonical bottom-sheet wireframe.
+
+7. ~~**Mobile push-notification fanout architecture**~~ — **RESOLVED in v1.7.0** by `07-notifications.md`. Decision summary:
+   - **Relay-side fanout** (`apps/relay`) — host pushes a new `push:lifecycle` outbound message on its existing tunnel WS; relay calls Expo Push API.
+   - **Token storage in Upstash KV** keyed by `push:org:{orgId}:user:{userId}` as a set of `{ token, platform, deviceId, lastSeenAt }` entries.
+   - **Token registration** via new relay endpoints `POST /push/register` and `DELETE /push/register/:deviceId`, gated by the same `verifyJWT` middleware used by chat tRPC.
+   - **Events fanned out** are `Stop` + `PermissionRequest` only — no "agent failed" event in v2 (host emits none today).
+   - **Foreground suppression** is local-only via route-aware `setNotificationHandler`; no server-side presence tracking.
+   - **Permission flow** follows Expo best practices (pre-prompt → OS dialog → cold-launch re-check → deny → `Linking.openSettings()`).
+   See `07-notifications.md` for the four ASCII diagrams (delivery flow, token lifecycle, permission state machine, foreground suppression).
