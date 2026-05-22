@@ -21,3 +21,11 @@ The ticket targets three pills. The full composer footer also contains `PlusMenu
 ## 5. Parity across `apps/web`
 
 The v1 and v2 chat composers are in `apps/desktop`. If `apps/web` has a composer with similar controls, it is not in scope for SUPER-755 and would need its own ticket.
+
+## 6. Promote `ComposerSettingsMenu` to `packages/ui` when a third surface appears
+
+Option B (co-located app-level extraction) defers the `packages/ui` promotion intentionally — only two consumers exist today. When a third surface needs the same consolidated composer settings pattern, promote the component and resolve the `PermissionMode`/`ThinkingLevel` type-boundary (likely by moving those types to `packages/shared`). This is a prerequisite for any future `apps/web` or `apps/mobile` parity work.
+
+## 7. Permission mode indicator in the trigger
+
+The consolidated trigger omits the active permission mode label/icon to keep the pill compact. A follow-up could add the active shield icon (e.g., `ShieldOffIcon` for Auto) alongside the provider logo in the trigger — useful for safety-conscious users who have set Manual mode and want an at-a-glance reminder. This is cosmetic and low-risk; defer until user feedback indicates the omission is a problem.
