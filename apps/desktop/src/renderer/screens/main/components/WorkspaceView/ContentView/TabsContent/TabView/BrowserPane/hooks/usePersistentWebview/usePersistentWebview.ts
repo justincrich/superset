@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { electronTrpc } from "renderer/lib/electron-trpc";
+import { requestPaneClose } from "renderer/stores/editor-state/editorCoordinator";
 import { useTabsStore } from "renderer/stores/tabs/store";
 
 // ---------------------------------------------------------------------------
@@ -142,6 +143,30 @@ export function usePersistentWebview({
 					if (!tab) return;
 					state.openInBrowserPane(tab.workspaceId, url);
 				}
+			},
+		},
+	);
+
+	// SUPER-794: route Cmd/Ctrl+W from the guest webContents into the same
+	// pane-close path the renderer hotkeys use (CLOSE_PANE/CLOSE_TERMINAL).
+	electronTrpc.browser.onClosePane.useSubscription(
+		{ paneId },
+		{
+			onData: () => {
+				requestPaneClose(paneId);
+			},
+		},
+	);
+
+	// SUPER-794: route Cmd/Ctrl+R from the guest webContents into a webview-
+	// scoped reload. Look up via the module-level webviewRegistry rather than
+	// capturing a webview reference — the registry may have re-registered the
+	// underlying webContents since this hook ran.
+	electronTrpc.browser.onReloadPane.useSubscription(
+		{ paneId },
+		{
+			onData: () => {
+				webviewRegistry.get(paneId)?.reload();
 			},
 		},
 	);

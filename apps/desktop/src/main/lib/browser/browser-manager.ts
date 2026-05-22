@@ -28,12 +28,17 @@ class BrowserManager extends EventEmitter {
 	private consoleLogs = new Map<string, ConsoleEntry[]>();
 	private consoleListeners = new Map<string, () => void>();
 	private contextMenuListeners = new Map<string, () => void>();
+	private beforeInputListeners = new Map<string, () => void>();
 
 	register(paneId: string, webContentsId: number): void {
 		// Clean up previous listeners if re-registering with a new webContentsId
 		const prevId = this.paneWebContentsIds.get(paneId);
 		if (prevId != null && prevId !== webContentsId) {
-			for (const map of [this.consoleListeners, this.contextMenuListeners]) {
+			for (const map of [
+				this.consoleListeners,
+				this.contextMenuListeners,
+				this.beforeInputListeners,
+			]) {
 				const cleanup = map.get(paneId);
 				if (cleanup) {
 					cleanup();
@@ -55,11 +60,16 @@ class BrowserManager extends EventEmitter {
 			});
 			this.setupConsoleCapture(paneId, wc);
 			this.setupContextMenu(paneId, wc);
+			this.setupBeforeInput(paneId, wc);
 		}
 	}
 
 	unregister(paneId: string): void {
-		for (const map of [this.consoleListeners, this.contextMenuListeners]) {
+		for (const map of [
+			this.consoleListeners,
+			this.contextMenuListeners,
+			this.beforeInputListeners,
+		]) {
 			const cleanup = map.get(paneId);
 			if (cleanup) {
 				cleanup();
@@ -220,6 +230,55 @@ class BrowserManager extends EventEmitter {
 		this.contextMenuListeners.set(paneId, () => {
 			try {
 				wc.off("context-menu", handler);
+			} catch {
+				// webContents may be destroyed
+			}
+		});
+	}
+
+	// SUPER-794: intercept Cmd/Ctrl+W and Cmd/Ctrl+R on the guest webContents.
+	//
+	// When a browser pane's webview has keyboard focus, keystrokes route to the
+	// guest renderer process — host-side `react-hotkeys-hook` listeners and the
+	// main-process application menu's `CmdOrCtrl+W` accelerator BOTH miss them
+	// (close-pane never fires) OR fire incorrectly (menu closes the whole window).
+	//
+	// `before-input-event` fires in the main process before the page handler and
+	// before the menu accelerator. `event.preventDefault()` suppresses both per
+	// Electron docs (https://www.electronjs.org/docs/latest/api/web-contents:
+	// "Calling event.preventDefault will prevent the page keydown/keyup events
+	// and the menu shortcuts"). We then emit a per-pane event the renderer
+	// subscribes to via tRPC and route to the existing pane-close / webview-
+	// reload code paths.
+	//
+	// KeyDown guard on BOTH keys is intentional — without it the handler fires
+	// on keyUp too (PR #4783's `isReloadKey` was missing this guard).
+	//
+	// Shift guard preserves `Cmd+Shift+W` (CLOSE_TAB) and `Cmd+Shift+R`
+	// (forceReload via the menu) — those keep their existing behavior.
+	private setupBeforeInput(paneId: string, wc: Electron.WebContents): void {
+		const handler = (event: Electron.Event, input: Electron.Input): void => {
+			if (input.type !== "keyDown") return;
+			if (input.shift || input.alt) return;
+			if (!(input.meta || input.control)) return;
+
+			const key = input.key.toLowerCase();
+			if (key === "w") {
+				event.preventDefault();
+				this.emit(`close-pane:${paneId}`);
+				return;
+			}
+			if (key === "r") {
+				event.preventDefault();
+				this.emit(`reload-pane:${paneId}`);
+				return;
+			}
+		};
+
+		wc.on("before-input-event", handler);
+		this.beforeInputListeners.set(paneId, () => {
+			try {
+				wc.off("before-input-event", handler);
 			} catch {
 				// webContents may be destroyed
 			}

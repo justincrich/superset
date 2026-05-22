@@ -129,6 +129,44 @@ export const createBrowserRouter = () => {
 				});
 			}),
 
+		// SUPER-794: per-pane close signal emitted when the guest webContents'
+		// `before-input-event` intercepts Cmd/Ctrl+W. The renderer subscribes and
+		// routes to the existing pane-close path (v1: requestPaneClose, v2:
+		// ctx.actions.close). No payload — the subscription is paneId-filtered
+		// so the recipient already knows which pane.
+		onClosePane: publicProcedure
+			.input(z.object({ paneId: z.string() }))
+			.subscription(({ input }) => {
+				return observable<void>((emit) => {
+					const handler = () => {
+						emit.next();
+					};
+					browserManager.on(`close-pane:${input.paneId}`, handler);
+					return () => {
+						browserManager.off(`close-pane:${input.paneId}`, handler);
+					};
+				});
+			}),
+
+		// SUPER-794: per-pane reload signal emitted when the guest webContents'
+		// `before-input-event` intercepts Cmd/Ctrl+R. The renderer subscribes and
+		// reloads only the focused webview (v1: webviewRegistry.get(paneId).reload,
+		// v2: browserRuntimeRegistry.reload(paneId)). The View→Reload menu
+		// accelerator continues to fire for non-webview focus contexts.
+		onReloadPane: publicProcedure
+			.input(z.object({ paneId: z.string() }))
+			.subscription(({ input }) => {
+				return observable<void>((emit) => {
+					const handler = () => {
+						emit.next();
+					};
+					browserManager.on(`reload-pane:${input.paneId}`, handler);
+					return () => {
+						browserManager.off(`reload-pane:${input.paneId}`, handler);
+					};
+				});
+			}),
+
 		openDevTools: publicProcedure
 			.input(z.object({ paneId: z.string() }))
 			.mutation(({ input }) => {
