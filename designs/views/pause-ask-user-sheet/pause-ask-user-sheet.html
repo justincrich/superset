@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pause-ask-user-sheet — UC-PAUSE-02 §A</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-pause-ask-user-sheet — view-local layout glue only.
+       Composition purity:
+         ZERO .atom-* rules redefined here.
+         ZERO .mol-* rules redefined here.
+         ZERO hex literals.
+         ZERO raw font-size / font-weight / line-height values.
+         ZERO raw px in padding/margin/gap (1px structural borders
+         and --elevation-sheet box-shadow documented as exceptions).
+       Structural exceptions documented inline.
+    ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding:       var(--space-8) var(--space-4);
+      background:    var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- Viewport flex column --------------------------------- */
+    /*
+      The atom-device-bezel__viewport is already display:flex;
+      flex-direction:column. These view-local classes wire the
+      overlay slots without touching any atom or molecule rule.
+    */
+
+    /* Dimmed chat region — fills flex 1 behind the sheet overlay */
+    .view-pause-ask-user-sheet__chat-behind {
+      flex:           1;
+      overflow:       hidden;
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-5);
+      padding:        var(--space-4);
+      position:       relative;
+    }
+
+    /* The backdrop scrim sits atop the chat content */
+    .view-pause-ask-user-sheet__chat-behind .atom-backdrop {
+      position: absolute;   /* structural: scrim anchored to chat region, not viewport */
+      z-index:  2;
+    }
+
+    /* Chat stub — user message + assistant head + body snippet */
+    .view-pause-ask-user-sheet__chat-stub {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-5);
+      position:       relative;
+      z-index:        1;    /* structural: below scrim overlay */
+    }
+
+    .view-pause-ask-user-sheet__assistant-body {
+      padding-inline: var(--space-1);
+    }
+
+    .view-pause-ask-user-sheet__assistant-body p {
+      margin:      0;
+      line-height: var(--line-height-normal);
+      color:       var(--text-body);
+    }
+
+    /* ---- Sheet panel ------------------------------------------ */
+    /*
+      The sheet is absolutely positioned inside the viewport so it
+      overlaps the dimmed chat from ~50% height to the top of the
+      keyboard panel. It does NOT use position:fixed because the
+      viewport itself provides the scroll isolation boundary.
+    */
+    .view-pause-ask-user-sheet__overlay {
+      position: absolute;
+      bottom:   0;
+      left:     0;
+      right:    0;
+      z-index:  10;
+      display:  flex;
+      flex-direction: column;
+    }
+
+    /* Sheet card surface */
+    .view-pause-ask-user-sheet__sheet {
+      background:               var(--surface-overlay);
+      border-top-left-radius:   var(--radius-xl);
+      border-top-right-radius:  var(--radius-xl);
+      box-shadow:               var(--elevation-sheet);
+      display:                  flex;
+      flex-direction:           column;
+      gap:                      var(--space-4);
+      padding:                  var(--space-3) var(--space-4) var(--space-4);
+    }
+
+    /* Handle row — centered drag indicator */
+    .view-pause-ask-user-sheet__handle-row {
+      display:         flex;
+      justify-content: center;
+      padding-bottom:  var(--space-1);
+    }
+
+    /* Question heading */
+    .view-pause-ask-user-sheet__question {
+      margin: 0;
+    }
+
+    /* Horizontal-scroll pill row */
+    .view-pause-ask-user-sheet__pill-row-wrap {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .view-pause-ask-user-sheet__pill-row-wrap::after {
+      content:        '';
+      position:       absolute;
+      right:          0;
+      top:            0;
+      bottom:         0;
+      width:          var(--space-8);
+      background:     linear-gradient(to right, transparent 0%, var(--surface-overlay) 100%);
+      pointer-events: none;
+    }
+
+    .view-pause-ask-user-sheet__pill-row {
+      display:         flex;
+      align-items:     center;
+      gap:             var(--space-2);
+      overflow-x:      auto;
+      padding-bottom:  var(--space-1);  /* structural: prevent clipped focus rings */
+      scrollbar-width: none;
+    }
+
+    .view-pause-ask-user-sheet__pill-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Input + Send row */
+    .view-pause-ask-user-sheet__input-area {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    .view-pause-ask-user-sheet__send-row {
+      display:         flex;
+      justify-content: flex-end;
+    }
+
+    /* ---- Keyboard stub panel ---------------------------------- */
+    /*
+      Preview stand-in for the OS keyboard. Structural geometry:
+      height 290px matches iOS default keyboard height on iPhone 16 Pro Max.
+      Internal grid texture provides visual fidelity without rendering
+      real key glyphs. Documented as preview-only stand-in.
+    */
+    .view-pause-ask-user-sheet__keyboard {
+      height:     290px;  /* structural: iOS keyboard height, iPhone 16 Pro Max */
+      flex-shrink: 0;
+      background: var(--surface-soft);
+      position:   relative;
+      overflow:   hidden;
+    }
+
+    /* Textured key-grid stand-in */
+    .view-pause-ask-user-sheet__keyboard::before {
+      content:    '';
+      position:   absolute;
+      inset:      0;
+      background-image:
+        linear-gradient(var(--border-subtle) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+      background-size: 34px 42px;  /* structural: approx key-cell grid */
+      opacity:    0.45;
+    }
+
+    .view-pause-ask-user-sheet__keyboard::after {
+      content:      'iOS Keyboard (preview stand-in)';
+      position:     absolute;
+      bottom:       var(--space-3);
+      left:         50%;
+      transform:    translateX(-50%);
+      font-family:  var(--font-mono);
+      font-size:    var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:        var(--text-faint);
+      text-transform: uppercase;
+      white-space:  nowrap;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">pause-ask-user-sheet</h1>
+    <p class="crumb">UC-PAUSE-02 §A · ask_user bottom sheet — question + pills + keyboard</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- Content area (flex: 1, position: relative for absolute overlay) -->
+          <div class="atom-device-bezel__content">
+
+            <!-- Dimmed chat view (below the sheet) -->
+            <div class="view-pause-ask-user-sheet__chat-behind" aria-hidden="true">
+
+              <!-- Scrim backdrop over chat content -->
+              <div class="atom-backdrop atom-backdrop--scrim" aria-hidden="true"></div>
+
+              <!-- Chat stub content (visible through scrim) -->
+              <div class="view-pause-ask-user-sheet__chat-stub">
+
+                <!-- User message -->
+                <div class="mol-user-message-bubble" role="presentation">
+                  <button
+                    class="mol-user-message-bubble__bubble type-body"
+                    type="button"
+                    tabindex="-1"
+                    aria-hidden="true"
+                  >
+                    <p class="mol-user-message-bubble__text">Which approach should I use for the billing API?</p>
+                  </button>
+                  <div class="mol-user-message-bubble__meta">
+                    <span class="type-meta">9:41</span>
+                  </div>
+                </div><!-- /mol-user-message-bubble -->
+
+                <!-- Assistant head -->
+                <div class="mol-assistant-message-head mol-assistant-message-head--idle" role="presentation">
+                  <span
+                    class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                    aria-hidden="true"
+                  >A</span>
+                  <span class="mol-assistant-message-head__label">Assistant</span>
+                  <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                  <span class="mol-assistant-message-head__time">9:41 AM</span>
+                </div><!-- /mol-assistant-message-head -->
+
+                <!-- Assistant body stub -->
+                <div class="view-pause-ask-user-sheet__assistant-body type-body" role="presentation">
+                  <p>I can help refactor the billing API. Before I proceed, I need to know which approach you'd prefer — tRPC offers end-to-end type safety while REST…</p>
+                </div>
+
+              </div><!-- /chat-stub -->
+            </div><!-- /chat-behind -->
+
+            <!-- Sheet overlay — positioned at bottom of content area -->
+            <div
+              class="view-pause-ask-user-sheet__overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Agent question"
+            >
+
+              <!-- Sheet card -->
+              <div class="view-pause-ask-user-sheet__sheet">
+
+                <!-- Drag handle -->
+                <div class="view-pause-ask-user-sheet__handle-row" aria-hidden="true">
+                  <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--muted"></div>
+                </div>
+
+                <!-- Question text -->
+                <h2 class="view-pause-ask-user-sheet__question type-title">
+                  Which approach should I use?
+                </h2>
+
+                <!-- Suggested answer pills — horizontal scroll -->
+                <div class="view-pause-ask-user-sheet__pill-row-wrap">
+                  <ul
+                    class="view-pause-ask-user-sheet__pill-row"
+                    role="list"
+                    aria-label="Suggested answers"
+                  >
+                    <li role="listitem">
+                      <button
+                        class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+                        type="button"
+                        aria-label="Use suggested answer: tRPC"
+                      >
+                        <span class="mol-suggested-answer-pill__text">tRPC</span>
+                      </button>
+                    </li>
+                    <li role="listitem">
+                      <button
+                        class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+                        type="button"
+                        aria-label="Use suggested answer: REST API"
+                      >
+                        <span class="mol-suggested-answer-pill__text">REST API</span>
+                      </button>
+                    </li>
+                    <li role="listitem">
+                      <button
+                        class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+                        type="button"
+                        aria-label="Use suggested answer: Both"
+                      >
+                        <span class="mol-suggested-answer-pill__text">Both</span>
+                      </button>
+                    </li>
+                  </ul>
+                </div><!-- /pill-row-wrap -->
+
+                <!-- Input area: textarea + send button -->
+                <div class="view-pause-ask-user-sheet__input-area">
+                  <textarea
+                    class="atom-textarea atom-textarea--inset"
+                    placeholder="Type your answer…"
+                    aria-label="Type your answer"
+                    rows="2"
+                  ></textarea>
+
+                  <div class="view-pause-ask-user-sheet__send-row">
+                    <button
+                      class="atom-button atom-button--primary atom-button--md"
+                      type="button"
+                      aria-label="Send answer"
+                      style="border-radius: var(--radius-pill);"
+                    >
+                      Send
+                      <!-- Paper-plane glyph -->
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div><!-- /input-area -->
+
+              </div><!-- /sheet -->
+
+              <!-- iOS keyboard stub -->
+              <div
+                class="view-pause-ask-user-sheet__keyboard"
+                aria-hidden="true"
+                role="presentation"
+              ></div>
+
+            </div><!-- /overlay -->
+
+          </div><!-- /atom-device-bezel__content -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- Content area -->
+          <div class="atom-device-bezel__content">
+
+            <!-- Dimmed chat view -->
+            <div class="view-pause-ask-user-sheet__chat-behind" aria-hidden="true">
+              <div class="atom-backdrop atom-backdrop--scrim" aria-hidden="true"></div>
+
+              <div class="view-pause-ask-user-sheet__chat-stub">
+                <div class="mol-user-message-bubble" role="presentation">
+                  <button
+                    class="mol-user-message-bubble__bubble type-body"
+                    type="button"
+                    tabindex="-1"
+                    aria-hidden="true"
+                  >
+                    <p class="mol-user-message-bubble__text">Which approach should I use for the billing API?</p>
+                  </button>
+                  <div class="mol-user-message-bubble__meta">
+                    <span class="type-meta">9:41</span>
+                  </div>
+                </div>
+
+                <div class="mol-assistant-message-head mol-assistant-message-head--idle" role="presentation">
+                  <span class="atom-avatar atom-avatar--accent atom-avatar--sm" aria-hidden="true">A</span>
+                  <span class="mol-assistant-message-head__label">Assistant</span>
+                  <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                  <span class="mol-assistant-message-head__time">9:41 AM</span>
+                </div>
+
+                <div class="view-pause-ask-user-sheet__assistant-body type-body" role="presentation">
+                  <p>I can help refactor the billing API. Before I proceed, I need to know which approach you'd prefer — tRPC offers end-to-end type safety while REST…</p>
+                </div>
+              </div>
+            </div><!-- /chat-behind -->
+
+            <!-- Sheet overlay -->
+            <div
+              class="view-pause-ask-user-sheet__overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Agent question"
+            >
+              <div class="view-pause-ask-user-sheet__sheet">
+
+                <div class="view-pause-ask-user-sheet__handle-row" aria-hidden="true">
+                  <div class="atom-home-indicator atom-home-indicator--sheet-handle atom-home-indicator--muted"></div>
+                </div>
+
+                <h2 class="view-pause-ask-user-sheet__question type-title">
+                  Which approach should I use?
+                </h2>
+
+                <div class="view-pause-ask-user-sheet__pill-row-wrap">
+                  <ul
+                    class="view-pause-ask-user-sheet__pill-row"
+                    role="list"
+                    aria-label="Suggested answers"
+                  >
+                    <li role="listitem">
+                      <button
+                        class="mol-suggested-answer-pill mol-suggested-answer-pill--accent atom-pill atom-pill--accent atom-pill--md"
+                        type="button"
+                        aria-label="Use suggested answer: tRPC"
+                      >
+                        <span class="mol-suggested-answer-pill__text">tRPC</span>
+                      </button>
+                    </li>
+                    <li role="listitem">
+                      <button
+                        class="mol-suggested-answer-pill mol-suggested-answer-pill--default atom-pill atom-pill--default atom-pill--md"
+                        type="button"
+                        aria-label="Use suggested answer: REST API"
+                      >
+                        <span class="mol-suggested-answer-pill__text">REST API</span>
+                      </button>
+                    </li>
+                    <li role="listitem">
+                      <button
+                        class="mol-suggested-answer-pill mol-suggested-answer-pill--ghost atom-pill atom-pill--md"
+                        type="button"
+                        aria-label="Use suggested answer: Both"
+                      >
+                        <span class="mol-suggested-answer-pill__text">Both</span>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="view-pause-ask-user-sheet__input-area">
+                  <textarea
+                    class="atom-textarea atom-textarea--inset"
+                    placeholder="Type your answer…"
+                    aria-label="Type your answer"
+                    rows="2"
+                  ></textarea>
+
+                  <div class="view-pause-ask-user-sheet__send-row">
+                    <button
+                      class="atom-button atom-button--primary atom-button--md"
+                      type="button"
+                      aria-label="Send answer"
+                      style="border-radius: var(--radius-pill);"
+                    >
+                      Send
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+              </div><!-- /sheet -->
+
+              <div
+                class="view-pause-ask-user-sheet__keyboard"
+                aria-hidden="true"
+                role="presentation"
+              ></div>
+
+            </div><!-- /overlay -->
+
+          </div><!-- /atom-device-bezel__content -->
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
