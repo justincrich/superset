@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · live-activity-dot</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-live-activity-dot — Dynamic Island status indicator
+       Composition purity: only .atom-live-activity-dot rules here.
+       Zero hex literals. Zero raw font-size/weight/spacing outside
+       structural geometry (6px dot, 8px box-shadow spread).
+       ============================================================ */
+
+    /* ---- Keyframes ------------------------------------------- */
+    @keyframes atom-live-activity-pulse {
+      0%, 100% { transform: scale(1);   opacity: 1;    }
+      50%      { transform: scale(1.2); opacity: 0.55; }
+    }
+
+    /* ---- Base container -------------------------------------- */
+    .atom-live-activity-dot {
+      display:        inline-flex;
+      align-items:    center;
+      gap:            var(--space-2);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      line-height:    1;
+      color:          var(--state-live-fg);   /* default: live */
+    }
+
+    /* ---- Dot element ----------------------------------------- */
+    .atom-live-activity-dot__dot {
+      flex-shrink:   0;
+      width:         6px;
+      height:        6px;
+      border-radius: var(--radius-round);
+      background:    var(--state-live-fg);
+      box-shadow:    0 0 8px var(--state-live-fg);
+      animation:     atom-live-activity-pulse 1.4s ease-in-out infinite;
+    }
+
+    /* ---- Variant: paused (amber, steady, subtle glow) -------- */
+    .atom-live-activity-dot--paused {
+      color: var(--state-warning-fg);
+    }
+    .atom-live-activity-dot--paused .atom-live-activity-dot__dot {
+      background: var(--state-warning-fg);
+      box-shadow: 0 0 6px var(--state-warning-fg);
+      animation:  none;
+    }
+
+    /* ---- Variant: dormant (muted gray, no animation, no glow) */
+    .atom-live-activity-dot--dormant {
+      color: var(--text-muted);
+    }
+    .atom-live-activity-dot--dormant .atom-live-activity-dot__dot {
+      background: var(--text-muted);
+      box-shadow: none;
+      animation:  none;
+    }
+
+    /* ---- Reduced-motion override ----------------------------- */
+    @media (prefers-reduced-motion: reduce) {
+      .atom-live-activity-dot__dot {
+        animation: none;
+        /* Retain mint glow as static spatial cue */
+        box-shadow: 0 0 8px var(--state-live-fg);
+      }
+    }
+
+    /* ============================================================
+       Preview-only layout helpers (not part of the atom API)
+       ============================================================ */
+    .lad-row {
+      display:     flex;
+      align-items: center;
+      flex-wrap:   wrap;
+      gap:         var(--space-6);
+    }
+
+    .lad-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    /* Dynamic Island mockup ------------------------------------ */
+    .island-stack {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-4);
+      align-items:    flex-start;
+    }
+
+    .island-mockup {
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      width:           var(--dynamic-island-width);
+      height:          var(--dynamic-island-height);
+      border-radius:   var(--radius-pill);
+      background:      #000;  /* Island is always black on device; structural, not semantic */
+    }
+
+    .island-snapshot-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin-bottom:  var(--space-1);
+    }
+
+    .reduced-motion-note {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      padding-top:    var(--space-4);
+      border-top:     1px solid var(--border-subtle);
+      margin-top:     var(--spacing-section);
+    }
+
+    .reduced-motion-note strong {
+      color:       var(--state-live-fg);
+      font-weight: var(--font-weight-meta);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">live-activity-dot</h1>
+    <p class="crumb">atom · Dynamic Island live-activity indicator</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- Section 1: Variant matrix --------------------- -->
+      <div class="variant">
+        <h3>variant matrix — all 3 variants with realistic labels</h3>
+
+        <!-- live — 5 use-case examples -->
+        <div class="state-grid">
+
+          <div class="state">
+            <span class="state-label">live · streaming</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Streaming</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">live · bash</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Bash</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">live · writing</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Writing</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">live · question</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Question</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">live · approve</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Approve</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- paused — 1 example -->
+          <div class="state">
+            <span class="state-label">paused · pending</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--paused">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Pending</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- dormant — 1 example -->
+          <div class="state">
+            <span class="state-label">dormant · idle</span>
+            <div aria-hidden="true">
+              <span class="atom-live-activity-dot atom-live-activity-dot--dormant">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Idle</span>
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- Section 2: Dynamic Island mockup --------------- -->
+      <div class="variant">
+        <h3>in context — Dynamic Island mockup (126 × 37 px)</h3>
+        <div class="island-stack">
+
+          <!-- live: mint pulsing STREAMING -->
+          <div class="lad-cell">
+            <span class="island-snapshot-label">live — streaming</span>
+            <div class="island-mockup">
+              <div role="status" aria-live="polite">
+                <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                  <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                  <span class="atom-live-activity-dot__label">Streaming</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- paused: amber PENDING -->
+          <div class="lad-cell">
+            <span class="island-snapshot-label">paused — pending</span>
+            <div class="island-mockup">
+              <div role="status" aria-live="polite">
+                <span class="atom-live-activity-dot atom-live-activity-dot--paused">
+                  <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                  <span class="atom-live-activity-dot__label">Pending</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- dormant: gray IDLE -->
+          <div class="lad-cell">
+            <span class="island-snapshot-label">dormant — idle</span>
+            <div class="island-mockup">
+              <div aria-hidden="true">
+                <span class="atom-live-activity-dot atom-live-activity-dot--dormant">
+                  <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                  <span class="atom-live-activity-dot__label">Idle</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- Section 3: Reduced-motion note ----------------- -->
+      <div class="reduced-motion-note">
+        <strong>.live variant:</strong> prefers-reduced-motion suppresses pulse animation but preserves the mint color + glow.
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- Section 1: Variant matrix --------------------- -->
+      <div class="variant">
+        <h3>variant matrix — all 3 variants with realistic labels</h3>
+
+        <div class="state-grid">
+
+          <div class="state">
+            <span class="state-label">live · streaming</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Streaming</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">live · bash</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Bash</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">live · writing</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Writing</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">live · question</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Question</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">live · approve</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Approve</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">paused · pending</span>
+            <div role="status" aria-live="polite">
+              <span class="atom-live-activity-dot atom-live-activity-dot--paused">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Pending</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="state">
+            <span class="state-label">dormant · idle</span>
+            <div aria-hidden="true">
+              <span class="atom-live-activity-dot atom-live-activity-dot--dormant">
+                <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                <span class="atom-live-activity-dot__label">Idle</span>
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- Section 2: Dynamic Island mockup --------------- -->
+      <div class="variant">
+        <h3>in context — Dynamic Island mockup (126 × 37 px)</h3>
+        <div class="island-stack">
+
+          <div class="lad-cell">
+            <span class="island-snapshot-label">live — streaming</span>
+            <div class="island-mockup">
+              <div role="status" aria-live="polite">
+                <span class="atom-live-activity-dot atom-live-activity-dot--live">
+                  <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                  <span class="atom-live-activity-dot__label">Streaming</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lad-cell">
+            <span class="island-snapshot-label">paused — pending</span>
+            <div class="island-mockup">
+              <div role="status" aria-live="polite">
+                <span class="atom-live-activity-dot atom-live-activity-dot--paused">
+                  <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                  <span class="atom-live-activity-dot__label">Pending</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lad-cell">
+            <span class="island-snapshot-label">dormant — idle</span>
+            <div class="island-mockup">
+              <div aria-hidden="true">
+                <span class="atom-live-activity-dot atom-live-activity-dot--dormant">
+                  <span class="atom-live-activity-dot__dot" aria-hidden="true"></span>
+                  <span class="atom-live-activity-dot__label">Idle</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- Section 3: Reduced-motion note ----------------- -->
+      <div class="reduced-motion-note">
+        <strong>.live variant:</strong> prefers-reduced-motion suppresses pulse animation but preserves the mint color + glow.
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Recipe table
+       ============================================================ -->
+  <div class="recipe-footer" style="padding: var(--spacing-section) var(--spacing-between); border-top: 1px solid var(--border-subtle);">
+    <h2 style="font-family: var(--font-mono); font-size: var(--font-size-body-sm); font-weight: var(--font-weight-heading); letter-spacing: var(--tracking-tight); color: var(--text-heading); margin: 0 0 var(--spacing-between);">Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Dark resolved</th>
+          <th>Light resolved</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>dot bg + label color (live)</td>
+          <td>--state-live-fg</td>
+          <td>#50a878 (mint)</td>
+          <td>oklch(0.6 0.118 184.704)</td>
+          <td>Streaming, Bash, Writing, Question, Approve</td>
+        </tr>
+        <tr>
+          <td>box-shadow glow (live)</td>
+          <td>--state-live-fg</td>
+          <td>0 0 8px #50a878</td>
+          <td>0 0 8px oklch(…)</td>
+          <td>Also retained statically at prefers-reduced-motion</td>
+        </tr>
+        <tr>
+          <td>animation duration (live)</td>
+          <td>— (1.4s explicit)</td>
+          <td>1.4s</td>
+          <td>1.4s</td>
+          <td>Fixed Island cadence; no --motion-* token maps to a loop period</td>
+        </tr>
+        <tr>
+          <td>dot bg + label color (paused)</td>
+          <td>--state-warning-fg</td>
+          <td>#d4a84b (amber)</td>
+          <td>oklch(0.398 0.07 227.392)</td>
+          <td>Pending / awaiting response</td>
+        </tr>
+        <tr>
+          <td>box-shadow glow (paused)</td>
+          <td>--state-warning-fg</td>
+          <td>0 0 6px #d4a84b</td>
+          <td>0 0 6px oklch(…)</td>
+          <td>Subtle steady outline glow</td>
+        </tr>
+        <tr>
+          <td>dot bg + label color (dormant)</td>
+          <td>--text-muted</td>
+          <td>#a8a5a3</td>
+          <td>oklch(0.556 0 0)</td>
+          <td>Idle Island — no active session</td>
+        </tr>
+        <tr>
+          <td>box-shadow (dormant)</td>
+          <td>none</td>
+          <td>—</td>
+          <td>—</td>
+          <td>No glow in dormant state</td>
+        </tr>
+        <tr>
+          <td>gap</td>
+          <td>--space-2</td>
+          <td>8px</td>
+          <td>8px</td>
+          <td>Dot-to-label gap</td>
+        </tr>
+        <tr>
+          <td>font-family</td>
+          <td>--font-mono</td>
+          <td>Geist Mono</td>
+          <td>Geist Mono</td>
+          <td>Island content always mono</td>
+        </tr>
+        <tr>
+          <td>font-size</td>
+          <td>--font-size-meta</td>
+          <td>11px</td>
+          <td>11px</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>font-weight</td>
+          <td>--font-weight-meta</td>
+          <td>500</td>
+          <td>500</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>letter-spacing</td>
+          <td>--tracking-uppercase</td>
+          <td>0.06em</td>
+          <td>0.06em</td>
+          <td>Pairs with text-transform: uppercase</td>
+        </tr>
+        <tr>
+          <td>border-radius (dot)</td>
+          <td>--radius-round</td>
+          <td>50%</td>
+          <td>50%</td>
+          <td>Perfect circle</td>
+        </tr>
+        <tr>
+          <td>dot width/height</td>
+          <td>— (explicit 6px)</td>
+          <td>6px</td>
+          <td>6px</td>
+          <td>Structural geometry; sub-grid between --space-1 (4px) and --space-2 (8px)</td>
+        </tr>
+        <tr>
+          <td>island width (mockup)</td>
+          <td>--dynamic-island-width</td>
+          <td>126px</td>
+          <td>126px</td>
+          <td>iPhone 16 Pro Max spec</td>
+        </tr>
+        <tr>
+          <td>island height (mockup)</td>
+          <td>--dynamic-island-height</td>
+          <td>37px</td>
+          <td>37px</td>
+          <td>iPhone 16 Pro Max spec</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
