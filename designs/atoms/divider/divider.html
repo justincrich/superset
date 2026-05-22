@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · divider</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-divider — token-governed separator atom
+       Composition purity: only .atom-divider rules defined here.
+       Zero hex literals. Structural constants 1px/2px allowed.
+       Zero raw px in margin — only var(--space-*).
+       ============================================================ */
+
+    /* ---- Base reset ------------------------------------------ */
+    .atom-divider {
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    /* ---- Horizontal (default) -------------------------------- */
+    .atom-divider--horizontal,
+    hr.atom-divider {
+      display:    block;
+      width:      100%;
+      height:     0;
+      border:     none;
+      border-top: 1px solid var(--border-subtle); /* hairline default */
+      margin:     0;
+      padding:    0;
+    }
+
+    /* ---- Vertical -------------------------------------------- */
+    span.atom-divider--vertical {
+      display:      inline-block;
+      width:        1px;
+      height:       100%;
+      align-self:   stretch;
+      border:       none;
+      border-left:  1px solid var(--border-subtle); /* hairline default */
+      margin:       0;
+      padding:      0;
+    }
+
+    /* ---- Kind: hairline (explicit, same as default) ---------- */
+    .atom-divider--hairline.atom-divider--horizontal,
+    hr.atom-divider--hairline {
+      border-top-color: var(--border-subtle);
+    }
+    span.atom-divider--hairline.atom-divider--vertical {
+      border-left-color: var(--border-subtle);
+    }
+
+    /* ---- Kind: default --------------------------------------- */
+    .atom-divider--default.atom-divider--horizontal,
+    hr.atom-divider--default {
+      border-top-color: var(--border-default);
+    }
+    span.atom-divider--default.atom-divider--vertical {
+      border-left-color: var(--border-default);
+    }
+
+    /* ---- Kind: strong ---------------------------------------- */
+    .atom-divider--strong.atom-divider--horizontal,
+    hr.atom-divider--strong {
+      border-top-color: var(--border-strong);
+    }
+    span.atom-divider--strong.atom-divider--vertical {
+      border-left-color: var(--border-strong);
+    }
+
+    /* ---- Kind: accent ---------------------------------------- */
+    .atom-divider--accent.atom-divider--horizontal,
+    hr.atom-divider--accent {
+      border-top-width:  2px;
+      border-top-color:  var(--accent-primary);
+    }
+    span.atom-divider--accent.atom-divider--vertical {
+      width:             2px;
+      border-left-width: 2px;
+      border-left-color: var(--accent-primary);
+    }
+
+    /* ---- Gutter: none (default) ------------------------------ */
+    /* No rules needed — margin: 0 is set in base */
+
+    /* ---- Gutter: sm ------------------------------------------ */
+    .atom-divider--gutter-sm.atom-divider--horizontal,
+    hr.atom-divider--gutter-sm {
+      margin-block: var(--space-2);
+    }
+    span.atom-divider--gutter-sm.atom-divider--vertical {
+      margin-inline: var(--space-2);
+    }
+
+    /* ---- Gutter: md ------------------------------------------ */
+    .atom-divider--gutter-md.atom-divider--horizontal,
+    hr.atom-divider--gutter-md {
+      margin-block: var(--space-4);
+    }
+    span.atom-divider--gutter-md.atom-divider--vertical {
+      margin-inline: var(--space-4);
+    }
+
+    /* ============================================================
+       Preview layout helpers — not part of the atom spec
+       ============================================================ */
+
+    /* Section title inside pane */
+    .section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-4);
+    }
+
+    /* Sub-label above each demo row */
+    .demo-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-2);
+    }
+
+    /* Wrapper for a single horizontal divider demonstration */
+    .demo-row {
+      margin-bottom: var(--spacing-section);
+    }
+
+    /* Text rows flanking a horizontal divider */
+    .demo-text-row {
+      padding: var(--space-3) 0;
+      font-family: var(--font-body);
+      font-size:   var(--font-size-body);
+      color:       var(--text-body);
+      line-height: var(--line-height-normal);
+    }
+
+    /* Toolbar row for vertical divider demo */
+    .demo-toolbar {
+      display:     flex;
+      align-items: center;
+      gap:         0;
+      height:      var(--space-6);
+      padding:     0 var(--space-2);
+      background:  var(--surface-raised);
+      border:      1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      width:       fit-content;
+    }
+    .demo-toolbar-item {
+      padding-inline: var(--space-3);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+      white-space:    nowrap;
+    }
+
+    /* Gutter demo: three stacked rows with the divider between them */
+    .gutter-rows {
+      margin-bottom: var(--spacing-between);
+    }
+    .gutter-row-text {
+      font-family: var(--font-body);
+      font-size:   var(--font-size-body-sm);
+      color:       var(--text-body);
+      padding:     var(--space-1) 0;
+    }
+
+    /* Accent tab underline demo */
+    .demo-tab-row {
+      display:     flex;
+      gap:         var(--space-6);
+      margin-bottom: var(--space-2);
+    }
+    .demo-tab {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-label);
+      font-weight:    var(--font-weight-label);
+      letter-spacing: var(--tracking-snug);
+      color:          var(--text-muted);
+      padding-bottom: var(--space-2);
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+    }
+    .demo-tab--selected {
+      color: var(--text-body);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">divider</h1>
+    <p class="crumb">atom · visual separator — horizontal &amp; vertical</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. HORIZONTAL DIVIDERS -------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">horizontal dividers</h3>
+
+        <!-- hairline -->
+        <div class="demo-row">
+          <p class="demo-label">hairline (default) — between message rows</p>
+          <div class="demo-text-row">Refactor relay tunnel reconnect</div>
+          <hr class="atom-divider atom-divider--hairline atom-divider--horizontal"
+              role="separator"
+              aria-orientation="horizontal">
+          <div class="demo-text-row">Reset onboarding state for QA build</div>
+        </div>
+
+        <!-- default -->
+        <div class="demo-row">
+          <p class="demo-label">default — between sections</p>
+          <div class="demo-text-row">Refactor relay tunnel reconnect</div>
+          <hr class="atom-divider atom-divider--default atom-divider--horizontal"
+              role="separator"
+              aria-orientation="horizontal">
+          <div class="demo-text-row">Reset onboarding state for QA build</div>
+        </div>
+
+        <!-- strong -->
+        <div class="demo-row">
+          <p class="demo-label">strong — between major panes</p>
+          <div class="demo-text-row">Refactor relay tunnel reconnect</div>
+          <hr class="atom-divider atom-divider--strong atom-divider--horizontal"
+              role="separator"
+              aria-orientation="horizontal">
+          <div class="demo-text-row">Reset onboarding state for QA build</div>
+        </div>
+
+        <!-- accent (selected tab underline) -->
+        <div class="demo-row">
+          <p class="demo-label">accent — selected tab underline</p>
+          <div class="demo-tab-row" role="tablist">
+            <span class="demo-tab demo-tab--selected" role="tab" aria-selected="true">
+              Chats
+              <hr class="atom-divider atom-divider--accent atom-divider--horizontal"
+                  role="presentation">
+            </span>
+            <span class="demo-tab" role="tab" aria-selected="false">Sessions</span>
+            <span class="demo-tab" role="tab" aria-selected="false">Settings</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 2. VERTICAL DIVIDERS --------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">vertical dividers — toolbar row</h3>
+
+        <div class="demo-row">
+          <p class="demo-label">hairline — inline toolbar separator</p>
+          <div class="demo-toolbar" role="toolbar" aria-label="Compose options">
+            <span class="demo-toolbar-item">Streaming</span>
+            <span class="atom-divider atom-divider--hairline atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Sonnet 4.6</span>
+            <span class="atom-divider atom-divider--hairline atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Thinking: medium</span>
+            <span class="atom-divider atom-divider--hairline atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Permission: ask</span>
+          </div>
+        </div>
+
+        <div class="demo-row">
+          <p class="demo-label">default — inline toolbar separator</p>
+          <div class="demo-toolbar" role="toolbar" aria-label="Compose options">
+            <span class="demo-toolbar-item">Streaming</span>
+            <span class="atom-divider atom-divider--default atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Sonnet 4.6</span>
+            <span class="atom-divider atom-divider--default atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Thinking: medium</span>
+            <span class="atom-divider atom-divider--default atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Permission: ask</span>
+          </div>
+        </div>
+
+        <div class="demo-row">
+          <p class="demo-label">strong — inline toolbar separator</p>
+          <div class="demo-toolbar" role="toolbar" aria-label="Compose options">
+            <span class="demo-toolbar-item">Streaming</span>
+            <span class="atom-divider atom-divider--strong atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Sonnet 4.6</span>
+            <span class="atom-divider atom-divider--strong atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Thinking: medium</span>
+            <span class="atom-divider atom-divider--strong atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Permission: ask</span>
+          </div>
+        </div>
+
+        <div class="demo-row">
+          <p class="demo-label">accent — inline toolbar separator</p>
+          <div class="demo-toolbar" role="toolbar" aria-label="Compose options">
+            <span class="demo-toolbar-item">Streaming</span>
+            <span class="atom-divider atom-divider--accent atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Sonnet 4.6</span>
+            <span class="atom-divider atom-divider--accent atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Thinking: medium</span>
+            <span class="atom-divider atom-divider--accent atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Permission: ask</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 3. GUTTER VARIANTS ----------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">gutter variants — horizontal hairline</h3>
+
+        <!-- gutter-none -->
+        <div class="demo-row">
+          <p class="demo-label">gutter-none (default) — no margin</p>
+          <div class="gutter-rows">
+            <div class="gutter-row-text">Refactor relay tunnel reconnect</div>
+            <hr class="atom-divider atom-divider--hairline atom-divider--horizontal atom-divider--gutter-none"
+                role="separator">
+            <div class="gutter-row-text">Reset onboarding state for QA build</div>
+          </div>
+        </div>
+
+        <!-- gutter-sm -->
+        <div class="demo-row">
+          <p class="demo-label">gutter-sm — margin: var(--space-2) 0</p>
+          <div class="gutter-rows">
+            <div class="gutter-row-text">Refactor relay tunnel reconnect</div>
+            <hr class="atom-divider atom-divider--hairline atom-divider--horizontal atom-divider--gutter-sm"
+                role="separator">
+            <div class="gutter-row-text">Reset onboarding state for QA build</div>
+          </div>
+        </div>
+
+        <!-- gutter-md -->
+        <div class="demo-row">
+          <p class="demo-label">gutter-md — margin: var(--space-4) 0</p>
+          <div class="gutter-rows">
+            <div class="gutter-row-text">Refactor relay tunnel reconnect</div>
+            <hr class="atom-divider atom-divider--hairline atom-divider--horizontal atom-divider--gutter-md"
+                role="separator">
+            <div class="gutter-row-text">Reset onboarding state for QA build</div>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. HORIZONTAL DIVIDERS -------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">horizontal dividers</h3>
+
+        <!-- hairline -->
+        <div class="demo-row">
+          <p class="demo-label">hairline (default) — between message rows</p>
+          <div class="demo-text-row">Refactor relay tunnel reconnect</div>
+          <hr class="atom-divider atom-divider--hairline atom-divider--horizontal"
+              role="separator"
+              aria-orientation="horizontal">
+          <div class="demo-text-row">Reset onboarding state for QA build</div>
+        </div>
+
+        <!-- default -->
+        <div class="demo-row">
+          <p class="demo-label">default — between sections</p>
+          <div class="demo-text-row">Refactor relay tunnel reconnect</div>
+          <hr class="atom-divider atom-divider--default atom-divider--horizontal"
+              role="separator"
+              aria-orientation="horizontal">
+          <div class="demo-text-row">Reset onboarding state for QA build</div>
+        </div>
+
+        <!-- strong -->
+        <div class="demo-row">
+          <p class="demo-label">strong — between major panes</p>
+          <div class="demo-text-row">Refactor relay tunnel reconnect</div>
+          <hr class="atom-divider atom-divider--strong atom-divider--horizontal"
+              role="separator"
+              aria-orientation="horizontal">
+          <div class="demo-text-row">Reset onboarding state for QA build</div>
+        </div>
+
+        <!-- accent (selected tab underline) -->
+        <div class="demo-row">
+          <p class="demo-label">accent — selected tab underline</p>
+          <div class="demo-tab-row" role="tablist">
+            <span class="demo-tab demo-tab--selected" role="tab" aria-selected="true">
+              Chats
+              <hr class="atom-divider atom-divider--accent atom-divider--horizontal"
+                  role="presentation">
+            </span>
+            <span class="demo-tab" role="tab" aria-selected="false">Sessions</span>
+            <span class="demo-tab" role="tab" aria-selected="false">Settings</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 2. VERTICAL DIVIDERS --------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">vertical dividers — toolbar row</h3>
+
+        <div class="demo-row">
+          <p class="demo-label">hairline — inline toolbar separator</p>
+          <div class="demo-toolbar" role="toolbar" aria-label="Compose options">
+            <span class="demo-toolbar-item">Streaming</span>
+            <span class="atom-divider atom-divider--hairline atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Sonnet 4.6</span>
+            <span class="atom-divider atom-divider--hairline atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Thinking: medium</span>
+            <span class="atom-divider atom-divider--hairline atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Permission: ask</span>
+          </div>
+        </div>
+
+        <div class="demo-row">
+          <p class="demo-label">default — inline toolbar separator</p>
+          <div class="demo-toolbar" role="toolbar" aria-label="Compose options">
+            <span class="demo-toolbar-item">Streaming</span>
+            <span class="atom-divider atom-divider--default atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Sonnet 4.6</span>
+            <span class="atom-divider atom-divider--default atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Thinking: medium</span>
+            <span class="atom-divider atom-divider--default atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Permission: ask</span>
+          </div>
+        </div>
+
+        <div class="demo-row">
+          <p class="demo-label">strong — inline toolbar separator</p>
+          <div class="demo-toolbar" role="toolbar" aria-label="Compose options">
+            <span class="demo-toolbar-item">Streaming</span>
+            <span class="atom-divider atom-divider--strong atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Sonnet 4.6</span>
+            <span class="atom-divider atom-divider--strong atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Thinking: medium</span>
+            <span class="atom-divider atom-divider--strong atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Permission: ask</span>
+          </div>
+        </div>
+
+        <div class="demo-row">
+          <p class="demo-label">accent — inline toolbar separator</p>
+          <div class="demo-toolbar" role="toolbar" aria-label="Compose options">
+            <span class="demo-toolbar-item">Streaming</span>
+            <span class="atom-divider atom-divider--accent atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Sonnet 4.6</span>
+            <span class="atom-divider atom-divider--accent atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Thinking: medium</span>
+            <span class="atom-divider atom-divider--accent atom-divider--vertical"
+                  aria-hidden="true"></span>
+            <span class="demo-toolbar-item">Permission: ask</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- 3. GUTTER VARIANTS ----------------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">gutter variants — horizontal hairline</h3>
+
+        <!-- gutter-none -->
+        <div class="demo-row">
+          <p class="demo-label">gutter-none (default) — no margin</p>
+          <div class="gutter-rows">
+            <div class="gutter-row-text">Refactor relay tunnel reconnect</div>
+            <hr class="atom-divider atom-divider--hairline atom-divider--horizontal atom-divider--gutter-none"
+                role="separator">
+            <div class="gutter-row-text">Reset onboarding state for QA build</div>
+          </div>
+        </div>
+
+        <!-- gutter-sm -->
+        <div class="demo-row">
+          <p class="demo-label">gutter-sm — margin: var(--space-2) 0</p>
+          <div class="gutter-rows">
+            <div class="gutter-row-text">Refactor relay tunnel reconnect</div>
+            <hr class="atom-divider atom-divider--hairline atom-divider--horizontal atom-divider--gutter-sm"
+                role="separator">
+            <div class="gutter-row-text">Reset onboarding state for QA build</div>
+          </div>
+        </div>
+
+        <!-- gutter-md -->
+        <div class="demo-row">
+          <p class="demo-label">gutter-md — margin: var(--space-4) 0</p>
+          <div class="gutter-rows">
+            <div class="gutter-row-text">Refactor relay tunnel reconnect</div>
+            <hr class="atom-divider atom-divider--hairline atom-divider--horizontal atom-divider--gutter-md"
+                role="separator">
+            <div class="gutter-row-text">Reset onboarding state for QA build</div>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe footer
+       ============================================================ -->
+  <div class="recipe-footer">
+    <h2>Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Dark resolves to</th>
+          <th>Light resolves to</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>hairline color</td>
+          <td>--border-subtle</td>
+          <td>--_neutral-4 (#2a2827)</td>
+          <td>--_neutral-border (oklch 0.922)</td>
+        </tr>
+        <tr>
+          <td>default color</td>
+          <td>--border-default</td>
+          <td>--_neutral-4 (#2a2827)</td>
+          <td>--_neutral-border (oklch 0.922)</td>
+        </tr>
+        <tr>
+          <td>strong color</td>
+          <td>--border-strong</td>
+          <td>--_neutral-5 (#3a3837)</td>
+          <td>--_neutral-5 (oklch 0.708)</td>
+        </tr>
+        <tr>
+          <td>accent color</td>
+          <td>--accent-primary</td>
+          <td>--_ember (#e07850)</td>
+          <td>--_ember (oklch 0.646 0.222 41)</td>
+        </tr>
+        <tr>
+          <td>gutter-sm</td>
+          <td>--space-2</td>
+          <td colspan="2">8px</td>
+        </tr>
+        <tr>
+          <td>gutter-md</td>
+          <td>--space-4</td>
+          <td colspan="2">16px</td>
+        </tr>
+        <tr>
+          <td>thickness (structural)</td>
+          <td>— (constant)</td>
+          <td colspan="2">1px (all kinds) / 2px (accent)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
