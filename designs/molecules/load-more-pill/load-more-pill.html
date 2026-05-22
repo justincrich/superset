@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>molecule · load-more-pill</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-load-more-pill — molecule-local layout + glue only.
+       Composes: atom-button, atom-icon-glyph, atom-progress-dots,
+                 atom-section-label.
+       NEVER redefines .atom-* rules.
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Zero raw px in spacing/gap (structural dot geometry excepted
+       in atom-progress-dots source).
+       ================================================================ */
+
+    /* ---- Block ---------------------------------------------------- */
+    .mol-load-more-pill {
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      gap:             var(--space-2);
+      margin:          var(--space-2) var(--space-4);
+      /* pill-radius: inherit var(--radius-default) from atom-button */
+    }
+
+    /* ---- Width variants ------------------------------------------ */
+    .mol-load-more-pill--full-width {
+      width: calc(100% - var(--space-8));
+    }
+
+    .mol-load-more-pill--inline {
+      width: auto;
+    }
+
+    /* ---- Elements ------------------------------------------------- */
+    .mol-load-more-pill__label {
+      /* text inherits font/size from atom-button */
+    }
+
+    .mol-load-more-pill__count {
+      /* color via atom-section-label--muted; display inline in flex row */
+      display: inline;
+    }
+
+    .mol-load-more-pill__chevron {
+      transition: transform var(--motion-fast) var(--motion-ease-out);
+      flex-shrink: 0;
+    }
+
+    /* ---- Loading state ------------------------------------------- */
+    /* Chevron hidden; progress-dots shown */
+    .mol-load-more-pill.is-loading .mol-load-more-pill__chevron {
+      display: none;
+    }
+
+    .mol-load-more-pill.is-loading .mol-load-more-pill__count {
+      display: none;
+    }
+
+    .mol-load-more-pill__dots {
+      display: none;
+    }
+
+    .mol-load-more-pill.is-loading .mol-load-more-pill__dots {
+      display: inline-flex;
+    }
+
+    /* ---- End state ----------------------------------------------- */
+    /* atom-button--secondary:disabled gives opacity:0.5 + pointer-events:none */
+    .mol-load-more-pill.is-end .mol-load-more-pill__chevron {
+      display: none;
+    }
+
+    .mol-load-more-pill.is-end .mol-load-more-pill__count {
+      display: none;
+    }
+
+    /* ---- Reduced motion ------------------------------------------ */
+    @media (prefers-reduced-motion: reduce) {
+      .mol-load-more-pill__chevron {
+        transition: none;
+      }
+    }
+
+
+    /* ================================================================
+       Preview harness helpers — not part of the molecule spec
+       ================================================================ */
+
+    .preview-section {
+      margin-bottom: var(--space-8);
+    }
+
+    .preview-section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-uppercase);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+      margin:         0 0 var(--space-3);
+    }
+
+    .variant-strip {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+      max-width:      430px;
+    }
+
+    .state-strip {
+      display:     flex;
+      flex-wrap:   wrap;
+      gap:         var(--space-4);
+      align-items: flex-start;
+    }
+
+    .state-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+      min-width:      220px;
+      flex:           1;
+    }
+
+    .state-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    .variant-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+    }
+
+    .variant-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--space-8) 0;
+    }
+
+    /* Composition: paginated workspace section list */
+    .mol-sessions-list {
+      width:         100%;
+      max-width:     430px;
+      background:    var(--surface-page);
+      overflow:      hidden;
+      border-radius: var(--radius-default);
+      border:        1px solid var(--border-subtle);
+    }
+
+    .mol-sessions-list .mol-session-row {
+      border-radius: 0;
+    }
+
+    .mol-sessions-list .atom-divider--horizontal {
+      margin-inline: var(--space-4);
+      width:         calc(100% - var(--space-8));
+    }
+
+    .mol-sessions-list__load-more-wrap {
+      padding-block: var(--space-2);
+      border-top:    1px solid var(--border-subtle);
+      display:       flex;
+      justify-content: center;
+    }
+
+    /* Faux workspace section header inside composition demo */
+    .mol-sessions-list__section-header {
+      display:      flex;
+      align-items:  center;
+      padding:      var(--space-2) var(--space-4);
+      background:   var(--surface-page);
+      position:     sticky;
+      top:          0;
+      z-index:      1;
+      gap:          var(--space-2);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    /* Session row used in composition stubs — replicate mol-session-row layout
+       without redeclaring atom rules */
+    .mol-session-row {
+      display:          flex;
+      align-items:      center;
+      gap:              var(--space-3);
+      padding:          var(--space-3) var(--space-4);
+      min-height:       var(--touch-target-min);
+      background:       transparent;
+      border:           none;
+      width:            100%;
+      text-align:       left;
+      cursor:           pointer;
+      color:            var(--text-body);
+      font-family:      var(--font-body);
+      font-size:        var(--font-size-body);
+      position:         relative;
+      outline:          none;
+      text-decoration:  none;
+      transition:       background-color var(--motion-fast) var(--motion-ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mol-session-row__leading  { flex-shrink: 0; display: flex; align-items: center; }
+    .mol-session-row__body     { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .mol-session-row__title    { font-weight: var(--font-weight-meta); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-body); line-height: var(--line-height-snug); }
+    .mol-session-row__meta     { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mol-session-row__trailing { flex-shrink: 0; display: flex; align-items: center; gap: var(--space-2); }
+
+    .mol-session-row:hover,
+    .mol-session-row.is-hover  { background: var(--surface-soft); }
+    .mol-session-row:active,
+    .mol-session-row.is-active { background: var(--surface-active); }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       HEADER
+  ============================================================ -->
+  <div class="preview-plate">
+    <p class="crumb">molecules / load-more-pill</p>
+    <h1 class="type-h2">mol-load-more-pill</h1>
+    <p class="type-meta">Pagination affordance · appends 5 session rows per tap</p>
+  </div>
+
+
+  <!-- ============================================================
+       DARK PANE
+  ============================================================ -->
+  <div class="pegboard">
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+
+      <!-- ====================================================
+           1. VARIANT MATRIX — full-width vs inline
+      ==================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">1 — Variant matrix</p>
+
+        <div class="variant-strip">
+
+          <!-- full-width (default) -->
+          <div class="variant-cell">
+            <span class="variant-cell-label">full-width (default)</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <!-- progress-dots — hidden until is-loading -->
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- inline -->
+          <div class="variant-cell">
+            <span class="variant-cell-label">inline</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--inline atom-button atom-button--secondary atom-button--md"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+
+      <hr class="preview-divider">
+
+
+      <!-- ====================================================
+           2. STATE ROW — default / hover / active / loading / end
+      ==================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">2 — State row (full-width variant)</p>
+
+        <div class="state-strip">
+
+          <!-- default -->
+          <div class="state-cell">
+            <span class="state-cell-label">default</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- hover -->
+          <div class="state-cell">
+            <span class="state-cell-label">hover</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md is-hover"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- active -->
+          <div class="state-cell">
+            <span class="state-cell-label">active</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md is-active"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- focus -->
+          <div class="state-cell">
+            <span class="state-cell-label">focus</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md is-focus"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- loading -->
+          <div class="state-cell">
+            <span class="state-cell-label">loading</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md is-loading"
+              aria-label="Loading more sessions"
+              aria-busy="true"
+            >
+              <span class="mol-load-more-pill__label">Loading...</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- end (terminal) -->
+          <div class="state-cell">
+            <span class="state-cell-label">end (terminal)</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md is-end"
+              disabled
+              aria-label="No more sessions to load"
+            >
+              <span class="mol-load-more-pill__label">No more sessions</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+
+      <hr class="preview-divider">
+
+
+      <!-- ====================================================
+           3. COMPOSITION EXAMPLE — workspace section with 5 session
+              stubs followed by load-more-pill at the bottom
+      ==================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">3 — Composition: workspace section + load-more-pill</p>
+
+        <div class="mol-sessions-list">
+
+          <!-- Section header (workspace-section-header pattern) -->
+          <div class="mol-sessions-list__section-header">
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+            <span class="atom-section-label">superset</span>
+            <span class="atom-badge atom-badge--neutral atom-badge--sm">12</span>
+          </div>
+
+          <!-- Session row 1 — live -->
+          <button
+            class="mol-session-row"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">superset · chat-mobile-plan</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- Session row 2 — idle -->
+          <button
+            class="mol-session-row"
+            aria-label="Open session: Add Stripe webhook retry logic"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--idle atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Add Stripe webhook retry logic</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">2h</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- Session row 3 — idle -->
+          <button
+            class="mol-session-row"
+            aria-label="Open session: Update host-service JWT rotation"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--idle atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Update host-service JWT rotation</span>
+              <span class="mol-session-row__meta type-meta">host-service · feat/auth</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">1d</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- Session row 4 — idle -->
+          <button
+            class="mol-session-row"
+            aria-label="Open session: Fix desktop window restore on wake"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--idle atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Fix desktop window restore on wake</span>
+              <span class="mol-session-row__meta type-meta">superset · desktop/fixes</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">3d</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- Session row 5 — idle -->
+          <button
+            class="mol-session-row"
+            aria-label="Open session: Draft billing upgrade prompt copy"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--idle atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Draft billing upgrade prompt copy</span>
+              <span class="mol-session-row__meta type-meta">superset · marketing</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">5d</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <!-- Load-more-pill — anchored below 5 session rows -->
+          <div class="mol-sessions-list__load-more-wrap">
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md"
+              aria-label="Load 7 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(7 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+        </div><!-- /mol-sessions-list -->
+      </div><!-- /composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ============================================================
+         LIGHT PANE
+    ============================================================ -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+
+      <!-- ====================================================
+           1. VARIANT MATRIX — full-width vs inline
+      ==================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">1 — Variant matrix</p>
+
+        <div class="variant-strip">
+
+          <!-- full-width (default) -->
+          <div class="variant-cell">
+            <span class="variant-cell-label">full-width (default)</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- inline -->
+          <div class="variant-cell">
+            <span class="variant-cell-label">inline</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--inline atom-button atom-button--secondary atom-button--md"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+
+      <hr class="preview-divider">
+
+
+      <!-- ====================================================
+           2. STATE ROW — default / hover / active / loading / end
+      ==================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">2 — State row (full-width variant)</p>
+
+        <div class="state-strip">
+
+          <!-- default -->
+          <div class="state-cell">
+            <span class="state-cell-label">default</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- hover -->
+          <div class="state-cell">
+            <span class="state-cell-label">hover</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md is-hover"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- active -->
+          <div class="state-cell">
+            <span class="state-cell-label">active</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md is-active"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- focus -->
+          <div class="state-cell">
+            <span class="state-cell-label">focus</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md is-focus"
+              aria-label="Load 5 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- loading -->
+          <div class="state-cell">
+            <span class="state-cell-label">loading</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md is-loading"
+              aria-label="Loading more sessions"
+              aria-busy="true"
+            >
+              <span class="mol-load-more-pill__label">Loading...</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+          <!-- end (terminal) -->
+          <div class="state-cell">
+            <span class="state-cell-label">end (terminal)</span>
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md is-end"
+              disabled
+              aria-label="No more sessions to load"
+            >
+              <span class="mol-load-more-pill__label">No more sessions</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(5 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+
+      <hr class="preview-divider">
+
+
+      <!-- ====================================================
+           3. COMPOSITION EXAMPLE — workspace section with 5 session
+              stubs followed by load-more-pill at the bottom
+      ==================================================== -->
+      <div class="preview-section">
+        <p class="preview-section-title">3 — Composition: workspace section + load-more-pill</p>
+
+        <div class="mol-sessions-list">
+
+          <!-- Section header -->
+          <div class="mol-sessions-list__section-header">
+            <svg
+              class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted"
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+            <span class="atom-section-label">superset</span>
+            <span class="atom-badge atom-badge--neutral atom-badge--sm">12</span>
+          </div>
+
+          <!-- Session row 1 — live -->
+          <button
+            class="mol-session-row"
+            aria-label="Open session: Refactor relay tunnel reconnect"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Refactor relay tunnel reconnect</span>
+              <span class="mol-session-row__meta type-meta">superset · chat-mobile-plan</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">12m</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- Session row 2 -->
+          <button
+            class="mol-session-row"
+            aria-label="Open session: Add Stripe webhook retry logic"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--idle atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Add Stripe webhook retry logic</span>
+              <span class="mol-session-row__meta type-meta">superset · main</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">2h</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- Session row 3 -->
+          <button
+            class="mol-session-row"
+            aria-label="Open session: Update host-service JWT rotation"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--idle atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Update host-service JWT rotation</span>
+              <span class="mol-session-row__meta type-meta">host-service · feat/auth</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">1d</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- Session row 4 -->
+          <button
+            class="mol-session-row"
+            aria-label="Open session: Fix desktop window restore on wake"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--idle atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Fix desktop window restore on wake</span>
+              <span class="mol-session-row__meta type-meta">superset · desktop/fixes</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">3d</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <hr class="atom-divider atom-divider--horizontal atom-divider--hairline">
+
+          <!-- Session row 5 -->
+          <button
+            class="mol-session-row"
+            aria-label="Open session: Draft billing upgrade prompt copy"
+          >
+            <span class="mol-session-row__leading">
+              <span class="atom-status-dot atom-status-dot--idle atom-status-dot--sm" aria-hidden="true"></span>
+            </span>
+            <span class="mol-session-row__body">
+              <span class="mol-session-row__title">Draft billing upgrade prompt copy</span>
+              <span class="mol-session-row__meta type-meta">superset · marketing</span>
+            </span>
+            <span class="mol-session-row__trailing">
+              <span class="atom-section-label atom-section-label--faint">5d</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+          </button>
+
+          <!-- Load-more-pill — anchored below 5 session rows -->
+          <div class="mol-sessions-list__load-more-wrap">
+            <button
+              class="mol-load-more-pill mol-load-more-pill--full-width atom-button atom-button--secondary atom-button--md"
+              aria-label="Load 7 more sessions"
+            >
+              <span class="mol-load-more-pill__label">Load more</span>
+              <span class="mol-load-more-pill__count atom-section-label atom-section-label--muted">(7 more)</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--sm atom-icon-glyph--muted mol-load-more-pill__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <span class="atom-progress-dots atom-progress-dots--muted atom-progress-dots--sm mol-load-more-pill__dots" aria-hidden="true">
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+                <span class="atom-progress-dots__dot"></span>
+              </span>
+            </button>
+          </div>
+
+        </div><!-- /mol-sessions-list -->
+      </div><!-- /composition -->
+
+    </section><!-- /light pane -->
+  </div><!-- /pegboard -->
+
+</body>
+</html>
