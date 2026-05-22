@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>molecule · workspace-section-header</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_atoms.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <style>
+    /* ================================================================
+       mol-workspace-section-header
+       Molecule: sticky workspace section header for the sessions list.
+       Composes: atom-section-label, atom-badge, atom-icon-glyph,
+                 atom-hit-target-wrapper, atom-divider.
+       Zero hex literals. Zero raw px (except 1px structural border).
+       Zero re-definition of atom rules.
+       ================================================================ */
+
+    /* ---- Block ---------------------------------------------------- */
+    .mol-workspace-section-header {
+      display:         flex;
+      align-items:     center;
+      justify-content: space-between;
+      padding:         var(--space-2) var(--space-4);
+      background:      var(--surface-page);
+      position:        sticky;
+      top:             0;
+      z-index:         1;
+      min-height:      var(--touch-target-min);
+    }
+
+    /* ---- Toggle element (left side: chevron + label) -------------- */
+    /* Inherits atom-hit-target-wrapper base; shape overridden to row */
+    .mol-workspace-section-header__toggle {
+      display:          flex;
+      align-items:      center;
+      gap:              var(--space-2);
+      flex:             1;
+      min-width:        0;          /* allow text truncation */
+      min-height:       var(--touch-target-min);
+      background:       transparent;
+      border:           none;
+      cursor:           pointer;
+      padding:          0;
+      padding-inline-start: 0;
+      text-align:       left;
+
+      transition:
+        background-color var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Chevron -------------------------------------------------- */
+    .mol-workspace-section-header__chevron {
+      flex-shrink: 0;
+      transition:  transform var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* Collapsed: chevron rotates -90deg (points right) */
+    .mol-workspace-section-header--collapsed .mol-workspace-section-header__chevron {
+      transform: rotate(-90deg);
+    }
+
+    /* ---- Label truncation ---------------------------------------- */
+    .mol-workspace-section-header__label {
+      min-width: 0;
+      overflow:  hidden;
+      text-overflow: ellipsis;
+      white-space:   nowrap;
+    }
+
+    /* ---- Count badge slot ---------------------------------------- */
+    .mol-workspace-section-header__count {
+      flex-shrink: 0;
+      margin-inline-start: var(--space-2);
+    }
+
+    /* Empty variant: hide the count badge */
+    .mol-workspace-section-header--empty .mol-workspace-section-header__count {
+      display: none;
+    }
+
+    /* ---- State: hover on toggle ---------------------------------- */
+    .mol-workspace-section-header__toggle:hover,
+    .mol-workspace-section-header__toggle.is-hover {
+      background: var(--surface-soft);
+    }
+
+    /* ---- State: focus on toggle ---------------------------------- */
+    .mol-workspace-section-header__toggle:focus-visible,
+    .mol-workspace-section-header__toggle.is-focus {
+      outline:    none;
+      box-shadow: 0 0 0 3px var(--border-focus);
+      border-radius: var(--radius-subtle);
+    }
+
+    /* ---- State: pinned (JS adds this when header is stuck) ------- */
+    .mol-workspace-section-header.is-pinned {
+      /* Hairline at bottom when sticky-pinned — structural 1px */
+      box-shadow: 0 1px 0 var(--border-subtle);
+    }
+
+    /* ---- Reduced motion ------------------------------------------ */
+    @media (prefers-reduced-motion: reduce) {
+      .mol-workspace-section-header__chevron,
+      .mol-workspace-section-header__toggle {
+        transition: none;
+      }
+    }
+
+
+    /* ================================================================
+       Preview harness helpers — not part of the molecule spec
+       ================================================================ */
+
+    /* Section sub-header within a pane */
+    .preview-section {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+      margin:         0 0 var(--space-3);
+    }
+
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--space-8) 0;
+    }
+
+    /* Variant row — stacks headers with labels */
+    .variant-list {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    .variant-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+    }
+
+    .variant-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    /* State row — horizontal strip of state instances */
+    .state-strip {
+      display:   flex;
+      flex-wrap: wrap;
+      gap:       var(--space-4);
+      align-items: flex-start;
+    }
+
+    .state-cell {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+      flex:           1;
+      min-width:      220px;
+    }
+
+    .state-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+    }
+
+    /* Sticky composition demo */
+    .sticky-demo {
+      height:    250px;
+      overflow-y: auto;
+      border:    1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      background: var(--surface-page);
+      position:  relative;
+    }
+
+    .sticky-demo-caption {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+      margin:         var(--space-2) 0 var(--space-3);
+    }
+
+    /* Stub session row (preview only — not part of molecule) */
+    .stub-session-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-3);
+      padding:     var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border-subtle);
+      min-height:  var(--touch-target-min);
+    }
+    .stub-session-row:last-child {
+      border-bottom: none;
+    }
+    .stub-session-dot {
+      flex-shrink:   0;
+      width:         8px;
+      height:        8px;
+      border-radius: var(--radius-round);
+    }
+    .stub-session-dot--live    { background: var(--state-live-dot); }
+    .stub-session-dot--neutral { background: var(--state-neutral-dot); }
+    .stub-session-dot--warning { background: var(--state-warning-dot); }
+    .stub-session-content {
+      flex:        1;
+      min-width:   0;
+    }
+    .stub-session-title {
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      font-weight:   var(--font-weight-body);
+      color:         var(--text-body);
+      line-height:   var(--line-height-snug);
+      overflow:      hidden;
+      text-overflow: ellipsis;
+      white-space:   nowrap;
+    }
+    .stub-session-meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+    .stub-session-row__time {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-transform: uppercase;
+      flex-shrink:    0;
+    }
+
+    /* Workspace group block inside sticky demo */
+    .workspace-group {
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">workspace-section-header</h1>
+    <p class="crumb">molecule · sessions list sticky workspace header — section-label + badge + icon-glyph + hit-target-wrapper + divider</p>
+  </header>
+
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+
+    <!-- ============================================================
+         DARK PANE
+         ============================================================ -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT MATRIX (3 variants × realistic content) --- -->
+      <div class="variant">
+        <h3>1 · variant matrix — expanded / collapsed / empty</h3>
+
+        <div class="variant-list">
+
+          <!-- EXPANDED -->
+          <div class="variant-cell">
+            <span class="variant-cell-label">expanded (default) — superset · chat-mobile-plan · 12 sessions</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="dark-ws1-sessions"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <!-- chevron-down -->
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">12</span>
+            </header>
+          </div>
+
+          <!-- COLLAPSED -->
+          <div class="variant-cell">
+            <span class="variant-cell-label">collapsed — host-service · main · 4 sessions (chevron rotated)</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--collapsed"
+                    aria-label="Workspace: host-service · main">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="false"
+                aria-controls="dark-ws2-sessions"
+                aria-label="Expand host-service · main workspace">
+                <!-- chevron still uses down path; CSS rotation handles collapsed state -->
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  host-service · main
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">4</span>
+            </header>
+          </div>
+
+          <!-- EMPTY -->
+          <div class="variant-cell">
+            <span class="variant-cell-label">empty — rml · feature/import — no count badge (workspace has zero sessions matching filter)</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded mol-workspace-section-header--empty"
+                    aria-label="Workspace: rml · feature/import">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="dark-ws3-sessions"
+                aria-label="Collapse rml · feature/import workspace — no sessions">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  rml · feature/import
+                </span>
+              </button>
+              <!-- count badge hidden by --empty modifier -->
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">0</span>
+            </header>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. STATE ROW ---------------------------------------- -->
+      <div class="variant">
+        <h3>2 · state row — expanded in default / hover / pinned / focus</h3>
+
+        <div class="state-strip">
+
+          <!-- DEFAULT -->
+          <div class="state-cell">
+            <span class="state-cell-label">default</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="dark-state-default"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">12</span>
+            </header>
+          </div>
+
+          <!-- HOVER -->
+          <div class="state-cell">
+            <span class="state-cell-label">is-hover (toggle hovered)</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper is-hover"
+                type="button"
+                aria-expanded="true"
+                aria-controls="dark-state-hover"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">12</span>
+            </header>
+          </div>
+
+          <!-- PINNED (sticky-scrolled, box-shadow hairline) -->
+          <div class="state-cell">
+            <span class="state-cell-label">is-pinned (sticky + scrolled — bottom hairline)</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded is-pinned"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="dark-state-pinned"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">12</span>
+            </header>
+          </div>
+
+          <!-- FOCUS -->
+          <div class="state-cell">
+            <span class="state-cell-label">is-focus (toggle keyboard-focused)</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper is-focus"
+                type="button"
+                aria-expanded="true"
+                aria-controls="dark-state-focus"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">12</span>
+            </header>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. COMPOSITION — STICKY SCROLL DEMO -------------------- -->
+      <div class="variant">
+        <h3>3 · composition — 3 workspace sections with stub session rows (250px, scroll to see sticky)</h3>
+        <p class="sticky-demo-caption">scroll down · headers remain pinned while their sessions are in view</p>
+
+        <div class="sticky-demo" role="list" aria-label="Sessions grouped by workspace">
+
+          <!-- Workspace 1: superset · chat-mobile-plan (expanded, 4 sessions) -->
+          <div class="workspace-group">
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="dark-comp-ws1"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">4</span>
+            </header>
+
+            <ul id="dark-comp-ws1" style="list-style:none;margin:0;padding:0;" role="group" aria-label="superset · chat-mobile-plan sessions">
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--live" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Chat-v2 design — workspace sections + sticky headers</div>
+                  <div class="stub-session-meta">Streaming · sonnet-4.6</div>
+                </div>
+                <span class="stub-session-row__time">0:42</span>
+              </li>
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--neutral" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">API cleanup pass — drop legacy /v1/hosts</div>
+                  <div class="stub-session-meta">1h ago · 14 turns</div>
+                </div>
+                <span class="stub-session-row__time">1:03</span>
+              </li>
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--neutral" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Refactor relay tunnel reconnect logic</div>
+                  <div class="stub-session-meta">3h ago</div>
+                </div>
+                <span class="stub-session-row__time">0:55</span>
+              </li>
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--neutral" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Token audit: remove hex literals from pill atom</div>
+                  <div class="stub-session-meta">5h ago · 8 turns</div>
+                </div>
+                <span class="stub-session-row__time">3:21</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Workspace 2: host-service · main (expanded, 3 sessions) -->
+          <div class="workspace-group">
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: host-service · main">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="dark-comp-ws2"
+                aria-label="Collapse host-service · main workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  host-service · main
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">3</span>
+            </header>
+
+            <ul id="dark-comp-ws2" style="list-style:none;margin:0;padding:0;" role="group" aria-label="host-service · main sessions">
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--warning" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Auth refactor — host JWT rotation</div>
+                  <div class="stub-session-meta">Pause pending · tool approval</div>
+                </div>
+                <span class="stub-session-row__time">2:18</span>
+              </li>
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--neutral" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Debug host reconnect on network change</div>
+                  <div class="stub-session-meta">Yesterday · 22 turns</div>
+                </div>
+                <span class="stub-session-row__time">5:07</span>
+              </li>
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--neutral" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Setup CI for host-service module</div>
+                  <div class="stub-session-meta">2 days ago</div>
+                </div>
+                <span class="stub-session-row__time">0:31</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Workspace 3: rml · feature/import (collapsed) -->
+          <div class="workspace-group">
+            <header class="mol-workspace-section-header mol-workspace-section-header--collapsed"
+                    aria-label="Workspace: rml · feature/import">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="false"
+                aria-controls="dark-comp-ws3"
+                aria-label="Expand rml · feature/import workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  rml · feature/import
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">7</span>
+            </header>
+            <!-- collapsed: no session rows rendered -->
+            <ul id="dark-comp-ws3" style="list-style:none;margin:0;padding:0;display:none;"
+                role="group" aria-label="rml · feature/import sessions"></ul>
+          </div>
+
+        </div><!-- /sticky-demo -->
+      </div><!-- /composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ============================================================
+         LIGHT PANE
+         ============================================================ -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT MATRIX ----------------------------------- -->
+      <div class="variant">
+        <h3>1 · variant matrix — expanded / collapsed / empty</h3>
+
+        <div class="variant-list">
+
+          <!-- EXPANDED -->
+          <div class="variant-cell">
+            <span class="variant-cell-label">expanded (default) — superset · chat-mobile-plan · 12 sessions</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="light-ws1-sessions"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">12</span>
+            </header>
+          </div>
+
+          <!-- COLLAPSED -->
+          <div class="variant-cell">
+            <span class="variant-cell-label">collapsed — host-service · main · 4 sessions</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--collapsed"
+                    aria-label="Workspace: host-service · main">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="false"
+                aria-controls="light-ws2-sessions"
+                aria-label="Expand host-service · main workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  host-service · main
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">4</span>
+            </header>
+          </div>
+
+          <!-- EMPTY -->
+          <div class="variant-cell">
+            <span class="variant-cell-label">empty — rml · feature/import — no count badge</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded mol-workspace-section-header--empty"
+                    aria-label="Workspace: rml · feature/import">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="light-ws3-sessions"
+                aria-label="Collapse rml · feature/import workspace — no sessions">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  rml · feature/import
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">0</span>
+            </header>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 2. STATE ROW ---------------------------------------- -->
+      <div class="variant">
+        <h3>2 · state row — expanded in default / hover / pinned / focus</h3>
+
+        <div class="state-strip">
+
+          <!-- DEFAULT -->
+          <div class="state-cell">
+            <span class="state-cell-label">default</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="light-state-default"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">12</span>
+            </header>
+          </div>
+
+          <!-- HOVER -->
+          <div class="state-cell">
+            <span class="state-cell-label">is-hover</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper is-hover"
+                type="button"
+                aria-expanded="true"
+                aria-controls="light-state-hover"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">12</span>
+            </header>
+          </div>
+
+          <!-- PINNED -->
+          <div class="state-cell">
+            <span class="state-cell-label">is-pinned</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded is-pinned"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="light-state-pinned"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">12</span>
+            </header>
+          </div>
+
+          <!-- FOCUS -->
+          <div class="state-cell">
+            <span class="state-cell-label">is-focus</span>
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper is-focus"
+                type="button"
+                aria-expanded="true"
+                aria-controls="light-state-focus"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">12</span>
+            </header>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- ---- 3. COMPOSITION — STICKY SCROLL DEMO -------------------- -->
+      <div class="variant">
+        <h3>3 · composition — 3 workspace sections with stub session rows (250px, scroll to see sticky)</h3>
+        <p class="sticky-demo-caption">scroll down · headers remain pinned while their sessions are in view</p>
+
+        <div class="sticky-demo" role="list" aria-label="Sessions grouped by workspace">
+
+          <!-- Workspace 1 -->
+          <div class="workspace-group">
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: superset · chat-mobile-plan">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="light-comp-ws1"
+                aria-label="Collapse superset · chat-mobile-plan workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  superset · chat-mobile-plan
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">4</span>
+            </header>
+
+            <ul id="light-comp-ws1" style="list-style:none;margin:0;padding:0;" role="group" aria-label="superset · chat-mobile-plan sessions">
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--live" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Chat-v2 design — workspace sections + sticky headers</div>
+                  <div class="stub-session-meta">Streaming · sonnet-4.6</div>
+                </div>
+                <span class="stub-session-row__time">0:42</span>
+              </li>
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--neutral" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">API cleanup pass — drop legacy /v1/hosts</div>
+                  <div class="stub-session-meta">1h ago · 14 turns</div>
+                </div>
+                <span class="stub-session-row__time">1:03</span>
+              </li>
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--neutral" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Refactor relay tunnel reconnect logic</div>
+                  <div class="stub-session-meta">3h ago</div>
+                </div>
+                <span class="stub-session-row__time">0:55</span>
+              </li>
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--neutral" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Token audit: remove hex literals from pill atom</div>
+                  <div class="stub-session-meta">5h ago · 8 turns</div>
+                </div>
+                <span class="stub-session-row__time">3:21</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Workspace 2 -->
+          <div class="workspace-group">
+            <header class="mol-workspace-section-header mol-workspace-section-header--expanded"
+                    aria-label="Workspace: host-service · main">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="true"
+                aria-controls="light-comp-ws2"
+                aria-label="Collapse host-service · main workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  host-service · main
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">3</span>
+            </header>
+
+            <ul id="light-comp-ws2" style="list-style:none;margin:0;padding:0;" role="group" aria-label="host-service · main sessions">
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--warning" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Auth refactor — host JWT rotation</div>
+                  <div class="stub-session-meta">Pause pending · tool approval</div>
+                </div>
+                <span class="stub-session-row__time">2:18</span>
+              </li>
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--neutral" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Debug host reconnect on network change</div>
+                  <div class="stub-session-meta">Yesterday · 22 turns</div>
+                </div>
+                <span class="stub-session-row__time">5:07</span>
+              </li>
+              <li class="stub-session-row" role="listitem">
+                <span class="stub-session-dot stub-session-dot--neutral" aria-hidden="true"></span>
+                <div class="stub-session-content">
+                  <div class="stub-session-title">Setup CI for host-service module</div>
+                  <div class="stub-session-meta">2 days ago</div>
+                </div>
+                <span class="stub-session-row__time">0:31</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Workspace 3 (collapsed) -->
+          <div class="workspace-group">
+            <header class="mol-workspace-section-header mol-workspace-section-header--collapsed"
+                    aria-label="Workspace: rml · feature/import">
+              <button
+                class="mol-workspace-section-header__toggle atom-hit-target-wrapper"
+                type="button"
+                aria-expanded="false"
+                aria-controls="light-comp-ws3"
+                aria-label="Expand rml · feature/import workspace">
+                <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-workspace-section-header__chevron"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+                <span class="atom-section-label atom-section-label--muted mol-workspace-section-header__label">
+                  rml · feature/import
+                </span>
+              </button>
+              <span class="atom-badge atom-badge--neutral atom-badge--sm mol-workspace-section-header__count"
+                    aria-hidden="true">7</span>
+            </header>
+            <ul id="light-comp-ws3" style="list-style:none;margin:0;padding:0;display:none;"
+                role="group" aria-label="rml · feature/import sessions"></ul>
+          </div>
+
+        </div><!-- /sticky-demo -->
+      </div><!-- /composition -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe footer
+       ============================================================ -->
+  <div style="padding: var(--spacing-section) var(--spacing-between);">
+    <h2 style="
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-heading);
+      margin:         0 0 var(--space-4);
+    ">Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Dark resolves to</th>
+          <th>Light resolves to</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>header background</td>
+          <td>--surface-page</td>
+          <td>#151110</td>
+          <td>oklch 1 0 0 (white)</td>
+        </tr>
+        <tr>
+          <td>toggle hover background</td>
+          <td>--surface-soft</td>
+          <td>#1e1c1b</td>
+          <td>oklch 0.97 0 0</td>
+        </tr>
+        <tr>
+          <td>focus ring</td>
+          <td>--border-focus</td>
+          <td>ember amber</td>
+          <td>ember amber</td>
+        </tr>
+        <tr>
+          <td>pinned shadow color</td>
+          <td>--border-subtle</td>
+          <td>#2a2827</td>
+          <td>oklch 0.922 0 0</td>
+        </tr>
+        <tr>
+          <td>label color</td>
+          <td>--text-muted</td>
+          <td>#a8a5a3</td>
+          <td>oklch 0.556 0 0</td>
+        </tr>
+        <tr>
+          <td>badge background (neutral)</td>
+          <td>--surface-soft</td>
+          <td>#1e1c1b</td>
+          <td>oklch 0.97 0 0</td>
+        </tr>
+        <tr>
+          <td>badge text (neutral)</td>
+          <td>--text-body</td>
+          <td>#eae8e6</td>
+          <td>oklch 0.145 0 0</td>
+        </tr>
+        <tr>
+          <td>chevron color</td>
+          <td>--text-muted</td>
+          <td>#a8a5a3</td>
+          <td>oklch 0.556 0 0</td>
+        </tr>
+        <tr>
+          <td>header min-height</td>
+          <td>--touch-target-min</td>
+          <td colspan="2">44px</td>
+        </tr>
+        <tr>
+          <td>padding block</td>
+          <td>--space-2</td>
+          <td colspan="2">8px</td>
+        </tr>
+        <tr>
+          <td>padding inline</td>
+          <td>--space-4</td>
+          <td colspan="2">16px</td>
+        </tr>
+        <tr>
+          <td>chevron + label gap</td>
+          <td>--space-2</td>
+          <td colspan="2">8px</td>
+        </tr>
+        <tr>
+          <td>chevron transition</td>
+          <td>--motion-fast + --motion-ease-out</td>
+          <td colspan="2">120ms ease-out</td>
+        </tr>
+        <tr>
+          <td>collapsed chevron rotation (structural)</td>
+          <td>— (constant)</td>
+          <td colspan="2">rotate(-90deg)</td>
+        </tr>
+        <tr>
+          <td>pinned box-shadow (structural)</td>
+          <td>— (1px constant) + --border-subtle</td>
+          <td colspan="2">0 1px 0 var(--border-subtle)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
