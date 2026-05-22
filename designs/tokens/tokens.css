@@ -221,6 +221,14 @@
   --line-height-tight:  1.15;
   --line-height-snug:   1.3;
   --line-height-normal: 1.5;
+  --line-height-code:   1.55;    /* monospace code block line height */
+
+  /* Code syntax highlight tokens (used by mol-code-block) */
+  --syntax-keyword:  var(--accent-primary);
+  --syntax-string:   var(--state-success-fg);
+  --syntax-function: var(--state-warning-fg);
+  --syntax-comment:  var(--text-faint);
+  --syntax-type:     var(--state-info-fg, var(--accent-primary));
 
   /* Typography — tracking scale */
   --tracking-tight:     -0.02em;
@@ -400,6 +408,14 @@
   --line-height-tight:  1.15;
   --line-height-snug:   1.3;
   --line-height-normal: 1.5;
+  --line-height-code:   1.55;    /* monospace code block line height */
+
+  /* Code syntax highlight tokens (used by mol-code-block) */
+  --syntax-keyword:  var(--accent-primary);
+  --syntax-string:   var(--state-success-fg);
+  --syntax-function: var(--state-warning-fg);
+  --syntax-comment:  var(--text-faint);
+  --syntax-type:     var(--state-info-fg, var(--accent-primary));
 
   /* Typography — tracking scale */
   --tracking-tight:     -0.02em;

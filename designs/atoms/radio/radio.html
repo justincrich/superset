@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · radio</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-radio — token-governed single radio-button primitive
+       Composition purity: only .atom-radio rules defined here.
+       Zero hex literals. Zero raw font-size/weight/line-height/tracking.
+       Zero raw px in padding/margin/gap.
+       Width/height structural sizes (14/18/22, dot 6/8/10) ARE allowed
+       per spec (size-class encoding).
+       ============================================================ */
+
+    /* ---- Base ----------------------------------------------- */
+    .atom-radio {
+      display:         inline-flex;
+      align-items:     center;
+      justify-content: center;
+      position:        relative;
+      /* Default size: md (18px) */
+      width:  18px;
+      height: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ---- Sizes --------------------------------------------- */
+    .atom-radio--sm {
+      width:  14px;
+      height: 14px;
+    }
+    .atom-radio--lg {
+      width:  22px;
+      height: 22px;
+    }
+
+    /* ---- Hidden native input ------------------------------- */
+    .atom-radio__input {
+      position: absolute;
+      opacity:  0;
+      width:    100%;
+      height:   100%;
+      margin:   0;
+      cursor:   pointer;
+      /* Clip rather than display:none so AT still sees it */
+      clip-path: inset(0 0 0 0);
+    }
+
+    /* ---- Visual ring --------------------------------------- */
+    .atom-radio__ring {
+      width:         100%;
+      height:        100%;
+      border-radius: var(--radius-round);
+      border:        1.5px solid var(--border-default);
+      background:    transparent;
+      transition:
+        border-color var(--motion-fast) var(--motion-ease-out),
+        box-shadow   var(--motion-fast) var(--motion-ease-out),
+        background   var(--motion-fast) var(--motion-ease-out);
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      /* Prevent ring from eating pointer events — input handles them */
+      pointer-events:  none;
+    }
+
+    /* ---- Center dot (::after) — hidden until checked ------- */
+    .atom-radio__ring::after {
+      content:       '';
+      display:       block;
+      /* Default dot: md (8px) */
+      width:         8px;
+      height:        8px;
+      border-radius: var(--radius-round);
+      background:    var(--accent-primary);
+      transform:     scale(0);
+      transition:    transform var(--motion-fast) var(--motion-ease-out);
+    }
+
+    .atom-radio--sm .atom-radio__ring::after {
+      width:  6px;
+      height: 6px;
+    }
+    .atom-radio--lg .atom-radio__ring::after {
+      width:  10px;
+      height: 10px;
+    }
+
+    /* ---- Variant: accent (ember ring when unselected) ------ */
+    .atom-radio--accent .atom-radio__ring {
+      border-color: var(--accent-primary);
+    }
+
+    /* ---- Variant: inverse (resolves via token theming) ----- */
+    /* --border-default already resolves to the correct value per
+       theme; inverse variant keeps the default token so it adapts
+       correctly when rendered on a dark surface inside a light pane. */
+    .atom-radio--inverse .atom-radio__ring {
+      border-color: var(--border-default);
+    }
+
+    /* ---- State: checked ------------------------------------ */
+    .atom-radio.is-checked .atom-radio__ring,
+    .atom-radio:has(.atom-radio__input:checked) .atom-radio__ring {
+      border-color: var(--accent-primary);
+    }
+    .atom-radio.is-checked .atom-radio__ring::after,
+    .atom-radio:has(.atom-radio__input:checked) .atom-radio__ring::after {
+      transform: scale(1);
+    }
+
+    /* ---- State: hover -------------------------------------- */
+    .atom-radio.is-hover .atom-radio__ring,
+    .atom-radio:hover .atom-radio__ring {
+      border-color: var(--border-strong);
+    }
+    /* Hover on checked: keep accent, subtle lightening via strong */
+    .atom-radio.is-checked.is-hover .atom-radio__ring,
+    .atom-radio:has(.atom-radio__input:checked):hover .atom-radio__ring {
+      border-color: var(--accent-primary);
+    }
+
+    /* ---- State: active (pressed) --------------------------- */
+    .atom-radio.is-active .atom-radio__ring,
+    .atom-radio:active .atom-radio__ring {
+      border-color: var(--border-strong);
+    }
+    .atom-radio.is-checked.is-active .atom-radio__ring,
+    .atom-radio:has(.atom-radio__input:checked):active .atom-radio__ring {
+      border-color: var(--accent-primary);
+    }
+
+    /* ---- State: focus (keyboard / focus-within) ------------ */
+    .atom-radio.is-focus .atom-radio__ring,
+    .atom-radio:focus-within .atom-radio__ring {
+      box-shadow: 0 0 0 2px var(--border-focus);
+    }
+
+    /* ---- State: disabled ----------------------------------- */
+    .atom-radio.is-disabled,
+    .atom-radio:has(.atom-radio__input:disabled) {
+      opacity:        0.5;
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       Preview-only layout helpers (not part of atom contract)
+       ============================================================ */
+
+    /* Row of radios with label text side-by-side */
+    .radio-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+    }
+
+    /* Matrix: variant × size grid */
+    .matrix-grid {
+      display:               grid;
+      grid-template-columns: repeat(3, auto);
+      gap:                   var(--space-4) var(--space-6);
+      align-items:           center;
+      justify-content:       start;
+    }
+    .matrix-grid-header {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* Composition example — vertical thinking-level list */
+    .thinking-list {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+    }
+    .thinking-row {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-3);
+    }
+    .thinking-text {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-half);
+    }
+
+    /* Section spacing within pane */
+    .section-block {
+      margin-bottom: var(--spacing-section);
+    }
+    .section-block:last-child {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">radio</h1>
+    <p class="crumb">atom · single radio-button primitive · interactive form input</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- 1. VARIANT × SIZE MATRIX ----------------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>variant × size matrix — unselected (left) / selected (right)</h3>
+
+          <!-- Headers -->
+          <div class="matrix-grid" style="margin-bottom: var(--space-3);">
+            <span class="matrix-grid-header">sm · 14px</span>
+            <span class="matrix-grid-header">md · 18px</span>
+            <span class="matrix-grid-header">lg · 22px</span>
+          </div>
+
+          <!-- DEFAULT variant — unselected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">default · unselected</span>
+          </div>
+          <div class="matrix-grid" style="margin-bottom: var(--space-4);">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--sm">
+                <input type="radio" name="dark-model-sm" value="haiku" class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Haiku 4.5</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--md">
+                <input type="radio" name="dark-model-md" value="sonnet" class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Sonnet 4.6</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--lg">
+                <input type="radio" name="dark-model-lg" value="opus" class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Opus 4.7</span>
+            </div>
+          </div>
+
+          <!-- DEFAULT variant — selected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">default · selected</span>
+          </div>
+          <div class="matrix-grid" style="margin-bottom: var(--space-6);">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--sm is-checked">
+                <input type="radio" name="dark-model-sm-sel" value="haiku" checked class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Haiku 4.5</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--md is-checked">
+                <input type="radio" name="dark-model-md-sel" value="sonnet" checked class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Sonnet 4.6</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--lg is-checked">
+                <input type="radio" name="dark-model-lg-sel" value="opus" checked class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Opus 4.7</span>
+            </div>
+          </div>
+
+          <!-- ACCENT variant — unselected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">accent · unselected</span>
+          </div>
+          <div class="matrix-grid" style="margin-bottom: var(--space-4);">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--sm">
+                <input type="radio" name="dark-acc-sm" value="off" class="atom-radio__input" aria-label="off · No extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">off · No extended thinking</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--md">
+                <input type="radio" name="dark-acc-md" value="low" class="atom-radio__input" aria-label="low · Extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">low · Extended thinking</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--lg">
+                <input type="radio" name="dark-acc-lg" value="medium" class="atom-radio__input" aria-label="medium · Extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">medium · Extended thinking</span>
+            </div>
+          </div>
+
+          <!-- ACCENT variant — selected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">accent · selected</span>
+          </div>
+          <div class="matrix-grid" style="margin-bottom: var(--space-6);">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--sm is-checked">
+                <input type="radio" name="dark-acc-sm-sel" value="off" checked class="atom-radio__input" aria-label="off · No extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">off · No extended thinking</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--md is-checked">
+                <input type="radio" name="dark-acc-md-sel" value="low" checked class="atom-radio__input" aria-label="low · Extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">low · Extended thinking</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--lg is-checked">
+                <input type="radio" name="dark-acc-lg-sel" value="medium" checked class="atom-radio__input" aria-label="medium · Extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">medium · Extended thinking</span>
+            </div>
+          </div>
+
+          <!-- INVERSE variant — unselected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">inverse · unselected</span>
+          </div>
+          <div class="matrix-grid" style="margin-bottom: var(--space-4);">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--sm">
+                <input type="radio" name="dark-inv-sm" value="default" class="atom-radio__input" aria-label="default" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">default</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--md">
+                <input type="radio" name="dark-inv-md" value="acceptEdits" class="atom-radio__input" aria-label="acceptEdits" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">acceptEdits</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--lg">
+                <input type="radio" name="dark-inv-lg" value="plan" class="atom-radio__input" aria-label="plan" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">plan</span>
+            </div>
+          </div>
+
+          <!-- INVERSE variant — selected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">inverse · selected</span>
+          </div>
+          <div class="matrix-grid">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--sm is-checked">
+                <input type="radio" name="dark-inv-sm-sel" value="default" checked class="atom-radio__input" aria-label="default" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">default</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--md is-checked">
+                <input type="radio" name="dark-inv-md-sel" value="acceptEdits" checked class="atom-radio__input" aria-label="acceptEdits" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">acceptEdits</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--lg is-checked">
+                <input type="radio" name="dark-inv-lg-sel" value="plan" checked class="atom-radio__input" aria-label="plan" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">plan</span>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /matrix -->
+
+      <!-- ---- 2. STATE ROW ------------------------------------ -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>state row — default · md · all 7 states</h3>
+          <div class="state-grid">
+
+            <div class="state">
+              <span class="state-label">default unselected</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md">
+                  <input type="radio" name="dark-state-row" value="s1" class="atom-radio__input" aria-label="GPT-5.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">GPT-5.5</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">default checked</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-checked">
+                  <input type="radio" name="dark-state-row-2" value="s2" checked class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">Claude Sonnet 4.6</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-hover</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-hover">
+                  <input type="radio" name="dark-state-row-3" value="s3" class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">Claude Opus 4.7</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-active</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-active">
+                  <input type="radio" name="dark-state-row-4" value="s4" class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">Claude Haiku 4.5</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-focus</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-focus">
+                  <input type="radio" name="dark-state-row-5" value="s5" class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">Claude Sonnet 4.6</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-disabled</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-disabled">
+                  <input type="radio" name="dark-state-row-6" value="s6" disabled class="atom-radio__input" aria-label="GPT-5.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">GPT-5.5</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-checked + is-disabled</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-checked is-disabled">
+                  <input type="radio" name="dark-state-row-7" value="s7" checked disabled class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">Claude Opus 4.7</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /state row -->
+
+      <!-- ---- 3. COMPOSITION EXAMPLE — thinking-level group --- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>composition example — thinking-level group (medium selected)</h3>
+          <fieldset style="border: none; margin: 0; padding: 0;">
+            <legend class="type-label" style="margin-bottom: var(--space-3); color: var(--text-muted);">Extended thinking</legend>
+            <div class="thinking-list">
+
+              <div class="thinking-row">
+                <label class="atom-radio atom-radio--default atom-radio--md">
+                  <input type="radio" name="dark-thinking" value="off" class="atom-radio__input" aria-label="off · No extended thinking" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <div class="thinking-text">
+                  <span class="type-body">off</span>
+                  <span class="type-meta" style="color: var(--text-muted);">No extended thinking</span>
+                </div>
+              </div>
+
+              <div class="thinking-row">
+                <label class="atom-radio atom-radio--default atom-radio--md">
+                  <input type="radio" name="dark-thinking" value="low" class="atom-radio__input" aria-label="low · ~1K tokens" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <div class="thinking-text">
+                  <span class="type-body">low</span>
+                  <span class="type-meta" style="color: var(--text-muted);">~1K tokens</span>
+                </div>
+              </div>
+
+              <div class="thinking-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-checked">
+                  <input type="radio" name="dark-thinking" value="medium" checked class="atom-radio__input" aria-label="medium · ~5K tokens" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <div class="thinking-text">
+                  <span class="type-body">medium</span>
+                  <span class="type-meta" style="color: var(--text-muted);">~5K tokens</span>
+                </div>
+              </div>
+
+              <div class="thinking-row">
+                <label class="atom-radio atom-radio--default atom-radio--md">
+                  <input type="radio" name="dark-thinking" value="high" class="atom-radio__input" aria-label="high · ~10K tokens" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <div class="thinking-text">
+                  <span class="type-body">high</span>
+                  <span class="type-meta" style="color: var(--text-muted);">~10K tokens</span>
+                </div>
+              </div>
+
+              <div class="thinking-row">
+                <label class="atom-radio atom-radio--default atom-radio--md">
+                  <input type="radio" name="dark-thinking" value="xhigh" class="atom-radio__input" aria-label="xhigh · ~20K tokens" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <div class="thinking-text">
+                  <span class="type-body">xhigh</span>
+                  <span class="type-meta" style="color: var(--text-muted);">~20K tokens</span>
+                </div>
+              </div>
+
+            </div>
+          </fieldset>
+        </div>
+      </div><!-- /composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- 1. VARIANT × SIZE MATRIX ----------------------- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>variant × size matrix — unselected (left) / selected (right)</h3>
+
+          <!-- Headers -->
+          <div class="matrix-grid" style="margin-bottom: var(--space-3);">
+            <span class="matrix-grid-header">sm · 14px</span>
+            <span class="matrix-grid-header">md · 18px</span>
+            <span class="matrix-grid-header">lg · 22px</span>
+          </div>
+
+          <!-- DEFAULT variant — unselected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">default · unselected</span>
+          </div>
+          <div class="matrix-grid" style="margin-bottom: var(--space-4);">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--sm">
+                <input type="radio" name="light-model-sm" value="haiku" class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Haiku 4.5</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--md">
+                <input type="radio" name="light-model-md" value="sonnet" class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Sonnet 4.6</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--lg">
+                <input type="radio" name="light-model-lg" value="opus" class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Opus 4.7</span>
+            </div>
+          </div>
+
+          <!-- DEFAULT variant — selected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">default · selected</span>
+          </div>
+          <div class="matrix-grid" style="margin-bottom: var(--space-6);">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--sm is-checked">
+                <input type="radio" name="light-model-sm-sel" value="haiku" checked class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Haiku 4.5</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--md is-checked">
+                <input type="radio" name="light-model-md-sel" value="sonnet" checked class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Sonnet 4.6</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--default atom-radio--lg is-checked">
+                <input type="radio" name="light-model-lg-sel" value="opus" checked class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">Claude Opus 4.7</span>
+            </div>
+          </div>
+
+          <!-- ACCENT variant — unselected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">accent · unselected</span>
+          </div>
+          <div class="matrix-grid" style="margin-bottom: var(--space-4);">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--sm">
+                <input type="radio" name="light-acc-sm" value="off" class="atom-radio__input" aria-label="off · No extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">off · No extended thinking</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--md">
+                <input type="radio" name="light-acc-md" value="low" class="atom-radio__input" aria-label="low · Extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">low · Extended thinking</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--lg">
+                <input type="radio" name="light-acc-lg" value="medium" class="atom-radio__input" aria-label="medium · Extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">medium · Extended thinking</span>
+            </div>
+          </div>
+
+          <!-- ACCENT variant — selected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">accent · selected</span>
+          </div>
+          <div class="matrix-grid" style="margin-bottom: var(--space-6);">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--sm is-checked">
+                <input type="radio" name="light-acc-sm-sel" value="off" checked class="atom-radio__input" aria-label="off · No extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">off · No extended thinking</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--md is-checked">
+                <input type="radio" name="light-acc-md-sel" value="low" checked class="atom-radio__input" aria-label="low · Extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">low · Extended thinking</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--accent atom-radio--lg is-checked">
+                <input type="radio" name="light-acc-lg-sel" value="medium" checked class="atom-radio__input" aria-label="medium · Extended thinking" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">medium · Extended thinking</span>
+            </div>
+          </div>
+
+          <!-- INVERSE variant — unselected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">inverse · unselected</span>
+          </div>
+          <div class="matrix-grid" style="margin-bottom: var(--space-4);">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--sm">
+                <input type="radio" name="light-inv-sm" value="default" class="atom-radio__input" aria-label="default" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">default</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--md">
+                <input type="radio" name="light-inv-md" value="acceptEdits" class="atom-radio__input" aria-label="acceptEdits" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">acceptEdits</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--lg">
+                <input type="radio" name="light-inv-lg" value="plan" class="atom-radio__input" aria-label="plan" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">plan</span>
+            </div>
+          </div>
+
+          <!-- INVERSE variant — selected row -->
+          <div class="state" style="margin-bottom: var(--space-2);">
+            <span class="state-label">inverse · selected</span>
+          </div>
+          <div class="matrix-grid">
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--sm is-checked">
+                <input type="radio" name="light-inv-sm-sel" value="default" checked class="atom-radio__input" aria-label="default" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">default</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--md is-checked">
+                <input type="radio" name="light-inv-md-sel" value="acceptEdits" checked class="atom-radio__input" aria-label="acceptEdits" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">acceptEdits</span>
+            </div>
+            <div class="radio-row">
+              <label class="atom-radio atom-radio--inverse atom-radio--lg is-checked">
+                <input type="radio" name="light-inv-lg-sel" value="plan" checked class="atom-radio__input" aria-label="plan" />
+                <span class="atom-radio__ring" aria-hidden="true"></span>
+              </label>
+              <span class="type-body">plan</span>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /matrix -->
+
+      <!-- ---- 2. STATE ROW ------------------------------------ -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>state row — default · md · all 7 states</h3>
+          <div class="state-grid">
+
+            <div class="state">
+              <span class="state-label">default unselected</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md">
+                  <input type="radio" name="light-state-row" value="s1" class="atom-radio__input" aria-label="GPT-5.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">GPT-5.5</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">default checked</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-checked">
+                  <input type="radio" name="light-state-row-2" value="s2" checked class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">Claude Sonnet 4.6</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-hover</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-hover">
+                  <input type="radio" name="light-state-row-3" value="s3" class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">Claude Opus 4.7</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-active</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-active">
+                  <input type="radio" name="light-state-row-4" value="s4" class="atom-radio__input" aria-label="Claude Haiku 4.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">Claude Haiku 4.5</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-focus</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-focus">
+                  <input type="radio" name="light-state-row-5" value="s5" class="atom-radio__input" aria-label="Claude Sonnet 4.6" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">Claude Sonnet 4.6</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-disabled</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-disabled">
+                  <input type="radio" name="light-state-row-6" value="s6" disabled class="atom-radio__input" aria-label="GPT-5.5" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">GPT-5.5</span>
+              </div>
+            </div>
+
+            <div class="state">
+              <span class="state-label">is-checked + is-disabled</span>
+              <div class="radio-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-checked is-disabled">
+                  <input type="radio" name="light-state-row-7" value="s7" checked disabled class="atom-radio__input" aria-label="Claude Opus 4.7" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <span class="type-body">Claude Opus 4.7</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /state row -->
+
+      <!-- ---- 3. COMPOSITION EXAMPLE — thinking-level group --- -->
+      <div class="section-block">
+        <div class="variant">
+          <h3>composition example — thinking-level group (medium selected)</h3>
+          <fieldset style="border: none; margin: 0; padding: 0;">
+            <legend class="type-label" style="margin-bottom: var(--space-3); color: var(--text-muted);">Extended thinking</legend>
+            <div class="thinking-list">
+
+              <div class="thinking-row">
+                <label class="atom-radio atom-radio--default atom-radio--md">
+                  <input type="radio" name="light-thinking" value="off" class="atom-radio__input" aria-label="off · No extended thinking" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <div class="thinking-text">
+                  <span class="type-body">off</span>
+                  <span class="type-meta" style="color: var(--text-muted);">No extended thinking</span>
+                </div>
+              </div>
+
+              <div class="thinking-row">
+                <label class="atom-radio atom-radio--default atom-radio--md">
+                  <input type="radio" name="light-thinking" value="low" class="atom-radio__input" aria-label="low · ~1K tokens" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <div class="thinking-text">
+                  <span class="type-body">low</span>
+                  <span class="type-meta" style="color: var(--text-muted);">~1K tokens</span>
+                </div>
+              </div>
+
+              <div class="thinking-row">
+                <label class="atom-radio atom-radio--default atom-radio--md is-checked">
+                  <input type="radio" name="light-thinking" value="medium" checked class="atom-radio__input" aria-label="medium · ~5K tokens" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <div class="thinking-text">
+                  <span class="type-body">medium</span>
+                  <span class="type-meta" style="color: var(--text-muted);">~5K tokens</span>
+                </div>
+              </div>
+
+              <div class="thinking-row">
+                <label class="atom-radio atom-radio--default atom-radio--md">
+                  <input type="radio" name="light-thinking" value="high" class="atom-radio__input" aria-label="high · ~10K tokens" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <div class="thinking-text">
+                  <span class="type-body">high</span>
+                  <span class="type-meta" style="color: var(--text-muted);">~10K tokens</span>
+                </div>
+              </div>
+
+              <div class="thinking-row">
+                <label class="atom-radio atom-radio--default atom-radio--md">
+                  <input type="radio" name="light-thinking" value="xhigh" class="atom-radio__input" aria-label="xhigh · ~20K tokens" />
+                  <span class="atom-radio__ring" aria-hidden="true"></span>
+                </label>
+                <div class="thinking-text">
+                  <span class="type-body">xhigh</span>
+                  <span class="type-meta" style="color: var(--text-muted);">~20K tokens</span>
+                </div>
+              </div>
+
+            </div>
+          </fieldset>
+        </div>
+      </div><!-- /composition -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe table
+       ============================================================ -->
+  <div class="recipe-footer">
+    <h2>Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Dark resolved</th>
+          <th>Light resolved</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ring border (default · unselected)</td>
+          <td>--border-default</td>
+          <td>#2a2827</td>
+          <td>oklch(0.922 0 0)</td>
+          <td>Neutral hairline ring</td>
+        </tr>
+        <tr>
+          <td>ring border (accent · unselected)</td>
+          <td>--accent-primary</td>
+          <td>#e07850</td>
+          <td>oklch(0.646 0.222 41.116)</td>
+          <td>Ember ring on unselected for accent variant</td>
+        </tr>
+        <tr>
+          <td>ring border (checked, all variants)</td>
+          <td>--accent-primary</td>
+          <td>#e07850</td>
+          <td>oklch(0.646 0.222 41.116)</td>
+          <td>Ember selection indicator</td>
+        </tr>
+        <tr>
+          <td>ring border (hover, unselected)</td>
+          <td>--border-strong</td>
+          <td>#3a3837</td>
+          <td>oklch(0.708 0 0)</td>
+          <td>Emphasis on hover</td>
+        </tr>
+        <tr>
+          <td>focus ring shadow</td>
+          <td>--border-focus</td>
+          <td>#3a3837</td>
+          <td>oklch(0.708 0 0)</td>
+          <td>0 0 0 2px outer ring on :focus-within</td>
+        </tr>
+        <tr>
+          <td>center dot fill</td>
+          <td>--accent-primary</td>
+          <td>#e07850</td>
+          <td>oklch(0.646 0.222 41.116)</td>
+          <td>::after pseudo; scale(0→1) on checked</td>
+        </tr>
+        <tr>
+          <td>border-radius (ring + dot)</td>
+          <td>--radius-round</td>
+          <td>50%</td>
+          <td>50%</td>
+          <td>Perfect circle for both elements</td>
+        </tr>
+        <tr>
+          <td>transition duration</td>
+          <td>--motion-fast</td>
+          <td>120ms</td>
+          <td>120ms</td>
+          <td>border-color, box-shadow, background, transform</td>
+        </tr>
+        <tr>
+          <td>transition easing</td>
+          <td>--motion-ease-out</td>
+          <td>cubic-bezier(0.16,1,0.3,1)</td>
+          <td>same</td>
+          <td>Spring-like deceleration on all transitions</td>
+        </tr>
+        <tr>
+          <td>disabled opacity</td>
+          <td>0.5 (scalar)</td>
+          <td>—</td>
+          <td>—</td>
+          <td>No dedicated token; cross-variant disabled treatment</td>
+        </tr>
+        <tr>
+          <td>outer diameter (sm)</td>
+          <td>— (explicit 14px)</td>
+          <td>14px</td>
+          <td>14px</td>
+          <td>Size-class encoding; no spacing token at 14px</td>
+        </tr>
+        <tr>
+          <td>outer diameter (md)</td>
+          <td>— (explicit 18px)</td>
+          <td>18px</td>
+          <td>18px</td>
+          <td>Default; between --space-4 (16px) and --space-5 (20px)</td>
+        </tr>
+        <tr>
+          <td>outer diameter (lg)</td>
+          <td>— (explicit 22px)</td>
+          <td>22px</td>
+          <td>22px</td>
+          <td>Size-class encoding; between --space-5 (20px) and --space-6 (24px)</td>
+        </tr>
+        <tr>
+          <td>center dot (sm)</td>
+          <td>— (explicit 6px)</td>
+          <td>6px</td>
+          <td>6px</td>
+          <td>~43% of outer ring diameter</td>
+        </tr>
+        <tr>
+          <td>center dot (md)</td>
+          <td>— (explicit 8px)</td>
+          <td>8px</td>
+          <td>8px</td>
+          <td>~44% of outer ring diameter; matches --space-2</td>
+        </tr>
+        <tr>
+          <td>center dot (lg)</td>
+          <td>— (explicit 10px)</td>
+          <td>10px</td>
+          <td>10px</td>
+          <td>~45% of outer ring diameter</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>

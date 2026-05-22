@@ -70,6 +70,71 @@ The `--sm` size is the nominal default when no size class is applied (falls thro
 
 ---
 
+## Icon catalog
+
+### Chat
+
+| Lucide name | Use case |
+|---|---|
+| `message-square` | Conversation list item, empty-state hero |
+| `send` | Send button in composer |
+| `mic` | Voice input button |
+| `paperclip` | File attachment button |
+| `sparkles` | Model selector indicator |
+| `brain` | Context / thinking indicator |
+| `square` | Stop-generation button |
+
+### Navigation
+
+| Lucide name | Use case |
+|---|---|
+| `arrow-left` | Back navigation |
+| `arrow-up` | Scroll-to-top, submit alias |
+| `chevron-down` | Expand/collapse, dropdown trigger |
+| `chevron-right` | List row disclosure |
+| `more-vertical` | Overflow menu (vertical) |
+| `more-horizontal` | Overflow menu (horizontal) |
+| `x` | Close / dismiss |
+| `search` | Search input leading icon |
+| `plus` | New item / create action |
+
+### Status
+
+| Lucide name | Use case |
+|---|---|
+| `check` | Success confirmation |
+| `alert-triangle` | Warning state |
+| `circle` | Idle / neutral status dot |
+| `loader-2` | Spinning loading indicator |
+| `radio` | Live / streaming status |
+| `wifi-off` | Offline state |
+
+### Tool
+
+| Lucide name | Use case |
+|---|---|
+| `terminal` | Bash tool call chip |
+| `file-text` | Read-file tool call chip |
+| `pencil` | Edit tool call chip |
+| `git-branch` | Git tool call chip |
+| `play` | Run / execute action |
+
+### Domain
+
+| Lucide name | Use case |
+|---|---|
+| `package` | Project chip leading icon |
+| `laptop` | Local host chip icon |
+| `cloud` | Cloud host chip icon |
+| `bell` | Notification chrome |
+| `copy` | Code block copy affordance |
+| `shield` | Permission mode indicator |
+| `zap` | Thinking level selector |
+| `settings` | Filter / settings gear button |
+| `menu` | Hamburger / drawer toggle |
+
+---
+
 ## Icon naming conventions
 
 Lucide names map 1:1. Use the lucide name as the reference identifier in comments and documentation (e.g., `<!-- lucide: send -->`). In React Native, import directly from `lucide-react-native`:

@@ -2742,3 +2742,290 @@ span.atom-divider--gutter-md.atom-divider--vertical {
 .atom-tooltip.is-exiting {
   opacity: 0;
 }
+
+
+/* ============================================================
+   radio
+   Source: atoms/radio/radio.html
+   ============================================================ */
+
+/* ---- Base ----------------------------------------------- */
+.atom-radio {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  position:        relative;
+  /* Default size: md (18px) */
+  width:  18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ---- Sizes --------------------------------------------- */
+.atom-radio--sm {
+  width:  14px;
+  height: 14px;
+}
+.atom-radio--lg {
+  width:  22px;
+  height: 22px;
+}
+
+/* ---- Hidden native input ------------------------------- */
+.atom-radio__input {
+  position: absolute;
+  opacity:  0;
+  width:    100%;
+  height:   100%;
+  margin:   0;
+  cursor:   pointer;
+  /* Clip rather than display:none so AT still sees it */
+  clip-path: inset(0 0 0 0);
+}
+
+/* ---- Visual ring --------------------------------------- */
+.atom-radio__ring {
+  width:         100%;
+  height:        100%;
+  border-radius: var(--radius-round);
+  border:        1.5px solid var(--border-default);
+  background:    transparent;
+  transition:
+    border-color var(--motion-fast) var(--motion-ease-out),
+    box-shadow   var(--motion-fast) var(--motion-ease-out),
+    background   var(--motion-fast) var(--motion-ease-out);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  /* Prevent ring from eating pointer events — input handles them */
+  pointer-events:  none;
+}
+
+/* ---- Center dot (::after) — hidden until checked ------- */
+.atom-radio__ring::after {
+  content:       '';
+  display:       block;
+  /* Default dot: md (8px) */
+  width:         8px;
+  height:        8px;
+  border-radius: var(--radius-round);
+  background:    var(--accent-primary);
+  transform:     scale(0);
+  transition:    transform var(--motion-fast) var(--motion-ease-out);
+}
+
+.atom-radio--sm .atom-radio__ring::after {
+  width:  6px;
+  height: 6px;
+}
+.atom-radio--lg .atom-radio__ring::after {
+  width:  10px;
+  height: 10px;
+}
+
+/* ---- Variant: accent (ember ring when unselected) ------ */
+.atom-radio--accent .atom-radio__ring {
+  border-color: var(--accent-primary);
+}
+
+/* ---- Variant: inverse (resolves via token theming) ----- */
+/* --border-default already resolves to the correct value per
+   theme; inverse variant keeps the default token so it adapts
+   correctly when rendered on a dark surface inside a light pane. */
+.atom-radio--inverse .atom-radio__ring {
+  border-color: var(--border-default);
+}
+
+/* ---- State: checked ------------------------------------ */
+.atom-radio.is-checked .atom-radio__ring,
+.atom-radio:has(.atom-radio__input:checked) .atom-radio__ring {
+  border-color: var(--accent-primary);
+}
+.atom-radio.is-checked .atom-radio__ring::after,
+.atom-radio:has(.atom-radio__input:checked) .atom-radio__ring::after {
+  transform: scale(1);
+}
+
+/* ---- State: hover -------------------------------------- */
+.atom-radio.is-hover .atom-radio__ring,
+.atom-radio:hover .atom-radio__ring {
+  border-color: var(--border-strong);
+}
+/* Hover on checked: keep accent, subtle lightening via strong */
+.atom-radio.is-checked.is-hover .atom-radio__ring,
+.atom-radio:has(.atom-radio__input:checked):hover .atom-radio__ring {
+  border-color: var(--accent-primary);
+}
+
+/* ---- State: active (pressed) --------------------------- */
+.atom-radio.is-active .atom-radio__ring,
+.atom-radio:active .atom-radio__ring {
+  border-color: var(--border-strong);
+}
+.atom-radio.is-checked.is-active .atom-radio__ring,
+.atom-radio:has(.atom-radio__input:checked):active .atom-radio__ring {
+  border-color: var(--accent-primary);
+}
+
+/* ---- State: focus (keyboard / focus-within) ------------ */
+.atom-radio.is-focus .atom-radio__ring,
+.atom-radio:focus-within .atom-radio__ring {
+  box-shadow: 0 0 0 2px var(--border-focus);
+}
+
+/* ---- State: disabled ----------------------------------- */
+.atom-radio.is-disabled,
+.atom-radio:has(.atom-radio__input:disabled) {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+
+/* ============================================================
+   checkbox
+   Source: atoms/checkbox/checkbox.html
+   ============================================================ */
+
+/* ---- Base ------------------------------------------------- */
+.atom-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ---- Size variants ---------------------------------------- */
+.atom-checkbox--sm { width: 14px; height: 14px; }
+.atom-checkbox--md { width: 18px; height: 18px; }
+.atom-checkbox--lg { width: 22px; height: 22px; }
+
+/* ---- Hidden native input ---------------------------------- */
+.atom-checkbox__input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+}
+.atom-checkbox__input:disabled {
+  cursor: not-allowed;
+}
+
+/* ---- Visual box ------------------------------------------- */
+.atom-checkbox__box {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-subtle);
+  border: 1.5px solid var(--border-default);
+  background: transparent;
+  transition:
+    background var(--motion-fast) var(--motion-ease-out),
+    border-color var(--motion-fast) var(--motion-ease-out),
+    box-shadow var(--motion-fast) var(--motion-ease-out);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.atom-checkbox--rounded .atom-checkbox__box {
+  border-radius: var(--radius-default);
+}
+
+/* ---- Check glyph ------------------------------------------ */
+.atom-checkbox__check {
+  width: 70%;
+  height: 70%;
+  color: var(--accent-primary-fg);
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity var(--motion-fast) var(--motion-ease-out),
+    transform var(--motion-fast) var(--motion-ease-out);
+  display: block;
+  flex-shrink: 0;
+  /* SVG stroke-width 2 is structural geometry — TOKEN-AUDIT exception */
+}
+
+/* ---- Checked state ---------------------------------------- */
+.atom-checkbox.is-checked .atom-checkbox__box,
+.atom-checkbox:has(.atom-checkbox__input:checked) .atom-checkbox__box {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.atom-checkbox.is-checked .atom-checkbox__check,
+.atom-checkbox:has(.atom-checkbox__input:checked) .atom-checkbox__check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ---- Indeterminate state — horizontal bar via ::after ----- */
+.atom-checkbox.is-indeterminate .atom-checkbox__box {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.atom-checkbox.is-indeterminate .atom-checkbox__check {
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+.atom-checkbox.is-indeterminate .atom-checkbox__box::after {
+  content: '';
+  position: absolute;
+  width: 60%;
+  height: 2px;
+  background: var(--accent-primary-fg);
+  border-radius: var(--radius-pill);
+}
+
+/* ---- Hover state ------------------------------------------ */
+.atom-checkbox.is-hover .atom-checkbox__box,
+.atom-checkbox:hover:not(.is-checked):not(.is-indeterminate):not(.is-disabled) .atom-checkbox__box,
+.atom-checkbox:has(.atom-checkbox__input:not(:checked)):not(.is-indeterminate):not(.is-disabled):hover .atom-checkbox__box {
+  border-color: var(--border-strong);
+}
+
+/* Hover on checked: brighten slightly */
+.atom-checkbox.is-checked:hover:not(.is-disabled) .atom-checkbox__box,
+.atom-checkbox:has(.atom-checkbox__input:checked):not(.is-disabled):hover .atom-checkbox__box {
+  background: var(--accent-primary-hover);
+  border-color: var(--accent-primary-hover);
+}
+
+/* ---- Active (pressed) state ------------------------------- */
+.atom-checkbox.is-active .atom-checkbox__box,
+.atom-checkbox:active:not(.is-disabled) .atom-checkbox__box {
+  background: var(--surface-active);
+  border-color: var(--border-strong);
+}
+
+.atom-checkbox.is-checked.is-active .atom-checkbox__box,
+.atom-checkbox:has(.atom-checkbox__input:checked):active:not(.is-disabled) .atom-checkbox__box {
+  background: var(--accent-primary-pressed);
+  border-color: var(--accent-primary-pressed);
+}
+
+/* ---- Focus state ------------------------------------------ */
+.atom-checkbox.is-focus .atom-checkbox__box,
+.atom-checkbox:focus-within .atom-checkbox__box {
+  box-shadow: 0 0 0 2px var(--border-focus);
+  outline: none;
+}
+
+/* ---- Disabled state --------------------------------------- */
+.atom-checkbox.is-disabled,
+.atom-checkbox:has(.atom-checkbox__input:disabled) {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}

@@ -1,0 +1,2197 @@
+/*
+ * _molecules.css
+ * ──────────────────────────────────────────────────────────────────────────────
+ * AUTO-AGGREGATED molecule bundle for organism / view composition.
+ *
+ * Purpose
+ *   Organisms and views <link rel="stylesheet" href="../_molecules.css"> this
+ *   file and compose molecules by class name without redefining internal styles.
+ *
+ * Coverage
+ *   All 30 .mol-* component namespaces, extracted from:
+ *   designs/molecules/<name>/<name>.html — <style> block only.
+ *
+ * Extraction rules applied
+ *   INCLUDE  — any rule whose selector starts with .mol-<name>
+ *   INCLUDE  — variant / modifier / state classes on the same namespace
+ *   INCLUDE  — pseudo-element / pseudo-class rules under .mol-* selectors
+ *   INCLUDE  — @keyframes animations referenced by molecule CSS
+ *   INCLUDE  — compound selectors combining .mol-* with atoms
+ *   INCLUDE  — @media (prefers-reduced-motion) blocks scoped to .mol-* rules
+ *   EXCLUDE  — page chrome  (body, html, .preview-plate, .pegboard, .pane, .variant)
+ *   EXCLUDE  — demo helpers (.demo-*, .composition-*, .preview-*, .faux-*, .mock-*, .sim-*)
+ *   EXCLUDE  — recipe table (.recipe, .recipe-footer)
+ *   EXCLUDE  — @keyframes prefixed demo- (preview-only animations)
+ *   EXCLUDE  — local utilities (.sr-only, .mol-section-title, .chip-row, etc.)
+ *
+ * Sections are in alphabetical order by molecule name.
+ * ──────────────────────────────────────────────────────────────────────────────
+ */
+
+
+/* ================================================================================
+   applied-filter-tag
+   Source: designs/molecules/applied-filter-tag/applied-filter-tag.html
+   ================================================================================ */
+
+.mol-applied-filter-tag {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             var(--space-1);
+  padding:         var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  height:          var(--touch-target-min);
+  background:      var(--surface-raised);
+  border:          1px solid var(--border-default);
+  border-radius:   var(--radius-pill);
+  cursor:          default;
+  user-select:     none;
+  max-width:       20em;
+  white-space:     nowrap;
+  overflow:        hidden;
+}
+
+button.mol-applied-filter-tag {
+  cursor: pointer;
+}
+
+.mol-applied-filter-tag__label {
+  font-family:   var(--font-body);
+  font-size:     var(--font-size-body-sm);
+  font-weight:   var(--font-weight-meta);
+  color:         var(--text-body);
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+.mol-applied-filter-tag__leading-icon {
+  flex-shrink: 0;
+}
+
+.mol-applied-filter-tag__dismiss {
+  flex-shrink:     0;
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  width:           var(--space-5);
+  height:          var(--space-5);
+  border-radius:   var(--radius-round);
+  border:          none;
+  background:      transparent;
+  cursor:          pointer;
+  color:           var(--text-muted);
+  padding:         0;
+  position:        relative;
+  transition:      background-color var(--motion-fast) var(--motion-ease-out),
+                   color            var(--motion-fast) var(--motion-ease-out);
+}
+
+.mol-applied-filter-tag__dismiss::before {
+  content:       '';
+  position:      absolute;
+  inset:         calc(-1 * var(--space-1));
+  border-radius: inherit;
+}
+
+.mol-applied-filter-tag__dismiss:hover {
+  background: var(--surface-active);
+  color:      var(--text-body);
+}
+
+.mol-applied-filter-tag__dismiss:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 2px var(--border-focus);
+}
+
+.mol-applied-filter-tag.is-removing {
+  animation: mol-applied-filter-tag-remove var(--motion-fast) var(--motion-ease-out) forwards;
+}
+
+@keyframes mol-applied-filter-tag-remove {
+  from {
+    opacity:   1;
+    transform: scale(1);
+  }
+  to {
+    opacity:   0;
+    transform: scale(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mol-applied-filter-tag.is-removing {
+    animation: none;
+    opacity:   0;
+  }
+}
+
+.mol-applied-filter-tag-row {
+  display:    flex;
+  gap:        var(--space-2);
+  flex-wrap:  nowrap;
+  overflow-x: auto;
+  padding:    var(--space-2) var(--space-4);
+  min-height: calc(var(--touch-target-min) + var(--space-4));
+  scrollbar-width: none;
+}
+
+.mol-applied-filter-tag-row::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* ================================================================================
+   app-header
+   Source: designs/molecules/app-header/app-header.html
+   ================================================================================ */
+
+.mol-app-header {
+  display:       flex;
+  align-items:   center;
+  gap:           var(--space-2);
+  padding:       var(--space-2) var(--space-3);
+  min-height:    var(--touch-target-min);
+  background:    var(--surface-page);
+  border-bottom: 1px solid var(--border-subtle);
+  position:      sticky;
+  top:           0;
+  z-index:       20;
+}
+
+.mol-app-header__title-wrap {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  min-width:      0;
+}
+
+.mol-app-header__title {
+  margin:        0;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  max-width:     100%;
+}
+
+.mol-app-header__subtitle {
+  margin:        0;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  max-width:     100%;
+}
+
+.mol-app-header__back,
+.mol-app-header__actions {
+  flex-shrink: 0;
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-1);
+}
+
+.mol-app-header--no-back .mol-app-header__title-wrap {
+  padding-left: var(--touch-target-min);
+}
+
+.mol-app-header.is-scrolled {
+  box-shadow: 0 1px 0 var(--border-subtle);
+}
+
+
+/* ================================================================================
+   approval-footer
+   Source: designs/molecules/approval-footer/approval-footer.html
+   ================================================================================ */
+
+.mol-approval-footer {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-2);
+  padding:        var(--space-3) var(--space-4);
+  background:     var(--surface-overlay);
+  border-top:     1px solid var(--border-subtle);
+}
+
+.mol-approval-footer__rule {
+  display: none;
+}
+
+.mol-approval-footer__counter {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+}
+
+.mol-approval-footer__actions {
+  display: flex;
+  gap:     var(--space-2);
+}
+
+.mol-approval-footer__actions .atom-button {
+  flex: 1;
+}
+
+.mol-approval-footer--single .mol-approval-footer__counter {
+  display: none;
+}
+
+.mol-approval-footer.is-resolving .mol-approval-footer__actions {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+.mol-approval-footer.is-disabled .mol-approval-footer__actions {
+  opacity:        0.4;
+  pointer-events: none;
+}
+
+
+/* ================================================================================
+   assistant-message-head
+   Source: designs/molecules/assistant-message-head/assistant-message-head.html
+   ================================================================================ */
+
+.mol-assistant-message-head {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+  padding:     var(--space-2) var(--space-1);
+}
+
+.mol-assistant-message-head__label {
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-label);
+  font-weight:    var(--font-weight-label);
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+  color:          var(--text-muted);
+}
+
+.mol-assistant-message-head__time {
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-meta);
+  letter-spacing: var(--tracking-mono);
+  color:          var(--text-faint);
+}
+
+.mol-assistant-message-head__separator {
+  color: var(--text-faint);
+}
+
+.mol-assistant-message-head__status {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-1);
+  margin-left: auto;
+}
+
+.mol-assistant-message-head--idle .mol-assistant-message-head__status,
+.mol-assistant-message-head--idle .mol-assistant-message-head__status-separator {
+  display: none;
+}
+
+.mol-assistant-message-head--completed .mol-assistant-message-head__status .atom-status-dot {
+  opacity: 0;
+}
+
+
+/* ================================================================================
+   banner
+   Source: designs/molecules/banner/banner.html
+   ================================================================================ */
+
+.mol-banner {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-2);
+  padding:        var(--space-3) var(--space-4);
+  background:     var(--surface-raised);
+  border:         1px solid var(--border-subtle);
+  border-radius:  var(--radius-default);
+  position:       relative;
+  overflow:       hidden;
+}
+
+.mol-banner--unpaid,
+.mol-banner--dispatch-failed {
+  background: var(--state-warning-bg);
+  border-color: var(--state-warning-fg);
+}
+
+.mol-banner__rule {
+  position:   absolute;
+  left:       0;
+  top:        0;
+  bottom:     0;
+  width:      var(--domain-tool-rule-width);
+  background: var(--border-default);
+}
+
+.mol-banner__row {
+  display:     flex;
+  align-items: flex-start;
+  gap:         var(--space-3);
+}
+
+.mol-banner__icon {
+  flex-shrink: 0;
+  color:       var(--text-muted);
+}
+
+.mol-banner--unpaid .mol-banner__icon,
+.mol-banner--dispatch-failed .mol-banner__icon {
+  color: var(--state-warning-fg);
+}
+
+.mol-banner__text {
+  flex:    1;
+  min-width: 0;
+  color:   var(--text-body);
+}
+
+.mol-banner--unpaid .mol-banner__text,
+.mol-banner--dispatch-failed .mol-banner__text {
+  color: var(--state-warning-fg);
+}
+
+.mol-banner__body {
+  font-family: var(--font-body);
+  font-size:   var(--font-size-body-sm);
+  margin:      0;
+}
+
+.mol-banner__cta {
+  display:    flex;
+  flex-wrap:  wrap;
+  gap:        var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.mol-banner--stacked .mol-banner__cta {
+  flex-direction: column;
+}
+
+.mol-banner__dismiss {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+
+/* ================================================================================
+   bottom-tab-bar-item
+   Source: designs/molecules/bottom-tab-bar-item/bottom-tab-bar-item.html
+   ================================================================================ */
+
+.mol-bottom-tab-bar-item {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             var(--space-1);
+  flex:            1;
+  min-height:      var(--touch-target-min);
+  padding:         var(--space-2) var(--space-2) var(--space-1);
+  background:      transparent;
+  border:          none;
+  cursor:          pointer;
+  color:           var(--text-muted);
+  text-decoration: none;
+  position:        relative;
+  outline:         none;
+  transition:
+    color            var(--motion-fast) var(--motion-ease-out),
+    background-color var(--motion-fast) var(--motion-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mol-bottom-tab-bar-item__icon-wrap {
+  position:    relative;
+  display:     flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.mol-bottom-tab-bar-item__icon {
+  display: block;
+}
+
+.mol-bottom-tab-bar-item__label {
+  font-family:    var(--font-body);
+  font-size:      var(--font-size-meta);
+  font-weight:    var(--font-weight-body);
+  letter-spacing: var(--tracking-snug);
+  white-space:    nowrap;
+  line-height:    1;
+}
+
+.mol-bottom-tab-bar-item.is-selected {
+  color: var(--accent-primary);
+}
+
+.mol-bottom-tab-bar-item:hover:not(.is-selected),
+.mol-bottom-tab-bar-item.is-hover:not(.is-selected) {
+  color:      var(--text-body);
+  background: var(--surface-soft);
+}
+
+.mol-bottom-tab-bar-item:active,
+.mol-bottom-tab-bar-item.is-active {
+  background: var(--surface-active);
+  transform:  scale(0.96);
+}
+
+.mol-bottom-tab-bar-item:focus-visible,
+.mol-bottom-tab-bar-item.is-focus {
+  outline:    none;
+  box-shadow: inset 0 0 0 2px var(--border-focus);
+}
+
+.mol-bottom-tab-bar-item__notif {
+  position:      absolute;
+  top:           0;
+  right:         0;
+  transform:     translate(30%, -30%);
+  pointer-events: none;
+}
+
+
+/* ================================================================================
+   code-block
+   Source: designs/molecules/code-block/code-block.html
+   ================================================================================ */
+
+figure.mol-code-block {
+  display:        flex;
+  flex-direction: column;
+  margin:         0;
+  background:     var(--surface-sunken);
+  border:         1px solid var(--border-subtle);
+  border-radius:  var(--radius-default);
+  overflow:       hidden;
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-meta);
+}
+
+figure.mol-code-block--bare {
+  background:   transparent;
+  border:       none;
+  border-radius: 0;
+}
+
+.mol-code-block__head {
+  display:          flex;
+  align-items:      center;
+  justify-content:  space-between;
+  padding:          var(--space-2) var(--space-3);
+  border-bottom:    1px solid var(--border-subtle);
+  background:       var(--surface-raised);
+  min-height:       var(--touch-target-min);
+}
+
+.mol-code-block__lang {
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-meta);
+  font-weight:    var(--font-weight-meta);
+  color:          var(--text-muted);
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+}
+
+.mol-code-block__copy {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-1);
+}
+
+.mol-code-block__copy.is-copied .atom-icon-glyph {
+  color: var(--state-success-fg);
+}
+
+.mol-code-block__body {
+  margin:     0;
+  padding:    var(--space-3) var(--space-4);
+  overflow-x: auto;
+  white-space: pre;
+  font-family: var(--font-mono);
+  font-size:   var(--font-size-meta);
+  line-height: var(--line-height-code);
+  color:       var(--text-body);
+}
+
+figure.mol-code-block.is-overflow .mol-code-block__body {
+  max-height:  16em;
+  overflow-y:  auto;
+}
+
+.mol-code-block__kw  { color: var(--syntax-keyword); }
+.mol-code-block__str { color: var(--syntax-string); }
+.mol-code-block__fn  { color: var(--syntax-function); }
+.mol-code-block__cmt { color: var(--syntax-comment); font-style: italic; }
+
+.mol-code-block__inline {
+  display:       inline;
+  font-family:   var(--font-mono);
+  font-size:     0.9em;
+  background:    var(--surface-sunken);
+  border:        1px solid var(--border-subtle);
+  border-radius: var(--radius-subtle);
+  padding:       0.1em var(--space-1);
+  color:         var(--text-body);
+  white-space:   nowrap;
+}
+
+
+/* ================================================================================
+   collapsed-block
+   Source: designs/molecules/collapsed-block/collapsed-block.html
+   ================================================================================ */
+
+.mol-collapsed-block {
+  border:        1px solid var(--border-subtle);
+  border-radius: var(--radius-default);
+  overflow:      hidden;
+  background:    var(--surface-raised);
+}
+
+.mol-collapsed-block__summary {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+  padding:     var(--space-3) var(--space-4);
+  min-height:  var(--touch-target-min);
+  cursor:      pointer;
+  list-style:  none;
+  user-select: none;
+  outline:     none;
+  transition:  background-color var(--motion-fast) var(--motion-ease-out);
+}
+
+.mol-collapsed-block__summary::-webkit-details-marker {
+  display: none;
+}
+
+.mol-collapsed-block__summary::marker {
+  content: none;
+}
+
+.mol-collapsed-block__summary:hover,
+.mol-collapsed-block__summary.is-hover {
+  background: var(--surface-active);
+}
+
+.mol-collapsed-block__summary:focus-visible,
+.mol-collapsed-block__summary.is-focus {
+  outline:    none;
+  box-shadow: inset 0 0 0 2px var(--border-focus);
+}
+
+.mol-collapsed-block__icon {
+  flex-shrink: 0;
+  color:       var(--text-muted);
+}
+
+.mol-collapsed-block__label {
+  flex:          1;
+  min-width:     0;
+  font-family:   var(--font-mono);
+  font-size:     var(--font-size-body-sm);
+  font-weight:   var(--font-weight-meta);
+  color:         var(--text-body);
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.mol-collapsed-block__meta {
+  font-family:   var(--font-mono);
+  font-size:     var(--font-size-meta);
+  color:         var(--text-faint);
+  flex-shrink:   0;
+  white-space:   nowrap;
+}
+
+.mol-collapsed-block__chevron {
+  flex-shrink: 0;
+  color:       var(--text-faint);
+  transition:  transform var(--motion-fast) var(--motion-ease-out);
+}
+
+.mol-collapsed-block[open] .mol-collapsed-block__chevron {
+  transform: rotate(180deg);
+}
+
+.mol-collapsed-block__preview {
+  border-top:  1px solid var(--border-subtle);
+  padding:     var(--space-3) var(--space-4);
+  background:  var(--surface-sunken);
+}
+
+.mol-collapsed-block__preview p {
+  margin:      0;
+  font-family: var(--font-mono);
+  font-size:   var(--font-size-meta);
+  color:       var(--text-muted);
+  line-height: var(--line-height-code);
+}
+
+.mol-collapsed-block--subagent {
+  background: var(--surface-sunken);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mol-collapsed-block__chevron {
+    transition: none;
+  }
+}
+
+
+/* ================================================================================
+   composer-row
+   Source: designs/molecules/composer-row/composer-row.html
+   ================================================================================ */
+
+.mol-composer-row {
+  display:     flex;
+  align-items: flex-end;
+  gap:         var(--space-2);
+  padding:     var(--space-2) var(--space-3);
+  min-height:  var(--composer-min-height);
+  background:  var(--surface-page);
+  border-top:  1px solid var(--border-subtle);
+}
+
+.mol-composer-row__input {
+  flex:       1;
+  min-width:  0;
+  min-height: var(--touch-target-min);
+  resize:     none;
+}
+
+.mol-composer-row__action {
+  flex-shrink: 0;
+  display:     flex;
+  align-items: center;
+}
+
+.mol-composer-row--idle .mol-composer-row__action {
+  /* action slot shows submit button */
+}
+
+.mol-composer-row--typing .mol-composer-row__action {
+  /* action slot shows submit button (enabled) */
+}
+
+.mol-composer-row--streaming .mol-composer-row__input {
+  pointer-events: none;
+  opacity:        0.6;
+}
+
+.mol-composer-row--sending .mol-composer-row__action {
+  pointer-events: none;
+  opacity:        0.6;
+}
+
+.mol-composer-row.is-disabled {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+
+/* ================================================================================
+   composer-toolbar
+   Source: designs/molecules/composer-toolbar/composer-toolbar.html
+   ================================================================================ */
+
+.mol-composer-toolbar {
+  display:    flex;
+  align-items: center;
+  gap:         var(--space-1);
+  padding:     var(--space-1) var(--space-3);
+  overflow-x:  auto;
+  position:    relative;
+  scrollbar-width: none;
+  min-height:  var(--touch-target-min);
+}
+
+.mol-composer-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.mol-composer-toolbar__trigger {
+  flex-shrink: 0;
+}
+
+.mol-composer-toolbar__scroll-fade {
+  position:       absolute;
+  right:          0;
+  top:            0;
+  bottom:         0;
+  width:          var(--space-8);
+  background:     linear-gradient(to right, transparent, var(--surface-page));
+  pointer-events: none;
+  opacity:        0;
+  transition:     opacity var(--motion-fast) var(--motion-ease-out);
+}
+
+.mol-composer-toolbar.is-overflow .mol-composer-toolbar__scroll-fade {
+  opacity: 1;
+}
+
+.mol-composer-toolbar--compact .mol-composer-toolbar__trigger[data-trigger="permission"] {
+  display: none;
+}
+
+.mol-composer-toolbar.is-disabled .mol-composer-toolbar__trigger {
+  opacity:        0.4;
+  pointer-events: none;
+}
+
+
+/* ================================================================================
+   empty-state
+   Source: designs/molecules/empty-state/empty-state.html
+   ================================================================================ */
+
+.mol-empty-state {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             var(--space-4);
+  padding:         var(--space-8) var(--space-6);
+  text-align:      center;
+}
+
+.mol-empty-state__hero {
+  flex-shrink: 0;
+  color:       var(--text-faint);
+}
+
+.mol-empty-state__heading {
+  margin: 0;
+}
+
+.mol-empty-state__body {
+  margin:    0;
+  max-width: 28em;
+  color:     var(--text-muted);
+}
+
+.mol-empty-state__cta {
+  display:    flex;
+  flex-wrap:  wrap;
+  gap:        var(--space-2);
+  justify-content: center;
+}
+
+.mol-empty-state--no-matches .mol-empty-state__cta {
+  display: none;
+}
+
+
+/* ================================================================================
+   filter-checkbox-row
+   Source: designs/molecules/filter-checkbox-row/filter-checkbox-row.html
+   ================================================================================ */
+
+.mol-filter-checkbox-row {
+  display:         flex;
+  align-items:     center;
+  gap:             var(--space-3);
+  padding:         var(--space-3) var(--space-4);
+  min-height:      var(--touch-target-min);
+  background:      transparent;
+  border:          none;
+  width:           100%;
+  text-align:      left;
+  cursor:          pointer;
+  color:           var(--text-body);
+  position:        relative;
+  outline:         none;
+  transition:      background-color var(--motion-fast) var(--motion-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mol-filter-checkbox-row__icon {
+  flex-shrink: 0;
+  color:       var(--text-muted);
+}
+
+.mol-filter-checkbox-row__label {
+  flex:          1;
+  min-width:     0;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  color:         var(--text-body);
+}
+
+.mol-filter-checkbox-row__separator {
+  color: var(--text-faint);
+}
+
+.mol-filter-checkbox-row__host-icon {
+  flex-shrink: 0;
+  color:       var(--text-faint);
+}
+
+.mol-filter-checkbox-row__host {
+  font-family:   var(--font-mono);
+  font-size:     var(--font-size-meta);
+  color:         var(--text-faint);
+  letter-spacing: var(--tracking-mono);
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  max-width:     8em;
+}
+
+.mol-filter-checkbox-row:hover,
+.mol-filter-checkbox-row.is-hover {
+  background: var(--surface-soft);
+}
+
+.mol-filter-checkbox-row:active,
+.mol-filter-checkbox-row.is-active {
+  background: var(--surface-active);
+}
+
+.mol-filter-checkbox-row:has(.atom-checkbox__input:checked),
+.mol-filter-checkbox-row.is-checked {
+  background: var(--surface-active);
+}
+
+.mol-filter-checkbox-row.is-disabled {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+.mol-filter-checkbox-row--status .mol-filter-checkbox-row__icon {
+  color: var(--state-success-fg);
+}
+
+.mol-filter-checkbox-row--status.mol-filter-checkbox-row--warning .mol-filter-checkbox-row__icon {
+  color: var(--state-warning-fg);
+}
+
+.mol-filter-checkbox-row--status.mol-filter-checkbox-row--idle .mol-filter-checkbox-row__icon {
+  color: var(--text-faint);
+}
+
+
+/* ================================================================================
+   host-chip
+   Source: designs/molecules/host-chip/host-chip.html
+   ================================================================================ */
+
+.mol-host-chip {
+  display:     inline-flex;
+  align-items: center;
+  gap:         var(--space-2);
+  cursor:      pointer;
+}
+
+.mol-host-chip__status {
+  flex-shrink: 0;
+}
+
+.mol-host-chip__icon {
+  flex-shrink: 0;
+}
+
+.mol-host-chip__label {
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  max-width:     8em;
+}
+
+.mol-host-chip__chevron {
+  margin-left: var(--space-1);
+  flex-shrink: 0;
+}
+
+.mol-host-chip--no-host .mol-host-chip__label {
+  color: var(--text-faint);
+}
+
+
+/* ================================================================================
+   host-picker-row
+   Source: designs/molecules/host-picker-row/host-picker-row.html
+   ================================================================================ */
+
+.mol-host-picker-row {
+  display:         flex;
+  align-items:     center;
+  gap:             var(--space-3);
+  padding:         var(--space-3) var(--space-4);
+  min-height:      var(--touch-target-min);
+  background:      transparent;
+  border:          none;
+  width:           100%;
+  text-align:      left;
+  cursor:          pointer;
+  color:           var(--text-body);
+  position:        relative;
+  outline:         none;
+  transition:      background-color var(--motion-fast) var(--motion-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mol-host-picker-row__leading {
+  flex-shrink: 0;
+  display:     flex;
+  align-items: center;
+  position:    relative;
+}
+
+.mol-host-picker-row__leading .atom-status-dot {
+  position: absolute;
+  right:    -2px;
+  bottom:   -2px;
+}
+
+.mol-host-picker-row__body {
+  flex:           1;
+  min-width:      0;
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+.mol-host-picker-row__name {
+  font-family:   var(--font-mono);
+  font-size:     var(--font-size-body);
+  font-weight:   var(--font-weight-meta);
+  color:         var(--text-body);
+  line-height:   var(--line-height-snug);
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.mol-host-picker-row__trailing {
+  flex-shrink: 0;
+  display:     flex;
+  align-items: center;
+}
+
+.mol-host-picker-row__trailing .atom-icon-glyph {
+  opacity:    0;
+  transition: opacity var(--motion-fast) var(--motion-ease-out);
+}
+
+.mol-host-picker-row:hover,
+.mol-host-picker-row.is-hover {
+  background: var(--surface-soft);
+}
+
+.mol-host-picker-row:active,
+.mol-host-picker-row.is-active {
+  background: var(--surface-active);
+  transform:  scale(0.995);
+}
+
+.mol-host-picker-row:focus-visible,
+.mol-host-picker-row.is-focus {
+  outline:    none;
+  box-shadow: inset 0 0 0 2px var(--border-focus);
+}
+
+.mol-host-picker-row.is-selected {
+  background: var(--surface-active);
+}
+
+.mol-host-picker-row.is-selected .mol-host-picker-row__trailing .atom-icon-glyph {
+  opacity: 1;
+}
+
+.mol-host-picker-row.is-selected:hover,
+.mol-host-picker-row.is-selected.is-hover {
+  background: var(--surface-soft);
+}
+
+.mol-host-picker-row.is-disabled,
+.mol-host-picker-row:disabled {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+
+/* ================================================================================
+   load-more-pill
+   Source: designs/molecules/load-more-pill/load-more-pill.html
+   ================================================================================ */
+
+.mol-load-more-pill {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             var(--space-2);
+  margin:          var(--space-2) var(--space-4);
+}
+
+.mol-load-more-pill--full-width {
+  width: calc(100% - var(--space-8));
+}
+
+.mol-load-more-pill--inline {
+  width: auto;
+}
+
+.mol-load-more-pill__label {
+  /* text inherits font/size from atom-button */
+}
+
+.mol-load-more-pill__count {
+  display: inline;
+}
+
+.mol-load-more-pill__chevron {
+  transition:  transform var(--motion-fast) var(--motion-ease-out);
+  flex-shrink: 0;
+}
+
+.mol-load-more-pill.is-loading .mol-load-more-pill__chevron {
+  display: none;
+}
+
+.mol-load-more-pill.is-loading .mol-load-more-pill__count {
+  display: none;
+}
+
+.mol-load-more-pill__dots {
+  display: none;
+}
+
+.mol-load-more-pill.is-loading .mol-load-more-pill__dots {
+  display: inline-flex;
+}
+
+.mol-load-more-pill.is-end .mol-load-more-pill__chevron {
+  display: none;
+}
+
+.mol-load-more-pill.is-end .mol-load-more-pill__count {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mol-load-more-pill__chevron {
+    transition: none;
+  }
+}
+
+
+/* ================================================================================
+   modal-header
+   Source: designs/molecules/modal-header/modal-header.html
+   ================================================================================ */
+
+.mol-modal-header {
+  display:       flex;
+  align-items:   center;
+  gap:           var(--space-2);
+  padding:       var(--space-2) var(--space-3);
+  min-height:    var(--touch-target-min);
+  background:    var(--surface-page);
+  border-bottom: 1px solid var(--border-subtle);
+  position:      sticky;
+  top:           0;
+  z-index:       20;
+}
+
+.mol-modal-header__title {
+  margin:        0;
+  flex:          1;
+  text-align:    center;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.mol-modal-header__close {
+  flex-shrink: 0;
+  width:       var(--touch-target-min);
+}
+
+.mol-modal-header__spacer {
+  flex-shrink: 0;
+  width:       var(--touch-target-min);
+}
+
+.mol-modal-header__action {
+  flex-shrink: 0;
+}
+
+.mol-modal-header--simple .mol-modal-header__title {
+  text-align: left;
+}
+
+.mol-modal-header.is-scrolled {
+  box-shadow: 0 1px 0 var(--border-subtle);
+}
+
+
+/* ================================================================================
+   model-picker-option
+   Source: designs/molecules/model-picker-option/model-picker-option.html
+   ================================================================================ */
+
+.mol-model-picker-option {
+  display:        flex;
+  align-items:    center;
+  gap:            var(--space-3);
+  padding:        var(--space-3) var(--space-4);
+  min-height:     var(--touch-target-min);
+  cursor:         pointer;
+  border-radius:  var(--radius-default);
+  background:     transparent;
+  width:          100%;
+  box-sizing:     border-box;
+  transition:     background-color var(--motion-fast) var(--motion-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mol-model-picker-option__label {
+  flex:      1;
+  min-width: 0;
+  color:     var(--text-body);
+}
+
+.mol-model-picker-option__new {
+  flex-shrink: 0;
+}
+
+.mol-model-picker-option:hover,
+.mol-model-picker-option.is-hover {
+  background: var(--surface-soft);
+}
+
+.mol-model-picker-option:active,
+.mol-model-picker-option.is-active {
+  background: var(--surface-active);
+  transform:  scale(0.995);
+}
+
+.mol-model-picker-option:focus-within,
+.mol-model-picker-option.is-focus {
+  outline:    none;
+  box-shadow: inset 0 0 0 2px var(--border-focus);
+}
+
+.mol-model-picker-option.is-selected {
+  background: var(--surface-active);
+}
+
+.mol-model-picker-option.is-selected:hover,
+.mol-model-picker-option.is-selected.is-hover {
+  background: var(--surface-soft);
+}
+
+.mol-model-picker-option--featured.is-selected {
+  background: color-mix(in oklch, var(--accent-primary-subtle) 60%, var(--surface-active) 40%);
+}
+
+.mol-model-picker-option--featured.is-selected:hover,
+.mol-model-picker-option--featured.is-selected.is-hover {
+  background: color-mix(in oklch, var(--accent-primary-subtle) 40%, var(--surface-soft) 60%);
+}
+
+.mol-model-picker-option.is-disabled {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+.mol-model-picker-option-divider {
+  padding:    var(--space-2) var(--space-4);
+  box-sizing: border-box;
+}
+
+
+/* ================================================================================
+   pending-action-pill
+   Source: designs/molecules/pending-action-pill/pending-action-pill.html
+   ================================================================================ */
+
+.mol-pending-action-pill {
+  position:    absolute;
+  bottom:      calc(var(--composer-min-height) + var(--space-3));
+  right:       var(--space-4);
+  z-index:     15;
+  display:     inline-flex;
+  align-items: center;
+  gap:         var(--space-2);
+  box-shadow:  var(--elevation-overlay);
+  animation:   mol-pending-action-pill-enter var(--motion-medium) var(--motion-ease-out);
+}
+
+.mol-pending-action-pill__icon,
+.mol-pending-action-pill__direction {
+  color: var(--state-warning-fg);
+}
+
+.mol-pending-action-pill__count {
+  color: var(--state-warning-fg);
+}
+
+.mol-pending-action-pill.is-exiting {
+  animation: mol-pending-action-pill-exit var(--motion-medium) var(--motion-ease-out) forwards;
+}
+
+@keyframes mol-pending-action-pill-enter {
+  from {
+    opacity:   0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity:   1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mol-pending-action-pill-exit {
+  from {
+    opacity:   1;
+    transform: translateY(0);
+  }
+  to {
+    opacity:   0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mol-pending-action-pill,
+  .mol-pending-action-pill.is-exiting {
+    animation: none;
+  }
+}
+
+
+/* ================================================================================
+   pending-approval-card
+   Source: designs/molecules/pending-approval-card/pending-approval-card.html
+   ================================================================================ */
+
+.mol-pending-approval-card {
+  display:        flex;
+  align-items:    stretch;
+  gap:            var(--space-3);
+  padding:        var(--space-3) var(--space-4);
+  background:     var(--surface-raised);
+  border:         1px solid var(--border-subtle);
+  border-radius:  var(--radius-default);
+  position:       relative;
+  overflow:       hidden;
+  min-height:     var(--touch-target-min);
+  transition:     opacity var(--motion-fast) var(--motion-ease-out);
+}
+
+.mol-pending-approval-card__rule {
+  flex-shrink:         0;
+  margin-inline-start: calc(-1 * var(--space-4));
+}
+
+.mol-pending-approval-card__content {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-2);
+  min-width:      0;
+}
+
+.mol-pending-approval-card__head {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+}
+
+.mol-pending-approval-card__icon {
+  color:       var(--state-warning-fg);
+  flex-shrink: 0;
+}
+
+.mol-pending-approval-card__title {
+  /* type-body provides all typographic values */
+}
+
+.mol-pending-approval-card__allowable-badge {
+  margin-left: auto;
+  background:  var(--state-warning-bg);
+  color:       var(--state-warning-fg);
+  border:      1px solid var(--state-warning-fg);
+}
+
+.mol-pending-approval-card__subtitle {
+  margin: 0;
+}
+
+.mol-pending-approval-card__divider {
+  width:  100%;
+  margin: 0;
+}
+
+.mol-pending-approval-card__args {
+  margin:        0;
+  color:         var(--text-muted);
+  background:    var(--surface-sunken);
+  padding:       var(--space-2) var(--space-3);
+  border-radius: var(--radius-subtle);
+  overflow-x:    auto;
+  white-space:   pre;
+}
+
+.mol-pending-approval-card--detailed .mol-pending-approval-card__args {
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.mol-pending-approval-card.is-resolving {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+.mol-pending-approval-card.is-approved .mol-pending-approval-card__icon {
+  color: var(--state-success-fg);
+}
+
+.mol-pending-approval-card.is-declined .mol-pending-approval-card__icon {
+  color: var(--state-danger-fg);
+}
+
+
+/* ================================================================================
+   picker-trigger
+   Source: designs/molecules/picker-trigger/picker-trigger.html
+   ================================================================================ */
+
+.mol-picker-trigger {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             var(--space-2);
+  cursor:          pointer;
+  text-decoration: none;
+}
+
+.mol-picker-trigger__prefix {
+  color: var(--text-muted);
+}
+
+.mol-picker-trigger__value {
+  font-weight: var(--font-weight-meta);
+  color:       var(--text-body);
+}
+
+.mol-picker-trigger__chevron {
+  margin-left: var(--space-1);
+  transition:  transform var(--motion-fast) var(--motion-ease-out);
+  flex-shrink: 0;
+}
+
+.mol-picker-trigger.is-open .mol-picker-trigger__chevron {
+  transform: rotate(180deg);
+}
+
+.mol-picker-trigger.is-open {
+  background: var(--surface-active);
+}
+
+.mol-picker-trigger.is-disabled {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mol-picker-trigger__chevron {
+    transition: none;
+  }
+}
+
+
+/* ================================================================================
+   project-chip-header
+   Source: designs/molecules/project-chip-header/project-chip-header.html
+   ================================================================================ */
+
+.mol-project-chip-header {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-2);
+  padding:        var(--space-2) var(--space-3) var(--space-3);
+  background:     var(--surface-page);
+  border-bottom:  1px solid var(--border-subtle);
+  position:       relative;
+  z-index:        10;
+}
+
+.mol-project-chip-header__row {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+}
+
+.mol-project-chip-header__chip {
+  flex:            1;
+  justify-content: flex-start;
+  min-width:       0;
+  cursor:          pointer;
+}
+
+.mol-project-chip-header__chip-name {
+  font-weight:   var(--font-weight-meta);
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  min-width:     0;
+}
+
+.mol-project-chip-header--single-project .mol-project-chip-header__chip {
+  pointer-events: none;
+  background:     transparent;
+  border-color:   transparent;
+  cursor:         default;
+}
+
+.mol-project-chip-header--single-project .mol-project-chip-header__chip-chevron,
+.mol-project-chip-header--no-projects    .mol-project-chip-header__chip-chevron {
+  display: none;
+}
+
+.mol-project-chip-header--no-projects .mol-project-chip-header__chip {
+  pointer-events: none;
+  background:     transparent;
+  border-color:   transparent;
+  cursor:         default;
+  color:          var(--text-faint);
+}
+
+.mol-project-chip-header__search-wrap {
+  flex:        1;
+  position:    relative;
+  display:     flex;
+  align-items: center;
+  min-width:   0;
+}
+
+.mol-project-chip-header__search-leading {
+  position:           absolute;
+  inset-inline-start: var(--space-3);
+  display:            flex;
+  align-items:        center;
+  pointer-events:     none;
+  z-index:            1;
+}
+
+.mol-project-chip-header__search-input {
+  width:                100%;
+  padding-inline-start: calc(var(--space-3) * 2 + 16px);
+}
+
+.mol-project-chip-header__filter {
+  position:    relative;
+  flex-shrink: 0;
+}
+
+.mol-project-chip-header__filter-badge {
+  position:       absolute;
+  top:            2px;
+  right:          2px;
+  pointer-events: none;
+}
+
+.mol-project-chip-header:not(.is-filtering) .mol-project-chip-header__filter-badge {
+  display: none;
+}
+
+.mol-project-chip-header.is-scrolled {
+  box-shadow: 0 1px 0 var(--border-subtle);
+}
+
+
+/* ================================================================================
+   scroll-back-button
+   Source: designs/molecules/scroll-back-button/scroll-back-button.html
+   ================================================================================ */
+
+.mol-scroll-back-button {
+  position:   absolute;
+  right:      var(--space-4);
+  bottom:     calc(var(--composer-min-height) + var(--space-4));
+  opacity:    1;
+  transition: opacity var(--motion-fast) var(--motion-ease-out);
+  z-index:    10;
+}
+
+.mol-scroll-back-button.is-hidden {
+  opacity:        0;
+  pointer-events: none;
+}
+
+.mol-scroll-back-button__icon {
+  /* icon inherits color from atom-fab-base--overlay */
+}
+
+.mol-scroll-back-button__indicator {
+  position:       absolute;
+  top:            2px;
+  right:          2px;
+  pointer-events: none;
+}
+
+.mol-scroll-back-button--idle .mol-scroll-back-button__indicator {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mol-scroll-back-button {
+    transition: none;
+  }
+}
+
+
+/* ================================================================================
+   search-bar
+   Source: designs/molecules/search-bar/search-bar.html
+   ================================================================================ */
+
+.mol-search-bar {
+  width:   100%;
+  padding: var(--space-2) var(--space-4);
+}
+
+.mol-search-bar__wrap {
+  position:    relative;
+  display:     flex;
+  align-items: center;
+  width:       100%;
+}
+
+.mol-search-bar__leading {
+  position:       absolute;
+  left:           var(--space-3);
+  display:        flex;
+  align-items:    center;
+  pointer-events: none;
+  z-index:        1;
+}
+
+.mol-search-bar__clear {
+  position: absolute;
+  right:    var(--space-2);
+  display:  none;
+}
+
+.mol-search-bar.is-typing .mol-search-bar__clear {
+  display: inline-flex;
+}
+
+.mol-search-bar__error-msg {
+  font-family:  var(--font-body);
+  font-size:    var(--font-size-meta);
+  font-weight:  var(--font-weight-body);
+  color:        var(--state-danger-fg);
+  line-height:  var(--line-height-snug);
+  padding:      var(--space-1) 0 0 var(--space-4);
+  margin:       0;
+  min-height:   0;
+}
+
+.mol-search-bar--compact {
+  padding-block: var(--space-1);
+}
+
+.mol-search-bar--ghost {
+  padding: 0;
+}
+
+.mol-search-bar.is-loading .mol-search-bar__clear {
+  display: none !important;
+}
+
+
+/* ================================================================================
+   session-row
+   Source: designs/molecules/session-row/session-row.html
+   ================================================================================ */
+
+.mol-session-row {
+  display:         flex;
+  align-items:     center;
+  gap:             var(--space-3);
+  padding:         var(--space-3) var(--space-4);
+  min-height:      var(--touch-target-min);
+  background:      transparent;
+  border:          none;
+  width:           100%;
+  text-align:      left;
+  cursor:          pointer;
+  color:           var(--text-body);
+  font-family:     var(--font-body);
+  font-size:       var(--font-size-body);
+  position:        relative;
+  outline:         none;
+  text-decoration: none;
+  transition:      background-color var(--motion-fast) var(--motion-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mol-session-row__leading {
+  flex-shrink: 0;
+  display:     flex;
+  align-items: center;
+}
+
+.mol-session-row__body {
+  flex:           1;
+  min-width:      0;
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+.mol-session-row__title {
+  font-weight:   var(--font-weight-meta);
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  color:         var(--text-body);
+  line-height:   var(--line-height-snug);
+}
+
+.mol-session-row__meta {
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.mol-session-row__trailing {
+  flex-shrink: 0;
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+}
+
+.mol-session-row:hover,
+.mol-session-row.is-hover {
+  background: var(--surface-soft);
+}
+
+.mol-session-row:active,
+.mol-session-row.is-active {
+  background: var(--surface-active);
+}
+
+.mol-session-row:focus-visible,
+.mol-session-row.is-focus {
+  outline:    none;
+  box-shadow: inset 0 0 0 2px var(--border-focus);
+}
+
+.mol-session-row.is-selected {
+  background:   var(--surface-active);
+  border-left:  3px solid var(--accent-primary);
+  padding-left: calc(var(--space-4) - 3px);
+}
+
+.mol-session-row.is-pressed-long {
+  background: var(--surface-active);
+  transform:  scale(0.99);
+}
+
+.mol-session-row.is-pressed-long::after {
+  content:        "Hold to copy";
+  position:       absolute;
+  bottom:         calc(100% + var(--space-2));
+  left:           50%;
+  transform:      translateX(-50%);
+  background:     var(--surface-overlay);
+  color:          var(--text-muted);
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-meta);
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+  padding:        var(--space-1) var(--space-3);
+  border-radius:  var(--radius-subtle);
+  border:         1px solid var(--border-default);
+  white-space:    nowrap;
+  pointer-events: none;
+  z-index:        10;
+}
+
+.mol-session-row--archived .mol-session-row__title {
+  color: var(--text-faint);
+}
+
+
+/* ================================================================================
+   slash-command-option
+   Source: designs/molecules/slash-command-option/slash-command-option.html
+   ================================================================================ */
+
+.mol-slash-command-option {
+  display:         flex;
+  align-items:     flex-start;
+  gap:             var(--space-3);
+  padding:         var(--space-3) var(--space-4);
+  min-height:      var(--touch-target-min);
+  background:      transparent;
+  border:          none;
+  width:           100%;
+  text-align:      left;
+  cursor:          pointer;
+  color:           var(--text-body);
+  outline:         none;
+  position:        relative;
+  transition:      background-color var(--motion-fast) var(--motion-ease-out);
+  -webkit-tap-highlight-color: transparent;
+  box-sizing:      border-box;
+}
+
+.mol-slash-command-option__body {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-half);
+  min-width:      0;
+}
+
+.mol-slash-command-option__row-1 {
+  display:     inline-flex;
+  align-items: center;
+  gap:         var(--space-2);
+  flex-wrap:   nowrap;
+}
+
+.mol-slash-command-option__name {
+  color:       var(--accent-primary);
+  font-weight: var(--font-weight-meta);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mol-slash-command-option__source {
+  flex-shrink: 0;
+}
+
+.mol-slash-command-option__description {
+  color:              var(--text-muted);
+  min-width:          0;
+  overflow:           hidden;
+  display:            -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.mol-slash-command-option__loading {
+  display:     none;
+  flex-shrink: 0;
+  align-self:  center;
+}
+
+.mol-slash-command-option:hover,
+.mol-slash-command-option.is-hover {
+  background: var(--surface-soft);
+}
+
+.mol-slash-command-option.is-highlighted {
+  background: var(--surface-active);
+}
+
+.mol-slash-command-option:focus-visible,
+.mol-slash-command-option.is-focus {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--border-focus);
+}
+
+.mol-slash-command-option.is-highlighted:focus-visible,
+.mol-slash-command-option.is-highlighted.is-focus {
+  background: var(--surface-active);
+  box-shadow: inset 0 0 0 2px var(--border-focus);
+}
+
+.mol-slash-command-option.is-loading {
+  pointer-events: none;
+}
+
+.mol-slash-command-option.is-loading .mol-slash-command-option__loading {
+  display: flex;
+}
+
+.mol-slash-command-option__divider-row {
+  padding: var(--space-2) var(--space-4) var(--space-1);
+}
+
+
+/* ================================================================================
+   suggested-answer-pill
+   Source: designs/molecules/suggested-answer-pill/suggested-answer-pill.html
+   ================================================================================ */
+
+.mol-suggested-answer-pill {
+  min-height:      var(--touch-target-min);
+  white-space:     nowrap;
+  flex-shrink:     0;
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  cursor:          pointer;
+}
+
+.mol-suggested-answer-pill.is-tapped {
+  opacity:    0.6;
+  transform:  scale(0.98);
+  transition: opacity   var(--motion-fast) var(--motion-ease-out),
+              transform var(--motion-fast) var(--motion-ease-out);
+}
+
+.mol-suggested-answer-pill--ghost {
+  background: transparent;
+  border:     1px solid var(--border-default);
+}
+
+.mol-suggested-answer-pill--ghost:hover,
+.mol-suggested-answer-pill--ghost.is-hover {
+  background: var(--surface-soft);
+}
+
+.mol-suggested-answer-pill--ghost:active,
+.mol-suggested-answer-pill--ghost.is-active {
+  background: var(--surface-active);
+  transform:  translateY(1px);
+}
+
+.mol-suggested-answer-pill--ghost:focus-visible,
+.mol-suggested-answer-pill--ghost.is-focus {
+  box-shadow: 0 0 0 2px var(--border-focus);
+  outline:    none;
+}
+
+.mol-suggested-answer-pill--ghost.is-disabled {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mol-suggested-answer-pill.is-tapped {
+    transition: none;
+  }
+}
+
+
+/* ================================================================================
+   thinking-level-option
+   Source: designs/molecules/thinking-level-option/thinking-level-option.html
+   ================================================================================ */
+
+.mol-thinking-level-option {
+  display:         flex;
+  align-items:     center;
+  gap:             var(--space-3);
+  padding:         var(--space-3) var(--space-4);
+  min-height:      var(--touch-target-min);
+  cursor:          pointer;
+  border-radius:   var(--radius-default);
+  background:      transparent;
+  transition:      background-color var(--motion-fast) var(--motion-ease-out);
+  -webkit-tap-highlight-color: transparent;
+  width:           100%;
+  box-sizing:      border-box;
+}
+
+.mol-thinking-level-option__label {
+  flex:      0 0 auto;
+  min-width: 4em;
+  color:     var(--text-body);
+}
+
+.mol-thinking-level-option__hint {
+  margin-left: auto;
+  color:       var(--text-muted);
+  display:     inline;
+}
+
+.mol-thinking-level-option:hover,
+.mol-thinking-level-option.is-hover {
+  background: var(--surface-soft);
+}
+
+.mol-thinking-level-option.is-selected,
+.mol-thinking-level-option:has(.atom-radio__input:checked) {
+  background: var(--surface-active);
+}
+
+.mol-thinking-level-option.is-disabled {
+  opacity:        0.5;
+  pointer-events: none;
+}
+
+.mol-thinking-level-option--permission {}
+
+
+/* ================================================================================
+   tool-call-card
+   Source: designs/molecules/tool-call-card/tool-call-card.html
+   ================================================================================ */
+
+.mol-tool-call-card {
+  display:         flex;
+  align-items:     stretch;
+  gap:             var(--space-3);
+  padding:         var(--space-3) var(--space-4);
+  background:      var(--surface-raised);
+  border:          1px solid var(--border-subtle);
+  border-radius:   var(--radius-default);
+  cursor:          pointer;
+  position:        relative;
+  min-height:      var(--touch-target-min);
+  outline:         none;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease-out),
+    box-shadow       var(--motion-fast) var(--motion-ease-out),
+    transform        var(--motion-fast) var(--motion-ease-out);
+}
+
+.mol-tool-call-card__rule {
+  flex-shrink:         0;
+  margin-inline-start: calc(-1 * var(--space-4));
+}
+
+.mol-tool-call-card__content {
+  flex:            1;
+  display:         flex;
+  flex-direction:  column;
+  gap:             var(--space-2);
+  min-width:       0;
+  justify-content: center;
+}
+
+.mol-tool-call-card__header {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+}
+
+.mol-tool-call-card__name {
+  /* atom-pill provides all typography and shape */
+}
+
+.mol-tool-call-card__status {
+  margin-left: auto;
+  display:     inline-flex;
+  align-items: center;
+  gap:         var(--space-1);
+}
+
+.mol-tool-call-card__args {
+  margin:         0;
+  color:          var(--text-muted);
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+  font-family:    var(--font-mono);
+  font-size:      var(--font-size-meta);
+  line-height:    var(--line-height-snug);
+  letter-spacing: var(--tracking-mono);
+}
+
+.mol-tool-call-card__chevron {
+  position:       absolute;
+  right:          var(--space-3);
+  top:            50%;
+  transform:      translateY(-50%);
+  pointer-events: none;
+  flex-shrink:    0;
+}
+
+.mol-tool-call-card__divider {
+  /* atom-divider handles horizontal hairline */
+}
+
+.mol-tool-call-card--pending .mol-tool-call-card__icon {
+  color: var(--state-warning-fg);
+}
+
+.mol-tool-call-card:hover,
+.mol-tool-call-card.is-hover {
+  background: var(--surface-active);
+}
+
+.mol-tool-call-card:active,
+.mol-tool-call-card.is-active {
+  background: var(--surface-active);
+  transform:  scale(0.99);
+}
+
+.mol-tool-call-card:focus-visible,
+.mol-tool-call-card.is-focus {
+  outline:    none;
+  box-shadow: 0 0 0 2px var(--border-focus);
+}
+
+
+/* ================================================================================
+   user-message-bubble
+   Source: designs/molecules/user-message-bubble/user-message-bubble.html
+   ================================================================================ */
+
+.mol-user-message-bubble {
+  display:        flex;
+  flex-direction: column;
+  align-items:    flex-end;
+  gap:            var(--space-1);
+  max-width:      100%;
+}
+
+.mol-user-message-bubble__bubble {
+  display:                  block;
+  background:               var(--surface-soft);
+  color:                    var(--text-body);
+  padding:                  var(--space-3) var(--space-4);
+  border-radius:            var(--radius-xl);
+  border-top-right-radius:  var(--radius-default);
+  max-width:                85%;
+  word-wrap:                break-word;
+  text-align:               left;
+  border:                   none;
+  outline:                  none;
+  cursor:                   pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform  var(--motion-fast) var(--motion-ease-out),
+    box-shadow var(--motion-fast) var(--motion-ease-out);
+}
+
+.mol-user-message-bubble__bubble:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 2px var(--border-focus);
+}
+
+.mol-user-message-bubble__text {
+  margin:      0;
+  line-height: var(--line-height-normal);
+}
+
+.mol-user-message-bubble__meta {
+  display:            flex;
+  align-items:        center;
+  gap:                var(--space-2);
+  padding-inline-end: var(--space-2);
+}
+
+.mol-user-message-bubble__retry {
+  /* Composed from atom-button--link atom-button--sm */
+}
+
+.mol-user-message-bubble--accent .mol-user-message-bubble__bubble {
+  background: var(--accent-primary-subtle);
+}
+
+.mol-user-message-bubble--pending .mol-user-message-bubble__bubble {
+  opacity: 0.6;
+}
+
+.mol-user-message-bubble.is-long-press .mol-user-message-bubble__bubble {
+  transform:  scale(1.02);
+  box-shadow: var(--elevation-raised);
+}
+
+.mol-user-message-bubble.is-failed .mol-user-message-bubble__bubble {
+  border-left: var(--domain-tool-rule-width) solid var(--state-danger-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mol-user-message-bubble__bubble {
+    transition: none;
+  }
+  .mol-user-message-bubble.is-long-press .mol-user-message-bubble__bubble {
+    transform:  none;
+    box-shadow: var(--elevation-raised);
+  }
+}
+
+
+/* ================================================================================
+   workspace-section-header
+   Source: designs/molecules/workspace-section-header/workspace-section-header.html
+   ================================================================================ */
+
+.mol-workspace-section-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         var(--space-2) var(--space-4);
+  background:      var(--surface-page);
+  position:        sticky;
+  top:             0;
+  z-index:         1;
+  min-height:      var(--touch-target-min);
+}
+
+.mol-workspace-section-header__toggle {
+  display:              flex;
+  align-items:          center;
+  gap:                  var(--space-2);
+  flex:                 1;
+  min-width:            0;
+  min-height:           var(--touch-target-min);
+  background:           transparent;
+  border:               none;
+  cursor:               pointer;
+  padding:              0;
+  padding-inline-start: 0;
+  text-align:           left;
+  transition:           background-color var(--motion-fast) var(--motion-ease-out);
+}
+
+.mol-workspace-section-header__chevron {
+  flex-shrink: 0;
+  transition:  transform var(--motion-fast) var(--motion-ease-out);
+}
+
+.mol-workspace-section-header--collapsed .mol-workspace-section-header__chevron {
+  transform: rotate(-90deg);
+}
+
+.mol-workspace-section-header__label {
+  min-width:     0;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+.mol-workspace-section-header__count {
+  flex-shrink:         0;
+  margin-inline-start: var(--space-2);
+}
+
+.mol-workspace-section-header--empty .mol-workspace-section-header__count {
+  display: none;
+}
+
+.mol-workspace-section-header__toggle:hover,
+.mol-workspace-section-header__toggle.is-hover {
+  background: var(--surface-soft);
+}
+
+.mol-workspace-section-header__toggle:focus-visible,
+.mol-workspace-section-header__toggle.is-focus {
+  outline:       none;
+  box-shadow:    0 0 0 3px var(--border-focus);
+  border-radius: var(--radius-subtle);
+}
+
+.mol-workspace-section-header.is-pinned {
+  box-shadow: 0 1px 0 var(--border-subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mol-workspace-section-header__chevron,
+  .mol-workspace-section-header__toggle {
+    transition: none;
+  }
+}
