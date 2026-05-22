@@ -25,7 +25,7 @@ Single-purpose, indivisible primitives used by chat + adjacent surfaces. Each at
 | 19 | `tool-status-rule` | 3px left accent in 4 status colors (running/done/pending/error) | completed |
 | 20 | `fab-base` | 56pt circular floating action button | completed |
 | 21 | `hit-target-wrapper` | invisible 44pt min tap zone wrapper | completed |
-| 22 | `scroll-fade` | top/bottom gradient fade overlay | pending |
+| 22 | `scroll-fade` | top/bottom gradient fade overlay | completed |
 | 23 | `badge` | small count / status badge (`1 of N`, `New`) | completed |
 | 24 | `device-bezel` | iPhone 16 Pro Max bezel shell (used to frame views) | completed |
 | 25 | `home-indicator` | iOS home-indicator pill | completed |

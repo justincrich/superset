@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · scroll-fade</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-scroll-fade — token-governed gradient scroll affordance
+       Composition purity: only .atom-scroll-fade rules defined here.
+       Zero hex literals. Heights 24/40/64 are structural geometry constants.
+       pointer-events: none REQUIRED — fade never blocks taps.
+       ============================================================ */
+
+    /* ---- Base ------------------------------------------------ */
+    .atom-scroll-fade {
+      position:       absolute;
+      left:           0;
+      right:          0;
+      height:         40px; /* --md default */
+      pointer-events: none;
+      z-index:        5;
+      transition:     opacity var(--motion-fast) var(--motion-ease-out);
+    }
+
+    /* ---- Direction: top (default) ---------------------------- */
+    .atom-scroll-fade--top {
+      top:        0;
+      background: linear-gradient(to bottom, var(--surface-page) 0%, transparent 100%);
+    }
+
+    /* ---- Direction: bottom ----------------------------------- */
+    .atom-scroll-fade--bottom {
+      bottom:     0;
+      background: linear-gradient(to top, var(--surface-page) 0%, transparent 100%);
+    }
+
+    /* ---- Color modifier: on-soft ----------------------------- */
+    .atom-scroll-fade--on-soft.atom-scroll-fade--top {
+      background: linear-gradient(to bottom, var(--surface-soft) 0%, transparent 100%);
+    }
+    .atom-scroll-fade--on-soft.atom-scroll-fade--bottom {
+      background: linear-gradient(to top,   var(--surface-soft) 0%, transparent 100%);
+    }
+
+    /* ---- Color modifier: on-overlay -------------------------- */
+    .atom-scroll-fade--on-overlay.atom-scroll-fade--top {
+      background: linear-gradient(to bottom, var(--surface-overlay) 0%, transparent 100%);
+    }
+    .atom-scroll-fade--on-overlay.atom-scroll-fade--bottom {
+      background: linear-gradient(to top,    var(--surface-overlay) 0%, transparent 100%);
+    }
+
+    /* ---- Size: sm (24px) ------------------------------------- */
+    .atom-scroll-fade--sm { height: 24px; }
+
+    /* ---- Size: md (40px — explicit, matches default) --------- */
+    .atom-scroll-fade--md { height: 40px; }
+
+    /* ---- Size: lg (64px) ------------------------------------- */
+    .atom-scroll-fade--lg { height: 64px; }
+
+    /* ---- State: hidden --------------------------------------- */
+    .atom-scroll-fade.is-hidden { opacity: 0; }
+
+
+    /* ============================================================
+       Preview layout helpers — not part of the atom spec
+       ============================================================ */
+
+    .section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-4);
+    }
+
+    .demo-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-2);
+    }
+
+    .demo-row {
+      margin-bottom: var(--spacing-section);
+    }
+
+    /* ---- Scroll mock container -------------------------------- */
+    /* Parent must be position:relative; overflow:hidden clips the fade cleanly */
+    .scroll-mock {
+      position:    relative;
+      height:      200px;
+      overflow:    hidden;
+      border:      1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      background:  var(--surface-page);
+    }
+
+    .scroll-mock--on-soft {
+      background: var(--surface-soft);
+    }
+
+    .scroll-mock--on-overlay {
+      background: var(--surface-overlay);
+    }
+
+    /* Inner content that shows through the gradient */
+    .scroll-content {
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .scroll-row {
+      display:       flex;
+      align-items:   center;
+      justify-content: space-between;
+      padding:       var(--space-3) 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      color:         var(--text-body);
+      line-height:   var(--line-height-normal);
+    }
+    .scroll-row:last-child { border-bottom: none; }
+
+    .scroll-row-meta {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      white-space:    nowrap;
+      margin-left:    var(--space-4);
+    }
+
+    /* Assistant message bubble rows */
+    .msg-bubble {
+      max-width:     80%;
+      padding:       var(--space-3) var(--space-4);
+      border-radius: var(--radius-default);
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      line-height:   var(--line-height-normal);
+      margin-bottom: var(--space-3);
+    }
+    .msg-bubble--user {
+      background:  var(--surface-raised);
+      color:       var(--text-body);
+      align-self:  flex-end;
+      margin-left: auto;
+    }
+    .msg-bubble--assistant {
+      background: var(--surface-soft);
+      color:      var(--text-body);
+    }
+    .msg-col {
+      display:        flex;
+      flex-direction: column;
+      padding:        var(--space-4);
+    }
+
+    /* ---- Size comparison container (fixed mock heights) ------ */
+    .size-mock {
+      position:      relative;
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      background:    var(--surface-page);
+      overflow:      hidden;
+    }
+    .size-mock--sm { height: 60px; }
+    .size-mock--md { height: 80px; }
+    .size-mock--lg { height: 100px; }
+
+    .size-mock-content {
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-body);
+      font-size:   var(--font-size-body-sm);
+      color:       var(--text-muted);
+      line-height: var(--line-height-normal);
+    }
+
+    /* ---- State demo grid ------------------------------------- */
+    .state-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-between);
+    }
+    .state-item {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+    .state-item-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    /* ---- Composition: message-thread bracket ----------------- */
+    /* Outer wrapper is position:relative, thread content scrolls inside */
+    .thread-demo {
+      position:     relative;
+      height:       220px;
+      overflow:     hidden;
+      border:       1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      background:   var(--surface-page);
+    }
+    .thread-inner {
+      display:        flex;
+      flex-direction: column;
+      padding:        var(--space-4);
+      gap:            var(--space-2);
+    }
+
+    /* Composer mock (sits below scroll region, not inside it) */
+    .composer-mock {
+      height:        var(--touch-target-min);
+      background:    var(--surface-raised);
+      border-top:    1px solid var(--border-subtle);
+      display:       flex;
+      align-items:   center;
+      padding:       0 var(--space-4);
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      color:         var(--text-muted);
+      flex-shrink:   0;
+    }
+
+    .thread-composer-layout {
+      display:        flex;
+      flex-direction: column;
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      overflow:       hidden;
+      height:         280px;
+    }
+
+    /* ---- Composition: bottom sheet --------------------------- */
+    .sheet-demo {
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      overflow:      hidden;
+      background:    var(--surface-overlay);
+      height:        260px;
+      display:       flex;
+      flex-direction: column;
+    }
+    .sheet-header-mock {
+      height:         52px;
+      background:     var(--surface-overlay);
+      border-bottom:  1px solid var(--border-subtle);
+      display:        flex;
+      align-items:    center;
+      justify-content: center;
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      flex-shrink:    0;
+      position:       relative;
+    }
+    /* The sheet handle pip */
+    .sheet-handle {
+      position:      absolute;
+      top:           var(--space-2);
+      left:          50%;
+      transform:     translateX(-50%);
+      width:         var(--sheet-handle-width);
+      height:        var(--sheet-handle-height);
+      border-radius: var(--radius-pill);
+      background:    var(--border-default);
+    }
+    .sheet-scroll-body {
+      position:   relative;
+      flex:       1;
+      overflow:   hidden;
+      background: var(--surface-overlay);
+    }
+
+    /* ---- Composition: sessions list with FAB area ------------ */
+    .sessions-demo {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      overflow:       hidden;
+      background:     var(--surface-page);
+      height:         260px;
+      display:        flex;
+      flex-direction: column;
+    }
+    .sessions-list-body {
+      position: relative;
+      flex:     1;
+      overflow: hidden;
+    }
+    .fab-area-mock {
+      height:          64px;
+      background:      var(--surface-page);
+      border-top:      1px solid var(--border-subtle);
+      display:         flex;
+      align-items:     center;
+      justify-content: flex-end;
+      padding:         0 var(--space-4);
+      flex-shrink:     0;
+    }
+    .fab-pip {
+      width:         56px;
+      height:        56px;
+      border-radius: var(--radius-round);
+      background:    var(--accent-primary);
+      display:       flex;
+      align-items:   center;
+      justify-content: center;
+      font-size:     24px;
+      color:         var(--accent-primary-fg);
+      box-shadow:    var(--elevation-raised);
+      flex-shrink:   0;
+    }
+
+    /* recipe footer spacing */
+    .recipe-footer {
+      padding: var(--spacing-section) var(--spacing-between);
+    }
+    .recipe-footer h2 {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      text-transform: uppercase;
+      margin: 0 0 var(--space-4);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">scroll-fade</h1>
+    <p class="crumb">atom · gradient scroll affordance overlay — top &amp; bottom</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+
+      <!-- ---- 1. VARIANT × SURFACE MATRIX ----------------------- -->
+      <div class="variant">
+        <h3 class="section-title">variant × surface matrix (2 directions × 3 surfaces)</h3>
+
+        <!-- top / on-page -->
+        <div class="demo-row">
+          <p class="demo-label">top · on-page (default) — surface-page → transparent</p>
+          <div class="scroll-mock">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- bottom / on-page -->
+        <div class="demo-row">
+          <p class="demo-label">bottom · on-page — transparent → surface-page</p>
+          <div class="scroll-mock">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- top / on-soft -->
+        <div class="demo-row">
+          <p class="demo-label">top · on-soft — surface-soft → transparent</p>
+          <div class="scroll-mock scroll-mock--on-soft">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-soft atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- bottom / on-soft -->
+        <div class="demo-row">
+          <p class="demo-label">bottom · on-soft — transparent → surface-soft</p>
+          <div class="scroll-mock scroll-mock--on-soft">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-soft atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- top / on-overlay -->
+        <div class="demo-row">
+          <p class="demo-label">top · on-overlay — surface-overlay → transparent</p>
+          <div class="scroll-mock scroll-mock--on-overlay">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-overlay atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- bottom / on-overlay -->
+        <div class="demo-row">
+          <p class="demo-label">bottom · on-overlay — transparent → surface-overlay</p>
+          <div class="scroll-mock scroll-mock--on-overlay">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-overlay atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ---- 2. SIZE MATRIX ------------------------------------ -->
+      <div class="variant">
+        <h3 class="section-title">size matrix — top · on-page at sm / md / lg</h3>
+
+        <!-- sm -->
+        <div class="demo-row">
+          <p class="demo-label">sm — 24px</p>
+          <div class="size-mock size-mock--sm">
+            <div class="size-mock-content">Content scrolling behind a 24px fade</div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--sm"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- md (default) -->
+        <div class="demo-row">
+          <p class="demo-label">md (default) — 40px</p>
+          <div class="size-mock size-mock--md">
+            <div class="size-mock-content">Content scrolling behind a 40px fade</div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- lg -->
+        <div class="demo-row">
+          <p class="demo-label">lg — 64px</p>
+          <div class="size-mock size-mock--lg">
+            <div class="size-mock-content">Content scrolling behind a 64px fade</div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--lg"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ---- 3. STATE ------------------------------------------ -->
+      <div class="variant">
+        <h3 class="section-title">states — visible vs is-hidden</h3>
+
+        <div class="state-pair">
+          <!-- default (visible) -->
+          <div class="state-item">
+            <span class="state-item-label">default — visible (opacity 1)</span>
+            <div class="scroll-mock" style="height: 120px;">
+              <div class="scroll-content">
+                <div class="scroll-row">
+                  <span>Refactor relay tunnel reconnect</span>
+                  <span class="scroll-row-meta">10:41</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Reset onboarding state</span>
+                  <span class="scroll-row-meta">10:38</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Investigate slow snapshot writes</span>
+                  <span class="scroll-row-meta">10:32</span>
+                </div>
+              </div>
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--md"
+                   aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <!-- is-hidden -->
+          <div class="state-item">
+            <span class="state-item-label">is-hidden — opacity 0 (at scroll boundary)</span>
+            <div class="scroll-mock" style="height: 120px;">
+              <div class="scroll-content">
+                <div class="scroll-row">
+                  <span>Refactor relay tunnel reconnect</span>
+                  <span class="scroll-row-meta">10:41</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Reset onboarding state</span>
+                  <span class="scroll-row-meta">10:38</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Investigate slow snapshot writes</span>
+                  <span class="scroll-row-meta">10:32</span>
+                </div>
+              </div>
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--md is-hidden"
+                   aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ---- 4. COMPOSITION EXAMPLES --------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">composition — message thread (top + bottom bracketing)</h3>
+        <div class="demo-row">
+          <p class="demo-label">top fade (earlier history) + bottom fade (above composer)</p>
+          <!-- The outer layout stacks thread + composer; the scroll region is position:relative -->
+          <div class="thread-composer-layout">
+            <div class="thread-demo" style="border: none; border-radius: 0; flex: 1; height: auto;">
+              <div class="msg-col">
+                <div class="msg-bubble msg-bubble--assistant">
+                  Sure — I'll start by reading the current relay client to understand the reconnect logic.
+                </div>
+                <div class="msg-bubble msg-bubble--user">
+                  Can you refactor the tunnel reconnect to use exponential backoff?
+                </div>
+                <div class="msg-bubble msg-bubble--assistant">
+                  Reading relay-client.ts now. I see the current reconnect uses a fixed 2 s delay. I'll extract a backoff helper and thread it through the reconnect loop.
+                </div>
+                <div class="msg-bubble msg-bubble--user">
+                  Also cap the backoff at 30 seconds.
+                </div>
+                <div class="msg-bubble msg-bubble--assistant">
+                  Capping at 30 s. Writing the updated relay-client.ts.
+                </div>
+              </div>
+              <!-- Top fade: hints earlier messages scroll above -->
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--md"
+                   aria-hidden="true"></div>
+              <!-- Bottom fade: hints content continues below, above composer -->
+              <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page atom-scroll-fade--md"
+                   aria-hidden="true"></div>
+            </div>
+            <div class="composer-mock">Type a message…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <h3 class="section-title">composition — bottom sheet (top fade under sheet header)</h3>
+        <div class="demo-row">
+          <p class="demo-label">sheet content scrolls up under the fixed header; top fade on-overlay</p>
+          <div class="sheet-demo">
+            <div class="sheet-header-mock">
+              <div class="sheet-handle" aria-hidden="true"></div>
+              Sessions
+            </div>
+            <div class="sheet-scroll-body">
+              <div class="scroll-content">
+                <div class="scroll-row">
+                  <span>Refactor relay tunnel reconnect</span>
+                  <span class="scroll-row-meta">10:41</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Reset onboarding state for QA build</span>
+                  <span class="scroll-row-meta">10:38</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Investigate slow snapshot writes</span>
+                  <span class="scroll-row-meta">10:32</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Update session title on first message</span>
+                  <span class="scroll-row-meta">10:25</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Patch auth token refresh race</span>
+                  <span class="scroll-row-meta">10:18</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Port desktop sidebar to mobile</span>
+                  <span class="scroll-row-meta">09:55</span>
+                </div>
+              </div>
+              <!-- Top fade signals content scrolls under the header -->
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-overlay atom-scroll-fade--md"
+                   aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <h3 class="section-title">composition — sessions list (bottom fade above FAB area)</h3>
+        <div class="demo-row">
+          <p class="demo-label">bottom fade on-page signals more sessions below the FAB safe zone</p>
+          <div class="sessions-demo">
+            <div class="sessions-list-body">
+              <div class="scroll-content">
+                <div class="scroll-row">
+                  <span>Refactor relay tunnel reconnect</span>
+                  <span class="scroll-row-meta">10:41</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Reset onboarding state for QA build</span>
+                  <span class="scroll-row-meta">10:38</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Investigate slow snapshot writes</span>
+                  <span class="scroll-row-meta">10:32</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Update session title on first message</span>
+                  <span class="scroll-row-meta">10:25</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Patch auth token refresh race</span>
+                  <span class="scroll-row-meta">10:18</span>
+                </div>
+              </div>
+              <!-- Bottom fade: content continues under the FAB area -->
+              <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page atom-scroll-fade--lg"
+                   aria-hidden="true"></div>
+            </div>
+            <div class="fab-area-mock">
+              <div class="fab-pip" aria-label="New session">+</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+
+      <!-- ---- 1. VARIANT × SURFACE MATRIX ----------------------- -->
+      <div class="variant">
+        <h3 class="section-title">variant × surface matrix (2 directions × 3 surfaces)</h3>
+
+        <!-- top / on-page -->
+        <div class="demo-row">
+          <p class="demo-label">top · on-page (default) — surface-page → transparent</p>
+          <div class="scroll-mock">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- bottom / on-page -->
+        <div class="demo-row">
+          <p class="demo-label">bottom · on-page — transparent → surface-page</p>
+          <div class="scroll-mock">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- top / on-soft -->
+        <div class="demo-row">
+          <p class="demo-label">top · on-soft — surface-soft → transparent</p>
+          <div class="scroll-mock scroll-mock--on-soft">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-soft atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- bottom / on-soft -->
+        <div class="demo-row">
+          <p class="demo-label">bottom · on-soft — transparent → surface-soft</p>
+          <div class="scroll-mock scroll-mock--on-soft">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-soft atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- top / on-overlay -->
+        <div class="demo-row">
+          <p class="demo-label">top · on-overlay — surface-overlay → transparent</p>
+          <div class="scroll-mock scroll-mock--on-overlay">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-overlay atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- bottom / on-overlay -->
+        <div class="demo-row">
+          <p class="demo-label">bottom · on-overlay — transparent → surface-overlay</p>
+          <div class="scroll-mock scroll-mock--on-overlay">
+            <div class="scroll-content">
+              <div class="scroll-row">
+                <span>Refactor relay tunnel reconnect</span>
+                <span class="scroll-row-meta">10:41</span>
+              </div>
+              <div class="scroll-row">
+                <span>Reset onboarding state for QA build</span>
+                <span class="scroll-row-meta">10:38</span>
+              </div>
+              <div class="scroll-row">
+                <span>Investigate slow snapshot writes</span>
+                <span class="scroll-row-meta">10:32</span>
+              </div>
+              <div class="scroll-row">
+                <span>Update session title on first message</span>
+                <span class="scroll-row-meta">10:25</span>
+              </div>
+              <div class="scroll-row">
+                <span>Patch auth token refresh race</span>
+                <span class="scroll-row-meta">10:18</span>
+              </div>
+            </div>
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-overlay atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ---- 2. SIZE MATRIX ------------------------------------ -->
+      <div class="variant">
+        <h3 class="section-title">size matrix — top · on-page at sm / md / lg</h3>
+
+        <!-- sm -->
+        <div class="demo-row">
+          <p class="demo-label">sm — 24px</p>
+          <div class="size-mock size-mock--sm">
+            <div class="size-mock-content">Content scrolling behind a 24px fade</div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--sm"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- md (default) -->
+        <div class="demo-row">
+          <p class="demo-label">md (default) — 40px</p>
+          <div class="size-mock size-mock--md">
+            <div class="size-mock-content">Content scrolling behind a 40px fade</div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--md"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- lg -->
+        <div class="demo-row">
+          <p class="demo-label">lg — 64px</p>
+          <div class="size-mock size-mock--lg">
+            <div class="size-mock-content">Content scrolling behind a 64px fade</div>
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--lg"
+                 aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ---- 3. STATE ------------------------------------------ -->
+      <div class="variant">
+        <h3 class="section-title">states — visible vs is-hidden</h3>
+
+        <div class="state-pair">
+          <!-- default (visible) -->
+          <div class="state-item">
+            <span class="state-item-label">default — visible (opacity 1)</span>
+            <div class="scroll-mock" style="height: 120px;">
+              <div class="scroll-content">
+                <div class="scroll-row">
+                  <span>Refactor relay tunnel reconnect</span>
+                  <span class="scroll-row-meta">10:41</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Reset onboarding state</span>
+                  <span class="scroll-row-meta">10:38</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Investigate slow snapshot writes</span>
+                  <span class="scroll-row-meta">10:32</span>
+                </div>
+              </div>
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--md"
+                   aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <!-- is-hidden -->
+          <div class="state-item">
+            <span class="state-item-label">is-hidden — opacity 0 (at scroll boundary)</span>
+            <div class="scroll-mock" style="height: 120px;">
+              <div class="scroll-content">
+                <div class="scroll-row">
+                  <span>Refactor relay tunnel reconnect</span>
+                  <span class="scroll-row-meta">10:41</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Reset onboarding state</span>
+                  <span class="scroll-row-meta">10:38</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Investigate slow snapshot writes</span>
+                  <span class="scroll-row-meta">10:32</span>
+                </div>
+              </div>
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--md is-hidden"
+                   aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ---- 4. COMPOSITION EXAMPLES --------------------------- -->
+      <div class="variant">
+        <h3 class="section-title">composition — message thread (top + bottom bracketing)</h3>
+        <div class="demo-row">
+          <p class="demo-label">top fade (earlier history) + bottom fade (above composer)</p>
+          <div class="thread-composer-layout">
+            <div class="thread-demo" style="border: none; border-radius: 0; flex: 1; height: auto;">
+              <div class="msg-col">
+                <div class="msg-bubble msg-bubble--assistant">
+                  Sure — I'll start by reading the current relay client to understand the reconnect logic.
+                </div>
+                <div class="msg-bubble msg-bubble--user">
+                  Can you refactor the tunnel reconnect to use exponential backoff?
+                </div>
+                <div class="msg-bubble msg-bubble--assistant">
+                  Reading relay-client.ts now. I see the current reconnect uses a fixed 2 s delay. I'll extract a backoff helper and thread it through the reconnect loop.
+                </div>
+                <div class="msg-bubble msg-bubble--user">
+                  Also cap the backoff at 30 seconds.
+                </div>
+                <div class="msg-bubble msg-bubble--assistant">
+                  Capping at 30 s. Writing the updated relay-client.ts.
+                </div>
+              </div>
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page atom-scroll-fade--md"
+                   aria-hidden="true"></div>
+              <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page atom-scroll-fade--md"
+                   aria-hidden="true"></div>
+            </div>
+            <div class="composer-mock">Type a message…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <h3 class="section-title">composition — bottom sheet (top fade under sheet header)</h3>
+        <div class="demo-row">
+          <p class="demo-label">sheet content scrolls up under the fixed header; top fade on-overlay</p>
+          <div class="sheet-demo">
+            <div class="sheet-header-mock">
+              <div class="sheet-handle" aria-hidden="true"></div>
+              Sessions
+            </div>
+            <div class="sheet-scroll-body">
+              <div class="scroll-content">
+                <div class="scroll-row">
+                  <span>Refactor relay tunnel reconnect</span>
+                  <span class="scroll-row-meta">10:41</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Reset onboarding state for QA build</span>
+                  <span class="scroll-row-meta">10:38</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Investigate slow snapshot writes</span>
+                  <span class="scroll-row-meta">10:32</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Update session title on first message</span>
+                  <span class="scroll-row-meta">10:25</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Patch auth token refresh race</span>
+                  <span class="scroll-row-meta">10:18</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Port desktop sidebar to mobile</span>
+                  <span class="scroll-row-meta">09:55</span>
+                </div>
+              </div>
+              <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-overlay atom-scroll-fade--md"
+                   aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <h3 class="section-title">composition — sessions list (bottom fade above FAB area)</h3>
+        <div class="demo-row">
+          <p class="demo-label">bottom fade on-page signals more sessions below the FAB safe zone</p>
+          <div class="sessions-demo">
+            <div class="sessions-list-body">
+              <div class="scroll-content">
+                <div class="scroll-row">
+                  <span>Refactor relay tunnel reconnect</span>
+                  <span class="scroll-row-meta">10:41</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Reset onboarding state for QA build</span>
+                  <span class="scroll-row-meta">10:38</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Investigate slow snapshot writes</span>
+                  <span class="scroll-row-meta">10:32</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Update session title on first message</span>
+                  <span class="scroll-row-meta">10:25</span>
+                </div>
+                <div class="scroll-row">
+                  <span>Patch auth token refresh race</span>
+                  <span class="scroll-row-meta">10:18</span>
+                </div>
+              </div>
+              <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page atom-scroll-fade--lg"
+                   aria-hidden="true"></div>
+            </div>
+            <div class="fab-area-mock">
+              <div class="fab-pip" aria-label="New session">+</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe footer
+       ============================================================ -->
+  <div class="recipe-footer">
+    <h2>Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token / constant</th>
+          <th>Dark resolves to</th>
+          <th>Light resolves to</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>gradient stop — on-page</td>
+          <td>--surface-page</td>
+          <td>--_neutral-0 (#151110)</td>
+          <td>oklch(1 0 0)</td>
+        </tr>
+        <tr>
+          <td>gradient stop — on-soft</td>
+          <td>--surface-soft</td>
+          <td>--_neutral-4 (#2a2827)</td>
+          <td>oklch(0.97 0 0)</td>
+        </tr>
+        <tr>
+          <td>gradient stop — on-overlay</td>
+          <td>--surface-overlay</td>
+          <td>--_neutral-2 (#201e1c)</td>
+          <td>oklch(1 0 0)</td>
+        </tr>
+        <tr>
+          <td>opacity transition duration</td>
+          <td>--motion-fast</td>
+          <td colspan="2">120ms</td>
+        </tr>
+        <tr>
+          <td>opacity transition easing</td>
+          <td>--motion-ease-out</td>
+          <td colspan="2">cubic-bezier(0.16, 1, 0.3, 1)</td>
+        </tr>
+        <tr>
+          <td>height — sm (structural)</td>
+          <td>24px</td>
+          <td colspan="2">geometry constant</td>
+        </tr>
+        <tr>
+          <td>height — md (structural)</td>
+          <td>40px</td>
+          <td colspan="2">geometry constant (default)</td>
+        </tr>
+        <tr>
+          <td>height — lg (structural)</td>
+          <td>64px</td>
+          <td colspan="2">geometry constant</td>
+        </tr>
+        <tr>
+          <td>z-index (structural)</td>
+          <td>5</td>
+          <td colspan="2">above scroll content, below interactive chrome</td>
+        </tr>
+        <tr>
+          <td>pointer-events</td>
+          <td>none (required)</td>
+          <td colspan="2">never intercepts touch/mouse events</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
