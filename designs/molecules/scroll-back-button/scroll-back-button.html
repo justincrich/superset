@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol-scroll-back-button — Molecule Preview</title>
+
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../_atoms.css">
+
+  <style>
+    /* ================================================================
+       mol-scroll-back-button — molecule-local layout + glue only.
+       NEVER redefines .atom-* styles — composes by class only.
+       Zero hex literals. Zero raw font-size/weight/line-height.
+       Structural exceptions:
+         - 2px top/right offsets on __indicator (sub-token badge corner
+           geometry — TOKEN_GAP, documented in README)
+         - z-index: 10 (stacking integer — permitted structural value)
+       ================================================================ */
+
+    /* --- Base placement -------------------------------------------- */
+    .mol-scroll-back-button {
+      position:   absolute;
+      right:      var(--space-4);
+      bottom:     calc(var(--composer-min-height) + var(--space-4));
+      opacity:    1;
+      transition: opacity var(--motion-fast) var(--motion-ease-out);
+      z-index:    10; /* structural: above chat thread, below modal overlays */
+    }
+
+    /* --- Hidden state (at-bottom) ---------------------------------- */
+    .mol-scroll-back-button.is-hidden {
+      opacity:        0;
+      pointer-events: none;
+    }
+
+    /* --- Enter / exit animation states ----------------------------- */
+    /* is-entering: opacity transition fires automatically from is-hidden → default
+       (transition is on the base element). No separate keyframe needed.
+       is-exiting mirrors the same transition back toward 0.
+       Both are driven by the inherited transition on .mol-scroll-back-button. */
+
+    /* --- Icon slot -------------------------------------------------- */
+    .mol-scroll-back-button__icon {
+      /* icon inherits color from atom-fab-base--overlay (var(--text-body)) */
+      /* no additional overrides needed */
+    }
+
+    /* --- New-message indicator (absolute corner badge) ------------- */
+    .mol-scroll-back-button__indicator {
+      position:       absolute;
+      top:            2px;  /* structural geometry — sub-token badge-corner offset; TOKEN_GAP */
+      right:          2px;  /* structural geometry — sub-token badge-corner offset; TOKEN_GAP */
+      pointer-events: none;
+    }
+
+    /* --- Hide indicator in idle variant ---------------------------- */
+    .mol-scroll-back-button--idle .mol-scroll-back-button__indicator {
+      display: none;
+    }
+
+    /* --- Reduced motion: suppress visibility transition ------------ */
+    @media (prefers-reduced-motion: reduce) {
+      .mol-scroll-back-button {
+        transition: none;
+      }
+    }
+
+
+    /* ================================================================
+       PREVIEW LAYOUT HELPERS (preview chrome only — not shipped CSS)
+       ================================================================ */
+
+    .section-block {
+      margin-bottom: var(--spacing-section);
+    }
+    .section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-heading);
+      letter-spacing: var(--tracking-tight);
+      color:          var(--text-heading);
+      margin:         0 0 var(--spacing-between);
+      text-transform: uppercase;
+    }
+    .sub-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-3);
+    }
+    .preview-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--spacing-section) 0;
+    }
+
+    /* Variant matrix row */
+    .variant-row {
+      display:     flex;
+      align-items: flex-end;
+      gap:         var(--space-8);
+      flex-wrap:   wrap;
+      margin-bottom: var(--spacing-between);
+    }
+    .variant-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-3);
+    }
+    .variant-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+      white-space:    nowrap;
+    }
+
+    /* State row — inline, non-absolute positioning for preview */
+    .state-row {
+      display:     flex;
+      align-items: flex-end;
+      gap:         var(--space-6);
+      flex-wrap:   wrap;
+      margin-bottom: var(--spacing-between);
+    }
+    .state-cell {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-3);
+    }
+    .state-cell-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      text-align:     center;
+      white-space:    nowrap;
+    }
+
+    /* Static button — removes absolute positioning for the matrix / state rows */
+    .mol-scroll-back-button--static {
+      position: relative;
+      right:    unset;
+      bottom:   unset;
+    }
+
+    /* Composition: device-bezel wrappers */
+    .composition-wrap {
+      display:   flex;
+      flex-wrap: wrap;
+      gap:       var(--space-8);
+    }
+    .composition-note {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-align:     center;
+      margin:         var(--space-3) 0 0;
+    }
+
+    /* Mock chat thread content inside viewport */
+    .mock-chat-thread {
+      flex:           1;
+      overflow:       hidden;
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+      padding:        var(--space-4);
+      position:       relative;
+    }
+
+    .mock-message-row {
+      display:     flex;
+      align-items: flex-start;
+      gap:         var(--space-2);
+    }
+    .mock-message-row--user {
+      justify-content: flex-end;
+    }
+
+    .mock-bubble {
+      border-radius: var(--radius-lg);
+      padding:       var(--space-2) var(--space-3);
+      max-width:     72%;
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      line-height:   var(--line-height-body);
+      color:         var(--text-body);
+    }
+    .mock-bubble--user {
+      background: var(--accent-primary);
+      color:      var(--accent-primary-fg);
+      border-bottom-right-radius: var(--radius-subtle);
+    }
+    .mock-bubble--assistant {
+      background:                var(--surface-raised);
+      border:                    1px solid var(--border-subtle);
+      border-bottom-left-radius: var(--radius-subtle);
+    }
+
+    .mock-scroll-indicator {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-faint);
+      text-align:     center;
+      text-transform: uppercase;
+      padding:        var(--space-2) 0;
+    }
+
+    /* Mock composer bar at the bottom of viewport content */
+    .mock-composer {
+      height:          var(--composer-min-height);
+      background:      var(--surface-soft);
+      border-top:      1px solid var(--border-subtle);
+      display:         flex;
+      align-items:     center;
+      padding-inline:  var(--space-3);
+      gap:             var(--space-2);
+      flex-shrink:     0;
+      position:        relative;
+    }
+    .mock-composer__input {
+      flex:          1;
+      background:    var(--surface-sunken);
+      border:        1px solid var(--border-default);
+      border-radius: var(--radius-pill);
+      height:        36px;
+      font-family:   var(--font-body);
+      font-size:     var(--font-size-body-sm);
+      color:         var(--text-faint);
+      padding-inline: var(--space-3);
+      display:       flex;
+      align-items:   center;
+    }
+
+    /* Tab bar mock */
+    .mock-tab-bar {
+      height:          var(--tab-bar-height);
+      background:      var(--surface-sunken);
+      border-top:      1px solid var(--border-subtle);
+      display:         flex;
+      align-items:     center;
+      justify-content: space-around;
+      padding-inline:  var(--space-4);
+      flex-shrink:     0;
+    }
+    .mock-tab {
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-1);
+      opacity:        0.4;
+    }
+    .mock-tab--active { opacity: 1; }
+    .mock-tab__label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+    }
+    .mock-tab--active .mock-tab__label {
+      color: var(--accent-primary);
+    }
+
+    /* Chat viewport content wrapper — provides relative positioning context */
+    .mock-viewport-content {
+      flex:     1;
+      overflow: hidden;
+      position: relative;
+      display:  flex;
+      flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">scroll-back-button</h1>
+    <p class="crumb">molecule · fab-base (overlay) + icon-glyph + badge (optional) · chat thread scroll affordance</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ==================================================
+           1. VARIANT MATRIX
+           idle vs new-messages
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">1 · variant matrix</p>
+        <p class="sub-label">idle · new-messages</p>
+        <div class="variant-row">
+
+          <!-- idle: bare chevron -->
+          <div class="variant-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--idle mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="Scroll to latest message"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <!-- lucide: chevron-down -->
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <span class="variant-cell-label">idle<br>no badge</span>
+          </div>
+
+          <!-- new-messages: accent dot indicator -->
+          <div class="variant-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--new-messages mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="3 new messages, scroll to latest"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span
+                class="atom-badge atom-badge--accent atom-badge--dot mol-scroll-back-button__indicator"
+                aria-hidden="true"
+              ></span>
+            </button>
+            <span class="variant-cell-label">new-messages<br>accent dot</span>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           2. STATE ROW
+           default / is-hidden / is-hover / is-focus
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">2 · state row</p>
+        <p class="sub-label">idle variant — all interactive states</p>
+        <div class="state-row">
+
+          <!-- default -->
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--idle mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="Scroll to latest message"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">default</span>
+          </div>
+
+          <!-- is-hidden (opacity:0, pointer-events:none) -->
+          <div class="state-cell">
+            <div style="position: relative; width: 56px; height: 56px;">
+              <!-- Ghost outline so the hidden state is visible in the preview -->
+              <div style="
+                width:         56px;
+                height:        56px;
+                border-radius: var(--radius-round);
+                border:        1px dashed var(--border-subtle);
+              "></div>
+              <button
+                class="mol-scroll-back-button mol-scroll-back-button--idle mol-scroll-back-button--static
+                       mol-scroll-back-button is-hidden
+                       atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+                aria-label="Scroll to latest message"
+                aria-hidden="true"
+                inert
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <span class="state-cell-label">is-hidden<br>(at bottom)</span>
+          </div>
+
+          <!-- is-hover -->
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--idle mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md is-hover"
+              aria-label="Scroll to latest message"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-hover</span>
+          </div>
+
+          <!-- is-focus -->
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--idle mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md is-focus"
+              aria-label="Scroll to latest message"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-focus</span>
+          </div>
+
+        </div>
+
+        <!-- new-messages variant state row -->
+        <p class="sub-label" style="margin-top: var(--space-6);">new-messages variant — interactive states</p>
+        <div class="state-row">
+
+          <!-- default -->
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--new-messages mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="3 new messages, scroll to latest"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span
+                class="atom-badge atom-badge--accent atom-badge--dot mol-scroll-back-button__indicator"
+                aria-hidden="true"
+              ></span>
+            </button>
+            <span class="state-cell-label">default</span>
+          </div>
+
+          <!-- is-hover -->
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--new-messages mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md is-hover"
+              aria-label="3 new messages, scroll to latest"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span
+                class="atom-badge atom-badge--accent atom-badge--dot mol-scroll-back-button__indicator"
+                aria-hidden="true"
+              ></span>
+            </button>
+            <span class="state-cell-label">is-hover</span>
+          </div>
+
+          <!-- is-focus -->
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--new-messages mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md is-focus"
+              aria-label="3 new messages, scroll to latest"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span
+                class="atom-badge atom-badge--accent atom-badge--dot mol-scroll-back-button__indicator"
+                aria-hidden="true"
+              ></span>
+            </button>
+            <span class="state-cell-label">is-focus</span>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           3. COMPOSITION — iPhone frame · idle variant
+           Chat thread scrolled UP — button visible above composer
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">3 · composition — idle variant in device frame</p>
+        <p class="sub-label">chat thread scrolled up — scroll-back-button visible above composer</p>
+
+        <div class="composition-wrap">
+          <div>
+            <div class="atom-device-bezel">
+              <!-- Dynamic Island -->
+              <div class="atom-device-bezel__dynamic-island"></div>
+
+              <!-- Viewport -->
+              <div class="atom-device-bezel__viewport">
+
+                <!-- Status bar -->
+                <div class="atom-device-bezel__status-bar">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <!-- Signal bars -->
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0" y="8" width="3" height="4" rx="0.5"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5"/>
+                      <rect x="9" y="2" width="3" height="10" rx="0.5"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5"/>
+                    </svg>
+                    <!-- Wi-Fi -->
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
+                      <path d="M8 10.8a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 3.6a11 11 0 0 0-15.6 0l1.4 1.4Z"/>
+                    </svg>
+                    <!-- Battery -->
+                    <div class="atom-device-bezel__battery">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Viewport content (chat thread + composer) -->
+                <div class="mock-viewport-content">
+
+                  <!-- Chat thread — user scrolled up, older messages visible -->
+                  <div class="mock-chat-thread">
+                    <div class="mock-scroll-indicator">— earlier in conversation —</div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">Sure, here's the refactored version with the new auth layer.</div>
+                    </div>
+
+                    <div class="mock-message-row mock-message-row--user">
+                      <div class="mock-bubble mock-bubble--user">Can you add error handling to the retry logic?</div>
+                    </div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">Absolutely — wrapping the fetch in a try/catch with exponential backoff.</div>
+                    </div>
+
+                    <div class="mock-message-row mock-message-row--user">
+                      <div class="mock-bubble mock-bubble--user">Perfect. What about rate limiting?</div>
+                    </div>
+
+                    <!-- scroll-back-button: idle, positioned above composer -->
+                    <button
+                      class="mol-scroll-back-button mol-scroll-back-button--idle
+                             atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+                      aria-label="Scroll to latest message"
+                      type="button"
+                    >
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+
+                  </div><!-- /mock-chat-thread -->
+
+                  <!-- Composer bar -->
+                  <div class="mock-composer">
+                    <div class="mock-composer__input">Message</div>
+                  </div>
+
+                </div><!-- /mock-viewport-content -->
+
+                <!-- Tab bar -->
+                <div class="mock-tab-bar">
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 11 12 14 22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span class="mock-tab__label">Tasks</span>
+                  </div>
+                  <div class="mock-tab mock-tab--active">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary)">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="mock-tab__label">Chat</span>
+                  </div>
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <span class="mock-tab__label">More</span>
+                  </div>
+                </div>
+
+              </div><!-- /viewport -->
+
+              <!-- Home indicator -->
+              <div class="atom-device-bezel__home-indicator"></div>
+
+            </div><!-- /device-bezel -->
+            <p class="composition-note">idle · dark · thread scrolled up · button visible</p>
+          </div>
+        </div><!-- /composition-wrap -->
+      </div><!-- /idle composition -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           4. COMPOSITION — iPhone frame · new-messages variant
+           New messages arrived while scrolled up — accent dot visible
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">4 · composition — new-messages variant in device frame</p>
+        <p class="sub-label">new messages arrived while scrolled up — accent dot badge visible</p>
+
+        <div class="composition-wrap">
+          <div>
+            <div class="atom-device-bezel">
+              <!-- Dynamic Island -->
+              <div class="atom-device-bezel__dynamic-island"></div>
+
+              <!-- Viewport -->
+              <div class="atom-device-bezel__viewport">
+
+                <!-- Status bar -->
+                <div class="atom-device-bezel__status-bar">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0" y="8" width="3" height="4" rx="0.5"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5"/>
+                      <rect x="9" y="2" width="3" height="10" rx="0.5"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
+                      <path d="M8 10.8a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 3.6a11 11 0 0 0-15.6 0l1.4 1.4Z"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Viewport content -->
+                <div class="mock-viewport-content">
+
+                  <div class="mock-chat-thread">
+                    <div class="mock-scroll-indicator">— scrolled up, 3 new messages below —</div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">Here's the auth middleware with rate limiting baked in.</div>
+                    </div>
+
+                    <div class="mock-message-row mock-message-row--user">
+                      <div class="mock-bubble mock-bubble--user">Can you add a test for the token refresh path?</div>
+                    </div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">Writing that now — using Vitest with a mock fetch adapter.</div>
+                    </div>
+
+                    <!-- scroll-back-button: new-messages variant -->
+                    <button
+                      class="mol-scroll-back-button mol-scroll-back-button--new-messages
+                             atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+                      aria-label="3 new messages, scroll to latest"
+                      type="button"
+                    >
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                      <span
+                        class="atom-badge atom-badge--accent atom-badge--dot mol-scroll-back-button__indicator"
+                        aria-hidden="true"
+                      ></span>
+                    </button>
+
+                  </div><!-- /mock-chat-thread -->
+
+                  <!-- Composer bar -->
+                  <div class="mock-composer">
+                    <div class="mock-composer__input">Message</div>
+                  </div>
+
+                </div><!-- /mock-viewport-content -->
+
+                <!-- Tab bar -->
+                <div class="mock-tab-bar">
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 11 12 14 22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span class="mock-tab__label">Tasks</span>
+                  </div>
+                  <div class="mock-tab mock-tab--active">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary)">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="mock-tab__label">Chat</span>
+                  </div>
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <span class="mock-tab__label">More</span>
+                  </div>
+                </div>
+
+              </div><!-- /viewport -->
+
+              <div class="atom-device-bezel__home-indicator"></div>
+
+            </div><!-- /device-bezel -->
+            <p class="composition-note">new-messages · dark · accent dot at top-right · 3 new messages</p>
+          </div>
+        </div><!-- /composition-wrap -->
+      </div><!-- /new-messages composition -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ==================================================
+           1. VARIANT MATRIX
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">1 · variant matrix</p>
+        <p class="sub-label">idle · new-messages</p>
+        <div class="variant-row">
+
+          <div class="variant-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--idle mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="Scroll to latest message"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <span class="variant-cell-label">idle<br>no badge</span>
+          </div>
+
+          <div class="variant-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--new-messages mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="3 new messages, scroll to latest"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span
+                class="atom-badge atom-badge--accent atom-badge--dot mol-scroll-back-button__indicator"
+                aria-hidden="true"
+              ></span>
+            </button>
+            <span class="variant-cell-label">new-messages<br>accent dot</span>
+          </div>
+
+        </div>
+      </div><!-- /variant matrix -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           2. STATE ROW
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">2 · state row</p>
+        <p class="sub-label">idle variant — all interactive states</p>
+        <div class="state-row">
+
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--idle mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="Scroll to latest message"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">default</span>
+          </div>
+
+          <div class="state-cell">
+            <div style="position: relative; width: 56px; height: 56px;">
+              <div style="
+                width:         56px;
+                height:        56px;
+                border-radius: var(--radius-round);
+                border:        1px dashed var(--border-default);
+              "></div>
+              <button
+                class="mol-scroll-back-button mol-scroll-back-button--idle mol-scroll-back-button--static
+                       is-hidden
+                       atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+                aria-label="Scroll to latest message"
+                aria-hidden="true"
+                inert
+                type="button"
+              >
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <span class="state-cell-label">is-hidden<br>(at bottom)</span>
+          </div>
+
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--idle mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md is-hover"
+              aria-label="Scroll to latest message"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-hover</span>
+          </div>
+
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--idle mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md is-focus"
+              aria-label="Scroll to latest message"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <span class="state-cell-label">is-focus</span>
+          </div>
+
+        </div>
+
+        <p class="sub-label" style="margin-top: var(--space-6);">new-messages variant — interactive states</p>
+        <div class="state-row">
+
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--new-messages mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+              aria-label="3 new messages, scroll to latest"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span
+                class="atom-badge atom-badge--accent atom-badge--dot mol-scroll-back-button__indicator"
+                aria-hidden="true"
+              ></span>
+            </button>
+            <span class="state-cell-label">default</span>
+          </div>
+
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--new-messages mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md is-hover"
+              aria-label="3 new messages, scroll to latest"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span
+                class="atom-badge atom-badge--accent atom-badge--dot mol-scroll-back-button__indicator"
+                aria-hidden="true"
+              ></span>
+            </button>
+            <span class="state-cell-label">is-hover</span>
+          </div>
+
+          <div class="state-cell">
+            <button
+              class="mol-scroll-back-button mol-scroll-back-button--new-messages mol-scroll-back-button--static
+                     atom-fab-base atom-fab-base--overlay atom-fab-base--md is-focus"
+              aria-label="3 new messages, scroll to latest"
+              type="button"
+            >
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span
+                class="atom-badge atom-badge--accent atom-badge--dot mol-scroll-back-button__indicator"
+                aria-hidden="true"
+              ></span>
+            </button>
+            <span class="state-cell-label">is-focus</span>
+          </div>
+
+        </div>
+      </div><!-- /state row -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           3. COMPOSITION — iPhone frame · idle variant · light
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">3 · composition — idle variant in device frame</p>
+        <p class="sub-label">chat thread scrolled up — scroll-back-button visible above composer</p>
+
+        <div class="composition-wrap">
+          <div>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+
+              <div class="atom-device-bezel__viewport">
+
+                <div class="atom-device-bezel__status-bar">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0" y="8" width="3" height="4" rx="0.5"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5"/>
+                      <rect x="9" y="2" width="3" height="10" rx="0.5"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
+                      <path d="M8 10.8a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 3.6a11 11 0 0 0-15.6 0l1.4 1.4Z"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mock-viewport-content">
+
+                  <div class="mock-chat-thread">
+                    <div class="mock-scroll-indicator">— earlier in conversation —</div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">I've updated the schema with the new indexes.</div>
+                    </div>
+
+                    <div class="mock-message-row mock-message-row--user">
+                      <div class="mock-bubble mock-bubble--user">Great — can you run the migration plan?</div>
+                    </div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">Running drizzle-kit generate now.</div>
+                    </div>
+
+                    <button
+                      class="mol-scroll-back-button mol-scroll-back-button--idle
+                             atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+                      aria-label="Scroll to latest message"
+                      type="button"
+                    >
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+
+                  </div>
+
+                  <div class="mock-composer">
+                    <div class="mock-composer__input">Message</div>
+                  </div>
+
+                </div>
+
+                <div class="mock-tab-bar">
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 11 12 14 22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span class="mock-tab__label">Tasks</span>
+                  </div>
+                  <div class="mock-tab mock-tab--active">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary)">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="mock-tab__label">Chat</span>
+                  </div>
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <span class="mock-tab__label">More</span>
+                  </div>
+                </div>
+
+              </div><!-- /viewport -->
+
+              <div class="atom-device-bezel__home-indicator"></div>
+
+            </div><!-- /device-bezel -->
+            <p class="composition-note">idle · light · thread scrolled up · button visible</p>
+          </div>
+        </div><!-- /composition-wrap -->
+      </div><!-- /idle composition -->
+
+      <hr class="preview-divider">
+
+      <!-- ==================================================
+           4. COMPOSITION — iPhone frame · new-messages · light
+           ================================================== -->
+      <div class="section-block">
+        <p class="section-title">4 · composition — new-messages variant in device frame</p>
+        <p class="sub-label">new messages arrived while scrolled up — accent dot badge visible</p>
+
+        <div class="composition-wrap">
+          <div>
+            <div class="atom-device-bezel">
+              <div class="atom-device-bezel__dynamic-island"></div>
+
+              <div class="atom-device-bezel__viewport">
+
+                <div class="atom-device-bezel__status-bar">
+                  <span class="atom-device-bezel__time">9:41</span>
+                  <div class="atom-device-bezel__indicators">
+                    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0" y="8" width="3" height="4" rx="0.5"/>
+                      <rect x="4.5" y="5" width="3" height="7" rx="0.5"/>
+                      <rect x="9" y="2" width="3" height="10" rx="0.5"/>
+                      <rect x="13.5" y="0" width="3" height="12" rx="0.5"/>
+                    </svg>
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
+                      <path d="M8 10.8a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 3.6a11 11 0 0 0-15.6 0l1.4 1.4Z"/>
+                    </svg>
+                    <div class="atom-device-bezel__battery">
+                      <div class="atom-device-bezel__battery-body">
+                        <div class="atom-device-bezel__battery-fill"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mock-viewport-content">
+
+                  <div class="mock-chat-thread">
+                    <div class="mock-scroll-indicator">— scrolled up, 3 new messages below —</div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">The migration ran cleanly — 3 tables altered, 0 errors.</div>
+                    </div>
+
+                    <div class="mock-message-row mock-message-row--user">
+                      <div class="mock-bubble mock-bubble--user">Perfect. Push to staging?</div>
+                    </div>
+
+                    <div class="mock-message-row">
+                      <div class="mock-bubble mock-bubble--assistant">Pushing now via CI — should be green in ~2 min.</div>
+                    </div>
+
+                    <button
+                      class="mol-scroll-back-button mol-scroll-back-button--new-messages
+                             atom-fab-base atom-fab-base--overlay atom-fab-base--md"
+                      aria-label="3 new messages, scroll to latest"
+                      type="button"
+                    >
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--md mol-scroll-back-button__icon"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                      <span
+                        class="atom-badge atom-badge--accent atom-badge--dot mol-scroll-back-button__indicator"
+                        aria-hidden="true"
+                      ></span>
+                    </button>
+
+                  </div>
+
+                  <div class="mock-composer">
+                    <div class="mock-composer__input">Message</div>
+                  </div>
+
+                </div>
+
+                <div class="mock-tab-bar">
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="9 11 12 14 22 4"/>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span class="mock-tab__label">Tasks</span>
+                  </div>
+                  <div class="mock-tab mock-tab--active">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-primary)">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="mock-tab__label">Chat</span>
+                  </div>
+                  <div class="mock-tab">
+                    <svg class="atom-icon-glyph atom-icon-glyph--md" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="5" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1" fill="currentColor"/>
+                    </svg>
+                    <span class="mock-tab__label">More</span>
+                  </div>
+                </div>
+
+              </div><!-- /viewport -->
+
+              <div class="atom-device-bezel__home-indicator"></div>
+
+            </div><!-- /device-bezel -->
+            <p class="composition-note">new-messages · light · accent dot at top-right · 3 new messages</p>
+          </div>
+        </div><!-- /composition-wrap -->
+      </div><!-- /new-messages composition -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
