@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>push-pre-prompt-screen — UC-PLATF-01 §A</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-local layout glue — ONLY .view-push-pre-prompt-screen__* rules.
+       Never redefines .atom-* or .mol-* classes.
+       ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding: var(--space-8) var(--space-4);
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    /* Full-width pane — device centered inside */
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- View viewport layout --------------------------------- */
+    /* The viewport inside atom-device-bezel is a flex column.
+       These classes wire up the flex slots without touching any
+       atom or molecule rule. */
+
+    /* Body region — fills space between header and home indicator,
+       centering the pre-prompt content vertically and horizontally. */
+    .view-push-pre-prompt-screen__body {
+      flex:            1;
+      overflow:        hidden;
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      padding:         var(--space-6) var(--space-4);
+    }
+
+    /* Override mol-empty-state body max-width for the narrower
+       32ch readability target specified in the brief. */
+    .view-push-pre-prompt-screen__body .mol-empty-state__body {
+      max-width: 32ch;
+    }
+
+    /* Primary CTA: full-width up to 280px cap */
+    .view-push-pre-prompt-screen__body .mol-empty-state__cta {
+      flex-direction: column;
+      align-items:    center;
+      width:          100%;
+    }
+
+    .view-push-pre-prompt-screen__body .mol-empty-state__cta .atom-button--primary {
+      width:     100%;
+      max-width: 280px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">push-pre-prompt-screen</h1>
+    <p class="crumb">UC-PLATF-01 §A · in-app pre-prompt before OS notification permission dialog</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars (inline SVG — structural geometry) -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- App Header — back button only, no title -->
+          <header class="mol-app-header" role="banner">
+            <div class="mol-app-header__back">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Back"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Empty title slot — preserves mol-app-header layout balance -->
+            <div class="mol-app-header__title-wrap" aria-hidden="true"></div>
+
+            <!-- Empty actions slot — keeps header flex layout symmetric -->
+            <div class="mol-app-header__actions">
+              <!-- Spacer matching back button width so title slot stays centered -->
+              <span style="width: var(--touch-target-min); flex-shrink: 0;" aria-hidden="true"></span>
+            </div>
+          </header><!-- /mol-app-header -->
+
+          <!-- Pre-prompt body — centered content -->
+          <main
+            class="view-push-pre-prompt-screen__body"
+            role="main"
+            aria-label="Enable notifications"
+          >
+            <!-- mol-empty-state: hero · headline · body · primary CTA · "Not now" -->
+            <div class="mol-empty-state">
+
+              <!-- Bell hero icon — xl size, accent color -->
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--accent"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+              </div>
+
+              <!-- Headline -->
+              <h1 class="mol-empty-state__heading type-h1">Stay in the loop</h1>
+
+              <!-- Body paragraph -->
+              <p class="mol-empty-state__body type-body">
+                Get notified when Claude finishes a task or needs your input — even when the app is in the background.
+              </p>
+
+              <!-- CTAs: primary + "Not now" text button -->
+              <div class="mol-empty-state__cta">
+                <button
+                  class="atom-button atom-button--primary atom-button--md"
+                  type="button"
+                  aria-label="Enable notifications"
+                >
+                  Enable notifications
+                </button>
+                <button
+                  class="atom-button atom-button--link atom-button--md"
+                  type="button"
+                  aria-label="Not now — defer notification permission"
+                >
+                  Not now
+                </button>
+              </div>
+
+            </div><!-- /mol-empty-state -->
+          </main><!-- /pre-prompt body -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:41</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- App Header — back button only, no title -->
+          <header class="mol-app-header" role="banner">
+            <div class="mol-app-header__back">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Back"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mol-app-header__title-wrap" aria-hidden="true"></div>
+
+            <div class="mol-app-header__actions">
+              <span style="width: var(--touch-target-min); flex-shrink: 0;" aria-hidden="true"></span>
+            </div>
+          </header><!-- /mol-app-header -->
+
+          <!-- Pre-prompt body — centered content -->
+          <main
+            class="view-push-pre-prompt-screen__body"
+            role="main"
+            aria-label="Enable notifications"
+          >
+            <div class="mol-empty-state">
+
+              <div class="mol-empty-state__hero" aria-hidden="true">
+                <svg
+                  class="atom-icon-glyph atom-icon-glyph--xl atom-icon-glyph--accent"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+              </div>
+
+              <h1 class="mol-empty-state__heading type-h1">Stay in the loop</h1>
+
+              <p class="mol-empty-state__body type-body">
+                Get notified when Claude finishes a task or needs your input — even when the app is in the background.
+              </p>
+
+              <div class="mol-empty-state__cta">
+                <button
+                  class="atom-button atom-button--primary atom-button--md"
+                  type="button"
+                  aria-label="Enable notifications"
+                >
+                  Enable notifications
+                </button>
+                <button
+                  class="atom-button atom-button--link atom-button--md"
+                  type="button"
+                  aria-label="Not now — defer notification permission"
+                >
+                  Not now
+                </button>
+              </div>
+
+            </div><!-- /mol-empty-state -->
+          </main><!-- /pre-prompt body -->
+
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
