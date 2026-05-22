@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mol · host-chip</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_atoms.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <style>
+    /* ================================================================
+       mol-host-chip — molecule-local layout glue only.
+       Composition purity: ZERO .atom-* rules defined here.
+       ZERO hex literals. ZERO raw font-size/weight/line-height.
+       ZERO raw px in padding/margin/gap.
+       Structural exceptions: max-width: 8em (content-adaptive truncation
+       per audit rules), cursor: pointer (no token for cursor).
+    ================================================================ */
+
+    /* ---- Base layout glue ------------------------------------- */
+    .mol-host-chip {
+      display:     inline-flex;
+      align-items: center;
+      gap:         var(--space-2);
+      cursor:      pointer; /* structural: interactive affordance */
+    }
+
+    /* ---- Slot flex-shrink guards ------------------------------ */
+    .mol-host-chip__status {
+      flex-shrink: 0;
+    }
+
+    .mol-host-chip__icon {
+      flex-shrink: 0;
+    }
+
+    /* ---- Label truncation ------------------------------------- */
+    .mol-host-chip__label {
+      white-space:   nowrap;
+      overflow:      hidden;
+      text-overflow: ellipsis;
+      max-width:     8em; /* content-adaptive — hostname truncation */
+    }
+
+    /* ---- Chevron trailing spacer ------------------------------ */
+    .mol-host-chip__chevron {
+      margin-left: var(--space-1);
+      flex-shrink: 0;
+    }
+
+    /* ---- Variant: no-host — dim the label --------------------- */
+    .mol-host-chip--no-host .mol-host-chip__label {
+      color: var(--text-faint);
+    }
+
+    /* ---- Preview layout helpers ------------------------------- */
+    .mol-section-title {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-heading);
+      margin:         0 0 var(--space-4);
+      text-transform: uppercase;
+    }
+
+    .mol-section-sub {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      margin:         0 0 var(--space-3);
+      text-transform: uppercase;
+    }
+
+    .chip-row {
+      display:     flex;
+      flex-wrap:   wrap;
+      align-items: center;
+      gap:         var(--space-4);
+      margin-bottom: var(--space-4);
+    }
+
+    /* Faux Chat tab header for composition example */
+    .faux-header {
+      display:         flex;
+      align-items:     center;
+      justify-content: space-between;
+      padding:         var(--space-3) var(--space-4);
+      background:      var(--surface-page);
+      border-bottom:   1px solid var(--border-subtle);
+      border-radius:   var(--radius-default);
+    }
+
+    .faux-header__left {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+    }
+
+    .faux-header__title {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-label);
+      letter-spacing: var(--tracking-snug);
+      color:          var(--text-heading);
+    }
+
+    .composition-label {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-faint);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      margin:         0 0 var(--space-2);
+    }
+
+    .section-divider {
+      border:     none;
+      border-top: 1px solid var(--border-subtle);
+      margin:     var(--space-6) 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+  ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">host-chip</h1>
+    <p class="crumb">mol · interactive host-state pill for Chat tab header</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ============================================================
+         DARK PANE
+    ============================================================ -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ===========================================================
+           1. VARIANT MATRIX — 4 variants with realistic content
+      =========================================================== -->
+      <div class="variant">
+        <h3>1 · variant matrix — 4 host states</h3>
+
+        <div class="chip-row">
+
+          <!-- online: live dot (mint, pulsing) -->
+          <div class="state">
+            <span class="state-label">online</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span
+                class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status"
+                aria-hidden="true"
+              ></span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-linecap="round" stroke-linejoin="round"
+              >
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-linecap="round" stroke-linejoin="round"
+              >
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- offline: warning dot (amber, ring halo) -->
+          <div class="state">
+            <span class="state-label">offline</span>
+            <button
+              class="mol-host-chip mol-host-chip--offline atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: mac-studio is offline"
+            >
+              <span
+                class="atom-status-dot atom-status-dot--warning atom-status-dot--xs mol-host-chip__status"
+                aria-hidden="true"
+              ></span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-linecap="round" stroke-linejoin="round"
+              >
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">mac-studio</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-linecap="round" stroke-linejoin="round"
+              >
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- unpaid: warning dot (amber) — plan-limited -->
+          <div class="state">
+            <span class="state-label">unpaid</span>
+            <button
+              class="mol-host-chip mol-host-chip--unpaid atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: linux-box is plan limited"
+            >
+              <span
+                class="atom-status-dot atom-status-dot--warning atom-status-dot--xs mol-host-chip__status"
+                aria-hidden="true"
+              ></span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-linecap="round" stroke-linejoin="round"
+              >
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">linux-box</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-linecap="round" stroke-linejoin="round"
+              >
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- no-host: neutral dot — nothing selected -->
+          <div class="state">
+            <span class="state-label">no-host</span>
+            <button
+              class="mol-host-chip mol-host-chip--no-host atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Select a host"
+            >
+              <span
+                class="atom-status-dot atom-status-dot--neutral atom-status-dot--xs mol-host-chip__status"
+                aria-hidden="true"
+              ></span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-linecap="round" stroke-linejoin="round"
+              >
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">No host</span>
+              <svg
+                class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron"
+                aria-hidden="true"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-linecap="round" stroke-linejoin="round"
+              >
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ===========================================================
+           2. STATE ROW — --online variant in 5 interactive states
+      =========================================================== -->
+      <div class="variant">
+        <h3>2 · state row — online variant × 5 states</h3>
+
+        <div class="chip-row">
+
+          <!-- default -->
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- hover -->
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace is-hover"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- active -->
+          <div class="state">
+            <span class="state-label">active</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace is-active"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- focus -->
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace is-focus"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- disabled -->
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace is-disabled"
+              type="button"
+              disabled
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ===========================================================
+           3. COMPOSITION EXAMPLE — faux Chat tab header
+      =========================================================== -->
+      <div class="variant">
+        <h3>3 · composition — Chat tab header placement</h3>
+
+        <p class="composition-label">header · online host</p>
+        <div class="faux-header">
+          <!-- Left: back arrow icon-button -->
+          <div class="faux-header__left">
+            <button
+              class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm"
+              type="button"
+              aria-label="Go back"
+            >
+              <svg
+                class="atom-icon-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-linecap="round" stroke-linejoin="round"
+              >
+                <path d="M19 12H5"/>
+                <path d="M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <span class="faux-header__title">Sessions</span>
+          </div>
+
+          <!-- Right: host-chip (online) -->
+          <button
+            class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+            type="button"
+            aria-haspopup="dialog"
+            aria-label="Switch host: macbook-pro is online"
+          >
+            <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="7" rx="1"/>
+              <rect x="2" y="14" width="20" height="7" rx="1"/>
+              <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+            <span class="mol-host-chip__label">macbook-pro</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+        </div>
+
+        <p class="composition-label" style="margin-top: var(--space-4);">header · offline host</p>
+        <div class="faux-header">
+          <div class="faux-header__left">
+            <button
+              class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm"
+              type="button"
+              aria-label="Go back"
+            >
+              <svg
+                class="atom-icon-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-linecap="round" stroke-linejoin="round"
+              >
+                <path d="M19 12H5"/>
+                <path d="M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <span class="faux-header__title">Sessions</span>
+          </div>
+
+          <!-- offline chip -->
+          <button
+            class="mol-host-chip mol-host-chip--offline atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+            type="button"
+            aria-haspopup="dialog"
+            aria-label="Switch host: mac-studio is offline"
+          >
+            <span class="atom-status-dot atom-status-dot--warning atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="7" rx="1"/>
+              <rect x="2" y="14" width="20" height="7" rx="1"/>
+              <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+            <span class="mol-host-chip__label">mac-studio</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+        </div>
+
+        <p class="composition-label" style="margin-top: var(--space-4);">header · long hostname (truncation)</p>
+        <div class="faux-header">
+          <div class="faux-header__left">
+            <button
+              class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm"
+              type="button"
+              aria-label="Go back"
+            >
+              <svg
+                class="atom-icon-button__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-linecap="round" stroke-linejoin="round"
+              >
+                <path d="M19 12H5"/>
+                <path d="M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <span class="faux-header__title">Sessions</span>
+          </div>
+
+          <!-- long hostname truncation demo -->
+          <button
+            class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+            type="button"
+            aria-haspopup="dialog"
+            aria-label="Switch host: my-very-long-development-hostname is online"
+          >
+            <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="7" rx="1"/>
+              <rect x="2" y="14" width="20" height="7" rx="1"/>
+              <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+              <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+            <span class="mol-host-chip__label">my-very-long-development-hostname</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+        </div>
+
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ============================================================
+         LIGHT PANE
+    ============================================================ -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ===========================================================
+           1. VARIANT MATRIX — 4 variants with realistic content
+      =========================================================== -->
+      <div class="variant">
+        <h3>1 · variant matrix — 4 host states</h3>
+
+        <div class="chip-row">
+
+          <!-- online -->
+          <div class="state">
+            <span class="state-label">online</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- offline -->
+          <div class="state">
+            <span class="state-label">offline</span>
+            <button
+              class="mol-host-chip mol-host-chip--offline atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: mac-studio is offline"
+            >
+              <span class="atom-status-dot atom-status-dot--warning atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">mac-studio</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- unpaid -->
+          <div class="state">
+            <span class="state-label">unpaid</span>
+            <button
+              class="mol-host-chip mol-host-chip--unpaid atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: linux-box is plan limited"
+            >
+              <span class="atom-status-dot atom-status-dot--warning atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">linux-box</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- no-host -->
+          <div class="state">
+            <span class="state-label">no-host</span>
+            <button
+              class="mol-host-chip mol-host-chip--no-host atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Select a host"
+            >
+              <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/>
+                <rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                <circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">No host</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ===========================================================
+           2. STATE ROW — --online variant in 5 interactive states
+      =========================================================== -->
+      <div class="variant">
+        <h3>2 · state row — online variant × 5 states</h3>
+
+        <div class="chip-row">
+
+          <!-- default -->
+          <div class="state">
+            <span class="state-label">default</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/><rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+
+          <!-- hover -->
+          <div class="state">
+            <span class="state-label">hover</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace is-hover"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/><rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+
+          <!-- active -->
+          <div class="state">
+            <span class="state-label">active</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace is-active"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/><rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+
+          <!-- focus -->
+          <div class="state">
+            <span class="state-label">focus</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace is-focus"
+              type="button"
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/><rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+
+          <!-- disabled -->
+          <div class="state">
+            <span class="state-label">disabled</span>
+            <button
+              class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace is-disabled"
+              type="button"
+              disabled
+              aria-haspopup="dialog"
+              aria-label="Switch host: macbook-pro is online"
+            >
+              <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="7" rx="1"/><rect x="2" y="14" width="20" height="7" rx="1"/>
+                <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="mol-host-chip__label">macbook-pro</span>
+              <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ===========================================================
+           3. COMPOSITION EXAMPLE — faux Chat tab header
+      =========================================================== -->
+      <div class="variant">
+        <h3>3 · composition — Chat tab header placement</h3>
+
+        <p class="composition-label">header · online host</p>
+        <div class="faux-header">
+          <div class="faux-header__left">
+            <button
+              class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm"
+              type="button"
+              aria-label="Go back"
+            >
+              <svg class="atom-icon-button__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <span class="faux-header__title">Sessions</span>
+          </div>
+          <button
+            class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+            type="button"
+            aria-haspopup="dialog"
+            aria-label="Switch host: macbook-pro is online"
+          >
+            <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="7" rx="1"/><rect x="2" y="14" width="20" height="7" rx="1"/>
+              <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+            <span class="mol-host-chip__label">macbook-pro</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+        </div>
+
+        <p class="composition-label" style="margin-top: var(--space-4);">header · no host selected</p>
+        <div class="faux-header">
+          <div class="faux-header__left">
+            <button
+              class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm"
+              type="button"
+              aria-label="Go back"
+            >
+              <svg class="atom-icon-button__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <span class="faux-header__title">Sessions</span>
+          </div>
+          <button
+            class="mol-host-chip mol-host-chip--no-host atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+            type="button"
+            aria-haspopup="dialog"
+            aria-label="Select a host"
+          >
+            <span class="atom-status-dot atom-status-dot--neutral atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="7" rx="1"/><rect x="2" y="14" width="20" height="7" rx="1"/>
+              <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+            <span class="mol-host-chip__label">No host</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+        </div>
+
+        <p class="composition-label" style="margin-top: var(--space-4);">header · long hostname (truncation)</p>
+        <div class="faux-header">
+          <div class="faux-header__left">
+            <button
+              class="atom-icon-button atom-icon-button--ghost atom-icon-button--sm"
+              type="button"
+              aria-label="Go back"
+            >
+              <svg class="atom-icon-button__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <span class="faux-header__title">Sessions</span>
+          </div>
+          <button
+            class="mol-host-chip mol-host-chip--online atom-pill atom-pill--default atom-pill--sm atom-pill--monospace"
+            type="button"
+            aria-haspopup="dialog"
+            aria-label="Switch host: my-very-long-development-hostname is online"
+          >
+            <span class="atom-status-dot atom-status-dot--live atom-status-dot--xs mol-host-chip__status" aria-hidden="true"></span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--muted mol-host-chip__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="7" rx="1"/><rect x="2" y="14" width="20" height="7" rx="1"/>
+              <circle cx="17" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="17.5" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+            <span class="mol-host-chip__label">my-very-long-development-hostname</span>
+            <svg class="atom-icon-glyph atom-icon-glyph--xs atom-icon-glyph--faint mol-host-chip__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+        </div>
+
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
