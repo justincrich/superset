@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>atom · tool-status-rule</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../_preview.css">
+  <style>
+    /* ============================================================
+       atom-tool-status-rule — 3px colored left/top edge rule
+       Composition purity: only .atom-tool-status-rule rules here.
+       Zero hex literals. The 3px thickness lives in
+       --domain-tool-rule-width only — never inline.
+       ============================================================ */
+
+    /* ---- Base ----------------------------------------------- */
+    .atom-tool-status-rule {
+      background:    var(--text-muted);         /* --neutral default */
+      border-radius: var(--radius-subtle);
+      flex-shrink:   0;
+    }
+
+    /* ---- Orientation: vertical (default) -------------------- */
+    .atom-tool-status-rule--vertical {
+      width:      var(--domain-tool-rule-width);
+      align-self: stretch;                      /* fill parent flex cell height */
+      min-height: var(--space-6);               /* prevent degenerate collapse */
+    }
+
+    /* ---- Orientation: horizontal ---------------------------- */
+    .atom-tool-status-rule--horizontal {
+      height: var(--domain-tool-rule-width);
+      width:  100%;
+    }
+
+    /* ---- Status variants ------------------------------------ */
+    .atom-tool-status-rule--running {
+      background: var(--state-live-fg);
+      box-shadow: 0 0 6px var(--state-live-fg);
+    }
+
+    .atom-tool-status-rule--done {
+      background: var(--state-success-fg);
+    }
+
+    .atom-tool-status-rule--pending {
+      background: var(--state-warning-fg);
+      box-shadow: 0 0 4px var(--state-warning-fg);
+    }
+
+    .atom-tool-status-rule--error {
+      background: var(--state-danger-fg);
+    }
+
+    .atom-tool-status-rule--neutral {
+      background: var(--text-muted);
+    }
+
+    /* ============================================================
+       Preview-only layout helpers (not part of the atom API)
+       ============================================================ */
+
+    /* ---- Placeholder card shell ----------------------------- */
+    .demo-card {
+      display:          flex;
+      flex-direction:   row;
+      gap:              var(--space-3);
+      background:       var(--surface-raised);
+      border:           1px solid var(--border-subtle);
+      border-radius:    var(--radius-default);
+      overflow:         hidden;
+      min-height:       var(--space-10);
+      align-items:      stretch;
+    }
+
+    .demo-card__body {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-1);
+      padding:        var(--space-3) var(--space-3) var(--space-3) 0;
+      justify-content: center;
+    }
+
+    .demo-card__status {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--text-muted);
+    }
+
+    .demo-card__title {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-body);
+      color:          var(--text-body);
+      white-space:    nowrap;
+    }
+
+    /* Status color applied to text label so color is paired, not solo */
+    .demo-card--running .demo-card__status { color: var(--state-live-fg); }
+    .demo-card--done    .demo-card__status { color: var(--state-success-fg); }
+    .demo-card--pending .demo-card__status { color: var(--state-warning-fg); }
+    .demo-card--error   .demo-card__status { color: var(--state-danger-fg); }
+    .demo-card--neutral .demo-card__status { color: var(--text-muted); }
+
+    /* ---- Card stack for vertical matrix --------------------- */
+    .card-stack {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+    }
+
+    /* ---- Cards for horizontal matrix ------------------------ */
+    .demo-card--top-rule {
+      flex-direction: column;
+      align-items:    stretch;
+    }
+
+    .demo-card--top-rule .demo-card__body {
+      padding: var(--space-3);
+    }
+
+    /* ---- Baseline card (no rule) ---------------------------- */
+    .demo-card--bare {
+      padding-left: var(--space-3);
+    }
+
+    /* ---- Composition example: pending approval card --------- */
+    .approval-card {
+      display:       flex;
+      flex-direction: row;
+      gap:           var(--space-3);
+      background:    var(--surface-raised);
+      border:        1px solid var(--border-subtle);
+      border-radius: var(--radius-default);
+      overflow:      hidden;
+    }
+
+    .approval-card__inner {
+      flex:           1;
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-3);
+      padding:        var(--space-3) var(--space-3) var(--space-3) 0;
+    }
+
+    .approval-card__header {
+      display:     flex;
+      align-items: center;
+      gap:         var(--space-2);
+    }
+
+    .approval-card__badge {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      font-weight:    var(--font-weight-meta);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+      color:          var(--state-warning-fg);
+    }
+
+    .approval-card__tool-name {
+      font-family:  var(--font-body);
+      font-size:    var(--font-size-body-sm);
+      font-weight:  var(--font-weight-title);
+      color:        var(--text-heading);
+    }
+
+    .approval-card__args {
+      font-family:  var(--font-mono);
+      font-size:    var(--font-size-meta);
+      color:        var(--text-muted);
+      background:   var(--surface-sunken);
+      border:       1px solid var(--border-subtle);
+      border-radius: var(--radius-subtle);
+      padding:      var(--space-2) var(--space-3);
+      white-space:  pre;
+      overflow:     hidden;
+      text-overflow: ellipsis;
+    }
+
+    .approval-card__actions {
+      display:  flex;
+      gap:      var(--space-2);
+    }
+
+    .approval-btn {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      font-weight:    var(--font-weight-meta);
+      border:         1px solid var(--border-default);
+      border-radius:  var(--radius-subtle);
+      padding:        var(--space-1) var(--space-3);
+      cursor:         pointer;
+      min-height:     var(--space-6);
+    }
+
+    .approval-btn--approve {
+      background: var(--state-warning-bg);
+      color:      var(--state-warning-fg);
+      border-color: var(--state-warning-fg);
+    }
+
+    .approval-btn--decline {
+      background: var(--surface-soft);
+      color:      var(--text-muted);
+      border-color: var(--border-subtle);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header
+       ============================================================ -->
+  <header class="preview-plate">
+    <h1 class="type-h2">tool-status-rule</h1>
+    <p class="crumb">atom · 3px colored edge rule encoding tool-call status</p>
+  </header>
+
+  <!-- ============================================================
+       Pegboard — dark pane first, then light pane
+       ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ======================================================
+         DARK PANE
+         ====================================================== -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- ---- Section 1: Vertical variant matrix ------------- -->
+      <div class="variant">
+        <h3>vertical variant matrix — 5 status variants, left-edge rule</h3>
+        <div class="card-stack">
+
+          <!-- running -->
+          <div class="state">
+            <span class="state-label">running</span>
+            <div class="demo-card demo-card--running">
+              <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--running"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Running</span>
+                <span class="demo-card__title">npm run test</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- done -->
+          <div class="state">
+            <span class="state-label">done</span>
+            <div class="demo-card demo-card--done">
+              <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--done"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Done</span>
+                <span class="demo-card__title">git commit</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- pending -->
+          <div class="state">
+            <span class="state-label">pending</span>
+            <div class="demo-card demo-card--pending">
+              <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Pending</span>
+                <span class="demo-card__title">file write approval</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- error -->
+          <div class="state">
+            <span class="state-label">error</span>
+            <div class="demo-card demo-card--error">
+              <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--error"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Error</span>
+                <span class="demo-card__title">404 Not Found</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- neutral -->
+          <div class="state">
+            <span class="state-label">neutral</span>
+            <div class="demo-card demo-card--neutral">
+              <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--neutral"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Idle</span>
+                <span class="demo-card__title">cached result</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- Section 2: Horizontal variant matrix ----------- -->
+      <div class="variant">
+        <h3>horizontal variant matrix — 5 status variants, top-edge rule</h3>
+        <div class="card-stack">
+
+          <!-- running -->
+          <div class="state">
+            <span class="state-label">running — horizontal</span>
+            <div class="demo-card demo-card--running demo-card--top-rule">
+              <div class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--running"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Running</span>
+                <span class="demo-card__title">npm run test</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- done -->
+          <div class="state">
+            <span class="state-label">done — horizontal</span>
+            <div class="demo-card demo-card--done demo-card--top-rule">
+              <div class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--done"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Done</span>
+                <span class="demo-card__title">git commit</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- pending -->
+          <div class="state">
+            <span class="state-label">pending — horizontal</span>
+            <div class="demo-card demo-card--pending demo-card--top-rule">
+              <div class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Approval Required</span>
+                <span class="demo-card__title">file write approval</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- error -->
+          <div class="state">
+            <span class="state-label">error — horizontal</span>
+            <div class="demo-card demo-card--error demo-card--top-rule">
+              <div class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Error</span>
+                <span class="demo-card__title">404 Not Found</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- neutral -->
+          <div class="state">
+            <span class="state-label">neutral — horizontal</span>
+            <div class="demo-card demo-card--neutral demo-card--top-rule">
+              <div class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--neutral"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Idle</span>
+                <span class="demo-card__title">cached result</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- Section 3: Without rule baseline --------------- -->
+      <div class="variant">
+        <h3>without rule — baseline (bare/inactive card)</h3>
+        <div class="state">
+          <span class="state-label">no rule</span>
+          <div class="demo-card demo-card--bare">
+            <div class="demo-card__body">
+              <span class="demo-card__status" style="color: var(--text-muted);">Idle</span>
+              <span class="demo-card__title">cached result</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- Section 4: Composition example ----------------- -->
+      <div class="variant">
+        <h3>composition example — pending approval card</h3>
+        <div class="state">
+          <span class="state-label">pending · vertical rule + approve/decline</span>
+          <div class="approval-card">
+            <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending"
+                 aria-hidden="true"></div>
+            <div class="approval-card__inner">
+              <div class="approval-card__header">
+                <span class="approval-card__badge">Pending Approval</span>
+              </div>
+              <span class="approval-card__tool-name">Write file</span>
+              <pre class="approval-card__args">path: "src/auth/session.ts"
+content: "export const SESSION_MAX_AGE = 604800;"</pre>
+              <div class="approval-card__actions">
+                <button class="approval-btn approval-btn--approve" type="button">Approve</button>
+                <button class="approval-btn approval-btn--decline" type="button">Decline</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ======================================================
+         LIGHT PANE
+         ====================================================== -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- ---- Section 1: Vertical variant matrix ------------- -->
+      <div class="variant">
+        <h3>vertical variant matrix — 5 status variants, left-edge rule</h3>
+        <div class="card-stack">
+
+          <!-- running -->
+          <div class="state">
+            <span class="state-label">running</span>
+            <div class="demo-card demo-card--running">
+              <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--running"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Running</span>
+                <span class="demo-card__title">npm run test</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- done -->
+          <div class="state">
+            <span class="state-label">done</span>
+            <div class="demo-card demo-card--done">
+              <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--done"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Done</span>
+                <span class="demo-card__title">git commit</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- pending -->
+          <div class="state">
+            <span class="state-label">pending</span>
+            <div class="demo-card demo-card--pending">
+              <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Pending</span>
+                <span class="demo-card__title">file write approval</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- error -->
+          <div class="state">
+            <span class="state-label">error</span>
+            <div class="demo-card demo-card--error">
+              <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--error"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Error</span>
+                <span class="demo-card__title">404 Not Found</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- neutral -->
+          <div class="state">
+            <span class="state-label">neutral</span>
+            <div class="demo-card demo-card--neutral">
+              <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--neutral"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Idle</span>
+                <span class="demo-card__title">cached result</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- Section 2: Horizontal variant matrix ----------- -->
+      <div class="variant">
+        <h3>horizontal variant matrix — 5 status variants, top-edge rule</h3>
+        <div class="card-stack">
+
+          <!-- running -->
+          <div class="state">
+            <span class="state-label">running — horizontal</span>
+            <div class="demo-card demo-card--running demo-card--top-rule">
+              <div class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--running"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Running</span>
+                <span class="demo-card__title">npm run test</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- done -->
+          <div class="state">
+            <span class="state-label">done — horizontal</span>
+            <div class="demo-card demo-card--done demo-card--top-rule">
+              <div class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--done"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Done</span>
+                <span class="demo-card__title">git commit</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- pending -->
+          <div class="state">
+            <span class="state-label">pending — horizontal</span>
+            <div class="demo-card demo-card--pending demo-card--top-rule">
+              <div class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Approval Required</span>
+                <span class="demo-card__title">file write approval</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- error -->
+          <div class="state">
+            <span class="state-label">error — horizontal</span>
+            <div class="demo-card demo-card--error demo-card--top-rule">
+              <div class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--error"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Error</span>
+                <span class="demo-card__title">404 Not Found</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- neutral -->
+          <div class="state">
+            <span class="state-label">neutral — horizontal</span>
+            <div class="demo-card demo-card--neutral demo-card--top-rule">
+              <div class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--neutral"
+                   aria-hidden="true"></div>
+              <div class="demo-card__body">
+                <span class="demo-card__status">Idle</span>
+                <span class="demo-card__title">cached result</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ---- Section 3: Without rule baseline --------------- -->
+      <div class="variant">
+        <h3>without rule — baseline (bare/inactive card)</h3>
+        <div class="state">
+          <span class="state-label">no rule</span>
+          <div class="demo-card demo-card--bare">
+            <div class="demo-card__body">
+              <span class="demo-card__status" style="color: var(--text-muted);">Idle</span>
+              <span class="demo-card__title">cached result</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- Section 4: Composition example ----------------- -->
+      <div class="variant">
+        <h3>composition example — pending approval card</h3>
+        <div class="state">
+          <span class="state-label">pending · vertical rule + approve/decline</span>
+          <div class="approval-card">
+            <div class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending"
+                 aria-hidden="true"></div>
+            <div class="approval-card__inner">
+              <div class="approval-card__header">
+                <span class="approval-card__badge">Pending Approval</span>
+              </div>
+              <span class="approval-card__tool-name">Write file</span>
+              <pre class="approval-card__args">path: "src/auth/session.ts"
+content: "export const SESSION_MAX_AGE = 604800;"</pre>
+              <div class="approval-card__actions">
+                <button class="approval-btn approval-btn--approve" type="button">Approve</button>
+                <button class="approval-btn approval-btn--decline" type="button">Decline</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+
+  <!-- ============================================================
+       Token recipe table
+       ============================================================ -->
+  <div style="padding: var(--spacing-section) var(--spacing-between); border-top: 1px solid var(--border-subtle);">
+    <h2 style="font-family: var(--font-mono); font-size: var(--font-size-body-sm); font-weight: var(--font-weight-heading); letter-spacing: var(--tracking-tight); color: var(--text-heading); margin: 0 0 var(--spacing-between);">Token recipe</h2>
+    <table class="recipe">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Token</th>
+          <th>Dark resolved</th>
+          <th>Light resolved</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Width (vertical) / Height (horizontal)</td>
+          <td>--domain-tool-rule-width</td>
+          <td>3px</td>
+          <td>3px</td>
+          <td>Canonical thickness; never use literal 3px</td>
+        </tr>
+        <tr>
+          <td>Background (running)</td>
+          <td>--state-live-fg</td>
+          <td>#50a878 (mint)</td>
+          <td>oklch(0.6 0.118 184.704)</td>
+          <td>+ box-shadow: 0 0 6px var(--state-live-fg)</td>
+        </tr>
+        <tr>
+          <td>Background (done)</td>
+          <td>--state-success-fg</td>
+          <td>#50a878 (green)</td>
+          <td>oklch(0.6 0.118 184.704)</td>
+          <td>No glow; same primitive as live-fg in current tokens</td>
+        </tr>
+        <tr>
+          <td>Background (pending)</td>
+          <td>--state-warning-fg</td>
+          <td>#d4a84b (amber)</td>
+          <td>oklch(0.398 0.07 227.392)</td>
+          <td>+ box-shadow: 0 0 4px var(--state-warning-fg)</td>
+        </tr>
+        <tr>
+          <td>Background (error)</td>
+          <td>--state-danger-fg</td>
+          <td>#cc4444 (red)</td>
+          <td>oklch(0.577 0.245 27.325)</td>
+          <td>No glow</td>
+        </tr>
+        <tr>
+          <td>Background (neutral)</td>
+          <td>--text-muted</td>
+          <td>#a8a5a3</td>
+          <td>oklch(0.556 0 0)</td>
+          <td>No glow</td>
+        </tr>
+        <tr>
+          <td>Border radius</td>
+          <td>--radius-subtle</td>
+          <td>calc(0.625rem - 4px) ≈ 6px</td>
+          <td>same</td>
+          <td>Softens bar corners</td>
+        </tr>
+        <tr>
+          <td>Min-height (vertical)</td>
+          <td>--space-6</td>
+          <td>24px</td>
+          <td>24px</td>
+          <td>Prevents degenerate single-line collapse</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
