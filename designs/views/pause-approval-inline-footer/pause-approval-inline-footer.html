@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pause-approval-inline-footer — UC-PAUSE-01 §A</title>
+  <link rel="stylesheet" href="../../typography/fonts.css">
+  <link rel="stylesheet" href="../../tokens/tokens.css">
+  <link rel="stylesheet" href="../../typography/type-modules.css">
+  <link rel="stylesheet" href="../../atoms/_preview.css">
+  <link rel="stylesheet" href="../../molecules/_atoms.css">
+  <link rel="stylesheet" href="../../organisms/_molecules.css">
+  <style>
+    /* ================================================================
+       view-local layout glue — ONLY .view-pause-approval-inline-footer__* rules.
+       Never redefines .atom-* or .mol-* classes.
+       ================================================================ */
+
+    /* ---- Page harness ----------------------------------------- */
+    body {
+      background: var(--surface-page);
+    }
+
+    .preview-plate {
+      padding: var(--space-8) var(--space-4);
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .preview-plate h1 {
+      margin: 0 0 var(--space-2);
+    }
+
+    .preview-plate .crumb {
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      color:          var(--text-muted);
+      letter-spacing: var(--tracking-mono);
+      text-transform: uppercase;
+    }
+
+    .pegboard {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-8);
+      padding:        var(--space-8) var(--space-4);
+    }
+
+    /* Full-width pane — device centered inside */
+    .pane {
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-default);
+      padding:        var(--space-8) var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      align-items:    center;
+      gap:            var(--space-4);
+    }
+
+    .pane-label {
+      align-self:     flex-start;
+      display:        inline-block;
+      padding:        var(--space-1) var(--space-3);
+      background:     var(--surface-sunken);
+      border:         1px solid var(--border-subtle);
+      border-radius:  var(--radius-subtle);
+      font-family:    var(--font-mono);
+      font-size:      var(--font-size-meta);
+      letter-spacing: var(--tracking-mono);
+      color:          var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---- View viewport layout --------------------------------- */
+    /* The viewport inside atom-device-bezel is a flex column.
+       We use these classes to wire up the flex slots without
+       touching any atom or molecule rule. */
+
+    /* Thread scroll region — fills remaining height between header and footer */
+    .view-pause-approval-inline-footer__thread {
+      flex:           1;
+      overflow-y:     auto;
+      padding:        var(--space-4);
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-5);
+      position:       relative; /* scroll-fade absolute anchor */
+    }
+
+    /* Assistant message group: head + body stacked with small gap */
+    .view-pause-approval-inline-footer__assistant {
+      display:        flex;
+      flex-direction: column;
+      gap:            var(--space-2);
+    }
+
+    /* Prose body container */
+    .view-pause-approval-inline-footer__body {
+      /* paragraphs and inline code live here */
+    }
+
+    .view-pause-approval-inline-footer__body p {
+      margin:      0 0 var(--space-3);
+      line-height: var(--line-height-normal);
+    }
+
+    .view-pause-approval-inline-footer__body p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Approval card placed inline after the assistant body paragraph */
+    .view-pause-approval-inline-footer__card-wrap {
+      /* No extra layout needed; card fills column width naturally */
+    }
+
+    /* Sticky approval footer — bottom-docked, above home indicator */
+    .view-pause-approval-inline-footer__footer {
+      flex-shrink:      0;
+      padding-block-end: var(--safe-area-bottom);
+    }
+
+    /* Composer suppressed stub — visible below the footer to signal
+       the composer is present but blocked during approval pause.
+       opacity: 0.3 per brief spec. */
+    .view-pause-approval-inline-footer__composer-stub {
+      border-top:     1px solid var(--border-subtle);
+      padding:        var(--space-3) var(--space-4);
+      display:        flex;
+      align-items:    center;
+      gap:            var(--space-2);
+      background:     var(--surface-page);
+      opacity:        0.3; /* structural: suppressed-composer opacity */
+      pointer-events: none;
+      flex-shrink:    0;
+    }
+
+    .view-pause-approval-inline-footer__composer-stub-label {
+      font-family:    var(--font-body);
+      font-size:      var(--font-size-body-sm);
+      color:          var(--text-faint);
+      line-height:    var(--line-height-snug);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       Header plate
+  ============================================================ -->
+  <div class="preview-plate">
+    <h1 class="type-h2">pause-approval-inline-footer</h1>
+    <p class="crumb">UC-PAUSE-01 §A · inline pending-approval-card + sticky approval-footer · composer suppressed</p>
+  </div>
+
+  <!-- ============================================================
+       Stacked theme panes — dark first, light second
+  ============================================================ -->
+  <div class="pegboard">
+
+    <!-- ── DARK PANE ─────────────────────────────────────────── -->
+    <section class="pane" data-theme="dark">
+      <span class="pane-label">dark</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:39</span>
+            <div class="atom-device-bezel__indicators">
+              <!-- Signal bars (inline SVG — structural geometry) -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <!-- Battery -->
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- App Header (mol-app-header) -->
+          <header class="mol-app-header" role="banner">
+            <div class="mol-app-header__back">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Back to sessions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mol-app-header__title-wrap">
+              <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+              <p class="mol-app-header__subtitle type-meta">superset · main</p>
+            </div>
+
+            <div class="mol-app-header__actions">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Session actions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </header><!-- /mol-app-header -->
+
+          <!-- Thread scroll region -->
+          <main
+            class="view-pause-approval-inline-footer__thread"
+            role="log"
+            aria-label="Chat thread"
+            aria-live="polite"
+          >
+            <!-- Scroll fade top -->
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden" aria-hidden="true"></div>
+
+            <!-- Prior user message -->
+            <div class="mol-user-message-bubble" role="article" aria-label="Your message">
+              <button
+                class="mol-user-message-bubble__bubble type-body"
+                type="button"
+                aria-label="Long press to copy message"
+              >
+                <p class="mol-user-message-bubble__text">Run the billing tests</p>
+              </button>
+              <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:38">
+                <span class="type-meta">9:38</span>
+              </div>
+            </div><!-- /mol-user-message-bubble -->
+
+            <!-- Assistant message with inline pending-approval-card -->
+            <article
+              class="view-pause-approval-inline-footer__assistant"
+              aria-label="Assistant message awaiting tool approval"
+            >
+              <!-- mol-assistant-message-head — idle (not streaming; paused awaiting approval) -->
+              <div class="mol-assistant-message-head mol-assistant-message-head--idle">
+                <!-- Avatar -->
+                <span
+                  class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                  aria-hidden="true"
+                >A</span>
+
+                <!-- Label -->
+                <span class="mol-assistant-message-head__label">Assistant</span>
+                <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                <span class="mol-assistant-message-head__time">9:39 AM</span>
+              </div><!-- /mol-assistant-message-head -->
+
+              <!-- Assistant body text above the approval card -->
+              <div class="view-pause-approval-inline-footer__body type-body" aria-label="Assistant response">
+                <p>I'll run the billing test suite. This requires bash tool approval first:</p>
+              </div><!-- /view-pause-approval-inline-footer__body -->
+
+              <!-- mol-pending-approval-card — inline in the thread, pending state -->
+              <div class="view-pause-approval-inline-footer__card-wrap">
+                <article
+                  class="mol-pending-approval-card mol-pending-approval-card--default"
+                  role="status"
+                  aria-live="polite"
+                  aria-label="Tool approval required: bash · run_tests.sh"
+                >
+                  <!-- Left amber status rule — bleeds flush to card left edge, pending glow -->
+                  <span
+                    class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                    aria-hidden="true"
+                  ></span>
+
+                  <div class="mol-pending-approval-card__content">
+                    <header class="mol-pending-approval-card__head">
+                      <!-- ⌖ target / crosshair icon — signals "action required" -->
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                    </header>
+
+                    <!-- Tool name subtitle -->
+                    <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+
+                    <!-- Hairline divider between subtitle and args -->
+                    <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true"/>
+
+                    <!-- Args preview -->
+                    <pre class="mol-pending-approval-card__args type-code">$ bun test --filter='**/billing/*' --bail</pre>
+                  </div>
+                </article>
+              </div><!-- /view-pause-approval-inline-footer__card-wrap -->
+
+            </article><!-- /view-pause-approval-inline-footer__assistant -->
+
+            <!-- Scroll fade bottom -->
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+
+          </main><!-- /role=log -->
+
+          <!-- Sticky approval footer — replaces composer during approval pause -->
+          <div class="view-pause-approval-inline-footer__footer">
+            <footer
+              class="mol-approval-footer mol-approval-footer--queued"
+              role="region"
+              aria-label="Tool approval required: 1 of 1 pending"
+            >
+              <!-- Top amber rule — full-bleed horizontal pending indicator -->
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+                aria-hidden="true"
+              ></span>
+
+              <!-- Counter badge: "1 OF 1" -->
+              <span
+                class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+                aria-label="Approval 1 of 1"
+              >1 OF 1</span>
+
+              <!-- Action buttons: Decline · Approve · Always -->
+              <div class="mol-approval-footer__actions">
+                <button
+                  class="atom-button atom-button--destructive atom-button--md"
+                  type="button"
+                  aria-label="Decline tool approval"
+                >Decline</button>
+                <button
+                  class="atom-button atom-button--primary atom-button--md"
+                  type="button"
+                  aria-label="Approve tool action"
+                >Approve</button>
+                <button
+                  class="atom-button atom-button--ghost atom-button--md"
+                  type="button"
+                  aria-label="Always allow bash category"
+                >Always</button>
+              </div>
+            </footer>
+          </div><!-- /view-pause-approval-inline-footer__footer -->
+
+          <!-- Composer stub — suppressed during approval pause -->
+          <div
+            class="view-pause-approval-inline-footer__composer-stub"
+            aria-hidden="true"
+          >
+            <span class="view-pause-approval-inline-footer__composer-stub-label">Composer suppressed during approval</span>
+          </div><!-- /composer-stub -->
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /dark pane -->
+
+
+    <!-- ── LIGHT PANE ────────────────────────────────────────── -->
+    <section class="pane" data-theme="light">
+      <span class="pane-label">light</span>
+
+      <!-- iPhone 16 Pro Max bezel -->
+      <div class="atom-device-bezel">
+        <div class="atom-device-bezel__viewport">
+
+          <!-- Dynamic Island -->
+          <div class="atom-device-bezel__dynamic-island" aria-hidden="true"></div>
+
+          <!-- Status bar -->
+          <div class="atom-device-bezel__status-bar" aria-hidden="true">
+            <span class="atom-device-bezel__time">9:39</span>
+            <div class="atom-device-bezel__indicators">
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
+                <rect x="0"  y="7" width="3" height="5" rx="1" fill="currentColor"/>
+                <rect x="4"  y="4" width="3" height="8" rx="1" fill="currentColor"/>
+                <rect x="8"  y="1" width="3" height="11" rx="1" fill="currentColor"/>
+                <rect x="12" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".3"/>
+              </svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" fill="currentColor"/>
+                <path d="M4.5 7.5A5 5 0 0 1 8 6a5 5 0 0 1 3.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                <path d="M1.5 4.5A9.5 9.5 0 0 1 8 2a9.5 9.5 0 0 1 6.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="atom-device-bezel__battery" aria-hidden="true">
+                <div class="atom-device-bezel__battery-body">
+                  <div class="atom-device-bezel__battery-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div><!-- /status-bar -->
+
+          <!-- App Header -->
+          <header class="mol-app-header" role="banner">
+            <div class="mol-app-header__back">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Back to sessions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mol-app-header__title-wrap">
+              <h1 class="mol-app-header__title type-title">Fix auth bug</h1>
+              <p class="mol-app-header__subtitle type-meta">superset · main</p>
+            </div>
+
+            <div class="mol-app-header__actions">
+              <button
+                class="atom-icon-button atom-icon-button--ghost atom-icon-button--md"
+                type="button"
+                aria-label="Session actions"
+              >
+                <svg class="atom-icon-button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                  <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </header><!-- /mol-app-header -->
+
+          <!-- Thread scroll region -->
+          <main
+            class="view-pause-approval-inline-footer__thread"
+            role="log"
+            aria-label="Chat thread"
+            aria-live="polite"
+          >
+            <div class="atom-scroll-fade atom-scroll-fade--top atom-scroll-fade--on-page is-hidden" aria-hidden="true"></div>
+
+            <!-- Prior user message -->
+            <div class="mol-user-message-bubble" role="article" aria-label="Your message">
+              <button
+                class="mol-user-message-bubble__bubble type-body"
+                type="button"
+                aria-label="Long press to copy message"
+              >
+                <p class="mol-user-message-bubble__text">Run the billing tests</p>
+              </button>
+              <div class="mol-user-message-bubble__meta" aria-label="Sent at 9:38">
+                <span class="type-meta">9:38</span>
+              </div>
+            </div>
+
+            <!-- Assistant message with inline pending-approval-card -->
+            <article
+              class="view-pause-approval-inline-footer__assistant"
+              aria-label="Assistant message awaiting tool approval"
+            >
+              <div class="mol-assistant-message-head mol-assistant-message-head--idle">
+                <span
+                  class="atom-avatar atom-avatar--accent atom-avatar--sm"
+                  aria-hidden="true"
+                >A</span>
+                <span class="mol-assistant-message-head__label">Assistant</span>
+                <span class="mol-assistant-message-head__separator" aria-hidden="true">·</span>
+                <span class="mol-assistant-message-head__time">9:39 AM</span>
+              </div>
+
+              <div class="view-pause-approval-inline-footer__body type-body" aria-label="Assistant response">
+                <p>I'll run the billing test suite. This requires bash tool approval first:</p>
+              </div>
+
+              <div class="view-pause-approval-inline-footer__card-wrap">
+                <article
+                  class="mol-pending-approval-card mol-pending-approval-card--default"
+                  role="status"
+                  aria-live="polite"
+                  aria-label="Tool approval required: bash · run_tests.sh"
+                >
+                  <span
+                    class="atom-tool-status-rule atom-tool-status-rule--vertical atom-tool-status-rule--pending mol-pending-approval-card__rule"
+                    aria-hidden="true"
+                  ></span>
+
+                  <div class="mol-pending-approval-card__content">
+                    <header class="mol-pending-approval-card__head">
+                      <svg
+                        class="atom-icon-glyph atom-icon-glyph--sm mol-pending-approval-card__icon"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      <span class="mol-pending-approval-card__title type-body">Tool approval required</span>
+                    </header>
+
+                    <p class="mol-pending-approval-card__subtitle type-meta">bash · run_tests.sh</p>
+
+                    <hr class="atom-divider atom-divider--hairline mol-pending-approval-card__divider" aria-hidden="true"/>
+
+                    <pre class="mol-pending-approval-card__args type-code">$ bun test --filter='**/billing/*' --bail</pre>
+                  </div>
+                </article>
+              </div>
+
+            </article>
+
+            <div class="atom-scroll-fade atom-scroll-fade--bottom atom-scroll-fade--on-page" aria-hidden="true"></div>
+
+          </main><!-- /role=log -->
+
+          <!-- Sticky approval footer -->
+          <div class="view-pause-approval-inline-footer__footer">
+            <footer
+              class="mol-approval-footer mol-approval-footer--queued"
+              role="region"
+              aria-label="Tool approval required: 1 of 1 pending"
+            >
+              <span
+                class="atom-tool-status-rule atom-tool-status-rule--horizontal atom-tool-status-rule--pending mol-approval-footer__rule"
+                aria-hidden="true"
+              ></span>
+
+              <span
+                class="mol-approval-footer__counter atom-badge atom-badge--neutral atom-badge--md"
+                aria-label="Approval 1 of 1"
+              >1 OF 1</span>
+
+              <div class="mol-approval-footer__actions">
+                <button
+                  class="atom-button atom-button--destructive atom-button--md"
+                  type="button"
+                  aria-label="Decline tool approval"
+                >Decline</button>
+                <button
+                  class="atom-button atom-button--primary atom-button--md"
+                  type="button"
+                  aria-label="Approve tool action"
+                >Approve</button>
+                <button
+                  class="atom-button atom-button--ghost atom-button--md"
+                  type="button"
+                  aria-label="Always allow bash category"
+                >Always</button>
+              </div>
+            </footer>
+          </div>
+
+          <!-- Composer stub — suppressed during approval pause -->
+          <div
+            class="view-pause-approval-inline-footer__composer-stub"
+            aria-hidden="true"
+          >
+            <span class="view-pause-approval-inline-footer__composer-stub-label">Composer suppressed during approval</span>
+          </div>
+
+          <!-- Home indicator -->
+          <div class="atom-device-bezel__home-indicator" aria-hidden="true"></div>
+
+        </div><!-- /atom-device-bezel__viewport -->
+      </div><!-- /atom-device-bezel -->
+
+    </section><!-- /light pane -->
+
+  </div><!-- /pegboard -->
+
+</body>
+</html>
