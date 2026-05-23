@@ -99,6 +99,19 @@ export function AskUserSheet({
 								/>
 							))}
 						</ScrollView>
+						{/*
+						 * BottomSheetTextInput is the @gorhom/bottom-sheet vendor primitive
+						 * that owns keyboard avoidance — it accepts inline `style` only, not
+						 * `className`. The hex values below mirror the ember dark-theme
+						 * tokens in `apps/mobile/global.css` exactly:
+						 *   --color-card             → hsl(20 7% 12%)  → #201e1c
+						 *   --color-foreground       → hsl(30 6% 91%)  → #f3eee9
+						 *   --color-muted-foreground → hsl(15 4% 65%)  → #ada6a3
+						 * We cannot import THEME from `apps/mobile/lib/theme.ts` here because
+						 * that module transitively imports expo-router/react-navigation,
+						 * which crashes storybook RN prep (UnhandledLinkingContext). Same
+						 * precedent as the BottomSheet organism's themed surface.
+						 */}
 						<BottomSheetTextInput
 							value={answer}
 							onChangeText={setAnswer}
@@ -112,7 +125,7 @@ export function AskUserSheet({
 								color: "#f3eee9",
 								fontSize: 15,
 							}}
-							placeholderTextColor="#888280"
+							placeholderTextColor="#ada6a3"
 						/>
 						<View className="flex-row gap-2">
 							<Button
