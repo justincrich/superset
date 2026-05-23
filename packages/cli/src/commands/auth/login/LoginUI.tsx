@@ -9,6 +9,7 @@ export interface LoginUIProps {
 	onSubmit: (code: string) => void;
 	onCancel: () => void;
 	onCopy: () => Promise<boolean>;
+	pasteOnly?: boolean;
 }
 
 export function LoginUI({
@@ -17,6 +18,7 @@ export function LoginUI({
 	onSubmit,
 	onCancel,
 	onCopy,
+	pasteOnly,
 }: LoginUIProps) {
 	const [value, setValue] = useState("");
 	const [validationError, setValidationError] = useState<string | null>(null);
@@ -96,8 +98,17 @@ export function LoginUI({
 			<Text bold>superset auth login</Text>
 			<Text> </Text>
 			<Box flexDirection="row">
-				<Text>Browser didn't open? Use the url below to sign in </Text>
-				<Text dimColor>(press c to copy)</Text>
+				{pasteOnly ? (
+					<>
+						<Text>Open the link below to sign in </Text>
+						<Text dimColor>(press c to copy)</Text>
+					</>
+				) : (
+					<>
+						<Text>Browser didn't open? Use the url below to sign in </Text>
+						<Text dimColor>(press c to copy)</Text>
+					</>
+				)}
 			</Box>
 			<Text> </Text>
 			<Text color="cyan">{url ?? "Generating sign-in link…"}</Text>
