@@ -4,10 +4,109 @@ improvement_id: GH-3572
 ticket_id: GH-3572
 ticket_url: https://github.com/superset-sh/superset/issues/3572
 tracker: github
-status: proposal
+status: binding
+chosen_option: option-α-upstream-bump-plus-fallback
+loc_budget: 15
+task_chunks: 1
 investigator_specialist: electron-reviewer
 challenger_specialist: code-reviewer
+research_doc: .spec/improvements/GH-3572/RESEARCH.md
+holocron_doc_id: js7eww2myv09kh74wqtjdgjqxs878p22
+upstream_pr: https://github.com/xtermjs/xterm.js/pull/5883
 ---
+
+# GH-3572 — Binding scope (option α: upstream bump + VSCode-style fallback)
+
+## Decision summary (2026-05-23)
+
+After deep research (`RESEARCH.md`), the upstream xterm.js team merged **PR #5883 "Fix webgl rendering corruption from atlas page merges"** on May 21, 2026 — directly addressing our exact symptom. Maintainer Tyriar's comment on that PR:
+
+> *"This has been an issue for a long time, I think it's popped up more recently due to agentic CLIs using a much wider range of character styles."*
+
+The fix shipped in `@xterm/xterm@6.1.0-beta.220` (we are on `beta.219`). The original three options (Mac→DOM Minimum, Minimum + onContextLoss Moderate, Drop-WebGL Strategic) were all SUPERSEDED because they regress Mac WebGL perf permanently for our majority-Mac user base. The new option **α**:
+
+1. **Bump all `@xterm/*` deps** from beta.219 → beta.220 (and addon-webgl from beta.218 → beta.219, peer-dep aligned). Picks up upstream root-cause fix.
+2. **Add `suggestedRendererType = "dom"` inside both `onContextLoss` handlers** in `terminal-addons.ts` and `helpers.ts` (VSCode pattern from `microsoft/vscode#120393`). Defense-in-depth for the rarer GPU-process-death class of failure that bypasses the atlas-merge fix.
+
+## Binding acceptance criteria
+
+- **AC-1**: All `@xterm/*` packages in `apps/desktop/package.json` are at `beta.220` (`addon-webgl` at `beta.219` — latest published; peer-deps on `^6.1.0-beta.220`).
+- **AC-2**: `bun.lock` resolves all `@xterm/*` packages to the bumped versions with `@xterm/addon-webgl@0.20.0-beta.219` declaring `"@xterm/xterm": "^6.1.0-beta.220"` peer-dep.
+- **AC-3**: `terminal-addons.ts:51-56` `onContextLoss` handler sets `suggestedRendererType = "dom"` after dispose.
+- **AC-4**: `helpers.ts:138-143` `onContextLoss` handler sets `suggestedRendererType = "dom"` after dispose.
+- **AC-5**: `bun run typecheck` exits 0 in `apps/desktop`.
+- **AC-6**: `bun run lint` exits 0 at repo root (Biome treats warnings as errors per repo policy).
+- **AC-7 (manual smoke test)**: User can run the desktop app, open ≥7 Claude Code terminal panes, exercise sustained streaming workloads (large `cat`, `tail -f`), and NOT observe glyph corruption on macOS over 15+ minutes. WebGL renderer remains active on Mac (verify via DevTools — `xterm` element should have webgl canvas, not DOM rows).
+
+## Files in scope
+
+- `apps/desktop/package.json` (version bumps only)
+- `bun.lock` (auto-regenerated)
+- `apps/desktop/src/renderer/lib/terminal/terminal-addons.ts` (one-line addition inside `onContextLoss` handler)
+- `apps/desktop/src/renderer/screens/main/components/WorkspaceView/ContentView/TabsContent/Terminal/helpers.ts` (one-line addition inside `onContextLoss` handler)
+
+**Total code delta**: 2 lines added (one per handler) + ~22 lines of package.json bumps + lockfile churn.
+
+## Out of scope (deferred)
+
+- ❌ Vendor-patch postinstall approach (Ouroboros recipe) — not needed; we are already on the beta train and dep bump is cleaner.
+- ❌ Periodic `Terminal.clearTextureAtlas()` heal on tab-visibility-change — defer; PR #5883 fix should remove the need for this.
+- ❌ Recovery-back-to-WebGL after fallback (Hermes Agent pattern) — defer; VSCode ships one-way-only fallback and it's been fine for them since 2021.
+- ❌ Multi-stage frame-budget watchdog (50ms detection from VSCode #118064) — defer; not load-bearing for this fix.
+- ❌ Removal of `addon-webgl` dependency (original Strategic option) — does not apply once upstream fix is adopted.
+- ❌ Touching `setup.ts:90` Chromium WebGL context cap (256) — keep as existing mitigation.
+
+## Risks
+
+- **Beta-train risk** (LOW). We are already on `beta.219`; bumping to `beta.220` is the next sequential beta. PR #5883 is the dominant change in this delta. Secondary change: PR #5875 (kitty keyboard protocol shift+number — unrelated, low risk).
+- **Bun minimum-release-age policy** (RESOLVED on this branch). Beta.220 is < 3 days old; install requires `--minimum-release-age=0` on this branch only. By the time PR review/merge cycle completes, beta.220 will be ≥ 3 days old and CI installs will succeed unmodified. `bunfig.toml` policy unchanged.
+- **Catastrophic GPU-process-death class** (LOW residual risk). User's forced `loseContext()` experiment captured a class of failure that bypasses `onContextLoss` (Chromium GPU process dies before event fires). PR #5883 doesn't address this. The defense-in-depth `onContextLoss` → DOM change covers the gentler context-loss class; the GPU-process-death class is rare in real usage and Chromium auto-restarts the GPU process.
+- **Parallel-worktree conflict**: stale `imp-xterm-webgl-macos-fallback-1779419095` worktree contains prior uncommitted code touching the same files. User to discard or reconcile post-merge.
+- **CI / contributor install on day-of-merge**: If merged within 24h of beta.220 publish (May 21 + 3d = May 24), other devs may need the same `--minimum-release-age=0` override. Practical workaround if needed: defer merge until May 24+.
+
+## Considered alternatives (rejected with reasons)
+
+### Original Minimum (Mac → always-DOM)
+- **Rejected** by owner 2026-05-23: permanent Mac WebGL perf regression unacceptable for majority-Mac user base.
+
+### Original Moderate (Mac → always-DOM + onContextLoss → DOM globally)
+- **Rejected** for same reason as Minimum (includes the Mac→DOM-always part).
+
+### Original Strategic (drop WebGL on all platforms)
+- **Rejected** for same Mac perf reason; punishes non-Mac users too.
+
+### Option β (vendor PR #5883 diff via Ouroboros-style postinstall patcher)
+- **Rejected** in favor of α. Same fix outcome but ~150 LOC of patching tooling vs. a dep bump. Only justified if beta.220 had a known regression — it doesn't.
+
+### Option γ (bump + multi-detector + visibility-change recovery + clearTextureAtlas)
+- **Deferred** as follow-up if α + PR #5883 don't fully resolve user reports after rollout. Currently overkill given the upstream root-cause fix.
+
+## Challenger notes (from prior proposal phase)
+
+Original challenger (code-reviewer) confirmed in commit `b43e70123`:
+- All ground-truth claims verified.
+- Could not find a smaller option than the original Minimum at the time (research had not yet surfaced the upstream PR).
+- Flagged that `onContextLoss` was provably dead code on Mac under original Minimum.
+
+**Re-evaluation under option α**: the `onContextLoss` change is no longer dead code on Mac because WebGL stays loaded on Mac. It's now active belt-and-suspenders for all platforms.
+
+## Security review
+
+Not applicable — no auth/secrets/tokens touched. Confirmed by file-overlap analysis.
+
+## Scope amendments
+
+_(none — populated post-merge if scope shifts)_
+
+## Deferred follow-ups
+
+See `.spec/improvements/GH-3572/follow-ups.md` for the original investigator-listed follow-ups. Additional items from research:
+
+- Track xterm.js 7.0.0 GA — when it ships on the `latest` npm dist-tag, plan migration off the beta train.
+- Monitor xtermjs/xterm.js#5816 (Safari macOS beta 26.5) for any non-#5883 corruption fixes we should also pick up.
+- Watch Chromium bug 502262228 (Intel RPL-U dual-monitor + fractional-scale GL_INVALID_OPERATION) — driver-level issue, may need DOM-fallback if any affected users emerge.
+- If PR #5883 + onContextLoss fallback don't fully resolve user reports after rollout, escalate to option γ (clearTextureAtlas on visibility-change + recovery-back-to-WebGL).
+
 
 # GH-3572: xterm.js WebGL texture-atlas corruption causes garbled terminal glyphs on macOS
 
