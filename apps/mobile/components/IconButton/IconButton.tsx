@@ -58,7 +58,12 @@ const vendorVariantByOurVariant: Record<
 const iconColorByVariant: Record<IconButtonVariant, string> = {
 	ghost: "text-foreground",
 	soft: "text-foreground",
-	primary: "text-primary-foreground",
+	// `primary` (ember bg) — white in both themes. Matches the messaging-app
+	// canon (iMessage, ChatGPT, Slack, WhatsApp) where the primary send-action
+	// is always white-on-brand. Pays a small WCAG hit (~2.6:1 vs ember) in
+	// exchange for semantic clarity: white-on-color reads as "energetic CTA,"
+	// black-on-color reads as "editorial tag."
+	primary: "text-white",
 	neutral: "text-background",
 	destructive: "text-white",
 };

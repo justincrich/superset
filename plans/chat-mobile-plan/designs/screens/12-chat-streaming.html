@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chat — Streaming · Superset Mobile</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <link rel="stylesheet" href="../components.css" />
+  <script src="../icons.js" defer></script>
+</head>
+<body>
+<div class="stage">
+  <div class="iphone-frame">
+    <div class="iphone-viewport">
+      <div class="dynamic-island">
+        <span class="live-dot"></span>
+        <span class="live-label">Streaming</span>
+      </div>
+
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="sb-right">
+          <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="5" y="5" width="3" height="7" rx="0.5"/><rect x="10" y="2" width="3" height="10" rx="0.5"/><rect x="15" y="0" width="3" height="12" rx="0.5"/></svg>
+          <svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 4a11 11 0 0 0-15.6 0l1.4 1.4Z"/></svg>
+          <span class="sb-battery"><span class="sb-battery-body"><span class="sb-battery-fill"></span></span></span>
+        </div>
+      </div>
+
+      <div class="app-content">
+
+        <header class="app-header">
+          <button class="menu-btn"><i data-lucide="arrow-left"></i></button>
+          <div style="flex: 1; min-width: 0; text-align: center;">
+            <div style="font-size: 14px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Refactor relay tunnel reconnect</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--accent-live); margin-top: 1px; display: flex; align-items: center; justify-content: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.06em;">
+              <span style="width: 6px; height: 6px; background: var(--accent-live); border-radius: 50%; box-shadow: 0 0 6px var(--accent-live); animation: pulse 1.4s ease-in-out infinite;"></span>
+              <span>Streaming</span>
+            </div>
+          </div>
+          <button class="menu-btn"><i data-lucide="more-vertical"></i></button>
+        </header>
+
+        <div class="chat-scroll">
+          <div class="msg-user-row">
+            <div class="msg-user">Show me the new backoff schedule with the jitter applied — paste the function as it'll look post-edit.</div>
+          </div>
+
+          <div class="msg-asst-row">
+            <div class="msg-asst-head"><span class="av">A</span><span>Assistant</span></div>
+            <div class="msg-asst">
+              <p>Sure — here's the updated <code>scheduleReconnect</code> with exponential backoff and ±20% jitter:</p>
+              <pre><span class="codelang">ts</span><span class="code-tok-com">// apps/relay/src/tunnel-client.ts</span>
+<span class="code-tok-key">function</span> <span class="code-tok-fn">scheduleReconnect</span>(<span>attempt</span>: <span class="code-tok-key">number</span>) {
+  <span class="code-tok-key">const</span> <span>base</span> = <span class="code-tok-fn">Math.min</span>(<span class="code-tok-num">30_000</span>, <span class="code-tok-num">1000</span> * <span class="code-tok-num">2</span> ** attempt);
+  <span class="code-tok-key">const</span> <span>jitter</span> = <span>base</span> * <span class="code-tok-num">0.2</span> * (<span class="code-tok-fn">Math.random</span>() * <span class="code-tok-num">2</span> - <span class="code-tok-num">1</span>);
+  <span class="code-tok-key">return</span> <span class="code-tok-fn">Math.round</span>(<span>base</span> + <span>jitter</span>);
+}</pre>
+              <p>So attempts grow: 1s → 2s → 4s … capped at 30s. The jitter prevents thundering-herd<span class="streaming-caret"></span></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer-wrap">
+          <div class="composer">
+            <div class="textline placeholder">Generating response…</div>
+            <div class="ctrls" style="margin-top: 6px">
+              <button class="pill-btn icon-only"><i data-lucide="paperclip"></i></button>
+              <button class="pill-btn"><i data-lucide="sparkles"></i><span>sonnet-4.6</span><i data-lucide="chevron-down" class="chev"></i></button>
+              <button class="pill-btn"><i data-lucide="brain"></i><span>med</span></button>
+              <div class="spacer"></div>
+              <button class="send-btn stop"><span class="stop-square"></span></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

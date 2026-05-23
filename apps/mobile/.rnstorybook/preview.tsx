@@ -1,6 +1,7 @@
 import { PortalHost } from "@rn-primitives/portal";
 import type { Preview } from "@storybook/react-native";
 import { View } from "react-native";
+import { cn } from "@/lib/utils";
 
 // NOTE: Do NOT import from `expo-router/react-navigation` here. Storybook 9 RN
 // imports preview.tsx during prep (`createPreparedStoryMapping`), which
@@ -11,12 +12,18 @@ import { View } from "react-native";
 // providers out of this file entirely.
 const preview: Preview = {
 	decorators: [
-		(Story) => (
-			<View className="flex-1 bg-background p-4">
-				<Story />
-				<PortalHost />
-			</View>
-		),
+		(Story, context) => {
+			// Stories that declare `parameters.layout: 'fullscreen'` (per the
+			// Storybook convention) render edge-to-edge so views look like they
+			// would on a real device. Atoms/molecules keep the p-4 chrome.
+			const isFullscreen = context.parameters?.layout === "fullscreen";
+			return (
+				<View className={cn("flex-1 bg-background", !isFullscreen && "p-4")}>
+					<Story />
+					<PortalHost />
+				</View>
+			);
+		},
 	],
 	parameters: {
 		controls: {

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tool Approval — Inline Card + Sticky Footer · Superset Mobile</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <link rel="stylesheet" href="../components.css" />
+  <script src="../icons.js" defer></script>
+</head>
+<body>
+<div class="stage">
+  <div class="iphone-frame">
+    <div class="iphone-viewport">
+      <div class="dynamic-island">
+        <span style="width: 6px; height: 6px; background: var(--accent-warn); border-radius: 50%; box-shadow: 0 0 8px var(--accent-warn); animation: pulse 1.4s ease-in-out infinite;"></span>
+        <span class="live-label" style="color: var(--accent-warn);">Approve</span>
+      </div>
+
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="sb-right">
+          <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="5" y="5" width="3" height="7" rx="0.5"/><rect x="10" y="2" width="3" height="10" rx="0.5"/><rect x="15" y="0" width="3" height="12" rx="0.5"/></svg>
+          <svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 4a11 11 0 0 0-15.6 0l1.4 1.4Z"/></svg>
+          <span class="sb-battery"><span class="sb-battery-body"><span class="sb-battery-fill"></span></span></span>
+        </div>
+      </div>
+
+      <div class="app-content">
+
+        <header class="app-header">
+          <button class="menu-btn"><i data-lucide="arrow-left"></i></button>
+          <div style="flex: 1; min-width: 0; text-align: center;">
+            <div style="font-size: 14px; font-weight: 500; letter-spacing: -0.01em;">Auth refactor — JWT rotation</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--accent-warn); margin-top: 1px; text-transform: uppercase; letter-spacing: 0.06em;">2 actions pending</div>
+          </div>
+          <button class="menu-btn"><i data-lucide="more-vertical"></i></button>
+        </header>
+
+        <div class="chat-scroll">
+
+          <div class="msg-asst-row">
+            <div class="msg-asst-head"><span class="av">A</span><span>Assistant</span></div>
+            <div class="msg-asst">
+              <p>I need to run this migration to add the <code>jwt_kid</code> column. It modifies the production schema, so I'm pausing for your approval.</p>
+            </div>
+
+            <div class="approval-card">
+              <div class="ac-head">
+                <span class="ac-icon"><i data-lucide="alert-triangle"></i></span>
+                <span class="ac-title">Approval requested</span>
+                <span class="ac-tool">bash · destructive</span>
+              </div>
+              <div class="ac-body">
+                Run schema migration <code style="font-family: var(--font-mono); font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 4px;">0042_add_jwt_kid</code> against the <code style="font-family: var(--font-mono); font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 4px;">superset-dev</code> Neon branch.
+                <div class="ac-args">
+$ bun drizzle-kit migrate \
+    --config drizzle.config.ts \
+    --to 0042_add_jwt_kid
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="footer-sticky">
+          <span class="pending-count">1 of 2</span>
+          <button class="footer-btn ghost">
+            <i data-lucide="circle-slash" style="width: 14px; height: 14px;"></i>
+            Decline
+          </button>
+          <button class="footer-btn primary">
+            <i data-lucide="check" style="width: 14px; height: 14px; stroke-width: 2.5;"></i>
+            Approve
+          </button>
+          <button class="footer-btn" style="flex: 0 0 44px; padding: 0;" aria-label="Always allow">
+            <i data-lucide="check-check" style="width: 16px; height: 16px;"></i>
+          </button>
+        </div>
+
+        <div class="composer-wrap" style="padding-top: 4px">
+          <div class="composer" style="opacity: 0.65">
+            <div class="textline placeholder">Approval needed — input disabled</div>
+            <div class="ctrls" style="margin-top: 6px">
+              <button class="pill-btn icon-only"><i data-lucide="paperclip"></i></button>
+              <button class="pill-btn"><i data-lucide="sparkles"></i><span>sonnet-4.6</span></button>
+              <div class="spacer"></div>
+              <button class="send-btn disabled"><i data-lucide="arrow-up"></i></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

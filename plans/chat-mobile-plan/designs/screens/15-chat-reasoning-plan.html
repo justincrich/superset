@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chat — Reasoning & Plan · Superset Mobile</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <link rel="stylesheet" href="../components.css" />
+  <script src="../icons.js" defer></script>
+</head>
+<body>
+<div class="stage">
+  <div class="iphone-frame">
+    <div class="iphone-viewport">
+      <div class="dynamic-island"></div>
+
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="sb-right">
+          <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="5" y="5" width="3" height="7" rx="0.5"/><rect x="10" y="2" width="3" height="10" rx="0.5"/><rect x="15" y="0" width="3" height="12" rx="0.5"/></svg>
+          <svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 4a11 11 0 0 0-15.6 0l1.4 1.4Z"/></svg>
+          <span class="sb-battery"><span class="sb-battery-body"><span class="sb-battery-fill"></span></span></span>
+        </div>
+      </div>
+
+      <div class="app-content">
+
+        <header class="app-header">
+          <button class="menu-btn"><i data-lucide="arrow-left"></i></button>
+          <div style="flex: 1; min-width: 0; text-align: center;">
+            <div style="font-size: 14px; font-weight: 500; letter-spacing: -0.01em;">Drizzle migration plan</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); margin-top: 1px;">superset · chat-mobile-plan</div>
+          </div>
+          <button class="menu-btn"><i data-lucide="more-vertical"></i></button>
+        </header>
+
+        <div class="chat-scroll">
+
+          <div class="msg-user-row">
+            <div class="msg-user">Lay out a migration plan to move chat_messages from jsonb columns to a proper events table. Think it through first.</div>
+          </div>
+
+          <div class="msg-asst-row">
+            <div class="msg-asst-head"><span class="av">A</span><span>Assistant</span></div>
+
+            <div class="reasoning-card">
+              <span class="rb-icon"><i data-lucide="brain"></i></span>
+              <div>
+                <div class="rb-title">Extended thinking</div>
+                <div class="rb-meta">12 steps · 1,820 tokens</div>
+              </div>
+              <span class="chev"><i data-lucide="chevron-down"></i></span>
+            </div>
+
+            <div class="msg-asst" style="margin-top: 4px">
+              <p>Plan ready. We move to an append-only events table, dual-write for one release, then cut over the read path. Safe because the existing jsonb column stays canonical until we flip the flag.</p>
+            </div>
+
+            <div class="plan-card">
+              <div class="plan-head">
+                <div class="plan-icon"><i data-lucide="list-checks"></i></div>
+                <div class="plan-title">Migration plan — chat_messages → events</div>
+                <div class="plan-meta">5 steps</div>
+              </div>
+              <div class="step">
+                <span class="step-num">01</span>
+                <span class="step-text">Add <code style="font-family: var(--font-mono); font-size: 12px; background: var(--bg); padding: 1px 4px; border-radius: 3px;">chat_events</code> table with composite PK <code style="font-family: var(--font-mono); font-size: 12px; background: var(--bg); padding: 1px 4px; border-radius: 3px;">(session_id, seq)</code>.</span>
+              </div>
+              <div class="step">
+                <span class="step-num">02</span>
+                <span class="step-text">Backfill from existing jsonb arrays in a background job, batched at 5k rows.</span>
+              </div>
+              <div class="step">
+                <span class="step-num">03</span>
+                <span class="step-text">Ship dual-write behind <code style="font-family: var(--font-mono); font-size: 12px; background: var(--bg); padding: 1px 4px; border-radius: 3px;">ff.chat_events_dual_write</code>.</span>
+              </div>
+              <div class="step">
+                <span class="step-num">04</span>
+                <span class="step-text">Flip <code style="font-family: var(--font-mono); font-size: 12px; background: var(--bg); padding: 1px 4px; border-radius: 3px;">ff.chat_events_read</code> after one release of soak.</span>
+              </div>
+              <div class="step">
+                <span class="step-num">05</span>
+                <span class="step-text">Drop the jsonb column in a follow-up migration once read path is stable.</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="composer-wrap">
+          <div class="composer">
+            <div class="textline placeholder">Ask follow-up…</div>
+            <div class="ctrls" style="margin-top: 6px">
+              <button class="pill-btn icon-only"><i data-lucide="paperclip"></i></button>
+              <button class="pill-btn"><i data-lucide="sparkles"></i><span>opus-4.7</span><i data-lucide="chevron-down" class="chev"></i></button>
+              <button class="pill-btn"><i data-lucide="brain"></i><span>high</span></button>
+              <div class="spacer"></div>
+              <button class="send-btn disabled"><i data-lucide="arrow-up"></i></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

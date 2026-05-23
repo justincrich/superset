@@ -27,7 +27,7 @@ export const THEME = {
 
 		// Ember accent (BRAND)
 		primary: "hsl(17 69% 60%)",
-		primaryForeground: "hsl(0 0% 100%)",
+		primaryForeground: "hsl(0 0% 0%)",
 
 		// Neutrals
 		secondary: "hsl(40 5% 95%)",
@@ -77,7 +77,7 @@ export const THEME = {
 
 		// Ember accent (BRAND)
 		primary: "hsl(17 69% 60%)",
-		primaryForeground: "hsl(13 16% 7%)",
+		primaryForeground: "hsl(0 0% 100%)",
 
 		// Neutrals
 		secondary: "hsl(15 4% 16%)",

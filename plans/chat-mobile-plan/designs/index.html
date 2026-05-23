@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Superset Mobile Chat — Design Contact Sheet</title>
+  <link rel="stylesheet" href="tokens.css" />
+  <style>
+    body { padding: 32px 0 96px; }
+    .wrap { max-width: 1480px; margin: 0 auto; padding: 0 32px; }
+    .head {
+      display: flex; align-items: baseline; gap: 24px;
+      padding-bottom: 24px; border-bottom: 0.5px solid var(--border);
+      margin-bottom: 32px;
+    }
+    .head h1 {
+      margin: 0;
+      font-size: 36px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+    }
+    .head .meta {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .head .meta strong { color: var(--accent-live); font-weight: 500; }
+    .head .lede {
+      flex: 1;
+      max-width: 540px;
+      font-size: 14px;
+      color: var(--fg-muted);
+      line-height: 1.55;
+    }
+    .group-label {
+      grid-column: 1 / -1;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent-live);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 12px 0 4px;
+      margin-top: 16px;
+      border-top: 0.5px solid var(--border);
+    }
+    .group-label:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 28px 24px;
+    }
+    .cell { display: flex; flex-direction: column; gap: 10px; }
+    .cell .frame-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 444 / 962;
+      background: #000;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.55);
+    }
+    .cell iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 444px;
+      height: 962px;
+      transform-origin: top left;
+      border: none;
+      pointer-events: none;
+    }
+    @media (max-width: 1480px) { .cell iframe { transform: scale(0.63); } }
+    @media (max-width: 1280px) { .cell iframe { transform: scale(0.55); } }
+    @media (min-width: 1481px) { .cell iframe { transform: scale(0.63); } }
+    .cell .caption { font-size: 13px; line-height: 1.4; letter-spacing: -0.005em; }
+    .cell .caption .num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .cell .caption .uc {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent-live);
+      margin-top: 2px;
+      display: block;
+    }
+    .cell a { color: inherit; text-decoration: none; }
+    .cell a:hover .frame-wrap { box-shadow: 0 12px 32px rgba(0,0,0,0.6), 0 0 0 1px var(--accent-live); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="head">
+    <h1>Mobile Chat<br/><span style="color: var(--fg-muted); font-weight: 400; font-style: italic;">design contact sheet</span></h1>
+    <p class="lede">High-fidelity HTML mockups for the chat-mobile-sprint-1 PRD. 26 screens × iPhone&nbsp;16 Pro Max viewport, dark-only, OLED-first. Designed to feed the <code style="font-family: var(--font-mono); background: var(--surface); padding: 1px 6px; border-radius: 4px; font-size: 12px;">pixel-perfect:build</code> skill as concept HTML.</p>
+    <div class="meta">
+      <strong>26</strong> screens<br/>
+      <strong>6</strong> functional groups<br/>
+      <strong>430×932</strong> viewport
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <div class="group-label">Empty states · UC-NAV-06</div>
+
+    <div class="cell"><a href="screens/00-empty-no-hosts.html"><div class="frame-wrap"><iframe src="screens/00-empty-no-hosts.html"></iframe></div><div class="caption"><span class="num">00</span>No devices yet<span class="uc">UC-NAV-06.1</span></div></a></div>
+    <div class="cell"><a href="screens/01-empty-no-workspaces.html"><div class="frame-wrap"><iframe src="screens/01-empty-no-workspaces.html"></iframe></div><div class="caption"><span class="num">01</span>No workspaces<span class="uc">UC-NAV-06.2</span></div></a></div>
+    <div class="cell"><a href="screens/02-empty-no-sessions.html"><div class="frame-wrap"><iframe src="screens/02-empty-no-sessions.html"></iframe></div><div class="caption"><span class="num">02</span>No sessions · FAB highlight<span class="uc">UC-NAV-06.3</span></div></a></div>
+
+    <div class="group-label">Sessions list · UC-NAV-01 · 02 · 07</div>
+
+    <div class="cell"><a href="screens/03-sessions-list-multi.html"><div class="frame-wrap"><iframe src="screens/03-sessions-list-multi.html"></iframe></div><div class="caption"><span class="num">03</span>Multi-workspace + Load more<span class="uc">UC-NAV-01,02</span></div></a></div>
+    <div class="cell"><a href="screens/04-sessions-list-single.html"><div class="frame-wrap"><iframe src="screens/04-sessions-list-single.html"></iframe></div><div class="caption"><span class="num">04</span>Single workspace · no cap<span class="uc">UC-NAV-02</span></div></a></div>
+    <div class="cell"><a href="screens/05-sessions-search-active.html"><div class="frame-wrap"><iframe src="screens/05-sessions-search-active.html"></iframe></div><div class="caption"><span class="num">05</span>Search active · cross-workspace<span class="uc">UC-NAV-07</span></div></a></div>
+    <div class="cell"><a href="screens/06-sessions-search-no-matches.html"><div class="frame-wrap"><iframe src="screens/06-sessions-search-no-matches.html"></iframe></div><div class="caption"><span class="num">06</span>Search · no matches<span class="uc">UC-NAV-07</span></div></a></div>
+
+    <div class="group-label">Sheets · UC-NAV-03 · 04</div>
+
+    <div class="cell"><a href="screens/07-host-picker-sheet.html"><div class="frame-wrap"><iframe src="screens/07-host-picker-sheet.html"></iframe></div><div class="caption"><span class="num">07</span>Host picker<span class="uc">UC-NAV-03</span></div></a></div>
+    <div class="cell"><a href="screens/08-new-chat-sheet.html"><div class="frame-wrap"><iframe src="screens/08-new-chat-sheet.html"></iframe></div><div class="caption"><span class="num">08</span>New chat · workspace picker<span class="uc">UC-NAV-04</span></div></a></div>
+
+    <div class="group-label">Chat surface · UC-SESS-02,03 · UC-RENDER-01–07</div>
+
+    <div class="cell"><a href="screens/09-chat-empty.html"><div class="frame-wrap"><iframe src="screens/09-chat-empty.html"></iframe></div><div class="caption"><span class="num">09</span>Empty new chat<span class="uc">UC-SESS-03</span></div></a></div>
+    <div class="cell"><a href="screens/10-chat-history-loading.html"><div class="frame-wrap"><iframe src="screens/10-chat-history-loading.html"></iframe></div><div class="caption"><span class="num">10</span>Loading history · skeletons<span class="uc">UC-SESS-02</span></div></a></div>
+    <div class="cell"><a href="screens/11-chat-message-thread.html"><div class="frame-wrap"><iframe src="screens/11-chat-message-thread.html"></iframe></div><div class="caption"><span class="num">11</span>Message thread + long-press<span class="uc">UC-RENDER-01</span></div></a></div>
+    <div class="cell"><a href="screens/12-chat-streaming.html"><div class="frame-wrap"><iframe src="screens/12-chat-streaming.html"></iframe></div><div class="caption"><span class="num">12</span>Streaming · live caret · Stop<span class="uc">UC-RENDER-02</span></div></a></div>
+    <div class="cell"><a href="screens/13-chat-markdown.html"><div class="frame-wrap"><iframe src="screens/13-chat-markdown.html"></iframe></div><div class="caption"><span class="num">13</span>Markdown · code, table, quote<span class="uc">UC-RENDER-03</span></div></a></div>
+    <div class="cell"><a href="screens/14-chat-tool-calls.html"><div class="frame-wrap"><iframe src="screens/14-chat-tool-calls.html"></iframe></div><div class="caption"><span class="num">14</span>Tool calls · running/done<span class="uc">UC-RENDER-04</span></div></a></div>
+    <div class="cell"><a href="screens/15-chat-reasoning-plan.html"><div class="frame-wrap"><iframe src="screens/15-chat-reasoning-plan.html"></iframe></div><div class="caption"><span class="num">15</span>Reasoning + plan card<span class="uc">UC-RENDER-05</span></div></a></div>
+    <div class="cell"><a href="screens/16-chat-subagent.html"><div class="frame-wrap"><iframe src="screens/16-chat-subagent.html"></iframe></div><div class="caption"><span class="num">16</span>Subagent execution<span class="uc">UC-RENDER-06</span></div></a></div>
+
+    <div class="group-label">Composer · UC-COMP-01 · 04 · 05</div>
+
+    <div class="cell"><a href="screens/17-composer-idle.html"><div class="frame-wrap"><iframe src="screens/17-composer-idle.html"></iframe></div><div class="caption"><span class="num">17</span>Composer + linked refs<span class="uc">UC-COMP-01</span></div></a></div>
+    <div class="cell"><a href="screens/18-composer-slash-menu.html"><div class="frame-wrap"><iframe src="screens/18-composer-slash-menu.html"></iframe></div><div class="caption"><span class="num">18</span>Slash command menu<span class="uc">UC-COMP-01</span></div></a></div>
+    <div class="cell"><a href="screens/19-composer-model-picker.html"><div class="frame-wrap"><iframe src="screens/19-composer-model-picker.html"></iframe></div><div class="caption"><span class="num">19</span>Model picker<span class="uc">UC-COMP-04</span></div></a></div>
+    <div class="cell"><a href="screens/20-composer-thinking-picker.html"><div class="frame-wrap"><iframe src="screens/20-composer-thinking-picker.html"></iframe></div><div class="caption"><span class="num">20</span>Thinking level<span class="uc">UC-COMP-05</span></div></a></div>
+
+    <div class="group-label">Mid-turn pause containers · UC-PAUSE-01–04</div>
+
+    <div class="cell"><a href="screens/21-approval-card-footer.html"><div class="frame-wrap"><iframe src="screens/21-approval-card-footer.html"></iframe></div><div class="caption"><span class="num">21</span>Tool approval · card + footer<span class="uc">UC-PAUSE-01</span></div></a></div>
+    <div class="cell"><a href="screens/22-question-sheet.html"><div class="frame-wrap"><iframe src="screens/22-question-sheet.html"></iframe></div><div class="caption"><span class="num">22</span>ask_user · sheet<span class="uc">UC-PAUSE-02</span></div></a></div>
+    <div class="cell"><a href="screens/23-plan-review-modal.html"><div class="frame-wrap"><iframe src="screens/23-plan-review-modal.html"></iframe></div><div class="caption"><span class="num">23</span>Plan review · full-screen<span class="uc">UC-PAUSE-03</span></div></a></div>
+    <div class="cell"><a href="screens/24-pending-action-pill.html"><div class="frame-wrap"><iframe src="screens/24-pending-action-pill.html"></iframe></div><div class="caption"><span class="num">24</span>Pending action pill<span class="uc">UC-PAUSE-04</span></div></a></div>
+
+    <div class="group-label">Platform states · UC-PLATF-01 · 03</div>
+
+    <div class="cell"><a href="screens/25-host-offline-banner.html"><div class="frame-wrap"><iframe src="screens/25-host-offline-banner.html"></iframe></div><div class="caption"><span class="num">25</span>Host offline banner<span class="uc">UC-PLATF-03</span></div></a></div>
+    <div class="cell"><a href="screens/26-push-pre-prompt.html"><div class="frame-wrap"><iframe src="screens/26-push-pre-prompt.html"></iframe></div><div class="caption"><span class="num">26</span>Push pre-prompt<span class="uc">UC-PLATF-01</span></div></a></div>
+
+  </div>
+</div>
+</body>
+</html>

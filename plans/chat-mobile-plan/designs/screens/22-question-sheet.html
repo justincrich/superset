@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ask_user — Question Sheet · Superset Mobile</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <link rel="stylesheet" href="../components.css" />
+  <script src="../icons.js" defer></script>
+</head>
+<body>
+<div class="stage">
+  <div class="iphone-frame">
+    <div class="iphone-viewport">
+      <div class="dynamic-island">
+        <span style="width: 6px; height: 6px; background: var(--accent-warn); border-radius: 50%; box-shadow: 0 0 8px var(--accent-warn); animation: pulse 1.4s ease-in-out infinite;"></span>
+        <span class="live-label" style="color: var(--accent-warn);">Question</span>
+      </div>
+
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="sb-right">
+          <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="5" y="5" width="3" height="7" rx="0.5"/><rect x="10" y="2" width="3" height="10" rx="0.5"/><rect x="15" y="0" width="3" height="12" rx="0.5"/></svg>
+          <svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 4a11 11 0 0 0-15.6 0l1.4 1.4Z"/></svg>
+          <span class="sb-battery"><span class="sb-battery-body"><span class="sb-battery-fill"></span></span></span>
+        </div>
+      </div>
+
+      <div class="app-content">
+
+        <header class="app-header" style="opacity: 0.4">
+          <button class="menu-btn"><i data-lucide="arrow-left"></i></button>
+          <div style="flex: 1; min-width: 0; text-align: center;">
+            <div style="font-size: 14px; font-weight: 500; letter-spacing: -0.01em;">Refactor relay tunnel reconnect</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); margin-top: 1px;">superset · chat-mobile-plan</div>
+          </div>
+          <button class="menu-btn"><i data-lucide="more-vertical"></i></button>
+        </header>
+
+        <div class="chat-scroll" style="opacity: 0.35">
+          <div class="msg-user-row">
+            <div class="msg-user">Pick the most defensive option.</div>
+          </div>
+        </div>
+
+        <div class="scrim"></div>
+
+        <div class="sheet question-sheet" style="padding-bottom: 18px">
+          <div class="grabber"></div>
+          <div class="sheet-header">
+            <div class="sheet-title">
+              <span class="lozenge" style="background: var(--accent-warn); box-shadow: 0 0 8px var(--accent-warn);"></span>
+              <span>Question from assistant</span>
+            </div>
+            <button class="sheet-close"><i data-lucide="x"></i></button>
+          </div>
+
+          <div class="question">
+            Should I make the backoff cap configurable per-host, or hard-code <code style="font-family: var(--font-mono); background: var(--surface); padding: 1px 5px; border-radius: 4px; font-size: 13px;">30s</code> for everyone?
+          </div>
+
+          <div class="pills">
+            <span class="pill">Hard-code 30s</span>
+            <span class="pill">Per-host setting</span>
+            <span class="pill">Per-tunnel override</span>
+          </div>
+
+          <div class="input-area" style="margin-bottom: 14px">
+            <div class="placeholder">Type a response, or pick a suggestion above…</div>
+            <button class="send-cta"><i data-lucide="arrow-up"></i></button>
+          </div>
+
+          <div style="padding: 0 20px; display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 10px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.06em;">
+            <i data-lucide="info" style="width: 12px; height: 12px;"></i>
+            Swipe down to leave question pending
+          </div>
+        </div>
+
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

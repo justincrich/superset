@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pending Action — Floating Pill · Superset Mobile</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <link rel="stylesheet" href="../components.css" />
+  <script src="../icons.js" defer></script>
+</head>
+<body>
+<div class="stage">
+  <div class="iphone-frame">
+    <div class="iphone-viewport">
+      <div class="dynamic-island">
+        <span style="width: 6px; height: 6px; background: var(--accent-warn); border-radius: 50%; box-shadow: 0 0 8px var(--accent-warn); animation: pulse 1.4s ease-in-out infinite;"></span>
+        <span class="live-label" style="color: var(--accent-warn);">Pending</span>
+      </div>
+
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="sb-right">
+          <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="5" y="5" width="3" height="7" rx="0.5"/><rect x="10" y="2" width="3" height="10" rx="0.5"/><rect x="15" y="0" width="3" height="12" rx="0.5"/></svg>
+          <svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 4a11 11 0 0 0-15.6 0l1.4 1.4Z"/></svg>
+          <span class="sb-battery"><span class="sb-battery-body"><span class="sb-battery-fill"></span></span></span>
+        </div>
+      </div>
+
+      <div class="app-content">
+
+        <header class="app-header">
+          <button class="menu-btn"><i data-lucide="arrow-left"></i></button>
+          <div style="flex: 1; min-width: 0; text-align: center;">
+            <div style="font-size: 14px; font-weight: 500; letter-spacing: -0.01em;">Auth refactor — JWT rotation</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); margin-top: 1px;">JustinCode · main</div>
+          </div>
+          <button class="menu-btn"><i data-lucide="more-vertical"></i></button>
+        </header>
+
+        <div class="chat-scroll">
+
+          <div class="msg-asst-row">
+            <div class="msg-asst-head"><span class="av">A</span><span>Assistant</span></div>
+            <div class="msg-asst">
+              <p>Reviewed the file. The signing key rotation logic is in <code>host-sign.ts</code>. Before I edit it, let me check how the relay consumes the kid header.</p>
+            </div>
+            <div class="tool-card done">
+              <div class="rule"></div>
+              <div class="body">
+                <div class="head"><span class="tname">read_file</span><span class="status">done</span><span class="chev"><i data-lucide="chevron-right"></i></span></div>
+                <div class="argline">apps/relay/src/jwt-verify.ts · 96 lines</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg-user-row">
+            <div class="msg-user">Try the rotation against the staging Neon branch first.</div>
+          </div>
+
+          <div class="msg-asst-row">
+            <div class="msg-asst-head"><span class="av">A</span><span>Assistant</span></div>
+            <div class="msg-asst">
+              <p>Will do. I'll bump the kid in the host's signing config and run the test suite against staging.</p>
+            </div>
+            <div class="tool-card done">
+              <div class="rule"></div>
+              <div class="body">
+                <div class="head"><span class="tname">edit_file</span><span class="status">done</span><span class="chev"><i data-lucide="chevron-right"></i></span></div>
+                <div class="argline">packages/auth/src/host-sign.ts · +6 -2</div>
+              </div>
+            </div>
+            <div class="tool-card done">
+              <div class="rule"></div>
+              <div class="body">
+                <div class="head"><span class="tname">bash</span><span class="status">done</span><span class="chev"><i data-lucide="chevron-right"></i></span></div>
+                <div class="argline">bun test packages/auth · 28 passed</div>
+              </div>
+            </div>
+            <div class="msg-asst">
+              <p>Tests passed. Ready to run the actual rotation, but it's destructive — I've paused for your approval. ↑ scroll up to see the approval card.</p>
+            </div>
+          </div>
+
+          <div class="msg-user-row">
+            <div class="msg-user">Hmm okay, give me a sec to read it through.</div>
+          </div>
+
+          <div class="msg-asst-row">
+            <div class="msg-asst-head"><span class="av">A</span><span>Assistant</span></div>
+            <div class="msg-asst">
+              <p>No rush. Take a look at the migration SQL too — I dropped a preview in the approval card. The kid column is nullable for backwards compat.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="pending-pill">
+          <span class="pp-dot"></span>
+          <span>1 pending</span>
+          <span style="color: var(--fg-dim);">·</span>
+          <span class="pp-count">tap to respond</span>
+          <i data-lucide="arrow-up" style="width: 14px; height: 14px; color: var(--accent-warn); margin-left: 4px;"></i>
+        </div>
+
+        <div class="composer-wrap">
+          <div class="composer" style="opacity: 0.65">
+            <div class="textline placeholder">Approval pending — input disabled</div>
+            <div class="ctrls" style="margin-top: 6px">
+              <button class="pill-btn icon-only"><i data-lucide="paperclip"></i></button>
+              <button class="pill-btn"><i data-lucide="sparkles"></i><span>sonnet-4.6</span></button>
+              <div class="spacer"></div>
+              <button class="send-btn disabled"><i data-lucide="arrow-up"></i></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -137,6 +137,11 @@ export function ComposerRow({
 							shape="pill"
 							onPress={onSend}
 							disabled={variant === "idle"}
+							// Override vendor Button's `opacity-50` disabled state — at 50% the
+							// muted ember reads as a different color rather than an obviously
+							// dim version of the brand. 70% keeps "disabled" legible while
+							// preserving the ember identity.
+							className={variant === "idle" ? "opacity-70" : undefined}
 						/>
 					)}
 				</View>

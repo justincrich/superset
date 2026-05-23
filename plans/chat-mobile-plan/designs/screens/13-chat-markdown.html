@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chat — Markdown · Superset Mobile</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <link rel="stylesheet" href="../components.css" />
+  <script src="../icons.js" defer></script>
+</head>
+<body>
+<div class="stage">
+  <div class="iphone-frame">
+    <div class="iphone-viewport">
+      <div class="dynamic-island"></div>
+
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="sb-right">
+          <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="5" y="5" width="3" height="7" rx="0.5"/><rect x="10" y="2" width="3" height="10" rx="0.5"/><rect x="15" y="0" width="3" height="12" rx="0.5"/></svg>
+          <svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 4a11 11 0 0 0-15.6 0l1.4 1.4Z"/></svg>
+          <span class="sb-battery"><span class="sb-battery-body"><span class="sb-battery-fill"></span></span></span>
+        </div>
+      </div>
+
+      <div class="app-content">
+
+        <header class="app-header">
+          <button class="menu-btn"><i data-lucide="arrow-left"></i></button>
+          <div style="flex: 1; min-width: 0; text-align: center;">
+            <div style="font-size: 14px; font-weight: 500; letter-spacing: -0.01em;">Drizzle migration plan</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); margin-top: 1px;">superset · chat-mobile-plan</div>
+          </div>
+          <button class="menu-btn"><i data-lucide="more-vertical"></i></button>
+        </header>
+
+        <div class="chat-scroll">
+
+          <div class="msg-user-row">
+            <div class="msg-user">Summarize the new chat session shape and how it relates to chat_messages, please.</div>
+          </div>
+
+          <div class="msg-asst-row">
+            <div class="msg-asst-head"><span class="av">A</span><span>Assistant</span></div>
+            <div class="msg-asst">
+
+              <h3>chat_sessions — Electric-shape ready</h3>
+              <p>The new schema separates lightweight session metadata from message bodies, so we can sync the list cheaply while keeping the bulky thread on the host.</p>
+
+              <ol>
+                <li><strong>List shape</strong> — <code>chat_sessions</code> rows replicate via Electric.</li>
+                <li><strong>Messages</strong> — stay in host-runtime memory; fetched on demand.</li>
+                <li><strong>Cursor</strong> — opaque <code>lastUpdatedAt</code> per row, used for resume.</li>
+              </ol>
+
+              <h3>Schema</h3>
+<pre><span class="codelang">sql</span><span class="code-tok-com">-- packages/db/src/schema/chat-sessions.ts</span>
+<span class="code-tok-key">CREATE TABLE</span> chat_sessions (
+  id          <span class="code-tok-key">uuid</span>      <span class="code-tok-key">PRIMARY KEY</span>,
+  org_id      <span class="code-tok-key">uuid</span>      <span class="code-tok-key">NOT NULL</span>,
+  host_id     <span class="code-tok-key">uuid</span>      <span class="code-tok-key">NOT NULL</span>,
+  workspace_id <span class="code-tok-key">uuid</span>     <span class="code-tok-key">NOT NULL</span>,
+  title       <span class="code-tok-key">text</span>      <span class="code-tok-key">NOT NULL</span>,
+  status      session_status <span class="code-tok-key">NOT NULL</span>,
+  last_active <span class="code-tok-key">timestamptz</span> <span class="code-tok-key">NOT NULL</span>
+);</pre>
+
+              <blockquote>Heads up: <em>session_status</em> is a postgres enum — adding a value is a migration of its own.</blockquote>
+
+              <h3>Compared to v1</h3>
+              <table>
+                <thead><tr><th>Field</th><th>v1</th><th>v2</th></tr></thead>
+                <tbody>
+                  <tr><td><code>title</code></td><td>nullable</td><td>required</td></tr>
+                  <tr><td><code>status</code></td><td>varchar</td><td>enum</td></tr>
+                  <tr><td><code>messages</code></td><td>jsonb[]</td><td>in-memory</td></tr>
+                </tbody>
+              </table>
+
+              <p>Full RFC lives at <a>plans/chat-mobile-plan/11-tech/02-electric-shapes.md</a>.</p>
+
+            </div>
+          </div>
+
+        </div>
+
+        <div class="composer-wrap">
+          <div class="composer">
+            <div class="textline placeholder">Ask follow-up…</div>
+            <div class="ctrls" style="margin-top: 6px">
+              <button class="pill-btn icon-only"><i data-lucide="paperclip"></i></button>
+              <button class="pill-btn"><i data-lucide="sparkles"></i><span>sonnet-4.6</span><i data-lucide="chevron-down" class="chev"></i></button>
+              <button class="pill-btn"><i data-lucide="brain"></i><span>med</span></button>
+              <div class="spacer"></div>
+              <button class="send-btn disabled"><i data-lucide="arrow-up"></i></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

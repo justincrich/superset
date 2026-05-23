@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Plan Review — Modal · Superset Mobile</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <link rel="stylesheet" href="../components.css" />
+  <script src="../icons.js" defer></script>
+</head>
+<body>
+<div class="stage">
+  <div class="iphone-frame">
+    <div class="iphone-viewport">
+      <div class="dynamic-island">
+        <span style="width: 6px; height: 6px; background: var(--accent-warn); border-radius: 50%; box-shadow: 0 0 8px var(--accent-warn); animation: pulse 1.4s ease-in-out infinite;"></span>
+        <span class="live-label" style="color: var(--accent-warn);">Plan</span>
+      </div>
+
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="sb-right">
+          <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="5" y="5" width="3" height="7" rx="0.5"/><rect x="10" y="2" width="3" height="10" rx="0.5"/><rect x="15" y="0" width="3" height="12" rx="0.5"/></svg>
+          <svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 4a11 11 0 0 0-15.6 0l1.4 1.4Z"/></svg>
+          <span class="sb-battery"><span class="sb-battery-body"><span class="sb-battery-fill"></span></span></span>
+        </div>
+      </div>
+
+      <div class="modal-full">
+
+        <header class="modal-header">
+          <button class="close"><i data-lucide="x"></i></button>
+          <div class="mh-title">Plan review</div>
+          <span class="mh-label">Awaiting you</span>
+        </header>
+
+        <div class="modal-body">
+
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Session · Drizzle migration plan</div>
+          <h2>Migrate chat_messages → events table</h2>
+          <p style="color: var(--fg-muted)">5 steps · est. ~2 days for full cutover. Safe rollback path at every step.</p>
+
+          <h3>Context</h3>
+          <p>The existing <code>chat_messages</code> column is a <code>jsonb[]</code> array per row, which forces the host to deserialize the whole array on every read. For 100k-message sessions, this is a 12s cold-load. Switching to an append-only events table cuts that to ~80ms.</p>
+
+          <h3>Plan</h3>
+          <ol style="counter-reset: planstep">
+            <li><strong>Add <code>chat_events</code> table</strong> with composite PK <code>(session_id, seq)</code> and an index on <code>session_id, created_at</code>.</li>
+            <li><strong>Backfill</strong> from existing jsonb arrays in a background job. Process 5k rows per batch, 50ms between batches, single-tenant aware.</li>
+            <li><strong>Dual-write</strong> behind <code>ff.chat_events_dual_write</code>. Both reads and writes go to both paths.</li>
+            <li><strong>Flip reads</strong> to the new table after one release of soak (no rollback events).</li>
+            <li><strong>Drop the jsonb column</strong> in a follow-up migration once read path is stable.</li>
+          </ol>
+
+          <h3>Risks</h3>
+          <ul>
+            <li><strong>Backfill duration</strong> — on the largest tenant (Coram), this is ~6h of writes. Run during their off-hours window (Sun 02:00–06:00 UTC).</li>
+            <li><strong>Dual-write divergence</strong> — if the new path errors, do we fail the write or log-and-continue? Recommend log-and-continue with an alarm.</li>
+            <li><strong>Storage spike</strong> — ~2× the message data during the dual-write window, ~14% during steady-state.</li>
+          </ul>
+
+          <div class="feedback-area">
+            <div class="fa-head">
+              <i data-lucide="message-square"></i>
+              Add feedback (optional)
+            </div>
+            <div class="fa-input">
+              Reasons to reject, or constraints I should incorporate before retrying…
+            </div>
+          </div>
+
+        </div>
+
+        <footer class="modal-footer">
+          <button class="ft-btn reject">Reject</button>
+          <button class="ft-btn approve">
+            <i data-lucide="check" style="width: 16px; height: 16px; margin-right: 6px; stroke-width: 2.5;"></i>
+            Approve plan
+          </button>
+        </footer>
+
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

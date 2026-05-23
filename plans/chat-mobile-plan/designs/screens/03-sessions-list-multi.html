@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sessions — Multi-Workspace · Superset Mobile</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <link rel="stylesheet" href="../components.css" />
+  <script src="../icons.js" defer></script>
+</head>
+<body>
+<div class="stage">
+  <div class="iphone-frame">
+    <div class="iphone-viewport">
+
+      <div class="dynamic-island"></div>
+
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="sb-right">
+          <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="5" y="5" width="3" height="7" rx="0.5"/><rect x="10" y="2" width="3" height="10" rx="0.5"/><rect x="15" y="0" width="3" height="12" rx="0.5"/></svg>
+          <svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Zm-3.6-3a5 5 0 0 1 7.2 0l1.4-1.4a7 7 0 0 0-10 0l1.4 1.4Zm-2.8-2.8a9 9 0 0 1 12.8 0L15.8 4a11 11 0 0 0-15.6 0l1.4 1.4Z"/></svg>
+          <span class="sb-battery">
+            <span class="sb-battery-body"><span class="sb-battery-fill"></span></span>
+          </span>
+        </div>
+      </div>
+
+      <div class="app-content">
+
+        <header class="app-header">
+          <button class="menu-btn"><i data-lucide="menu"></i></button>
+          <span class="title">Sessions</span>
+          <button class="host-chip">
+            <i data-lucide="laptop"></i>
+            <span>macbook</span>
+            <i data-lucide="chevron-down" class="chev" style="width:14px;height:14px"></i>
+          </button>
+        </header>
+
+        <div class="search-bar">
+          <i data-lucide="search"></i>
+          <input placeholder="Search sessions…" />
+        </div>
+
+        <div class="session-scroll">
+
+          <!-- Workspace 1 (sticky, expanded) -->
+          <div class="workspace-section">
+            <div class="ws-label">
+              <span class="repo">superset</span>
+              <span class="branch">· chat-mobile-plan</span>
+            </div>
+            <i data-lucide="chevron-down" class="ws-chev"></i>
+          </div>
+
+          <a class="session-row">
+            <span class="glyph streaming"></span>
+            <div class="content">
+              <div class="title">Chat-v2 design — workspace sections + sticky headers</div>
+              <div class="meta">
+                <span class="state">Streaming</span>
+                <span class="dot"></span>
+                <span>2m ago</span>
+                <span class="dot"></span>
+                <span>claude-sonnet-4.6</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="session-row">
+            <span class="glyph idle"></span>
+            <div class="content">
+              <div class="title">How chat works in Superset</div>
+              <div class="meta">
+                <span>18m ago</span>
+                <span class="dot"></span>
+                <span>32 turns</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="session-row">
+            <span class="glyph idle"></span>
+            <div class="content">
+              <div class="title">API cleanup pass — drop legacy /v1/hosts</div>
+              <div class="meta">
+                <span>1h ago</span>
+                <span class="dot"></span>
+                <span>opus-4.7</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="session-row">
+            <span class="glyph idle"></span>
+            <div class="content">
+              <div class="title">Refactor relay tunnel reconnect logic</div>
+              <div class="meta">
+                <span>3h ago</span>
+                <span class="dot"></span>
+                <span>14 turns</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="session-row">
+            <span class="glyph idle"></span>
+            <div class="content">
+              <div class="title">Pre-flight check for sprint-02</div>
+              <div class="meta">
+                <span>5h ago</span>
+              </div>
+            </div>
+          </a>
+
+          <button class="load-more">Load more (12 more)</button>
+
+          <!-- Workspace 2 (sticky, expanded) -->
+          <div class="workspace-section" style="margin-top:8px">
+            <div class="ws-label">
+              <span class="repo">JustinCode</span>
+              <span class="branch">· main</span>
+            </div>
+            <i data-lucide="chevron-down" class="ws-chev"></i>
+          </div>
+
+          <a class="session-row">
+            <span class="glyph paused"></span>
+            <div class="content">
+              <div class="title">Auth refactor — host JWT rotation</div>
+              <div class="meta">
+                <span class="state paused">Pause pending</span>
+                <span class="dot"></span>
+                <span>tool approval</span>
+              </div>
+            </div>
+          </a>
+
+          <a class="session-row">
+            <span class="glyph idle"></span>
+            <div class="content">
+              <div class="title">API cleanup</div>
+              <div class="meta">
+                <span>yesterday</span>
+              </div>
+            </div>
+          </a>
+
+          <!-- Workspace 3 (collapsed) -->
+          <div class="workspace-section" style="margin-top:8px">
+            <div class="ws-label">
+              <span class="repo">LaneShadow</span>
+              <span class="branch">· main</span>
+            </div>
+            <i data-lucide="chevron-right" class="ws-chev"></i>
+          </div>
+
+        </div>
+
+        <button class="fab" aria-label="New chat"><i data-lucide="plus"></i></button>
+
+        <nav class="tab-bar">
+          <div class="tab"><i data-lucide="check-square"></i><span>Tasks</span></div>
+          <div class="tab active"><i data-lucide="message-square"></i><span>Chat</span></div>
+          <div class="tab"><i data-lucide="more-horizontal"></i><span>More</span></div>
+        </nav>
+
+      </div>
+
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+/* tokens.css — Superset Mobile Chat design tokens (dark-only) */
+/* Derived from apps/mobile/lib/theme.ts + chat-specific extensions. */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Color — surfaces & text */
+  --bg:             hsl(240 10% 3.9%);
+  --surface:        hsl(240 6% 8%);
+  --surface-elev:   hsl(240 5% 12%);
+  --surface-popover: hsl(240 5% 14%);
+  --border:         hsl(240 4% 16%);
+  --border-strong:  hsl(240 4% 22%);
+  --fg:             hsl(0 0% 98%);
+  --fg-muted:       hsl(240 5% 65%);
+  --fg-dim:         hsl(240 4% 45%);
+
+  /* Color — semantic accents (use sparingly) */
+  --accent-live:    hsl(160 84% 55%);   /* streaming, running */
+  --accent-warn:    hsl(38 92% 60%);    /* pause-pending */
+  --accent-danger:  hsl(0 72% 58%);     /* error, decline */
+  --accent-success: hsl(142 50% 50%);   /* approved */
+
+  /* Device chrome */
+  --device-bg-start: #1a1a1a;
+  --device-bg-end:   #050505;
+  --device-radius:   60px;
+  --viewport-radius: 54px;
+
+  /* Type */
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* Spacing scale (tailwind-aligned, 4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+
+  /* Type sizes */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+
+  /* Shadows */
+  --shadow-sheet: 0 -8px 32px rgba(0,0,0,0.55);
+  --shadow-popover: 0 12px 32px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.04);
+}
+
+* { box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+html, body { margin: 0; padding: 0; background: radial-gradient(circle at 50% 30%, #1c1c1e 0%, #0a0a0a 70%) fixed; min-height: 100vh; font-family: var(--font-sans); color: var(--fg); }
