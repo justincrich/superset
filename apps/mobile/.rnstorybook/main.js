@@ -9,6 +9,10 @@ const main = {
 		// `../screens/**` glob remains disabled — adding it would re-trigger
 		// the prep-time `UnhandledLinkingContext` crash described below.
 		"../screens/chat-view/**/*.stories.?(ts|tsx|js|jsx)",
+		// Wave 5 — sessions-list view stories. Same narrow-glob constraint as
+		// chat-view (above): nothing in this subtree imports expo-router or
+		// `useTheme`, so prep-time `loadStory` is safe.
+		"../screens/sessions-list/**/*.stories.?(ts|tsx|js|jsx)",
 		// "../screens/**/*.stories.?(ts|tsx|js|jsx)",
 		// ^ Disabled 2026-05-22. Screen placeholder stories transitively import
 		// `useTheme` → `lib/theme.ts` → `expo-router/react-navigation`. Storybook 9
