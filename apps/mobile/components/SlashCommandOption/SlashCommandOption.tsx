@@ -27,16 +27,19 @@ const slashCommandOptionVariants = cva(
 const sourceBadgeVariantByKind = {
 	builtin: "secondary",
 	project: "default",
-	user: "destructive",
+	user: "default", // live token override applied for user scope below
 } as const;
+
+export type SlashCommandSourceKind = keyof typeof sourceBadgeVariantByKind;
+
+const userSourceBadgeClassName = "bg-state-live-bg";
+const userSourceBadgeTextClassName = "text-state-live-fg";
 
 const sourceBadgeLabelByKind = {
 	builtin: "BUILT-IN",
 	project: "PROJECT",
 	user: "USER",
 } as const;
-
-export type SlashCommandSourceKind = keyof typeof sourceBadgeVariantByKind;
 
 export type SlashCommandOptionProps = PressableProps &
 	VariantProps<typeof slashCommandOptionVariants> & {
@@ -99,9 +102,17 @@ export function SlashCommandOption({
 					<Text className="font-mono font-medium text-primary">{name}</Text>
 					<Badge
 						variant={sourceBadgeVariantByKind[source]}
-						className="px-1.5 py-0"
+						className={cn(
+							"px-1.5 py-0",
+							source === "user" && userSourceBadgeClassName,
+						)}
 					>
-						<Text className="text-[10px] font-mono uppercase tracking-wider">
+						<Text
+							className={cn(
+								"text-[10px] font-mono uppercase tracking-wider",
+								source === "user" && userSourceBadgeTextClassName,
+							)}
+						>
 							{sourceBadgeLabelByKind[source]}
 						</Text>
 					</Badge>
