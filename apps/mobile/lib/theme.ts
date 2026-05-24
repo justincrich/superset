@@ -36,6 +36,16 @@ export const THEME = {
 		mutedForeground: "hsl(0 0% 50.2%)",
 		accent: "hsl(40 7% 90%)",
 		accentForeground: "hsl(0 0% 14.5%)",
+		tertiary: "hsl(20 9.1% 93.5%)",
+		tertiaryActive: "hsl(15 6.1% 87.1%)",
+		sidebar: "hsl(0 0% 98%)",
+		sidebarPrimary: "hsl(0 0% 9%)",
+		sidebarAccent: "hsl(0 0% 96.1%)",
+		sidebarForeground: "hsl(0 0% 3.9%)",
+		sidebarBorder: "hsl(0 0% 89.8%)",
+		highlight: "hsl(18 100% 48%)",
+		highlightMatch: "rgba(255, 211, 61, 0.35)",
+		highlightActive: "rgba(255, 150, 50, 0.55)",
 
 		// Destructive
 		destructive: "hsl(0 61.2% 53.5%)",
@@ -86,6 +96,16 @@ export const THEME = {
 		mutedForeground: "hsl(15 4% 65%)",
 		accent: "hsl(20 4% 16%)",
 		accentForeground: "hsl(30 6% 91%)",
+		tertiary: "hsl(15 8.3% 9.4%)",
+		tertiaryActive: "hsl(24 7.2% 13.5%)",
+		sidebar: "hsl(15 8.3% 9.4%)",
+		sidebarPrimary: "hsl(17 69.9% 59.6%)",
+		sidebarAccent: "hsl(24 7.2% 13.5%)",
+		sidebarForeground: "hsl(30 8.7% 91%)",
+		sidebarBorder: "hsl(20 3.7% 15.9%)",
+		highlight: "hsl(17 69.9% 59.6%)",
+		highlightMatch: "rgba(224, 120, 80, 0.2)",
+		highlightActive: "rgba(224, 120, 80, 0.5)",
 
 		// Destructive
 		destructive: "hsl(0 56% 53%)",
