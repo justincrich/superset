@@ -219,7 +219,13 @@ Path A is a global visual change. Every screen needs re-baselining.
 
 ---
 
-## 8. Out of scope
+## 8. Warning hue resolution
+
+**state-warning-fg light decision (2026-05-23): amber wins.** The light warning foreground remains `hsl(38 70% 45%)` in `apps/mobile/global.css` and `THEME.light.stateWarningFg` because warning states must read as caution across banners, pending-action pills, and tool-status rules. The previous canonical `--_amber` primitive reused desktop `chart-3` light, but that value was a cool blue-gray chart color rather than a warning semantic.
+
+**Hue-family rationale.** Dark mode already uses amber `hsl(43 60% 56%)`, so keeping light mode amber avoids a jarring theme-toggle hue shift and keeps light/dark warning foreground hues within 5 degrees. The canonical token now uses a dedicated light warning amber (`oklch(0.67 0.131 75.356)`, equivalent to the mobile amber target) instead of chart-3 reuse.
+
+## 9. Out of scope
 
 Explicitly NOT in scope for this audit (deferred to follow-up tickets if needed):
 
@@ -255,7 +261,7 @@ When all 10 pass, Sprint 01's pixel-perfect `plan` phase may begin. Until then, 
 
 ---
 
-## 9. AC-7 / AC-8 Resolution (REMED-010, 2026-05-23)
+## 10. AC-7 / AC-8 Resolution (REMED-010, 2026-05-23)
 
 **Decision: Path B (waive) AC-7 and AC-8.**
 
