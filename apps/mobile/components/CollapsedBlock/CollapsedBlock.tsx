@@ -7,6 +7,11 @@ import {
 } from "lucide-react-native";
 import { type ReactNode, useState } from "react";
 import { Pressable, View, type ViewProps } from "react-native";
+import Animated, {
+	useAnimatedStyle,
+	useDerivedValue,
+	withTiming,
+} from "react-native-reanimated";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -71,6 +76,25 @@ export function CollapsedBlock({
 }: CollapsedBlockProps) {
 	const cfg = KIND[kind];
 	const [open, setOpen] = useState(defaultOpen);
+	const rotation = useDerivedValue(
+		() => withTiming(open ? 180 : 0, { duration: 200 }),
+		[open],
+	);
+	const chevronStyle = useAnimatedStyle(
+		() => ({
+			transform: [
+				{
+					rotate:
+						rotation.value === 0
+							? "0deg"
+							: rotation.value === 180
+								? "180deg"
+								: `${rotation.value}deg`,
+				},
+			],
+		}),
+		[rotation],
+	);
 
 	return (
 		<View className={cn(cfg.indentClass, className)} {...props}>
@@ -93,11 +117,9 @@ export function CollapsedBlock({
 						) : (
 							<View className="flex-1" />
 						)}
-						<View
-							className={cn("transition-transform", open ? "rotate-180" : "")}
-						>
+						<Animated.View style={chevronStyle}>
 							<Icon as={ChevronDown} className="size-4 text-muted-foreground" />
-						</View>
+						</Animated.View>
 					</Pressable>
 				</CollapsibleTrigger>
 				<CollapsibleContent>

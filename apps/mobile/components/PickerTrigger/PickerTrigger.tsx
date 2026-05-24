@@ -6,7 +6,12 @@ import {
 	Sparkles,
 	Zap,
 } from "lucide-react-native";
-import { Pressable, type PressableProps, View } from "react-native";
+import { Pressable, type PressableProps } from "react-native";
+import Animated, {
+	useAnimatedStyle,
+	useDerivedValue,
+	withTiming,
+} from "react-native-reanimated";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
@@ -86,6 +91,26 @@ export function PickerTrigger({
 	const resolvedIcon = icon ?? config.icon;
 	const resolvedPrefix = prefix ?? config.prefix;
 	const resolvedSize = size ?? "md";
+	const open = isOpen ?? false;
+	const rotation = useDerivedValue(
+		() => withTiming(open ? 180 : 0, { duration: 200 }),
+		[open],
+	);
+	const chevronStyle = useAnimatedStyle(
+		() => ({
+			transform: [
+				{
+					rotate:
+						rotation.value === 0
+							? "0deg"
+							: rotation.value === 180
+								? "180deg"
+								: `${rotation.value}deg`,
+				},
+			],
+		}),
+		[rotation],
+	);
 
 	return (
 		<Pressable
@@ -122,14 +147,9 @@ export function PickerTrigger({
 			>
 				{value}
 			</Text>
-			<View
-				className={cn(
-					"transition-transform",
-					isOpen ? "rotate-180" : "rotate-0",
-				)}
-			>
+			<Animated.View style={chevronStyle}>
 				<Icon as={ChevronDown} className="size-3 text-muted-foreground/70" />
-			</View>
+			</Animated.View>
 		</Pressable>
 	);
 }
