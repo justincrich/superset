@@ -7,6 +7,7 @@ import {
 	type BottomSheetModalProps,
 } from "@gorhom/bottom-sheet";
 import { forwardRef, useCallback, useMemo } from "react";
+import { useColorScheme } from "react-native";
 
 // biome-ignore lint/suspicious/noExplicitAny: gorhom BottomSheetModal is generic over T = any for data, matches their public ref type
 export type BottomSheetRef = BottomSheetModal<any>;
@@ -51,6 +52,13 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
 		ref,
 	) {
 		const resolvedSnapPoints = useMemo(() => [...snapPoints], [snapPoints]);
+		const colorScheme = useColorScheme();
+		// gorhom no-className: BottomSheetHandle + BottomSheetModal require inline styles.
+		// Mirror global.css hex values here and avoid the theme.ts prep-crash path,
+		// following the ScrollFade.tsx precedent.
+		const surfaceHex = colorScheme === "dark" ? "#1a1716" : "#fafafa";
+		const handleIndicatorHex =
+			colorScheme === "dark" ? "rgba(255,255,255,0.32)" : "rgba(0,0,0,0.32)";
 
 		const renderBackdrop = useCallback(
 			(backdropProps: BottomSheetBackdropProps) => (
@@ -69,15 +77,15 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
 			(handleProps: BottomSheetHandleProps) => (
 				<BottomSheetHandle
 					{...handleProps}
-					indicatorStyle={{ backgroundColor: "rgba(255,255,255,0.32)" }}
+					indicatorStyle={{ backgroundColor: handleIndicatorHex }}
 					style={{
-						backgroundColor: "#1a1716",
+						backgroundColor: surfaceHex,
 						borderTopLeftRadius: 16,
 						borderTopRightRadius: 16,
 					}}
 				/>
 			),
-			[],
+			[handleIndicatorHex, surfaceHex],
 		);
 
 		return (
@@ -87,7 +95,7 @@ export const BottomSheet = forwardRef<BottomSheetRef, BottomSheetProps>(
 				enablePanDownToClose={enablePanDownToClose}
 				backdropComponent={renderBackdrop}
 				handleComponent={renderHandle}
-				backgroundStyle={{ backgroundColor: "#1a1716" }}
+				backgroundStyle={{ backgroundColor: surfaceHex }}
 				{...rest}
 			>
 				{children}
