@@ -19,6 +19,12 @@ supersedes:
 
 **Constraint reconciliation.** The `apps/mobile/design/manifest.json` field `constraints.preserve_theme` (which protected `global.css`, `lib/theme.ts`, `uniwind-env.d.ts`, `uniwind-types.d.ts`) is **superseded by this doc**. Path A explicitly requires rewriting those files. The manifest is amended as part of this audit's deliverables (see §6).
 
+**Known primary semantic split.** Mobile deliberately keeps `--color-primary`
+as ember so rn-reusables default buttons render with the brand fill. Desktop
+dark keeps `--color-primary` as neutral foreground and routes ember through
+`--sidebar-primary` and chart accents, so this divergence must not be "aligned"
+without changing the affected button and sidebar semantics together.
+
 ---
 
 ## Scope
