@@ -28,12 +28,10 @@ export function createApplicationMenu() {
 					},
 				},
 				{ type: "separator" },
-				// SUPER-794: Replace `role: "close"` with explicit click handler so
-				// the implicit `CmdOrCtrl+W` menu accelerator no longer fires when a
-				// browser pane's webview has focus. The File menu item stays clickable
-				// for users; the close keystroke is intercepted at the webview level
-				// by `browser-manager.ts` and routed to per-pane close instead. Window
-				// close remains available via the Window menu's `CmdOrCtrl+Shift+Q`.
+				// Explicit click handler (not `role: "close"`) — `role: "close"` adds
+				// an implicit CmdOrCtrl+W accelerator that overrides browser-manager's
+				// `before-input-event` interception and closes the window instead of
+				// the focused pane.
 				{
 					label: "Close Window",
 					click: () => {

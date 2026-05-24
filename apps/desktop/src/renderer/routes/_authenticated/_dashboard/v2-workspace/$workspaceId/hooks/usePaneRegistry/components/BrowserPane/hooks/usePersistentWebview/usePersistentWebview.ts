@@ -80,9 +80,8 @@ export function usePersistentWebview({
 					},
 				},
 			);
-		// SUPER-794: route Cmd/Ctrl+W from the guest webContents into v2 pane-
-		// close. `ctx.actions.close()` runs the standard onBeforeClose hook
-		// chain — same path the renderer CLOSE_PANE hotkey uses.
+		// `ctx.actions.close()` runs the standard onBeforeClose hook chain,
+		// matching the renderer CLOSE_PANE hotkey path.
 		const closePaneSub = electronTrpcClient.browser.onClosePane.subscribe(
 			{ paneId },
 			{
@@ -91,8 +90,6 @@ export function usePersistentWebview({
 				},
 			},
 		);
-		// SUPER-794: route Cmd/Ctrl+R from the guest webContents into a webview-
-		// scoped reload via the v2 browser runtime registry.
 		const reloadPaneSub = electronTrpcClient.browser.onReloadPane.subscribe(
 			{ paneId },
 			{

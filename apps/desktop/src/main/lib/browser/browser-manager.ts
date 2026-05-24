@@ -31,9 +31,10 @@ class BrowserManager extends EventEmitter {
 	private beforeInputListeners = new Map<string, () => void>();
 
 	register(paneId: string, webContentsId: number): void {
-		// Clean up previous listeners if re-registering with a new webContentsId
+		// Clean even when prevId === webContentsId so BrowserManager owns
+		// listener idempotency; callers can re-register without duplicating.
 		const prevId = this.paneWebContentsIds.get(paneId);
-		if (prevId != null && prevId !== webContentsId) {
+		if (prevId != null) {
 			for (const map of [
 				this.consoleListeners,
 				this.contextMenuListeners,
@@ -236,26 +237,13 @@ class BrowserManager extends EventEmitter {
 		});
 	}
 
-	// SUPER-794: intercept Cmd/Ctrl+W and Cmd/Ctrl+R on the guest webContents.
+	// When a webview has focus, keystrokes route to the guest renderer — host
+	// `react-hotkeys-hook` listeners never see them and the menu's CmdOrCtrl+W
+	// accelerator closes the whole window. `before-input-event` fires in the
+	// main process before both, and `preventDefault()` suppresses both.
 	//
-	// When a browser pane's webview has keyboard focus, keystrokes route to the
-	// guest renderer process — host-side `react-hotkeys-hook` listeners and the
-	// main-process application menu's `CmdOrCtrl+W` accelerator BOTH miss them
-	// (close-pane never fires) OR fire incorrectly (menu closes the whole window).
-	//
-	// `before-input-event` fires in the main process before the page handler and
-	// before the menu accelerator. `event.preventDefault()` suppresses both per
-	// Electron docs (https://www.electronjs.org/docs/latest/api/web-contents:
-	// "Calling event.preventDefault will prevent the page keydown/keyup events
-	// and the menu shortcuts"). We then emit a per-pane event the renderer
-	// subscribes to via tRPC and route to the existing pane-close / webview-
-	// reload code paths.
-	//
-	// KeyDown guard on BOTH keys is intentional — without it the handler fires
-	// on keyUp too (PR #4783's `isReloadKey` was missing this guard).
-	//
-	// Shift guard preserves `Cmd+Shift+W` (CLOSE_TAB) and `Cmd+Shift+R`
-	// (forceReload via the menu) — those keep their existing behavior.
+	// keyDown guard prevents a second fire on keyUp. Shift guard preserves
+	// Cmd+Shift+W (CLOSE_TAB) and Cmd+Shift+R (forceReload).
 	private setupBeforeInput(paneId: string, wc: Electron.WebContents): void {
 		const handler = (event: Electron.Event, input: Electron.Input): void => {
 			if (input.type !== "keyDown") return;

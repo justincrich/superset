@@ -147,8 +147,6 @@ export function usePersistentWebview({
 		},
 	);
 
-	// SUPER-794: route Cmd/Ctrl+W from the guest webContents into the same
-	// pane-close path the renderer hotkeys use (CLOSE_PANE/CLOSE_TERMINAL).
 	electronTrpc.browser.onClosePane.useSubscription(
 		{ paneId },
 		{
@@ -158,10 +156,8 @@ export function usePersistentWebview({
 		},
 	);
 
-	// SUPER-794: route Cmd/Ctrl+R from the guest webContents into a webview-
-	// scoped reload. Look up via the module-level webviewRegistry rather than
-	// capturing a webview reference — the registry may have re-registered the
-	// underlying webContents since this hook ran.
+	// Look up via webviewRegistry, not a captured ref — the registry may have
+	// re-registered the underlying webContents since this hook ran.
 	electronTrpc.browser.onReloadPane.useSubscription(
 		{ paneId },
 		{
