@@ -9,7 +9,7 @@ const meta: Meta<typeof PlanReviewModal> = {
 		docs: {
 			description: {
 				component:
-					"UC-PAUSE-03 §A — full-screen plan review modal. The modal owns its chrome (ModalHeader + scrollable markdown + expandable feedback + docked Reject/Approve). Approve / Reject toggle a 1.2s isSubmitting state via useState so reviewers can see the spinner transition.",
+					"UC-PAUSE-03 §A — full-screen plan review modal. The modal owns its chrome (ModalHeader + scrollable markdown + expandable feedback + docked Reject/Approve). Reject stays disabled while feedback is empty or whitespace-only, then enables after non-empty feedback; Approve / Reject toggle a 1.2s isSubmitting state via useState so reviewers can see the spinner transition.",
 			},
 		},
 		layout: "fullscreen",
