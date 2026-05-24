@@ -32,6 +32,11 @@ describe("shouldOpenBrowser detection", () => {
 	});
 
 	test("AC-2a: shouldOpenBrowser returns false with SSH_CONNECTION set (regression)", () => {
+		Object.defineProperty(process, "platform", {
+			value: "darwin",
+			writable: true,
+			configurable: true,
+		});
 		process.env = {
 			SSH_CONNECTION: "192.168.1.1 22 192.168.1.100 22",
 		};
@@ -42,6 +47,11 @@ describe("shouldOpenBrowser detection", () => {
 	});
 
 	test("AC-2b: shouldOpenBrowser returns false with SSH_TTY set (regression)", () => {
+		Object.defineProperty(process, "platform", {
+			value: "darwin",
+			writable: true,
+			configurable: true,
+		});
 		process.env = {
 			SSH_TTY: "pts/0",
 		};
@@ -52,6 +62,14 @@ describe("shouldOpenBrowser detection", () => {
 	});
 
 	test("AC-2c: shouldOpenBrowser returns true when SSH_* not set (regression baseline)", () => {
+		// Pin platform to darwin so this test isolates SSH detection — without
+		// the pin, on Linux CI the Linux-headless branch (no DISPLAY) would
+		// satisfy the assertion for the wrong reason.
+		Object.defineProperty(process, "platform", {
+			value: "darwin",
+			writable: true,
+			configurable: true,
+		});
 		process.env = {};
 		process.stdout.isTTY = true;
 
