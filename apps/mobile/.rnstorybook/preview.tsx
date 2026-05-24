@@ -3,13 +3,8 @@ import type { Preview } from "@storybook/react-native";
 import { View } from "react-native";
 import { cn } from "@/lib/utils";
 
-// NOTE: Do NOT import from `expo-router/react-navigation` here. Storybook 9 RN
-// imports preview.tsx during prep (`createPreparedStoryMapping`), which
-// evaluates module top-levels eagerly. Loading expo-router's nav module reads
-// the default `UnhandledLinkingContext` value, whose getters throw
-// "Couldn't find an UnhandledLinkingContext context." There is no decorator
-// fix — decorators apply at render time, not prep time. Keep nav-context
-// providers out of this file entirely.
+import { StorybookRouterProvider } from "./StorybookRouterProvider";
+
 const preview: Preview = {
 	decorators: [
 		(Story, context) => {
@@ -18,10 +13,12 @@ const preview: Preview = {
 			// would on a real device. Atoms/molecules keep the p-4 chrome.
 			const isFullscreen = context.parameters?.layout === "fullscreen";
 			return (
-				<View className={cn("flex-1 bg-background", !isFullscreen && "p-4")}>
-					<Story />
-					<PortalHost />
-				</View>
+				<StorybookRouterProvider>
+					<View className={cn("flex-1 bg-background", !isFullscreen && "p-4")}>
+						<Story />
+						<PortalHost />
+					</View>
+				</StorybookRouterProvider>
 			);
 		},
 	],
