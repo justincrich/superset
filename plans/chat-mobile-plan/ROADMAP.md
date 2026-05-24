@@ -111,6 +111,48 @@ Preserves the original MOB-* and DESIGN-* IDs as a reference inventory. Pixel-pe
 - ✅ `MOB-INFRA-001` chat-tree runtime dependencies installed via `bun add` (Storybook 9 native + `@storybook/addon-ondevice-controls` + `@storybook/addon-ondevice-actions`, `storybook@^9` pinned to avoid v10 normalizeStories incompat)
 - ✅ `MOB-INFRA-002` Storybook 9 root toggle (env-only via `EXPO_PUBLIC_STORYBOOK=true`, no UI toggle) + `.rnstorybook/` config dir (`main.js`, `preview.tsx`, `index.tsx`) + Metro `withStorybook` wrap + Design System stories (Colors, Typography, Spacing, Icons reading existing tokens) + HelloWorld reference component
 
+## Sprint 01 Scope Resolution (2026-05-23)
+
+Per the 2026-05-23 frontend-designer red-hat review, this section explicitly maps every Sprint 01 deliverable to its actual status. It resolves contradictions C-1 through C-5 between the original ROADMAP scope and the implementation recorded in `apps/mobile/design/manifest.json`.
+
+### Test Step Status
+
+| TS | Description | Status | Reference |
+|---|---|---|---|
+| TS-1 | Phase 0 token migration audit ACs | COMPLETED; AC-7/AC-8 screenshot evidence WAIVED by Path B via REMED-010 | `14-token-migration-audit.md`, REMED-010 |
+| TS-2 | `bun storybook` launches and generates `.rnstorybook/storybook.requires.ts` | COMPLETED for the chat-view scope; Storybook was later narrowed per tier while Wave 5 sessions-list work ran in parallel | `apps/mobile/design/manifest.json` |
+| TS-3 | Design System group renders ember tokens | COMPLETED; ember token migration is the canonical mobile theme baseline | `apps/mobile/global.css`, `apps/mobile/lib/theme.ts` |
+| TS-4 | Sessions-list tier, project-first chrome, and navigation surfaces | COMPLETED in parallel Wave 5; artifacts live at `apps/mobile/screens/sessions-list/` and cover the sessions-list tier called out by C-1 | TaskList #501-504, manifest `sessions_list_tier` |
+| TS-5 | Chat-tree tier | COMPLETED for chat bubbles, assistant head, tool-call, plan, reasoning, subagent, and scroll affordances; MessageMarkdown DEFERRED to Sprint 03 | `apps/mobile/screens/chat-view/` |
+| TS-6 | Composer tier, including TiptapPromptEditor and NewChatSheet | COMPLETED for Textarea-backed composer controls in chat-view; TiptapPromptEditor DEFERRED to Sprint 04; NewChatSheet DEFERRED to Sprint 04 | Sprint 04 compose/send integration |
+| TS-7 | Pause-container tier | COMPLETED; AskUserSheet is the implemented view name for PendingQuestionSheet semantics, and REMED-006 covers the reject-button remediation | REMED-006, `apps/mobile/screens/chat-view/` |
+| TS-8 | Platform-surface tier | COMPLETED for HostOfflineBanner and dispatch outcome variants; PushPrePromptScreen DEFERRED to Sprint 06; RebableInSettingsBanner DEFERRED to Sprint 06; NotificationIconPreview DEFERRED to Sprint 06 | Sprint 06 push notifications |
+| TS-9 | Light/dark theme toggle works for every component | COMPLETED for built chat-view and sessions-list Storybook tiers; remaining drift/remediation tracked by REMED-001 through REMED-009 | REMED-001..009 |
+
+### Missing Tier Deferrals
+
+- `MessageMarkdown` -> deferred to Sprint 03, where real message history and markdown rendering are wired.
+- `TiptapPromptEditor` -> deferred to Sprint 04, where compose/send integration replaces the interim Textarea surface.
+- `NewChatSheet` -> deferred to Sprint 04, where FAB-to-workspace creation and real session creation are wired.
+- `PushPrePromptScreen` -> deferred to Sprint 06, where push permission prompting is implemented end-to-end.
+- `RebableInSettingsBanner` -> deferred to Sprint 06, where push denial and re-enable flows are implemented.
+- `NotificationIconPreview` -> deferred to Sprint 06, where Android notification icon assets and push delivery are validated.
+
+### Contradictions Addressed
+
+- **C-1** (sessions-list deferred in manifest vs required in ROADMAP): RESOLVED. TS-4 is now documented as completed by parallel Wave 5 work, with artifacts in `apps/mobile/screens/sessions-list/`.
+- **C-2** (TiptapPromptEditor promised vs Textarea implemented): RESOLVED by formal deferral. `TiptapPromptEditor` is deferred to Sprint 04 because rich composer behavior belongs with real compose/send integration.
+- **C-3** (`transition-*` CSS in React Native): RESOLVED by REMED-007, which replaces the offending rotation behavior with Reanimated.
+- **C-4** (`PendingQuestionSheet` name vs implemented `AskUserSheet`): RESOLVED by naming decision. `AskUserSheet` remains the view name and satisfies the PendingQuestionSheet behavior; future Sprint 05+ references should map to `AskUserSheet`.
+- **C-5** (TS-8 missing push-surface components): RESOLVED by formal deferral. `PushPrePromptScreen`, `RebableInSettingsBanner`, and `NotificationIconPreview` are deferred to Sprint 06, which owns the push notification flow.
+
+### Sprint Dependency Notes
+
+- Sprint 02 can proceed with sessions-list integration because Wave 5 supplies the sessions-list component tier in `apps/mobile/screens/sessions-list/`; Sprint 02 remains responsible for real Electric data wiring.
+- Sprint 03 owns the deferred `MessageMarkdown` rendering work alongside real message history.
+- Sprint 04 owns the deferred `TiptapPromptEditor` and `NewChatSheet` work alongside real compose/send behavior.
+- Sprint 06 owns the deferred `PushPrePromptScreen`, `RebableInSettingsBanner`, and `NotificationIconPreview` work alongside push notifications.
+
 #### Dependencies
 
 - Blocks: Sprint 02, 03, 04, 05, 06, 07
