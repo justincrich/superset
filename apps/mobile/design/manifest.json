@@ -47,7 +47,7 @@
 				"compose": "passed"
 			},
 			"build_plan": {
-				"scope_note": "Chat-view only (per designs/AUDIT.md). Sessions-list + nav surfaces deferred. Wave 1 (atoms) completed 2026-05-22. Wave 2 (molecules) completed 2026-05-22 — 19 molecules built (1 replaces ComposerToolbar per desktop PR #4866 unified-settings-menu pattern). Wave 3 (organisms) completed 2026-05-22 — 10 organisms built per designs/AUDIT.md §ORGANISM AUDIT. Wave 4 (views / compose) completed 2026-05-22 — 20 view stories under `apps/mobile/screens/chat-view/views/` covering all 22 chat-view designs (composer-states view bundles UC-COMP-01 §A/§B + UC-COMP-03 §A; dispatch-outcomes view bundles all 4 banner variants). ChatView orchestrator at `apps/mobile/screens/chat-view/components/ChatView/` composes ChatHeader + ChatThread + Composer with slots for floating UI, bottom overlay, and full-screen overlay. Storybook glob narrowed to `apps/mobile/screens/chat-view/**` so other screens (which import expo-router) stay disabled.",
+				"scope_note": "Chat-view tier completed (Wave 1-4). Sessions-list tier completed in parallel Wave 5. Other tiers DEFERRED per ROADMAP Sprint 01 Scope Resolution (2026-05-23): TiptapPromptEditor + NewChatSheet -> Sprint 04, MessageMarkdown -> Sprint 03, PushPrePromptScreen + RebableInSettingsBanner + NotificationIconPreview -> Sprint 06. See plans/chat-mobile-plan/ROADMAP.md '## Sprint 01 Scope Resolution' for the full status table.",
 				"tokens": "skip",
 				"atoms": {
 					"status": "build",
@@ -217,7 +217,7 @@
 				"compose": "passed"
 			},
 			"build_plan": {
-				"scope_note": "Mirrors mobile-ios — apps/mobile/ source tree is shared across both platforms. Visual verification done on iOS sim only; android-specific render quirks reviewed when an android build is available.",
+				"scope_note": "Mirrors mobile-ios. Apps/mobile source is shared across both platforms; scope follows ROADMAP Sprint 01 Scope Resolution (2026-05-23): chat-view completed, sessions-list completed in parallel Wave 5, MessageMarkdown deferred to Sprint 03, TiptapPromptEditor + NewChatSheet deferred to Sprint 04, PushPrePromptScreen + RebableInSettingsBanner + NotificationIconPreview deferred to Sprint 06. Visual verification done on iOS sim only; android-specific render quirks reviewed when an android build is available.",
 				"tokens": "skip",
 				"atoms": "see mobile-ios.build_plan.atoms",
 				"molecules": "see mobile-ios.build_plan.molecules",
