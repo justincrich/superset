@@ -9,7 +9,7 @@ import {
 } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { ActivityIndicator, View, type ViewProps } from "react-native";
-import { HitTargetWrapper } from "@/components/HitTargetWrapper";
+import { IconButton } from "@/components/IconButton";
 import { ToolStatusRule } from "@/components/ToolStatusRule";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
@@ -90,7 +90,7 @@ export type ToastBaseProps = ViewProps &
 		icon?: LucideIcon;
 		/** Optional action button slot (e.g. Retry, Open Settings). */
 		action?: ReactNode;
-		/** When provided, renders a ✕ dismiss button wrapped in a 44pt HitTargetWrapper. */
+		/** When provided, renders a ✕ dismiss button via IconButton (44pt touch target). */
 		onDismiss?: () => void;
 		dismissAccessibilityLabel?: string;
 		accessibilityLabel?: string;
@@ -106,10 +106,10 @@ export type ToastBaseProps = ViewProps &
  *  - Variant color is conveyed via the 3px left ToolStatusRule + matching
  *    icon tint; the surface itself stays neutral (bg-popover) for legibility.
  *  - `loading` swaps the leading icon for ActivityIndicator.
- *  - `onDismiss` renders ✕ inside HitTargetWrapper for a guaranteed 44pt
- *    touch target on a 14px visual glyph.
+ *  - `onDismiss` renders ✕ via IconButton (variant=ghost, shape=pill) for a
+ *    guaranteed 44pt touch target.
  *
- * Composes existing internals: ToolStatusRule + Icon + Text + HitTargetWrapper.
+ * Composes existing internals: ToolStatusRule + Icon + Text + IconButton.
  * No external vendor component fits the left-rule layout cleanly.
  */
 export function ToastBase({
@@ -168,13 +168,15 @@ export function ToastBase({
 
 				{!isStacked && action ? <View>{action}</View> : null}
 				{onDismiss ? (
-					<HitTargetWrapper
+					<IconButton
+						icon={X}
 						accessibilityLabel={dismissAccessibilityLabel ?? "Dismiss"}
-						shape="circle"
+						variant="ghost"
+						shape="pill"
+						size="xs"
 						onPress={onDismiss}
-					>
-						<Icon as={X} className="size-3.5 text-muted-foreground" />
-					</HitTargetWrapper>
+						iconClassName="size-3.5 text-muted-foreground"
+					/>
 				) : null}
 			</View>
 		</View>

@@ -11,7 +11,7 @@ const meta: Meta<typeof ToastBase> = {
 		docs: {
 			description: {
 				component:
-					"Transient notification surface composing internal atoms (ToolStatusRule + Icon + Text + HitTargetWrapper). Five variants (info default · success · warning · danger · loading) × two shapes (inline default · stacked for longer messages). Variant color conveyed via 3px left rule + matching icon tint; surface stays neutral bg-popover. Caller manages timeout + position.",
+					"Transient notification surface composing internal atoms (ToolStatusRule + Icon + Text + IconButton). Five variants (info default · success · warning · danger · loading) × two shapes (inline default · stacked for longer messages). Variant color conveyed via 3px left rule + matching icon tint; surface stays neutral bg-popover. Caller manages timeout + position.",
 			},
 		},
 		layout: "centered",
