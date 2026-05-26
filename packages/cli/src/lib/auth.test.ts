@@ -1,5 +1,10 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { type LoginCallbacks, shouldOpenBrowser } from "./auth";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { CLIError } from "@superset/cli-framework";
+import {
+	type LoginCallbacks,
+	refreshAccessToken,
+	shouldOpenBrowser,
+} from "./auth";
 
 describe("shouldOpenBrowser detection", () => {
 	const originalEnv = process.env;
@@ -238,5 +243,46 @@ describe("derivePasteOnly helper (AC-10: both trigger conditions independently)"
 		);
 		expect(derivePasteOnly({}, true)).toBe(false);
 		expect(derivePasteOnly({}, false)).toBe(true);
+	});
+});
+
+describe("refreshAccessToken", () => {
+	const originalFetch = globalThis.fetch;
+
+	afterEach(() => {
+		globalThis.fetch = originalFetch;
+	});
+
+	test("sanitizes OAuth refresh failure details (regression)", async () => {
+		globalThis.fetch = mock(
+			async () =>
+				new Response(
+					JSON.stringify({
+						error: "invalid_grant",
+						access_token: "access-secret",
+						refresh_token: "refresh-secret",
+						redirect: "https://app.superset.test/callback?code=code-secret",
+						cookie: "session=session-secret",
+					}),
+					{ status: 400 },
+				),
+		) as unknown as typeof fetch;
+
+		let thrown: unknown;
+		try {
+			await refreshAccessToken("refresh-secret");
+		} catch (error) {
+			thrown = error;
+		}
+
+		expect(thrown).toBeInstanceOf(CLIError);
+		const error = thrown as CLIError;
+		const visibleText = `${error.message} ${error.suggestion ?? ""}`;
+		expect(visibleText).toContain("Token refresh failed: 400");
+		expect(visibleText).toContain("superset auth login");
+		expect(visibleText).not.toContain("access-secret");
+		expect(visibleText).not.toContain("refresh-secret");
+		expect(visibleText).not.toContain("session-secret");
+		expect(visibleText).not.toContain("code-secret");
 	});
 });
