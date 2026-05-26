@@ -1,5 +1,5 @@
 import * as p from "@clack/prompts";
-import { boolean, CLIError, string } from "@superset/cli-framework";
+import { CLIError, string } from "@superset/cli-framework";
 import { render } from "ink";
 import { createElement } from "react";
 import { type ApiClient, createApiClient } from "../../../lib/api-client";
@@ -7,7 +7,6 @@ import { login, shouldOpenBrowser } from "../../../lib/auth";
 import { command } from "../../../lib/command";
 import { readConfig, writeConfig } from "../../../lib/config";
 import { copyToClipboard } from "./copyToClipboard";
-import { derivePasteOnly } from "./derivePasteOnly";
 import { LoginUI, type LoginUIProps } from "./LoginUI";
 
 type LoginOutput =
@@ -153,14 +152,10 @@ export default command({
 		apiKey: string().desc(
 			"Store a Superset API key (sk_live_…) at ~/.superset/config.json instead of running the OAuth flow",
 		),
-		noBrowser: boolean().desc(
-			"Skip browser open and use paste-only flow (useful for SSH/remote contexts)",
-		),
 	},
 	run: async (opts) => {
 		const requestedOrganization = opts.options.organization;
-		const noBrowser = opts.options.noBrowser ?? false;
-		const pasteOnly = derivePasteOnly({ noBrowser }, shouldOpenBrowser());
+		const pasteOnly = !shouldOpenBrowser();
 		const apiKeyExplicit = apiKeyFlagInArgv();
 		const apiKeyFromCli = apiKeyExplicit
 			? opts.options.apiKey?.trim()
@@ -262,7 +257,6 @@ export default command({
 						signal.removeEventListener("abort", onAbort);
 					}
 				},
-				noBrowser,
 			});
 			if (inkInstance) update({ status: "done" });
 		} catch (err) {

@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { CLIError } from "@superset/cli-framework";
-import {
-	type LoginCallbacks,
-	refreshAccessToken,
-	shouldOpenBrowser,
-} from "./auth";
+import { refreshAccessToken, shouldOpenBrowser } from "./auth";
 
 describe("shouldOpenBrowser detection", () => {
 	const originalEnv = process.env;
@@ -25,7 +21,6 @@ describe("shouldOpenBrowser detection", () => {
 			configurable: true,
 		});
 	});
-
 
 	test("AC-2a: shouldOpenBrowser returns false with SSH_CONNECTION set (regression)", () => {
 		Object.defineProperty(process, "platform", {
@@ -134,22 +129,6 @@ describe("shouldOpenBrowser detection", () => {
 	});
 });
 
-describe("LoginCallbacks interface", () => {
-	test("AC-7: LoginCallbacks type accepts noBrowser field", () => {
-		// Compile-time check: If noBrowser were removed from LoginCallbacks,
-		// this would fail to compile since we explicitly type-check it below.
-		// This ensures the interface shape is verified at compile time.
-		const validCb: LoginCallbacks = {
-			noBrowser: true,
-			onAuthorizationUrl: (url: string) => console.log(url),
-			promptForPastedCode: async () => "code#state",
-		};
-
-		expect(validCb).toHaveProperty("noBrowser");
-		expect(validCb.noBrowser).toBe(true);
-	});
-});
-
 describe("LoginUI pasteOnly prop branching", () => {
 	test("AC-8: LoginUI renders paste-primary copy when pasteOnly=true", async () => {
 		const { render } = await import("ink-testing-library");
@@ -196,44 +175,6 @@ describe("LoginUI pasteOnly prop branching", () => {
 		expect(frame).toContain("Browser didn't open");
 		// Should NOT show paste-primary copy with domain
 		expect(frame).not.toContain("Sign in to");
-	});
-});
-
-describe("derivePasteOnly helper (AC-10: both trigger conditions independently)", () => {
-	test("AC-10a: --no-browser forces pasteOnly even when browser is available", async () => {
-		const { derivePasteOnly } = await import(
-			"../commands/auth/login/derivePasteOnly"
-		);
-		expect(derivePasteOnly({ noBrowser: true }, true)).toBe(true);
-	});
-
-	test("AC-10b: auto-detected cross-device forces pasteOnly with no flag", async () => {
-		const { derivePasteOnly } = await import(
-			"../commands/auth/login/derivePasteOnly"
-		);
-		expect(derivePasteOnly({ noBrowser: false }, false)).toBe(true);
-	});
-
-	test("AC-10c: local TTY with no flag does NOT force pasteOnly", async () => {
-		const { derivePasteOnly } = await import(
-			"../commands/auth/login/derivePasteOnly"
-		);
-		expect(derivePasteOnly({ noBrowser: false }, true)).toBe(false);
-	});
-
-	test("AC-10d: both triggers active still result in pasteOnly", async () => {
-		const { derivePasteOnly } = await import(
-			"../commands/auth/login/derivePasteOnly"
-		);
-		expect(derivePasteOnly({ noBrowser: true }, false)).toBe(true);
-	});
-
-	test("AC-10e: undefined noBrowser is treated as false", async () => {
-		const { derivePasteOnly } = await import(
-			"../commands/auth/login/derivePasteOnly"
-		);
-		expect(derivePasteOnly({}, true)).toBe(false);
-		expect(derivePasteOnly({}, false)).toBe(true);
 	});
 });
 

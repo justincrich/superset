@@ -19,7 +19,6 @@ export interface LoginResult {
 export interface LoginCallbacks {
 	onAuthorizationUrl?: (url: string) => void;
 	promptForPastedCode: (signal: AbortSignal) => Promise<string>;
-	noBrowser?: boolean;
 }
 
 function base64url(buffer: Buffer): string {
@@ -311,7 +310,7 @@ export async function login(
 
 	callbacks.onAuthorizationUrl?.(pasteAuthorizeUrl);
 
-	const shouldOpen = shouldOpenBrowser() && !callbacks.noBrowser;
+	const shouldOpen = shouldOpenBrowser();
 	let loopback: Awaited<ReturnType<typeof bindLoopbackServer>> = null;
 	let loopbackRedirectUri: string | null = null;
 	let browserAuthorizeUrl = pasteAuthorizeUrl;
