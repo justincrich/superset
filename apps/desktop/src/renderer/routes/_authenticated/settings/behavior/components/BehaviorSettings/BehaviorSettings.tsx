@@ -18,6 +18,9 @@ import {
 	type SettingItemId,
 } from "../../../utils/settings-search";
 
+const VOICE_SHORTCUT_SETTINGS_HREF =
+	"#/settings/keyboard?shortcut=VOICE_INPUT_TOGGLE";
+
 interface BehaviorSettingsProps {
 	visibleItems?: SettingItemId[] | null;
 }
@@ -109,7 +112,10 @@ export function BehaviorSettings({ visibleItems }: BehaviorSettingsProps) {
 	);
 
 	const utils = electronTrpc.useUtils();
-	const voiceShortcut = useHotkeyDisplay("VOICE_INPUT_TOGGLE").text;
+	const voiceShortcutDisplay = useHotkeyDisplay("VOICE_INPUT_TOGGLE");
+	const voiceShortcutText = voiceShortcutDisplay.text;
+	const canDisplayVoiceShortcut =
+		voiceShortcutText.length > 0 && voiceShortcutText !== "Unassigned";
 
 	const { data: confirmOnQuit, isLoading: isConfirmLoading } =
 		electronTrpc.settings.getConfirmOnQuit.useQuery();
@@ -392,9 +398,25 @@ export function BehaviorSettings({ visibleItems }: BehaviorSettingsProps) {
 								<p className="text-xs text-muted-foreground">
 									{microphoneReadiness.description}
 								</p>
-								<p className="text-xs text-muted-foreground">
-									Shortcut: {voiceShortcut}
-								</p>
+								<div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+									<span className="font-medium text-foreground">
+										Voice Shortcut
+									</span>
+									{canDisplayVoiceShortcut ? (
+										<span>{voiceShortcutText}</span>
+									) : (
+										<span>Shortcut unavailable</span>
+									)}
+									<a
+										className="text-primary underline-offset-4 hover:underline"
+										data-testid="behavior-voice-shortcut-link"
+										href={VOICE_SHORTCUT_SETTINGS_HREF}
+									>
+										{canDisplayVoiceShortcut
+											? "Edit shortcut"
+											: "Reset in Keyboard Shortcuts"}
+									</a>
+								</div>
 							</div>
 							{microphoneReadiness.actionLabel ? (
 								<Button
