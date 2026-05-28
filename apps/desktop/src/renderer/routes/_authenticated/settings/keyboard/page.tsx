@@ -28,6 +28,12 @@ import {
 	useRecordHotkeys,
 } from "renderer/hotkeys";
 
+type PendingHotkeyConflict = {
+	targetId: HotkeyId;
+	binding: ShortcutBinding;
+	conflictId: HotkeyId;
+};
+
 const CATEGORY_ORDER: HotkeyCategory[] = [
 	"Navigation",
 	"Workspace",
@@ -53,9 +59,11 @@ function HotkeyRow({
 	onReset: () => void;
 }) {
 	const { keys } = useHotkeyDisplay(id);
+	const rowTestId = `keyboard-shortcut-row-${id}`;
 
 	return (
 		<div
+			data-testid={rowTestId}
 			className={cn(
 				"flex items-center justify-between gap-4 py-3 px-4 transition-colors",
 				isRecording && "bg-destructive/5",
@@ -70,6 +78,8 @@ function HotkeyRow({
 			<div className="flex items-center gap-2">
 				<button
 					type="button"
+					aria-label={`Record shortcut for ${label}`}
+					data-testid={`${rowTestId}-record`}
 					onClick={onStartRecording}
 					className={cn(
 						"h-7 px-3 rounded-md border text-xs transition-colors",
@@ -88,7 +98,13 @@ function HotkeyRow({
 						</KbdGroup>
 					)}
 				</button>
-				<Button variant="ghost" size="sm" onClick={onReset}>
+				<Button
+					aria-label={`Reset shortcut for ${label}`}
+					data-testid={`${rowTestId}-reset`}
+					variant="ghost"
+					size="sm"
+					onClick={onReset}
+				>
 					Reset
 				</Button>
 			</div>
@@ -99,6 +115,25 @@ function HotkeyRow({
 export const Route = createFileRoute("/_authenticated/settings/keyboard/")({
 	component: KeyboardShortcutsPage,
 });
+
+export function buildHotkeyConflictPrompt({
+	conflictDisplayText,
+	conflictId,
+}: {
+	conflictDisplayText: string;
+	conflictId: HotkeyId;
+}) {
+	const assignmentDescription = `${conflictDisplayText} is already assigned to "${
+		HOTKEYS[conflictId].label
+	}".`;
+	const question = "Would you like to reassign it?";
+	return {
+		title: "Shortcut already in use",
+		assignmentDescription,
+		question,
+		description: `${assignmentDescription} ${question}`,
+	};
+}
 
 function getHotkeysByCategory(): Record<
 	HotkeyCategory,
@@ -127,14 +162,11 @@ function getHotkeysByCategory(): Record<
 
 const hotkeysByCategory = getHotkeysByCategory();
 
-function KeyboardShortcutsPage() {
+export function KeyboardShortcutsPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [recordingId, setRecordingId] = useState<HotkeyId | null>(null);
-	const [pendingConflict, setPendingConflict] = useState<{
-		targetId: HotkeyId;
-		binding: ShortcutBinding;
-		conflictId: HotkeyId;
-	} | null>(null);
+	const [pendingConflict, setPendingConflict] =
+		useState<PendingHotkeyConflict | null>(null);
 
 	const resetOverride = useHotkeyOverridesStore((s) => s.resetOverride);
 	const resetAll = useHotkeyOverridesStore((s) => s.resetAll);
@@ -196,6 +228,12 @@ function KeyboardShortcutsPage() {
 	};
 
 	const conflictDisplay = useFormatBinding(pendingConflict?.binding ?? null);
+	const conflictPrompt = pendingConflict
+		? buildHotkeyConflictPrompt({
+				conflictDisplayText: conflictDisplay.text,
+				conflictId: pendingConflict.conflictId,
+			})
+		: null;
 
 	return (
 		<div className="p-6 max-w-4xl w-full">
@@ -214,6 +252,7 @@ function KeyboardShortcutsPage() {
 					</p>
 				</div>
 				<Button
+					data-testid="keyboard-shortcuts-reset-all"
 					variant="outline"
 					size="sm"
 					onClick={() => {
@@ -240,6 +279,7 @@ function KeyboardShortcutsPage() {
 				</div>
 				<Switch
 					id="adaptive-layout"
+					data-testid="keyboard-shortcuts-adaptive-layout"
 					checked={adaptiveLayoutEnabled}
 					onCheckedChange={setAdaptiveLayoutEnabled}
 				/>
@@ -249,6 +289,7 @@ function KeyboardShortcutsPage() {
 			<div className="relative mb-6">
 				<HiMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 				<Input
+					data-testid="keyboard-shortcuts-search"
 					type="text"
 					placeholder="Search"
 					value={searchQuery}
@@ -312,18 +353,15 @@ function KeyboardShortcutsPage() {
 						<AlertDialogDescription asChild>
 							<div className="text-muted-foreground space-y-1.5">
 								<span className="block">
-									{pendingConflict
-										? `${conflictDisplay.text} is already assigned to "${
-												HOTKEYS[pendingConflict.conflictId].label
-											}".`
-										: ""}
+									{conflictPrompt?.assignmentDescription ?? ""}
 								</span>
-								<span className="block">Would you like to reassign it?</span>
+								<span className="block">{conflictPrompt?.question ?? ""}</span>
 							</div>
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter className="px-4 pb-4 pt-2 flex-row justify-end gap-2">
 						<Button
+							data-testid="keyboard-shortcuts-conflict-cancel"
 							variant="ghost"
 							size="sm"
 							onClick={() => setPendingConflict(null)}
@@ -331,6 +369,7 @@ function KeyboardShortcutsPage() {
 							Cancel
 						</Button>
 						<Button
+							data-testid="keyboard-shortcuts-conflict-reassign"
 							variant="secondary"
 							size="sm"
 							onClick={handleConflictReassign}
