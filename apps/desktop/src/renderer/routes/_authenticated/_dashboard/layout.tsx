@@ -26,6 +26,10 @@ import {
 	MAX_WORKSPACE_SIDEBAR_WIDTH,
 	useWorkspaceSidebarStore,
 } from "renderer/stores/workspace-sidebar-state";
+import {
+	runVoiceActivationHotkeyEvent,
+	useVoiceActivationGuard,
+} from "renderer/voice-input/useVoiceActivationGuard";
 import { AddRepositoryModals } from "./components/AddRepositoryModals";
 import { CrossVersionMismatchState } from "./components/CrossVersionMismatchState";
 import { TopBar } from "./components/TopBar";
@@ -102,10 +106,22 @@ function DashboardLayout() {
 		setIsResizing: setWorkspaceSidebarIsResizing,
 		isCollapsed: isWorkspaceSidebarCollapsed,
 	} = useWorkspaceSidebarStore();
+	const { data: voiceInputEnabled } =
+		electronTrpc.settings.getVoiceInputEnabled.useQuery();
+	const handleVoiceActivationShortcut = useVoiceActivationGuard({
+		voiceInputEnabled: voiceInputEnabled ?? false,
+	});
 
 	// Global hotkeys for dashboard
 	useHotkey("OPEN_SETTINGS", () => navigate({ to: "/settings/account" }));
 	useHotkey("SHOW_HOTKEYS", () => navigate({ to: "/settings/keyboard" }));
+	useHotkey(
+		"VOICE_INPUT_TOGGLE",
+		(event) => {
+			runVoiceActivationHotkeyEvent(event, handleVoiceActivationShortcut);
+		},
+		{ preventDefault: false },
+	);
 	useHotkey("TOGGLE_WORKSPACE_SIDEBAR", () => {
 		if (!isWorkspaceSidebarOpen) {
 			setWorkspaceSidebarOpen(true);
