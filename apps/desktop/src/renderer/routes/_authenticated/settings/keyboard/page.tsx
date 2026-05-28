@@ -48,6 +48,7 @@ function HotkeyRow({
 	label,
 	description,
 	isRecording,
+	isFocused,
 	onStartRecording,
 	onReset,
 }: {
@@ -55,6 +56,7 @@ function HotkeyRow({
 	label: string;
 	description?: string;
 	isRecording: boolean;
+	isFocused: boolean;
 	onStartRecording: () => void;
 	onReset: () => void;
 }) {
@@ -64,9 +66,11 @@ function HotkeyRow({
 	return (
 		<div
 			data-testid={rowTestId}
+			data-focused-shortcut={isFocused ? "true" : undefined}
 			className={cn(
 				"flex items-center justify-between gap-4 py-3 px-4 transition-colors",
 				isRecording && "bg-destructive/5",
+				isFocused && "bg-accent/30",
 			)}
 		>
 			<div className="flex flex-col">
@@ -162,8 +166,28 @@ function getHotkeysByCategory(): Record<
 
 const hotkeysByCategory = getHotkeysByCategory();
 
+function getShortcutFocusId(): HotkeyId | null {
+	if (typeof window === "undefined") {
+		return null;
+	}
+
+	const params = new URLSearchParams(window.location.search);
+	const shortcutId =
+		params.get("shortcut") ?? window.location.hash.replace("#", "");
+	if (shortcutId && shortcutId in HOTKEYS) {
+		return shortcutId as HotkeyId;
+	}
+
+	return null;
+}
+
 export function KeyboardShortcutsPage() {
-	const [searchQuery, setSearchQuery] = useState("");
+	const [focusedShortcutId] = useState<HotkeyId | null>(() =>
+		getShortcutFocusId(),
+	);
+	const [searchQuery, setSearchQuery] = useState(() =>
+		focusedShortcutId ? HOTKEYS[focusedShortcutId].label : "",
+	);
 	const [recordingId, setRecordingId] = useState<HotkeyId | null>(null);
 	const [pendingConflict, setPendingConflict] =
 		useState<PendingHotkeyConflict | null>(null);
@@ -318,6 +342,7 @@ export function KeyboardShortcutsPage() {
 										id={hotkey.id}
 										label={hotkey.label}
 										description={hotkey.description}
+										isFocused={focusedShortcutId === hotkey.id}
 										isRecording={recordingId === hotkey.id}
 										onStartRecording={() => handleStartRecording(hotkey.id)}
 										onReset={() => {

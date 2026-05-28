@@ -252,6 +252,28 @@ afterEach(() => {
 });
 
 describe("voice activation keyboard shortcut settings", () => {
+	it("opensKeyboardSettingsAtVoiceShortcutRow", async () => {
+		window.history.replaceState(
+			null,
+			"",
+			"/settings/keyboard?shortcut=VOICE_INPUT_TOGGLE",
+		);
+
+		const page = await mountKeyboardShortcutsPage();
+		try {
+			const search = getByTestId(
+				"keyboard-shortcuts-search",
+			) as HTMLInputElement;
+			const row = getShortcutRow();
+
+			expect(search.value).toBe("Toggle Voice Input");
+			expect(row.textContent).toContain("Toggle Voice Input");
+			expect(row.getAttribute("data-focused-shortcut")).toBe("true");
+		} finally {
+			await page.unmount();
+		}
+	});
+
 	it("rendersVoiceActivationShortcutRow", async () => {
 		const page = await mountKeyboardShortcutsPage();
 		try {
